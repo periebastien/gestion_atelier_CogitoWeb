@@ -351,6 +351,30 @@
 		} );
 
 		/* ---------------------------------------------------------------
+		 * Carte de prestation cliquable : un tap/clic n'importe où sur
+		 * l'item bascule sa case (indispensable en mobile où la petite
+		 * case native est masquée ; confort en desktop).
+		 * ------------------------------------------------------------- */
+
+		form.addEventListener( 'click', function ( e ) {
+			var wrap = e.target.closest( '.gacct-accordion__body .jet-form-builder__field-wrap' );
+			if (
+				! wrap
+				|| e.target.closest( 'label' )
+				|| e.target.closest( 'a' )
+				// Le template Crocoblock est DÉJÀ cliquable (son propre JS coche
+				// l'input) : intervenir ici provoquerait une double bascule.
+				|| e.target.closest( '.jet-form-builder__field-template' )
+			) {
+				return;
+			}
+			var input = wrap.querySelector( 'input.checkradio-field' );
+			if ( input ) {
+				input.click();
+			}
+		}, true ); // capture : un script du template stoppe la propagation en bulle
+
+		/* ---------------------------------------------------------------
 		 * Recalcul du résumé financier / durée
 		 * ------------------------------------------------------------- */
 
@@ -485,8 +509,12 @@
 				var ouvre = ! barreDetail.classList.contains( 'est-ouvert' );
 				if ( ouvre ) {
 					refreshBarreDetail();
+					// Colle le panneau à la hauteur réelle de la barre pour
+					// qu'ils forment visuellement un seul élément.
+					barreDetail.style.bottom = barre.offsetHeight + 'px';
 				}
 				barreDetail.classList.toggle( 'est-ouvert', ouvre );
+				barre.classList.toggle( 'est-ouvert', ouvre );
 				barreInfos.setAttribute( 'aria-expanded', ouvre ? 'true' : 'false' );
 			}
 			barreInfos.addEventListener( 'click', toggleDetail );
@@ -511,6 +539,9 @@
 			// Copie du résumé en flux (masqué en mobile), sans dupliquer les IDs.
 			var clone = resume.cloneNode( true );
 			clone.removeAttribute( 'id' );
+			// Le bloc d'origine porte un style inline « carte » (fond, bordure,
+			// padding) : on le retire pour que le clone fonde dans le panneau.
+			clone.removeAttribute( 'style' );
 			clone.querySelectorAll( '[id]' ).forEach( function ( el ) {
 				el.removeAttribute( 'id' );
 			} );

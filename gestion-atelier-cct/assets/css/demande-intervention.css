@@ -445,6 +445,98 @@ span.flatpickr-weekday {
 	.jet-form-builder {
 		padding-bottom: 84px;
 	}
+
+	/* --- Récupération de largeur : sur petit écran, chaque pixel compte ---- */
+
+	/* Le conteneur Elementor du widget formulaire garde ses paddings desktop
+	   (ex. 48px à droite) : on les neutralise via ses variables. */
+	.e-con:has(.jet-form-builder) {
+		--padding-left: 12px;
+		--padding-right: 12px;
+	}
+
+	.jet-form-builder .form-card,
+	.jet-form-builder .datepicker-card {
+		padding: 16px 14px;
+	}
+
+	/* Grille « Votre matériel » : 2 champs par ligne (1 sous 360px). */
+	.jet-form-builder .grid-3 {
+		grid-template-columns: repeat(2, 1fr) !important;
+		gap: 10px !important;
+	}
+
+	/* --- Items de prestation plus compacts -------------------------------
+	   Structure d'origine : template produit (case décorative + titre + prix
+	   + description) PUIS label réel (case + titre dupliqué). En mobile on
+	   recompose : vraie case à gauche, contenu du template à droite, et on
+	   masque les doublons (titre du label, case décorative du template). */
+
+	/* Item = carte sélectionnable : on masque la petite case native (le label
+	   dupliqué) et l'état coché s'affiche par la mise en évidence de la carte
+	   entière (voir bloc hors media-query). Le JS rend toute la carte
+	   cliquable. */
+	.gacct-accordion__body .jet-form-builder__field-wrap {
+		padding: 4px 8px;
+		border: 1px solid transparent;
+		border-radius: var(--gacct-radius);
+	}
+
+	.gacct-accordion__body .jet-form-builder__field-wrap > label {
+		display: none;
+	}
+
+	.gacct-accordion__body .jet-form-builder__field-template {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.gacct-accordion__body .jet-fb-check-mark {
+		display: none;
+	}
+
+	.gacct-accordion__body .jet-form-builder__field-template h1,
+	.gacct-accordion__body .jet-form-builder__field-template h2,
+	.gacct-accordion__body .jet-form-builder__field-template h3,
+	.gacct-accordion__body .jet-form-builder__field-template h4,
+	.gacct-accordion__body .jet-form-builder__field-template .elementor-heading-title {
+		font-size: 14px;
+		line-height: 1.35;
+	}
+
+	.gacct-accordion__body .jet-form-builder__field-template .woocommerce-Price-amount {
+		font-size: 14px;
+	}
+
+	.gacct-accordion__body .jet-form-builder__field-template .e-con {
+		--padding-top: 0px;
+		--padding-bottom: 0px;
+		--padding-left: 0px;
+		--padding-right: 0px;
+	}
+}
+
+@media (max-width: 360px) {
+	.jet-form-builder .grid-3 {
+		grid-template-columns: 1fr !important;
+	}
+}
+
+/* --------------------------------------------------------------------------
+   État sélectionné d'un item de prestation : la carte entière se met en
+   évidence (tous écrans — le JS rend aussi la carte cliquable). Le carré
+   natif reste visible en desktop, masqué en mobile (voir media-query).
+   -------------------------------------------------------------------------- */
+
+.gacct-accordion__body .jet-form-builder__field-wrap {
+	cursor: pointer;
+	transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.gacct-accordion__body .jet-form-builder__field-wrap:has(input.checkradio-field:checked) {
+	background-color: color-mix( in srgb, var(--gacct-accent) 8%, transparent );
+	border: 1px solid var(--gacct-accent);
+	border-radius: var(--gacct-radius);
 }
 
 /* --- Barre panier mobile (markup injecté par demande-intervention.js) --- */
@@ -502,16 +594,18 @@ span.flatpickr-weekday {
 	cursor: pointer;
 }
 
-/* Détail du panier déplié au-dessus de la barre */
+/* Détail du panier déplié au-dessus de la barre. Même fond et ombre UNIQUE
+   portée par le détail : barre + détail se lisent comme un seul panneau
+   (la barre perd sa propre ombre/bordure quand le détail est ouvert). */
 .gacct-barre-detail {
 	position: fixed;
 	inset: auto 0 0 0;
-	bottom: 62px;
+	bottom: 62px; /* recalé en JS sur la hauteur réelle de la barre */
 	z-index: 9997;
-	background: var(--gacct-surface-alt);
-	border-top: 1px solid var(--gacct-border);
+	background: var(--gacct-surface);
+	border-radius: 14px 14px 0 0;
 	box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.15);
-	padding: 14px 16px;
+	padding: 14px 16px 8px;
 	max-height: 50vh;
 	overflow-y: auto;
 	display: none;
@@ -519,6 +613,22 @@ span.flatpickr-weekday {
 
 .gacct-barre-detail.est-ouvert {
 	display: block;
+}
+
+.gacct-barre.est-ouvert {
+	border-top: 0;
+	box-shadow: none;
+}
+
+/* Le résumé cloné dans le détail perd sa carte (fond/bordure/marge) pour
+   fondre dans le panneau. */
+.gacct-barre-detail #resume_financier,
+.gacct-barre-detail > div {
+	display: block !important;
+	background: transparent;
+	border: 0;
+	margin: 0;
+	padding: 0;
 }
 
 .gacct-barre-chevron {
