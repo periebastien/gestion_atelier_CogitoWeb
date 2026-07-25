@@ -1,0 +1,440 @@
+/**
+ * Formulaire "demande-intervention" (JetFormBuilder, formulaire #127).
+ *
+ * Dépend de window.gacctDemande (localisé par le PHP) et de flatpickr (+ sa
+ * locale fr), chargés par le plugin AVANT ce script. Défensif : si l'un des
+ * deux manque, on ne fait rien plutôt que de planter.
+ *
+ * Fonctionnalités :
+ *  - flatpickr sur le champ date_intervention, avec dispos calculées depuis
+ *    gacctDemande.dispos (jamais depuis le DOM) ;
+ *  - recalcul du résumé financier + durée totale à chaque changement d'une
+ *    prestation ou du frais de port (jamais date_disponible) ;
+ *  - synchronisation du radio caché date_disponible avec la date choisie ;
+ *  - validation de la date au submit ;
+ *  - accordéons sur les groupes de prestations.
+ */
+( function () {
+	'use strict';
+
+	function init() {
+		var cfg = window.gacctDemande;
+		if ( ! cfg || typeof window.flatpickr !== 'function' ) {
+			return;
+		}
+
+		var form = cfg.formId
+			? document.querySelector( '.jet-form-builder[data-form-id="' + cfg.formId + '"]' )
+			: document.querySelector( '.jet-form-builder' );
+		if ( ! form ) {
+			form = document.querySelector( '.jet-form-builder' );
+		}
+		if ( ! form ) {
+			return;
+		}
+
+		var champs = cfg.champs || {};
+		var prestationNames = champs.prestations || [];
+		var portName = champs.port || '';
+		var dateDispoName = champs.dateDispo || '';
+		var dateFieldName = champs.date || 'date_intervention';
+		var dureeFieldName = champs.duree || 'duree_totale_commande';
+
+		var prestations = cfg.prestations || {};
+		var dispos = cfg.dispos || {};
+		var i18n = cfg.i18n || {};
+		var devise = cfg.devise || '€';
+
+		var inputDate = form.querySelector( 'input[name="' + dateFieldName + '"]' );
+		var inputDuree = form.querySelector( 'input[name="' + dureeFieldName + '"]' );
+
+		var instanceFp = null;
+		var heuresRequisesCourant = 0;
+
+		/* ---------------------------------------------------------------
+		 * Utilitaires
+		 * ------------------------------------------------------------- */
+
+		function fieldInputs( name ) {
+			if ( ! name ) {
+				return [];
+			}
+			var nodes = form.querySelectorAll(
+				'[data-field-name="' + name + '"], [name="' + name + '"], [name="' + name + '[]"]'
+			);
+			return Array.prototype.slice.call( nodes );
+		}
+
+		function decimalToTime( decimal ) {
+			if ( isNaN( decimal ) || decimal <= 0 ) {
+				return '00:00';
+			}
+			var hrs = Math.floor( decimal );
+			var mins = Math.round( ( decimal - hrs ) * 60 );
+			return String( hrs ).padStart( 2, '0' ) + ':' + String( mins ).padStart( 2, '0' );
+		}
+
+		function formatMoney( n ) {
+			var val = isNaN( n ) ? 0 : n;
+			return val.toFixed( 2 ).replace( '.', ',' ) + ' ' + devise;
+		}
+
+		function toDateISO( date ) {
+			var y = date.getFullYear();
+			var m = String( date.getMonth() + 1 ).padStart( 2, '0' );
+			var d = String( date.getDate() ).padStart( 2, '0' );
+			return y + '-' + m + '-' + d;
+		}
+
+		function heuresDispoPour( date ) {
+			var iso = toDateISO( date );
+			var h = dispos[ iso ];
+			return typeof h === 'number' ? h : null;
+		}
+
+		/* ---------------------------------------------------------------
+		 * flatpickr
+		 * ------------------------------------------------------------- */
+
+		if ( inputDate ) {
+			var demain = new Date();
+			demain.setDate( demain.getDate() + 1 );
+
+			instanceFp = window.flatpickr( inputDate, {
+				locale: 'fr',
+				dateFormat: 'Y-m-d',
+				altInput: true,
+				altFormat: 'd/m/Y',
+				allowInput: true,
+				disableMobile: true,
+				monthSelectorType: 'static',
+				minDate: demain,
+
+				onReady: function ( selectedDates, dateStr, instance ) {
+					var legend = document.createElement( 'div' );
+					legend.className = 'dp-legend';
+					legend.innerHTML =
+						'<span class="dp-legend-item"><span class="dp-swatch available"></span>' +
+						( i18n.legendeDispo || 'Disponible' ) +
+						'</span>' +
+						'<span class="dp-legend-item"><span class="dp-swatch selected-sw"></span>' +
+						( i18n.legendeSelection || 'Sélectionné' ) +
+						'</span>' +
+						'<span class="dp-legend-item"><span class="dp-swatch unavailable"></span>' +
+						( i18n.legendeIndispo || 'Indisponible' ) +
+						'</span>';
+					instance.calendarContainer.appendChild( legend );
+				},
+
+				onDayCreate: function ( dObj, dStr, fp, dayElem ) {
+					dayElem.classList.remove( 'date-complete', 'date-dispo' );
+					var h = heuresDispoPour( dayElem.dateObj );
+					if ( h === null ) {
+						return;
+					}
+					if ( h >= heuresRequisesCourant ) {
+						dayElem.classList.add( 'date-dispo' );
+					} else {
+						dayElem.classList.add( 'date-complete' );
+					}
+				},
+
+				disable: [
+					function ( date ) {
+						var h = heuresDispoPour( date );
+						return h === null || h < heuresRequisesCourant;
+					},
+				],
+
+				onChange: function ( selectedDates ) {
+					clearDateError();
+					if ( selectedDates && selectedDates[ 0 ] ) {
+						syncDateDisponible( selectedDates[ 0 ] );
+					}
+				},
+			} );
+		}
+
+		function syncDateDisponible( date ) {
+			if ( ! dateDispoName ) {
+				return;
+			}
+			var ts = Math.floor( Date.UTC( date.getFullYear(), date.getMonth(), date.getDate() ) / 1000 );
+			var radios = fieldInputs( dateDispoName );
+			var match = null;
+			radios.forEach( function ( r ) {
+				if ( String( r.value ) === String( ts ) ) {
+					match = r;
+				}
+			} );
+			if ( ! match ) {
+				return;
+			}
+			radios.forEach( function ( r ) {
+				r.checked = false;
+			} );
+			match.checked = true;
+		}
+
+		function actualiserCalendrier() {
+			if ( ! instanceFp ) {
+				return;
+			}
+			if ( instanceFp.selectedDates && instanceFp.selectedDates.length ) {
+				var h = heuresDispoPour( instanceFp.selectedDates[ 0 ] );
+				if ( h === null || h < heuresRequisesCourant ) {
+					instanceFp.clear();
+				}
+			}
+			instanceFp.redraw();
+		}
+
+		/* ---------------------------------------------------------------
+		 * Validation de la date au submit
+		 * ------------------------------------------------------------- */
+
+		function dateRow() {
+			return inputDate ? inputDate.closest( '.jet-form-builder-row' ) : null;
+		}
+
+		function clearDateError() {
+			var row = dateRow();
+			if ( ! row ) {
+				return;
+			}
+			row.classList.remove( 'jet-form-builder-row--error' );
+			var errorMsg = row.querySelector( '.jet-form-builder__error' );
+			if ( errorMsg ) {
+				errorMsg.remove();
+			}
+		}
+
+		function showDateError() {
+			var row = dateRow();
+			if ( ! row ) {
+				return;
+			}
+			row.classList.add( 'jet-form-builder-row--error' );
+			var errorMsg = row.querySelector( '.jet-form-builder__error' );
+			if ( ! errorMsg ) {
+				errorMsg = document.createElement( 'div' );
+				errorMsg.className = 'jet-form-builder-message jet-form-builder__error field-error';
+				errorMsg.textContent = i18n.erreurDate || "Vous devez sélectionner une date d'intervention";
+				var wrap = row.querySelector( '.jet-form-builder__field-wrap' ) || row;
+				wrap.appendChild( errorMsg );
+			}
+			row.scrollIntoView( { behavior: 'smooth', block: 'center' } );
+		}
+
+		form.addEventListener(
+			'submit',
+			function ( e ) {
+				var dateVal = inputDate ? inputDate.value.trim() : '';
+				if ( dateVal === '' ) {
+					e.preventDefault();
+					e.stopImmediatePropagation();
+					showDateError();
+				}
+			},
+			true
+		);
+
+		/* ---------------------------------------------------------------
+		 * Accordéons sur les groupes de prestations
+		 * ------------------------------------------------------------- */
+
+		var accordions = [];
+
+		function chevronSvg() {
+			return (
+				'<svg class="gacct-accordion__chevron" viewBox="0 0 24 24" width="18" height="18" ' +
+				'fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+				'<polyline points="6 9 12 15 18 9"></polyline></svg>'
+			);
+		}
+
+		function buildAccordion( name, isOpen ) {
+			var input = form.querySelector(
+				'[data-field-name="' + name + '"], [name="' + name + '"], [name="' + name + '[]"]'
+			);
+			if ( ! input ) {
+				return;
+			}
+			var row = input.closest( '.jet-form-builder-row' );
+			if ( ! row || row.hasAttribute( 'data-gacct-accordion' ) ) {
+				return;
+			}
+			var body = row.querySelector( '.jet-form-builder__fields-group' );
+			if ( ! body ) {
+				return;
+			}
+
+			row.setAttribute( 'data-gacct-accordion', name );
+			row.classList.add( 'gacct-accordion' );
+
+			var legend = row.querySelector( '.jet-form-builder__label' );
+			var labelText = legend ? legend.textContent.trim() : name;
+
+			var header = document.createElement( 'div' );
+			header.className = 'gacct-accordion__header';
+			header.setAttribute( 'role', 'button' );
+			header.setAttribute( 'tabindex', '0' );
+			header.setAttribute( 'aria-expanded', isOpen ? 'true' : 'false' );
+
+			var title = document.createElement( 'span' );
+			title.className = 'gacct-accordion__title';
+			title.textContent = labelText;
+
+			var badge = document.createElement( 'span' );
+			badge.className = 'gacct-accordion__badge';
+			badge.textContent = '0';
+			badge.hidden = true;
+
+			header.appendChild( title );
+			header.appendChild( badge );
+			header.insertAdjacentHTML( 'beforeend', chevronSvg() );
+
+			if ( legend && legend.parentNode ) {
+				legend.parentNode.replaceChild( header, legend );
+			} else {
+				row.insertBefore( header, row.firstChild );
+			}
+
+			var bodyWrap = document.createElement( 'div' );
+			bodyWrap.className = 'gacct-accordion__body-wrap';
+			body.parentNode.insertBefore( bodyWrap, body );
+			bodyWrap.appendChild( body );
+			body.classList.add( 'gacct-accordion__body' );
+
+			function setOpen( open ) {
+				header.setAttribute( 'aria-expanded', open ? 'true' : 'false' );
+				row.classList.toggle( 'is-open', open );
+			}
+			setOpen( isOpen );
+
+			function toggle() {
+				setOpen( header.getAttribute( 'aria-expanded' ) !== 'true' );
+			}
+
+			header.addEventListener( 'click', toggle );
+			header.addEventListener( 'keydown', function ( e ) {
+				if ( e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar' ) {
+					e.preventDefault();
+					toggle();
+				}
+			} );
+
+			accordions.push( { name: name, row: row, body: body, badge: badge } );
+		}
+
+		function updateAccordionBadges() {
+			accordions.forEach( function ( acc ) {
+				// Ne compter que les vraies cases du champ : le template produit contient
+				// aussi une case décorative (.check-mark-control) qui suit l'état visuel.
+				var n = acc.body.querySelectorAll( 'input[data-field-name="' + acc.name + '"]:checked' ).length;
+				acc.badge.textContent = String( n );
+				acc.badge.hidden = n === 0;
+			} );
+		}
+
+		prestationNames.forEach( function ( name ) {
+			buildAccordion( name, name === cfg.accordeonOuvert );
+		} );
+
+		/* ---------------------------------------------------------------
+		 * Recalcul du résumé financier / durée
+		 * ------------------------------------------------------------- */
+
+		var listeContainer = document.getElementById( 'liste_panier' );
+		var elTotalPresta = document.getElementById( 'total_prestations' );
+		var elTotalPort = document.getElementById( 'total_port' );
+		var elTotalGlobal = document.getElementById( 'total_global' );
+
+		function toutRecalculer() {
+			var heuresRequises = 0;
+			var sommePrestations = 0;
+			var sommePort = 0;
+			var htmlPanier = '';
+
+			prestationNames.forEach( function ( name ) {
+				fieldInputs( name ).forEach( function ( input ) {
+					if ( ! input.checked ) {
+						return;
+					}
+					var info = prestations[ input.value ];
+					if ( ! info ) {
+						return;
+					}
+					var prix = parseFloat( info.prix ) || 0;
+					var duree = parseFloat( info.duree ) || 0;
+					var titre = info.titre || 'Prestation';
+
+					sommePrestations += prix;
+					heuresRequises += duree;
+
+					htmlPanier +=
+						'<div class="gacct-panier-item">' +
+						'<span class="gacct-panier-item__label">• ' + titre + '</span>' +
+						'<span class="gacct-panier-item__price">' + formatMoney( prix ) + '</span>' +
+						'</div>';
+				} );
+			} );
+
+			if ( portName ) {
+				fieldInputs( portName ).forEach( function ( input ) {
+					if ( ! input.checked ) {
+						return;
+					}
+					var info = prestations[ input.value ];
+					var prix = info ? parseFloat( info.prix ) || 0 : 0;
+					sommePort += prix;
+				} );
+			}
+
+			if ( listeContainer ) {
+				listeContainer.innerHTML =
+					htmlPanier ||
+					'<div class="gacct-panier-empty">' + ( i18n.aucuneSelection || 'Aucune prestation sélectionnée' ) + '</div>';
+			}
+
+			if ( inputDuree ) {
+				inputDuree.value = decimalToTime( heuresRequises );
+			}
+
+			if ( elTotalPresta ) {
+				elTotalPresta.textContent = formatMoney( sommePrestations );
+			}
+			if ( elTotalPort ) {
+				elTotalPort.textContent = formatMoney( sommePort );
+			}
+			if ( elTotalGlobal ) {
+				elTotalGlobal.textContent = formatMoney( sommePrestations + sommePort );
+			}
+
+			heuresRequisesCourant = heuresRequises;
+
+			actualiserCalendrier();
+			updateAccordionBadges();
+		}
+
+		form.addEventListener( 'change', function ( e ) {
+			var target = e.target;
+			if ( ! target || ( target.type !== 'checkbox' && target.type !== 'radio' ) ) {
+				return;
+			}
+			var fieldName = target.getAttribute( 'data-field-name' ) || target.name;
+			if ( fieldName === dateDispoName ) {
+				return;
+			}
+			toutRecalculer();
+		} );
+
+		toutRecalculer();
+	}
+
+	if ( document.readyState === 'loading' ) {
+		document.addEventListener( 'DOMContentLoaded', init );
+	} else {
+		init();
+	}
+} )();

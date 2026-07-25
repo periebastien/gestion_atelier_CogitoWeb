@@ -1,0 +1,430 @@
+/**
+ * Styles du formulaire "demande-intervention" (JetFormBuilder #127) :
+ * flatpickr custom, accordéons de prestations, résumé financier sticky.
+ *
+ * Toutes les couleurs passent par des variables CSS pour permettre
+ * une personnalisation par site.
+ */
+
+/* Variables sur :root : le calendrier flatpickr est monté dans <body>, hors du
+   formulaire — un scope .jet-form-builder ne l'atteindrait pas (fond transparent). */
+:root {
+	--gacct-accent: #398ffc;
+	--gacct-accent-2: #20c4c3;
+	--gacct-dispo-bg: #e6f7ec;
+	--gacct-dispo-txt: #137a3b;
+	--gacct-dispo-border: rgba(19, 122, 59, 0.3);
+	--gacct-complete-txt: #cccccc;
+	--gacct-disabled-txt: #dddddd;
+	--gacct-text: #1a1a1a;
+	--gacct-text-muted: #777777;
+	--gacct-text-faint: #999999;
+	--gacct-text-empty: #95a5a6;
+	--gacct-surface: #ffffff;
+	--gacct-surface-alt: #f8f9fa;
+	--gacct-border: #e2e8f0;
+	--gacct-border-light: #f0f0f0;
+	--gacct-radius: 8px;
+	--gacct-radius-lg: 16px;
+	--gacct-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+	--gacct-badge-bg: var(--gacct-accent);
+	--gacct-badge-txt: #ffffff;
+}
+
+/* ==========================================================================
+   Flatpickr — calendrier custom
+   ========================================================================== */
+
+.flatpickr-calendar {
+	width: 350px !important;
+	background: var(--gacct-surface) !important;
+	border-radius: var(--gacct-radius-lg) !important;
+	box-shadow: var(--gacct-shadow) !important;
+	padding: 15px !important;
+	border: none !important;
+	box-sizing: border-box !important;
+	animation: gacctDpFade 140ms ease-out;
+}
+
+@keyframes gacctDpFade {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.flatpickr-months {
+	position: relative !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	height: 40px !important;
+	margin-bottom: 10px !important;
+}
+
+.flatpickr-months .flatpickr-month {
+	height: 100% !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	color: var(--gacct-text) !important;
+	fill: var(--gacct-text) !important;
+}
+
+.flatpickr-current-month {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	font-size: 16px !important;
+	font-weight: 700 !important;
+	padding: 0 !important;
+}
+
+.flatpickr-current-month .cur-month {
+	font-weight: 700 !important;
+	color: var(--gacct-text) !important;
+	margin-right: 4px !important;
+}
+
+.flatpickr-current-month .numInputWrapper {
+	width: auto !important;
+	display: inline-block !important;
+}
+
+.flatpickr-current-month input.cur-year {
+	background: transparent !important;
+	color: var(--gacct-text) !important;
+	cursor: default !important;
+	font-weight: 700 !important;
+	font-size: inherit !important;
+	font-family: inherit !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	border: 0 !important;
+	width: 4ch !important;
+	box-shadow: none !important;
+	appearance: textfield !important;
+	-moz-appearance: textfield !important;
+	-webkit-appearance: none !important;
+	pointer-events: none !important;
+}
+
+.flatpickr-current-month input.cur-year::-webkit-outer-spin-button,
+.flatpickr-current-month input.cur-year::-webkit-inner-spin-button {
+	-webkit-appearance: none !important;
+	margin: 0 !important;
+}
+
+.flatpickr-current-month .numInputWrapper span.arrowUp,
+.flatpickr-current-month .numInputWrapper span.arrowDown {
+	display: none !important;
+}
+
+.flatpickr-months .flatpickr-prev-month,
+.flatpickr-months .flatpickr-next-month {
+	position: absolute !important;
+	top: 50% !important;
+	transform: translateY(-50%) !important;
+	height: 30px !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	padding: 0 10px !important;
+}
+
+.flatpickr-months .flatpickr-prev-month {
+	left: 0 !important;
+}
+
+.flatpickr-months .flatpickr-next-month {
+	right: 0 !important;
+}
+
+.flatpickr-months .flatpickr-prev-month svg,
+.flatpickr-months .flatpickr-next-month svg {
+	width: 18px;
+	height: 18px;
+	stroke-width: 2.5;
+	fill: none;
+	stroke: currentColor;
+}
+
+.flatpickr-months .flatpickr-prev-month:hover,
+.flatpickr-months .flatpickr-next-month:hover {
+	background: rgba(0, 0, 0, 0.05) !important;
+	border-radius: 6px !important;
+}
+
+.flatpickr-weekdays {
+	display: flex !important;
+	background: transparent !important;
+	margin-bottom: 10px !important;
+	height: auto !important;
+}
+
+span.flatpickr-weekday {
+	flex: 1 !important;
+	font-size: 11px !important;
+	font-weight: 800 !important;
+	color: var(--gacct-text-faint) !important;
+	text-transform: lowercase;
+	text-align: center !important;
+}
+
+.flatpickr-innerContainer,
+.flatpickr-rContainer,
+.flatpickr-days,
+.dayContainer {
+	width: 100% !important;
+	min-width: 100% !important;
+	max-width: 100% !important;
+}
+
+.dayContainer {
+	display: flex !important;
+	flex-wrap: wrap !important;
+	justify-content: space-around !important;
+	gap: 3px;
+}
+
+.flatpickr-day {
+	flex: 0 0 13% !important;
+	max-width: 40px !important;
+	height: 40px !important;
+	line-height: 40px !important;
+	margin: 2px 0 !important;
+	border-radius: var(--gacct-radius) !important;
+	font-size: 13px !important;
+	font-weight: 600 !important;
+	border: 1px solid transparent !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	color: var(--gacct-text) !important;
+	background: transparent;
+	transition: background 120ms, color 120ms, transform 120ms;
+	padding: 0 !important;
+}
+
+.flatpickr-day.date-dispo {
+	background: var(--gacct-dispo-bg) !important;
+	color: var(--gacct-dispo-txt) !important;
+	cursor: pointer;
+}
+
+.flatpickr-day.date-dispo:hover {
+	background: var(--gacct-dispo-txt) !important;
+	color: #fff !important;
+	transform: translateY(-1px);
+}
+
+.flatpickr-day.date-complete {
+	color: var(--gacct-complete-txt) !important;
+	background: transparent !important;
+	cursor: not-allowed !important;
+	opacity: 0.5;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover,
+.flatpickr-day.selected:focus {
+	background: var(--gacct-accent-2) !important;
+	color: #fff !important;
+	box-shadow: 0 4px 12px rgba(32, 196, 195, 0.4) !important;
+	border-color: transparent !important;
+	transform: none !important;
+}
+
+.flatpickr-day.flatpickr-disabled,
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay {
+	color: var(--gacct-disabled-txt) !important;
+	background: transparent !important;
+	cursor: default;
+}
+
+.flatpickr-day.today {
+	outline: 1.5px dashed rgba(32, 196, 195, 0.6) !important;
+	outline-offset: -3px;
+	border-color: transparent !important;
+}
+
+.dp-legend {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 0;
+	padding: 5px;
+	border-top: 1px solid var(--gacct-border-light);
+}
+
+.dp-legend-item {
+	font-size: 11px;
+	color: var(--gacct-text-muted);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-weight: 600;
+}
+
+.dp-swatch {
+	width: 12px;
+	height: 12px;
+	border-radius: 4px;
+}
+
+.dp-swatch.available {
+	background: var(--gacct-dispo-bg);
+	border: 1px solid var(--gacct-dispo-border);
+}
+
+.dp-swatch.selected-sw {
+	background: var(--gacct-accent-2);
+}
+
+.dp-swatch.unavailable {
+	background: transparent;
+	border: 1px dashed #ccc;
+}
+
+/* ==========================================================================
+   Accordéons de prestations
+   ========================================================================== */
+
+.gacct-accordion {
+	border: 1px solid var(--gacct-border);
+	border-radius: var(--gacct-radius);
+	overflow: hidden;
+	background: var(--gacct-surface);
+}
+
+.gacct-accordion__header {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 14px 16px;
+	cursor: pointer;
+	user-select: none;
+	background: var(--gacct-surface-alt);
+}
+
+.gacct-accordion__header:focus-visible {
+	outline: 2px solid var(--gacct-accent);
+	outline-offset: -2px;
+}
+
+.gacct-accordion__title {
+	flex: 1 1 auto;
+	font-weight: 700;
+	color: var(--gacct-text);
+}
+
+.gacct-accordion__badge {
+	flex: 0 0 auto;
+	min-width: 22px;
+	height: 22px;
+	padding: 0 6px;
+	border-radius: 999px;
+	background: var(--gacct-badge-bg);
+	color: var(--gacct-badge-txt);
+	font-size: 12px;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.gacct-accordion__chevron {
+	flex: 0 0 auto;
+	color: var(--gacct-text-muted);
+	transition: transform 250ms ease;
+}
+
+.gacct-accordion.is-open .gacct-accordion__chevron {
+	transform: rotate(180deg);
+}
+
+.gacct-accordion__body-wrap {
+	display: grid;
+	grid-template-rows: 0fr;
+	transition: grid-template-rows 250ms ease;
+}
+
+.gacct-accordion.is-open .gacct-accordion__body-wrap {
+	grid-template-rows: 1fr;
+}
+
+.gacct-accordion__body {
+	min-height: 0;
+	overflow: hidden;
+	padding: 0 12px;
+}
+
+.gacct-accordion.is-open .gacct-accordion__body {
+	padding: 10px 12px 14px;
+}
+
+/* ==========================================================================
+   Résumé financier
+   ========================================================================== */
+
+.gacct-panier-item {
+	display: flex;
+	justify-content: space-between;
+	font-size: 14px;
+	margin-bottom: 5px;
+	gap: 10px;
+}
+
+.gacct-panier-item__label {
+	flex: 1;
+	padding-right: 10px;
+	color: var(--gacct-text);
+}
+
+.gacct-panier-item__price {
+	font-weight: 600;
+	color: var(--gacct-text);
+	white-space: nowrap;
+}
+
+.gacct-panier-empty {
+	color: var(--gacct-text-empty);
+	font-style: italic;
+}
+
+/* ==========================================================================
+   Sticky : résumé financier + bouton d'envoi
+   ========================================================================== */
+
+#resume_financier {
+	position: sticky;
+	bottom: 12px;
+	background-color: var(--gacct-surface-alt);
+	box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.08);
+	z-index: 2;
+}
+
+.jet-form-builder__submit-wrap {
+	position: sticky;
+	bottom: 0;
+	background: var(--gacct-surface);
+	padding-top: 10px;
+	padding-bottom: 10px;
+	z-index: 2;
+}
+
+@media (max-width: 768px) {
+	#resume_financier,
+	.jet-form-builder__submit-wrap {
+		position: static;
+		box-shadow: none;
+	}
+
+	.gacct-accordion {
+		width: 100%;
+	}
+}
