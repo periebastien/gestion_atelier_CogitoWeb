@@ -1,0 +1,145 @@
+.gacct-wrap {
+	max-width: 1280px;
+}
+
+.gacct-toolbar {
+	align-items: center;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	display: flex;
+	justify-content: space-between;
+	margin: 18px 0;
+	padding: 14px 16px;
+}
+
+.gacct-toolbar span {
+	color: #646970;
+	display: block;
+	margin-top: 2px;
+}
+
+.gacct-calendar {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	padding: 16px;
+}
+
+.gacct-calendar-error::before {
+	background: #fcf0f1;
+	border-left: 4px solid #d63638;
+	content: "Impossible de charger les donnees du calendrier.";
+	display: block;
+	margin-bottom: 12px;
+	padding: 10px 12px;
+}
+
+.gacct-form {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	margin-top: 18px;
+	max-width: 760px;
+	padding: 8px 20px 18px;
+}
+
+.gacct-form input[type="date"],
+.gacct-form input[type="number"],
+.gacct-form input[type="time"],
+.gacct-form input[type="text"] {
+	min-height: 34px;
+	width: 260px;
+}
+
+.gacct-checkbox-grid {
+	display: grid;
+	gap: 8px 16px;
+	grid-template-columns: repeat(2, minmax(120px, 1fr));
+	max-width: 360px;
+}
+
+.gacct-checkbox-grid label {
+	align-items: center;
+	display: flex;
+	gap: 6px;
+	margin: 0;
+}
+
+.gacct-availability-label {
+	color: #fff !important;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.gacct-availability-label--success {
+	background: #2e8540 !important;
+	border: 1px solid #2e8540 !important;
+}
+
+.gacct-availability-label--warning {
+	background: #b54708 !important;
+	border: 1px solid #b54708 !important;
+}
+
+.gacct-availability-label--danger {
+	background: #b42318 !important;
+	border: 1px solid #b42318 !important;
+}
+
+.gacct-services-tooltip {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+	color: #1d2327;
+	font-size: 11px;
+	line-height: 1.35;
+	max-width: 260px;
+	padding: 7px 9px;
+	pointer-events: none;
+	position: absolute;
+	z-index: 100000;
+}
+
+.gacct-services-tooltip div + div {
+	margin-top: 3px;
+}
+
+.fc .fc-bg-event {
+	opacity: 0.55;
+}
+
+.fc .fc-daygrid-event {
+	border-radius: 4px;
+}
+
+.fc .fc-button-primary {
+	background-color: #1d2327;
+	border-color: #1d2327;
+}
+
+.fc .fc-button-primary:hover,
+.fc .fc-button-primary:focus {
+	background-color: #2c3338;
+	border-color: #2c3338;
+}
+
+@media (max-width: 782px) {
+	.gacct-toolbar {
+		align-items: flex-start;
+		gap: 12px;
+		flex-direction: column;
+	}
+
+	.gacct-calendar {
+		padding: 10px;
+	}
+
+	.gacct-form input[type="date"],
+	.gacct-form input[type="number"],
+	.gacct-form input[type="time"],
+	.gacct-form input[type="text"] {
+		width: 100%;
+	}
+}
