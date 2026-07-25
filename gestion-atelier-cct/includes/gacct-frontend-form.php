@@ -139,6 +139,7 @@ function gacct_demande_build_data() {
 			'legendeDispo'    => __( 'Disponible', 'gestion-atelier-cct' ),
 			'legendeSelection'=> __( 'Sélectionné', 'gestion-atelier-cct' ),
 			'legendeIndispo'  => __( 'Indisponible', 'gestion-atelier-cct' ),
+			'aucuneDate'      => __( 'Aucune date choisie', 'gestion-atelier-cct' ),
 		),
 	);
 

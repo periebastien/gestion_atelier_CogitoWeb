@@ -151,6 +151,7 @@
 					if ( selectedDates && selectedDates[ 0 ] ) {
 						syncDateDisponible( selectedDates[ 0 ] );
 					}
+					updateBarre();
 				},
 			} );
 		}
@@ -313,7 +314,15 @@
 			setOpen( isOpen );
 
 			function toggle() {
-				setOpen( header.getAttribute( 'aria-expanded' ) !== 'true' );
+				var opening = header.getAttribute( 'aria-expanded' ) !== 'true';
+				// Accordéon exclusif : ouvrir un groupe referme les autres, la
+				// colonne reste courte et l'état coché survit via les badges.
+				if ( opening ) {
+					accordions.forEach( function ( acc ) {
+						acc.setOpen( false );
+					} );
+				}
+				setOpen( opening );
 			}
 
 			header.addEventListener( 'click', toggle );
@@ -324,7 +333,7 @@
 				}
 			} );
 
-			accordions.push( { name: name, row: row, body: body, badge: badge } );
+			accordions.push( { name: name, row: row, body: body, badge: badge, setOpen: setOpen } );
 		}
 
 		function updateAccordionBadges() {
@@ -412,10 +421,124 @@
 			}
 
 			heuresRequisesCourant = heuresRequises;
+			dernierTotalGlobal = sommePrestations + sommePort;
 
 			actualiserCalendrier();
 			updateAccordionBadges();
+			updateBarre();
 		}
+
+		/* ---------------------------------------------------------------
+		 * Barre panier mobile fixée en bas de fenêtre (compacte, dépliable).
+		 * Injectée hors du formulaire ; le CSS ne l'affiche qu'en <= 781px.
+		 * ------------------------------------------------------------- */
+
+		var barre = null;
+		var barreTotal = null;
+		var barreDate = null;
+		var barreDetail = null;
+		var barreInfos = null;
+
+		function buildBarreMobile() {
+			barreDetail = document.createElement( 'div' );
+			barreDetail.className = 'gacct-barre-detail';
+
+			barre = document.createElement( 'div' );
+			barre.className = 'gacct-barre';
+
+			barreInfos = document.createElement( 'div' );
+			barreInfos.className = 'gacct-barre-infos';
+			barreInfos.setAttribute( 'role', 'button' );
+			barreInfos.setAttribute( 'tabindex', '0' );
+			barreInfos.setAttribute( 'aria-expanded', 'false' );
+
+			barreTotal = document.createElement( 'div' );
+			barreTotal.className = 'gacct-barre-total';
+
+			var chevron = document.createElement( 'span' );
+			chevron.className = 'gacct-barre-chevron';
+			chevron.innerHTML = chevronSvg();
+
+			barreDate = document.createElement( 'div' );
+			barreDate.className = 'gacct-barre-date';
+
+			barreInfos.appendChild( barreTotal );
+			barreTotal.appendChild( chevron );
+			barreInfos.appendChild( barreDate );
+
+			var envoyer = document.createElement( 'button' );
+			envoyer.type = 'button';
+			envoyer.className = 'gacct-barre-envoyer';
+			var submitNatif = form.querySelector( '.jet-form-builder__submit' );
+			envoyer.textContent = submitNatif ? submitNatif.textContent.trim() : 'Envoyer la demande';
+			envoyer.addEventListener( 'click', function () {
+				// Passe par la soumission native pour déclencher toutes les
+				// validations (la nôtre en capture + celles de JetFormBuilder).
+				if ( typeof form.requestSubmit === 'function' ) {
+					form.requestSubmit();
+				} else if ( submitNatif ) {
+					submitNatif.click();
+				}
+			} );
+
+			function toggleDetail() {
+				var ouvre = ! barreDetail.classList.contains( 'est-ouvert' );
+				if ( ouvre ) {
+					refreshBarreDetail();
+				}
+				barreDetail.classList.toggle( 'est-ouvert', ouvre );
+				barreInfos.setAttribute( 'aria-expanded', ouvre ? 'true' : 'false' );
+			}
+			barreInfos.addEventListener( 'click', toggleDetail );
+			barreInfos.addEventListener( 'keydown', function ( e ) {
+				if ( e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar' ) {
+					e.preventDefault();
+					toggleDetail();
+				}
+			} );
+
+			barre.appendChild( barreInfos );
+			barre.appendChild( envoyer );
+			document.body.appendChild( barreDetail );
+			document.body.appendChild( barre );
+		}
+
+		function refreshBarreDetail() {
+			var resume = document.getElementById( 'resume_financier' );
+			if ( ! barreDetail || ! resume ) {
+				return;
+			}
+			// Copie du résumé en flux (masqué en mobile), sans dupliquer les IDs.
+			var clone = resume.cloneNode( true );
+			clone.removeAttribute( 'id' );
+			clone.querySelectorAll( '[id]' ).forEach( function ( el ) {
+				el.removeAttribute( 'id' );
+			} );
+			barreDetail.innerHTML = '';
+			barreDetail.appendChild( clone );
+		}
+
+		var dernierTotalGlobal = 0;
+
+		function updateBarre() {
+			if ( ! barre ) {
+				return;
+			}
+			var chevron = barreTotal.querySelector( '.gacct-barre-chevron' );
+			barreTotal.textContent = formatMoney( dernierTotalGlobal );
+			if ( chevron ) {
+				barreTotal.appendChild( chevron );
+			}
+			var iso = inputDate ? inputDate.value : '';
+			barreDate.textContent = iso
+				? iso.split( '-' ).reverse().join( '/' )
+				: ( i18n.aucuneDate || 'Aucune date choisie' );
+			if ( barreDetail.classList.contains( 'est-ouvert' ) ) {
+				refreshBarreDetail();
+			}
+		}
+
+		buildBarreMobile();
 
 		form.addEventListener( 'change', function ( e ) {
 			var target = e.target;

@@ -397,34 +397,136 @@ span.flatpickr-weekday {
 }
 
 /* ==========================================================================
-   Sticky : résumé financier + bouton d'envoi
+   Mobile (<= 781px, breakpoint d'empilement des wp:columns) :
+   - ré-ordonnancement des cartes : Matériel → Prestations → Frais → Date → Commentaires
+   - barre panier fixée en bas de fenêtre (compacte, dépliable), injectée par le JS
+   Desktop : flux normal, pas de sticky (retiré à la demande de l'atelier).
    ========================================================================== */
 
-#resume_financier {
-	position: sticky;
-	bottom: 12px;
-	background-color: var(--gacct-surface-alt);
-	box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.08);
-	z-index: 2;
-}
+@media (max-width: 781px) {
+	/* Les 2 colonnes deviennent transparentes : leurs cartes remontent au même
+	   niveau flex et se ré-ordonnent via `order` sans toucher au formulaire. */
+	.jet-form-builder .wp-block-columns {
+		display: flex;
+		flex-direction: column;
+	}
 
-.jet-form-builder__submit-wrap {
-	position: sticky;
-	bottom: 0;
-	background: var(--gacct-surface);
-	padding-top: 10px;
-	padding-bottom: 10px;
-	z-index: 2;
-}
+	.jet-form-builder .wp-block-column {
+		display: contents;
+	}
 
-@media (max-width: 768px) {
+	/* Défaut : tout enfant non listé (séparateurs, éléments techniques) part en
+	   fin de flux — sinon order:0 le ferait passer DEVANT les cartes ordonnées. */
+	.jet-form-builder .wp-block-column > * {
+		order: 90;
+	}
+
+	.jet-form-builder .form-card:has([data-field-name="marque"])               { order: 1; }
+	.jet-form-builder .form-card.coldroite                                     { order: 2; }
+	.jet-form-builder .form-card:has(input[data-field-name="frais_de_ports"])  { order: 3; }
+	.jet-form-builder .datepicker-card                                         { order: 4; }
+	.jet-form-builder .form-card:has([data-field-name="commentaire_client"])   { order: 5; }
+	.jet-form-builder .champ-date-cache                                        { order: 6; }
+
+	/* Le résumé en flux et le submit natif sont remplacés par la barre fixe.
+	   On masque la ROW submit entière (le CSS de JFB re-force display:flex sur
+	   le wrapper seul) ; le séparateur group-break n'a pas de sens empilé. */
 	#resume_financier,
-	.jet-form-builder__submit-wrap {
-		position: static;
-		box-shadow: none;
+	.jet-form-builder .jet-form-builder-row.field-type-submit-field,
+	.jet-form-builder .jet-form-builder-row.field-type-group-break-field {
+		display: none;
 	}
 
 	.gacct-accordion {
 		width: 100%;
 	}
+
+	/* Laisse la place à la barre fixe en bas de page. */
+	.jet-form-builder {
+		padding-bottom: 84px;
+	}
+}
+
+/* --- Barre panier mobile (markup injecté par demande-intervention.js) --- */
+
+.gacct-barre {
+	display: none;
+	position: fixed;
+	inset: auto 0 0 0;
+	z-index: 9998;
+	background: var(--gacct-surface);
+	border-top: 1px solid var(--gacct-border);
+	box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.12);
+	padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+}
+
+@media (max-width: 781px) {
+	.gacct-barre {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+}
+
+.gacct-barre-infos {
+	flex: 1;
+	min-width: 0;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.gacct-barre-total {
+	font-weight: 700;
+	font-size: 17px;
+	color: var(--gacct-accent);
+	white-space: nowrap;
+}
+
+.gacct-barre-date {
+	font-size: 12px;
+	color: var(--gacct-text-muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.gacct-barre-envoyer {
+	flex-shrink: 0;
+	border: 0;
+	border-radius: var(--gacct-radius);
+	background: var(--gacct-accent);
+	color: #ffffff;
+	font-weight: 600;
+	font-size: 15px;
+	padding: 12px 18px;
+	cursor: pointer;
+}
+
+/* Détail du panier déplié au-dessus de la barre */
+.gacct-barre-detail {
+	position: fixed;
+	inset: auto 0 0 0;
+	bottom: 62px;
+	z-index: 9997;
+	background: var(--gacct-surface-alt);
+	border-top: 1px solid var(--gacct-border);
+	box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.15);
+	padding: 14px 16px;
+	max-height: 50vh;
+	overflow-y: auto;
+	display: none;
+}
+
+.gacct-barre-detail.est-ouvert {
+	display: block;
+}
+
+.gacct-barre-chevron {
+	display: inline-block;
+	margin-left: 6px;
+	transition: transform 200ms ease;
+}
+
+.gacct-barre-infos[aria-expanded="true"] .gacct-barre-chevron {
+	transform: rotate(180deg);
 }
