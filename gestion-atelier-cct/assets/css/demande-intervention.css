@@ -460,10 +460,21 @@ span.flatpickr-weekday {
 		padding: 16px 14px;
 	}
 
-	/* Grille « Votre matériel » : 2 champs par ligne (1 sous 360px). */
+	/* Grille « Votre matériel » : 2 champs par ligne (1 sous 480px).
+	   minmax(0,1fr) est indispensable : avec 1fr seul, le min-width:auto des
+	   items de grille laisse un champ à contenu large (select Marque avec
+	   placeholder) élargir SA colonne et écraser l'autre. */
 	.jet-form-builder .grid-3 {
-		grid-template-columns: repeat(2, 1fr) !important;
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 		gap: 10px !important;
+	}
+
+	.jet-form-builder .grid-3 input,
+	.jet-form-builder .grid-3 select,
+	.jet-form-builder .grid-3 .jet-form-builder__field-wrap {
+		width: 100%;
+		max-width: 100%;
+		box-sizing: border-box;
 	}
 
 	/* --- Items de prestation plus compacts -------------------------------
@@ -516,7 +527,7 @@ span.flatpickr-weekday {
 	}
 }
 
-@media (max-width: 360px) {
+@media (max-width: 480px) {
 	.jet-form-builder .grid-3 {
 		grid-template-columns: 1fr !important;
 	}
