@@ -23,12 +23,13 @@
 			return;
 		}
 
+		// On ne travaille QUE sur le formulaire de demande d'intervention.
+		// Pas de repli sur "le premier formulaire JFB venu" : ce script pose un
+		// validateur de date en capture, qui bloquerait tout autre formulaire
+		// de la page (ex. le formulaire de contact).
 		var form = cfg.formId
 			? document.querySelector( '.jet-form-builder[data-form-id="' + cfg.formId + '"]' )
-			: document.querySelector( '.jet-form-builder' );
-		if ( ! form ) {
-			form = document.querySelector( '.jet-form-builder' );
-		}
+			: null;
 		if ( ! form ) {
 			return;
 		}
@@ -227,18 +228,21 @@
 			row.scrollIntoView( { behavior: 'smooth', block: 'center' } );
 		}
 
-		form.addEventListener(
-			'submit',
-			function ( e ) {
-				var dateVal = inputDate ? inputDate.value.trim() : '';
-				if ( dateVal === '' ) {
-					e.preventDefault();
-					e.stopImmediatePropagation();
-					showDateError();
-				}
-			},
-			true
-		);
+		// Sans champ date dans ce formulaire, il n'y a rien a valider : ne jamais
+		// poser le blocage (il rendrait le formulaire impossible a soumettre).
+		if ( inputDate ) {
+			form.addEventListener(
+				'submit',
+				function ( e ) {
+					if ( inputDate.value.trim() === '' ) {
+						e.preventDefault();
+						e.stopImmediatePropagation();
+						showDateError();
+					}
+				},
+				true
+			);
+		}
 
 		/* ---------------------------------------------------------------
 		 * Accordéons sur les groupes de prestations

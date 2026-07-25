@@ -83,24 +83,36 @@ function gacct_demande_enqueue_assets() {
 
 /**
  * Determine si la page couramment affichee rend le formulaire "demande d'intervention".
- * Detection : page singuliere dont l'_elementor_data contient le widget JFB,
- * ou dont le post_content contient un shortcode/bloc JFB.
+ * Detection : page singuliere dont l'_elementor_data (ou le post_content) rend le
+ * formulaire JFB **dont l'ID est celui de la demande d'intervention**.
  * Filtrable via `gacct_demande_enqueue` pour forcer ou empecher l'enqueue.
+ *
+ * ⚠️ Ne PAS elargir a "n'importe quel widget jet-form-builder-form" : le script
+ * demande-intervention.js pose un validateur de date en capture sur le formulaire
+ * trouve et bloquerait la soumission de tout autre formulaire de la page
+ * (ex. le formulaire de contact 1492).
  */
 function gacct_demande_should_enqueue() {
 	$should_enqueue = false;
+	$form_id        = gacct_demande_form_id();
 
-	if ( is_singular() ) {
+	if ( is_singular() && $form_id ) {
 		$post = get_queried_object();
 
 		if ( $post instanceof WP_Post ) {
-			$elementor_data = get_post_meta( $post->ID, '_elementor_data', true );
+			$elementor_data = (string) get_post_meta( $post->ID, '_elementor_data', true );
+			$content        = (string) $post->post_content;
 
-			if ( is_string( $elementor_data ) && false !== strpos( $elementor_data, 'jet-form-builder-form' ) ) {
+			// Widget Elementor : {"form_id":"127"} — l'ID peut etre serialise en chaine ou en entier.
+			if (
+				false !== strpos( $elementor_data, '"form_id":"' . $form_id . '"' )
+				|| false !== strpos( $elementor_data, '"form_id":' . $form_id . ',' )
+			) {
 				$should_enqueue = true;
 			} elseif (
-				false !== strpos( (string) $post->post_content, 'jet_fb_form' )
-				|| false !== strpos( (string) $post->post_content, 'jet-forms/form-block' )
+				// Shortcode [jet_fb_form form_id="127"] ou bloc Gutenberg {"form_id":127}.
+				false !== strpos( $content, 'form_id="' . $form_id . '"' )
+				|| false !== strpos( $content, '"form_id":' . $form_id )
 			) {
 				$should_enqueue = true;
 			}
