@@ -245,6 +245,149 @@
 		}
 
 		/* ---------------------------------------------------------------
+		 * Sélecteur de couleurs de voile
+		 *
+		 * Le champ texte reste la source de vérité (validation JFB, mapping
+		 * vers la colonne `couleur` du CCT) : on le masque et on l'alimente
+		 * au format historique « bleu, blanc », l'ordre étant l'ordre de clic.
+		 * ------------------------------------------------------------- */
+
+		function initSelecteurCouleurs() {
+			var couleurs = cfg.couleurs || [];
+			var maxi = cfg.couleursMax || 3;
+			var input = form.querySelector( '[name="' + ( champs.couleur || 'couleur_copy' ) + '"]' );
+
+			if ( ! input || ! couleurs.length ) {
+				return;
+			}
+
+			var row = input.closest( '.jet-form-builder-row' );
+			var wrap = row ? row.querySelector( '.jet-form-builder__field-wrap' ) : null;
+			if ( ! row || ! wrap ) {
+				return;
+			}
+
+			row.classList.add( 'gacct-couleurs-row' );
+			input.readOnly = true;
+			input.tabIndex = -1;
+			input.setAttribute( 'aria-hidden', 'true' );
+
+			var choisies = valeursInitiales();
+
+			var palette = document.createElement( 'div' );
+			palette.className = 'gacct-couleurs';
+
+			var grille = document.createElement( 'div' );
+			grille.className = 'gacct-couleurs__grille';
+			grille.setAttribute( 'role', 'group' );
+			grille.setAttribute( 'aria-label', input.getAttribute( 'aria-label' ) || 'Couleurs de la voile' );
+
+			couleurs.forEach( function ( c ) {
+				var b = document.createElement( 'button' );
+				b.type = 'button';
+				b.className = 'gacct-couleur';
+				b.dataset.nom = c.nom;
+				b.style.setProperty( '--gacct-teinte', c.hex );
+				b.setAttribute( 'role', 'checkbox' );
+				b.setAttribute( 'aria-checked', 'false' );
+				b.innerHTML =
+					'<span class="gacct-couleur__pastille" aria-hidden="true"></span>' +
+					'<span class="gacct-couleur__nom">' + c.nom + '</span>';
+				b.addEventListener( 'click', function () {
+					basculer( c.nom );
+				} );
+				grille.appendChild( b );
+			} );
+
+			var pied = document.createElement( 'div' );
+			pied.className = 'gacct-couleurs__pied';
+			pied.innerHTML =
+				'<span class="gacct-couleurs__aide">' +
+				( i18n.couleurAide || 'Cliquez vos couleurs, de la plus présente à la moins présente (3 maximum).' ) +
+				'</span><span class="gacct-couleurs__apercu" aria-hidden="true"></span>';
+
+			palette.appendChild( grille );
+			palette.appendChild( pied );
+			wrap.appendChild( palette );
+
+			var apercu = pied.querySelector( '.gacct-couleurs__apercu' );
+
+			function valeursInitiales() {
+				// Pré-remplissage (retour arrière navigateur, preset JFB…) :
+				// on ne garde que des noms connus, dans l'ordre de la chaîne.
+				var brut = ( input.value || '' ).toLowerCase();
+				var trouvees = [];
+				couleurs.forEach( function ( c ) {
+					var pos = brut.indexOf( c.nom );
+					if ( pos > -1 ) {
+						trouvees.push( { nom: c.nom, pos: pos } );
+					}
+				} );
+				return trouvees
+					.sort( function ( a, b ) { return a.pos - b.pos; } )
+					.slice( 0, maxi )
+					.map( function ( t ) { return t.nom; } );
+			}
+
+			function basculer( nom ) {
+				var i = choisies.indexOf( nom );
+				if ( i > -1 ) {
+					choisies.splice( i, 1 );
+				} else if ( choisies.length < maxi ) {
+					choisies.push( nom );
+				} else {
+					return;
+				}
+				appliquer();
+			}
+
+			function teinte( nom ) {
+				for ( var i = 0; i < couleurs.length; i++ ) {
+					if ( couleurs[ i ].nom === nom ) {
+						return couleurs[ i ].hex;
+					}
+				}
+				return '#e5e7eb';
+			}
+
+			function degrade() {
+				var h = choisies.map( teinte );
+				if ( h.length === 1 ) {
+					return h[ 0 ];
+				}
+				if ( h.length === 2 ) {
+					return 'linear-gradient(135deg, ' + h[ 0 ] + ' 50%, ' + h[ 1 ] + ' 50%)';
+				}
+				if ( h.length === 3 ) {
+					return 'linear-gradient(135deg, ' + h[ 0 ] + ' 33.33%, ' + h[ 1 ] + ' 33.33% 66.66%, ' + h[ 2 ] + ' 66.66%)';
+				}
+				return '';
+			}
+
+			function appliquer() {
+				Array.prototype.forEach.call( grille.children, function ( b ) {
+					var actif = choisies.indexOf( b.dataset.nom ) > -1;
+					b.classList.toggle( 'is-active', actif );
+					b.setAttribute( 'aria-checked', actif ? 'true' : 'false' );
+					b.classList.toggle( 'is-muted', ! actif && choisies.length >= maxi );
+				} );
+
+				palette.classList.toggle( 'has-selection', choisies.length > 0 );
+				apercu.style.background = degrade();
+
+				input.value = choisies.join( ', ' );
+				// JetFormBuilder écoute input/change pour synchroniser son état
+				// interne : sans ces évènements, la valeur n'est pas soumise.
+				input.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+				input.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+			}
+
+			appliquer();
+		}
+
+		initSelecteurCouleurs();
+
+		/* ---------------------------------------------------------------
 		 * Accordéons sur les groupes de prestations
 		 * ------------------------------------------------------------- */
 
@@ -386,11 +529,23 @@
 		var elTotalPresta = document.getElementById( 'total_prestations' );
 		var elTotalPort = document.getElementById( 'total_port' );
 		var elTotalGlobal = document.getElementById( 'total_global' );
+		var elTotalAcompte = document.getElementById( 'total_acompte' );
+
+		/**
+		 * Montant encaissé à la commande pour une prestation : l'acompte fourni par
+		 * PHP (miroir de la règle du plugin Kojito — acompte défini, sinon prix plein).
+		 * Fallback sur le prix si la donnée manque (ancien cache localisé).
+		 */
+		function acompteDe( info, prix ) {
+			var a = parseFloat( info && info.acompte );
+			return isNaN( a ) ? prix : a;
+		}
 
 		function toutRecalculer() {
 			var heuresRequises = 0;
 			var sommePrestations = 0;
 			var sommePort = 0;
+			var sommeAcompte = 0;
 			var htmlPanier = '';
 
 			prestationNames.forEach( function ( name ) {
@@ -407,6 +562,7 @@
 					var titre = info.titre || 'Prestation';
 
 					sommePrestations += prix;
+					sommeAcompte += acompteDe( info, prix );
 					heuresRequises += duree;
 
 					htmlPanier +=
@@ -425,6 +581,7 @@
 					var info = prestations[ input.value ];
 					var prix = info ? parseFloat( info.prix ) || 0 : 0;
 					sommePort += prix;
+					sommeAcompte += acompteDe( info, prix );
 				} );
 			}
 
@@ -446,6 +603,9 @@
 			}
 			if ( elTotalGlobal ) {
 				elTotalGlobal.textContent = formatMoney( sommePrestations + sommePort );
+			}
+			if ( elTotalAcompte ) {
+				elTotalAcompte.textContent = formatMoney( sommeAcompte );
 			}
 
 			heuresRequisesCourant = heuresRequises;

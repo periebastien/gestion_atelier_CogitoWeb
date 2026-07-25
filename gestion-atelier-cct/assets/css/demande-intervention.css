@@ -9,7 +9,12 @@
 /* Variables sur :root : le calendrier flatpickr est monté dans <body>, hors du
    formulaire — un scope .jet-form-builder ne l'atteindrait pas (fond transparent). */
 :root {
-	--gacct-accent: #398ffc;
+	/* Accent aligné sur le design system Altitude Révision (teal) : la maquette
+	   ne comporte aucun bleu. --gacct-accent pilote badges, sélection et focus. */
+	--gacct-accent: #20c4c3;
+	--gacct-accent-dark: #189998;
+	--gacct-accent-soft: #f0fafa;
+	--gacct-cta: #ffbd20;
 	--gacct-accent-2: #20c4c3;
 	--gacct-dispo-bg: #e6f7ec;
 	--gacct-dispo-txt: #137a3b;
@@ -368,31 +373,244 @@ span.flatpickr-weekday {
 }
 
 /* ==========================================================================
-   Résumé financier
+   Titres de carte — l'espacement sous le titre est neutralisé par la mise en
+   page « constrained » de Gutenberg (margin-block: 0 sur les enfants du groupe).
+   On le rétablit avec une spécificité suffisante (cf. maquette : 20px).
    ========================================================================== */
 
+.jet-form-builder .form-card > .card-title,
+.form-card > .card-title {
+	margin-bottom: 20px;
+}
+
+/* ==========================================================================
+   Items sélectionnables (prestations ET frais de retour)
+
+   Structure JetFormBuilder avec template d'item personnalisé :
+     .jet-form-builder__field-wrap        <- la carte cliquable
+       .jet-form-builder__field-template  <- rendu visible (case décorative, titre, prix)
+       label.jet-form-builder__field-label <- superposé, opacity 0, porte le vrai input
+   ========================================================================== */
+
+/* --- Prestations (dans les accordéons) : padding manquant en desktop ------ */
+.gacct-accordion__body .jet-form-builder__field-wrap {
+	padding: 8px 10px;
+	border: 1px solid transparent;
+	border-radius: var(--gacct-radius);
+}
+
+/* --- Frais de retour : liste d'options en cartes (maquette .port-option) --- */
+
+/* La bordure « groove » par défaut du <fieldset> est supprimée. */
+.jet-form-builder-row.field-type-radio-field:has( input[data-field-name="frais_de_ports"] ),
+.jet-form-builder-row.field-type-checkbox-field:has( input[data-field-name="frais_de_ports"] ) {
+	border: 0;
+	padding: 0;
+	margin: 0;
+	min-width: 0;
+}
+
+.jet-form-builder__fields-group:has( input[data-field-name="frais_de_ports"] ) {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.jet-form-builder__field-wrap:has( input[data-field-name="frais_de_ports"] ) {
+	padding: 10px 13px;
+	border: 1.5px solid rgba(0, 0, 0, 0.1);
+	border-radius: var(--gacct-radius);
+	cursor: pointer;
+	transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.jet-form-builder__field-wrap:has( input[data-field-name="frais_de_ports"] ):hover {
+	background: var(--gacct-accent-soft);
+	border-color: var(--gacct-accent);
+}
+
+.jet-form-builder__field-wrap:has( input[data-field-name="frais_de_ports"]:checked ) {
+	background: var(--gacct-accent-soft);
+	border-color: var(--gacct-accent);
+}
+
+/* Le libellé et le prix du template : typo de la maquette. */
+.jet-form-builder__field-wrap:has( input[data-field-name="frais_de_ports"] ) .service-item-name,
+.jet-form-builder__field-wrap:has( input[data-field-name="frais_de_ports"] ) .service-item-name .elementor-heading-title {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--gacct-text);
+}
+
+.jet-form-builder__field-wrap:has( input[data-field-name="frais_de_ports"] ) .service-item-price,
+.jet-form-builder__field-wrap:has( input[data-field-name="frais_de_ports"] ) .service-item-price .elementor-heading-title {
+	font-size: 13px;
+	font-weight: 800;
+	color: var(--gacct-text);
+	white-space: nowrap;
+}
+
+.jet-form-builder__field-wrap:has( input[data-field-name="frais_de_ports"] ) .service-item-detail,
+.jet-form-builder__field-wrap:has( input[data-field-name="frais_de_ports"] ) .service-item-detail .elementor-heading-title {
+	font-size: 11px;
+	color: var(--gacct-text-faint);
+}
+
+/* ==========================================================================
+   Erreur de date : le message par défaut se positionne en absolu et déborde
+   de la carte teal du sélecteur. On le rend lisible : pastille blanche sous
+   le champ, à l'intérieur de la carte.
+   ========================================================================== */
+
+.datepicker-card .jet-form-builder-message,
+.datepicker-card .field-error,
+.datepicker-card .error-message,
+.datepicker-card .jet-form-builder__error {
+	position: static !important;
+	top: auto !important;
+	display: block;
+	margin-top: 8px;
+	padding: 7px 10px;
+	border-radius: 6px;
+	background: rgba(255, 255, 255, 0.96);
+	color: #b42318 !important;
+	font-size: 11.5px !important;
+	font-weight: 700;
+	line-height: 1.35;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* ==========================================================================
+   Résumé financier (maquette « total-box »)
+   ========================================================================== */
+
+#resume_financier.gacct-total-box {
+	background: var(--gacct-surface);
+	border: 1px solid rgba(0, 0, 0, 0.08);
+	border-radius: 14px;
+	padding: 20px 22px;
+	margin-top: 20px;
+	font-size: 14px;
+	color: var(--gacct-text);
+}
+
+.gacct-total-box__head {
+	font-size: 10px;
+	font-weight: 800;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--gacct-accent);
+	margin-bottom: 14px;
+}
+
+.gacct-total-box__list {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	min-height: 20px;
+}
+
+.gacct-total-box__divider {
+	border: none;
+	border-top: 1px solid rgba(0, 0, 0, 0.08);
+	margin: 12px 0;
+}
+
+.gacct-total-box__row {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 10px;
+	font-size: 13px;
+	color: var(--gacct-text-muted);
+	margin-bottom: 8px;
+}
+
+.gacct-total-box__row span:last-child {
+	font-weight: 700;
+	color: var(--gacct-text);
+	white-space: nowrap;
+}
+
+.gacct-total-box__grand {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 10px;
+}
+
+.gacct-total-box__grand-label {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--gacct-text);
+}
+
+.gacct-total-box__grand-value {
+	font-size: 28px;
+	font-weight: 900;
+	line-height: 1.1;
+	color: var(--gacct-text);
+	white-space: nowrap;
+}
+
+/* Bloc acompte : c'est le montant réellement débité à la commande. */
+.gacct-total-box__acompte {
+	margin-top: 14px;
+	padding: 12px 14px;
+	border-radius: 10px;
+	background: var(--gacct-accent-soft);
+	border: 1px solid rgba(32, 196, 195, 0.35);
+}
+
+.gacct-total-box__row--acompte {
+	margin-bottom: 0;
+	align-items: baseline;
+}
+
+.gacct-total-box__acompte-label {
+	font-size: 13px;
+	font-weight: 800;
+	color: var(--gacct-accent-dark);
+}
+
+.gacct-total-box__acompte-value {
+	font-size: 18px;
+	font-weight: 900;
+	color: var(--gacct-accent-dark) !important;
+	white-space: nowrap;
+}
+
+.gacct-total-box__note {
+	font-size: 11px;
+	line-height: 1.5;
+	color: var(--gacct-text-faint);
+	margin-top: 6px;
+}
+
+/* Lignes de prestations sélectionnées */
 .gacct-panier-item {
 	display: flex;
 	justify-content: space-between;
-	font-size: 14px;
-	margin-bottom: 5px;
+	font-size: 12px;
+	color: #555555;
 	gap: 10px;
 }
 
 .gacct-panier-item__label {
 	flex: 1;
 	padding-right: 10px;
-	color: var(--gacct-text);
+	font-weight: 600;
 }
 
 .gacct-panier-item__price {
-	font-weight: 600;
+	font-weight: 700;
 	color: var(--gacct-text);
 	white-space: nowrap;
 }
 
 .gacct-panier-empty {
-	color: var(--gacct-text-empty);
+	font-size: 12px;
+	color: #bbbbbb;
 	font-style: italic;
 }
 
@@ -544,8 +762,12 @@ span.flatpickr-weekday {
 	transition: background-color 150ms ease, border-color 150ms ease;
 }
 
+.gacct-accordion__body .jet-form-builder__field-wrap:hover {
+	background-color: var(--gacct-accent-soft);
+}
+
 .gacct-accordion__body .jet-form-builder__field-wrap:has(input.checkradio-field:checked) {
-	background-color: color-mix( in srgb, var(--gacct-accent) 8%, transparent );
+	background-color: var(--gacct-accent-soft);
 	border: 1px solid var(--gacct-accent);
 	border-radius: var(--gacct-radius);
 }
@@ -650,4 +872,188 @@ span.flatpickr-weekday {
 
 .gacct-barre-infos[aria-expanded="true"] .gacct-barre-chevron {
 	transform: rotate(180deg);
+}
+
+/* =============================================================================
+ *  SÉLECTEUR DE COULEURS DE VOILE
+ *  Le champ texte d'origine reste en place (validation JFB + mapping CCT) mais
+ *  n'est plus saisi : il est masqué visuellement et alimenté par le JS.
+ * ========================================================================== */
+
+/* Le champ est masqué sans display:none, pour rester focusable par JFB en cas
+   d'erreur de validation et ne pas casser le calcul de largeur de la ligne. */
+.gacct-couleurs-row .jet-form-builder__field {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* Le label flottant du kit n'a plus de champ sur lequel flotter : on le repose
+   en libellé normal au-dessus de la palette. Les :not(#id) reproduisent la
+   spécificité des règles globales, sinon elles gagnent. */
+.jet-form-builder-row.gacct-couleurs-row:not(#zz-a):not(#zz-b):not(#zz-c) .jet-form-builder__label {
+	position: static;
+	transform: none;
+	margin: 0 0 10px;
+}
+
+.jet-form-builder-row.gacct-couleurs-row:not(#zz-a):not(#zz-b):not(#zz-c) .jet-form-builder__label-text {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--gacct-texte, #1a1a1a);
+	text-transform: none;
+	letter-spacing: 0;
+}
+
+/* La ligne vit dans la grille 3 colonnes du bloc « Votre matériel » : la palette
+   a besoin de toute la largeur. */
+.gacct-couleurs-row {
+	grid-column: 1 / -1;
+	order: 9; /* après les champs texte du bloc « Votre matériel » */
+	margin-top: 4px;
+}
+
+/* Le libellé étant repassé en statique, la ligne doit empiler libellé puis
+   palette : sans direction explicite, ils se placent côte à côte et la palette
+   déborde de la carte. */
+.jet-form-builder-row.gacct-couleurs-row:not(#zz-a):not(#zz-b):not(#zz-c) {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	/* Le kit pose flex-wrap:wrap : combiné à une direction colonne dans une
+	   piste de grille de hauteur contrainte, la palette repartait en 2e colonne
+	   hors de la carte. */
+	flex-wrap: nowrap;
+}
+
+.gacct-couleurs__grille {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px 12px;
+}
+
+/* Le thème stylise tous les <button> (fond jaune, padding, rayon) : on repart
+   d'une base neutre, d'où les !important sur ces quelques propriétés. */
+.gacct-couleurs .gacct-couleur {
+	display: flex !important;
+	flex-direction: column;
+	align-items: center;
+	gap: 5px;
+	width: 54px;
+	min-height: 0;
+	padding: 0 !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	background: none !important;
+	box-shadow: none !important;
+	cursor: pointer;
+	font: inherit;
+	color: inherit;
+	transition: opacity 150ms ease;
+}
+
+.gacct-couleur__pastille {
+	display: block;
+	flex-shrink: 0;
+	width: 38px;
+	height: 38px;
+	border-radius: 50%;
+	background: var(--gacct-teinte, #ccc);
+	box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+	transition: box-shadow 150ms ease, transform 150ms ease;
+}
+
+.gacct-couleur__nom {
+	font-size: 11px;
+	line-height: 1.2;
+	text-align: center;
+	color: #6b6b6b;
+}
+
+.gacct-couleur:hover .gacct-couleur__pastille {
+	transform: scale(1.06);
+}
+
+.gacct-couleur.is-active .gacct-couleur__pastille {
+	box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18), 0 0 0 3px var(--gacct-accent, #20c4c3);
+}
+
+.gacct-couleur.is-active .gacct-couleur__nom {
+	color: #1a1a1a;
+	font-weight: 700;
+}
+
+.gacct-couleur.is-muted {
+	opacity: 0.4;
+}
+
+.gacct-couleur:focus-visible .gacct-couleur__pastille {
+	outline: 2px solid var(--gacct-accent, #20c4c3);
+	outline-offset: 4px;
+}
+
+.gacct-couleurs__pied {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	margin-top: 14px;
+}
+
+.gacct-couleurs__aide {
+	flex: 1;
+	font-size: 12px;
+	line-height: 1.5;
+	color: #8a8a8a;
+}
+
+/* L'aperçu reprend exactement le rendu de la vignette de l'espace client :
+   même ordre de bandes, même dégradé. */
+.gacct-couleurs__apercu {
+	flex-shrink: 0;
+	width: 44px;
+	height: 44px;
+	border-radius: 10px;
+	background: #f1f1f1;
+	box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+.gacct-couleurs:not(.has-selection) .gacct-couleurs__apercu {
+	opacity: 0.5;
+}
+
+@media (max-width: 480px) {
+	.gacct-couleurs__grille {
+		gap: 8px;
+	}
+
+	.gacct-couleur {
+		width: 48px;
+	}
+
+	.gacct-couleur__pastille {
+		width: 34px;
+		height: 34px;
+	}
+}
+
+/* Le CSS de la page 467 positionne les messages d'erreur en absolu (pour qu'ils
+   ne poussent pas la grille) : sur la ligne couleur, ils se superposaient au
+   libellé et aux pastilles. Ici, l'erreur se pose sous la palette. */
+/* Même symptôme pour les autres champs du bloc « Votre matériel » : les messages
+   en absolu se superposaient au libellé de la ligne suivante (ex. « Entrez la
+   taille… » par-dessus « Couleur »). Ils reprennent leur place dans le flux. */
+.grid-3 .jet-form-builder-row .error-message,
+.grid-3 .jet-form-builder-row .field-error,
+.gacct-couleurs-row .error-message,
+.gacct-couleurs-row .field-error {
+	position: static;
+	top: auto;
+	margin-top: 10px;
 }

@@ -140,8 +140,11 @@ function gacct_demande_build_data() {
 			'duree'       => 'duree_totale_commande',
 			'dateDispo'   => 'date_disponible',
 			'port'        => 'frais_de_ports',
+			'couleur'     => 'couleur_copy',
 			'prestations' => array( 'revisions_controle', 'pliages_secours', 'suspentes_travaux' ),
 		),
+		'couleurs'        => gacct_demande_couleurs_js(),
+		'couleursMax'     => 3,
 		'accordeonOuvert' => 'revisions_controle',
 		'prestations'     => gacct_demande_prestations_map(),
 		'dispos'          => gacct_demande_availability_map(),
@@ -152,10 +155,39 @@ function gacct_demande_build_data() {
 			'legendeSelection'=> __( 'Sélectionné', 'gestion-atelier-cct' ),
 			'legendeIndispo'  => __( 'Indisponible', 'gestion-atelier-cct' ),
 			'aucuneDate'      => __( 'Aucune date choisie', 'gestion-atelier-cct' ),
+			'couleurAide'     => __( 'Cliquez vos couleurs, de la plus présente à la moins présente (3 maximum).', 'gestion-atelier-cct' ),
+			'couleurApercu'   => __( 'Aperçu', 'gestion-atelier-cct' ),
+			'acompte'         => __( 'Acompte à payer', 'gestion-atelier-cct' ),
+			'acompteNote'     => __( 'Montant réglé à la commande. Le solde sera à régler une fois l\'intervention terminée.', 'gestion-atelier-cct' ),
 		),
 	);
 
 	return apply_filters( 'gacct_demande_data', $data );
+}
+
+/**
+ * Palette de couleurs mise en forme pour le selecteur JS : liste ordonnee de
+ * { nom, hex }. La source reste gacct_couleurs_voile() (gacct-frontend.php),
+ * partagee avec la vignette de l'espace client — une couleur ajoutee la-bas
+ * apparait ici sans autre intervention.
+ *
+ * @return array<int,array{nom:string,hex:string}>
+ */
+function gacct_demande_couleurs_js() {
+	$liste = array();
+
+	if ( ! function_exists( 'gacct_couleurs_voile' ) ) {
+		return $liste;
+	}
+
+	foreach ( gacct_couleurs_voile() as $nom => $teintes ) {
+		$liste[] = array(
+			'nom' => $nom,
+			'hex' => $teintes['base'],
+		);
+	}
+
+	return $liste;
 }
 
 /**
@@ -230,15 +262,43 @@ function gacct_demande_prestations_map() {
 				continue;
 			}
 
+			$prix = (float) $product->get_price();
+
 			$prestations[ (string) $product_id ] = array(
-				'prix'  => (float) $product->get_price(),
-				'duree' => gacct_demande_parse_duree( get_post_meta( $product_id, 'duree_presta', true ) ),
-				'titre' => get_the_title( $product_id ),
+				'prix'    => $prix,
+				'acompte' => gacct_demande_acompte( $product_id, $prix ),
+				'duree'   => gacct_demande_parse_duree( get_post_meta( $product_id, 'duree_presta', true ) ),
+				'titre'   => get_the_title( $product_id ),
 			);
 		}
 	}
 
 	return $prestations;
+}
+
+/**
+ * Montant reellement encaisse a la commande pour un produit, en miroir exact de la
+ * regle appliquee par le plugin Kojito Acompte Produit dans le panier
+ * (`Kojito_Acompte_Produit::modifier_prix_panier_acompte`) :
+ *
+ *   - meta `_kojito_montant_acompte` numerique et > 0  -> c'est ce montant qui est facture ;
+ *   - sinon                                            -> le produit est facture au prix plein.
+ *
+ * Le formulaire affiche donc toujours l'acompte que le client va effectivement
+ * payer au checkout, y compris pour les produits dont l'acompte n'est pas renseigne.
+ *
+ * @param int   $product_id
+ * @param float $prix Prix plein du produit (fallback).
+ * @return float
+ */
+function gacct_demande_acompte( $product_id, $prix ) {
+	$acompte = get_post_meta( absint( $product_id ), '_kojito_montant_acompte', true );
+
+	if ( '' !== $acompte && is_numeric( $acompte ) && (float) $acompte > 0 ) {
+		return (float) $acompte;
+	}
+
+	return (float) $prix;
 }
 
 /**

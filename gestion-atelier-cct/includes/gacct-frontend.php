@@ -386,6 +386,112 @@ function jwcct_render_wc_order_link( $value ) {
 
 
 /* =============================================================================
+ *  COULEURS DE VOILE : SOURCE UNIQUE
+ * ============================================================================= */
+
+/**
+ * Palette des couleurs de voile : nom affiché => teintes de la vignette.
+ *
+ * Source unique, consommee par :
+ *  - le selecteur du formulaire de demande d'intervention (localise en JS) ;
+ *  - la vignette de l'espace client (jwcct_render_equipment_info).
+ * Ajouter une couleur ICI la rend disponible des deux cotes.
+ *
+ * L'ordre du tableau est l'ordre d'affichage des pastilles.
+ * `base` sert aux vignettes 2 et 3 couleurs, `light` au degrade mono-couleur.
+ *
+ * @return array<string,array{base:string,light:string}>
+ */
+function gacct_couleurs_voile() {
+    return apply_filters( 'gacct_couleurs_voile', array(
+        'rouge'      => array( 'base' => '#d33333', 'light' => '#ff5555' ),
+        'orange'     => array( 'base' => '#f97316', 'light' => '#fb923c' ),
+        'jaune'      => array( 'base' => '#eab308', 'light' => '#fde047' ),
+        'jaune fluo' => array( 'base' => '#e9f000', 'light' => '#f7ff5c' ),
+        'vert'       => array( 'base' => '#22c55e', 'light' => '#4ade80' ),
+        'vert fluo'  => array( 'base' => '#4cf50a', 'light' => '#9dff6b' ),
+        'turquoise'  => array( 'base' => '#0d9488', 'light' => '#5eead4' ),
+        'cyan'       => array( 'base' => '#06b6d4', 'light' => '#67e8f9' ),
+        'bleu'       => array( 'base' => '#2c8be0', 'light' => '#6cc6ff' ),
+        'violet'     => array( 'base' => '#a855f7', 'light' => '#c084fc' ),
+        'rose'       => array( 'base' => '#ec4899', 'light' => '#f472b6' ),
+        'rose fluo'  => array( 'base' => '#ff2d9b', 'light' => '#ff7ac2' ),
+        'blanc'      => array( 'base' => '#f5f5f5', 'light' => '#ffffff' ),
+        'gris'       => array( 'base' => '#9ca3af', 'light' => '#d1d5db' ),
+        'noir'       => array( 'base' => '#1f2937', 'light' => '#4b5563' ),
+    ) );
+}
+
+/**
+ * Extrait jusqu'a 3 couleurs connues d'une saisie libre.
+ *
+ * Les dossiers anterieurs au selecteur de couleurs contiennent du texte libre
+ * ("bleu blanc", "Rouge, vert, bleu,", "rouge/ bleu") : on reste compatible.
+ * Les noms composes ("jaune fluo") sont cherches EN PREMIER, sinon le decoupage
+ * sur les espaces les reduirait a leur premier mot ("jaune").
+ *
+ * @param string $saisie Valeur brute de la colonne `couleur`.
+ * @return array<int,array{base:string,light:string}> 0 a 3 couleurs, dans l'ordre de saisie.
+ */
+function gacct_extraire_couleurs( $saisie ) {
+    $palette = gacct_couleurs_voile();
+    $texte   = ' ' . strtolower( remove_accents( (string) $saisie ) ) . ' ';
+    $trouve  = array();
+
+    // 1. Noms composes, du plus long au plus court, retires du texte au passage.
+    $composes = array_filter( array_keys( $palette ), function ( $nom ) {
+        return false !== strpos( $nom, ' ' );
+    } );
+    usort( $composes, function ( $a, $b ) {
+        return strlen( $b ) - strlen( $a );
+    } );
+
+    foreach ( $composes as $nom ) {
+        $position = strpos( $texte, $nom );
+        if ( false !== $position ) {
+            $trouve[ $position ] = $palette[ $nom ];
+            $texte = str_replace( $nom, ' ', $texte );
+        }
+    }
+
+    // 2. Noms simples sur ce qu'il reste, en conservant leur position d'origine.
+    $offset = 0;
+    foreach ( preg_split( '/[\s,\/\+\-]+/', trim( $texte ) ) as $mot ) {
+        if ( '' !== $mot && isset( $palette[ $mot ] ) ) {
+            $trouve[ strpos( $texte, $mot, $offset ) ] = $palette[ $mot ];
+            $offset = strpos( $texte, $mot, $offset ) + strlen( $mot );
+        }
+    }
+
+    ksort( $trouve );
+
+    return array_slice( array_values( $trouve ), 0, 3 );
+}
+
+/**
+ * Degrade CSS correspondant a 0, 1, 2 ou 3 couleurs.
+ *
+ * @param array<int,array{base:string,light:string}> $couleurs
+ * @return string Declaration `background: …;`
+ */
+function gacct_degrade_couleurs( array $couleurs ) {
+    switch ( count( $couleurs ) ) {
+        case 1:
+            return sprintf( 'background: linear-gradient(135deg, %s 0%%, %s 100%%);', $couleurs[0]['base'], $couleurs[0]['light'] );
+        case 2:
+            return sprintf( 'background: linear-gradient(135deg, %s 50%%, %s 50%%);', $couleurs[0]['base'], $couleurs[1]['base'] );
+        case 3:
+            return sprintf(
+                'background: linear-gradient(135deg, %s 33.33%%, %s 33.33%% 66.66%%, %s 66.66%%);',
+                $couleurs[0]['base'], $couleurs[1]['base'], $couleurs[2]['base']
+            );
+        default:
+            return 'background: #e5e7eb;';
+    }
+}
+
+
+/* =============================================================================
  *  CALLBACK : DÉTAILS MATÉRIEL & SWATCH COULEUR
  * ============================================================================= */
 
@@ -409,45 +515,8 @@ function jwcct_render_equipment_info( $cct_id ) {
     $taille = ! empty( $data['taille'] ) ? $data['taille'] : '';
     $sn = ! empty( $data['numero_de_serie'] ) ? 'S/N : ' . $data['numero_de_serie'] : '';
 
-    // Dictionnaire enrichi (couleurs classiques + parapente)
-    $color_map = [
-        'rouge'     => ['base' => '#d33',    'light' => '#ff5555'],
-        'bleu'      => ['base' => '#2c8be0', 'light' => '#6cc6ff'],
-        'vert'      => ['base' => '#22c55e', 'light' => '#4ade80'],
-        'jaune'     => ['base' => '#eab308', 'light' => '#fde047'],
-        'orange'    => ['base' => '#f97316', 'light' => '#fb923c'],
-        'noir'      => ['base' => '#1f2937', 'light' => '#4b5563'],
-        'blanc'     => ['base' => '#f5f5f5', 'light' => '#ffffff'],
-        'gris'      => ['base' => '#9ca3af', 'light' => '#d1d5db'],
-        'violet'    => ['base' => '#a855f7', 'light' => '#c084fc'],
-        'rose'      => ['base' => '#ec4899', 'light' => '#f472b6'],
-        // Teintes spécifiques parapente :
-        'cyan'      => ['base' => '#06b6d4', 'light' => '#67e8f9'],
-        'turquoise' => ['base' => '#0d9488', 'light' => '#5eead4'],
-        'lime'      => ['base' => '#84cc16', 'light' => '#bef264'],
-    ];
-
-    // Nettoyage et extraction des mots
-    $clean_input = strtolower( remove_accents( $couleur_brute ) );
-    $words = preg_split('/[\s,\/\+\-]+/', $clean_input);
-
-    $found_colors = [];
-    foreach ( $words as $word ) {
-        if ( isset( $color_map[$word] ) && count($found_colors) < 3 ) {
-            $found_colors[] = $color_map[$word];
-        }
-    }
-
-    $gradient = 'background: #e5e7eb;';
-    $count = count($found_colors);
-
-    if ( $count === 1 ) {
-        $gradient = sprintf( 'background: linear-gradient(135deg, %s 0%%, %s 100%%);', $found_colors[0]['base'], $found_colors[0]['light'] );
-    } elseif ( $count === 2 ) {
-        $gradient = sprintf( 'background: linear-gradient(135deg, %s 50%%, %s 50%%);', $found_colors[0]['base'], $found_colors[1]['base'] );
-    } elseif ( $count === 3 ) {
-        $gradient = sprintf( 'background: linear-gradient(135deg, %s 33.33%%, %s 33.33%% 66.66%%, %s 66.66%%);', $found_colors[0]['base'], $found_colors[1]['base'], $found_colors[2]['base'] );
-    }
+    // Palette et extraction : voir gacct_couleurs_voile() / gacct_extraire_couleurs().
+    $gradient = gacct_degrade_couleurs( gacct_extraire_couleurs( $couleur_brute ) );
 
     // Suppression de la couleur brute dans les métadonnées affichées
     $meta_parts = array_filter([$taille, $sn]);
