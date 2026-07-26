@@ -306,6 +306,25 @@ span.flatpickr-weekday {
 	background: var(--gacct-surface);
 }
 
+/* Aucune prestation cochée au submit : les trois groupes se signalent et le
+   message s'affiche au-dessus du premier. */
+.gacct-accordion.is-error {
+	border-color: #d92d20;
+}
+
+.gacct-erreur-prestations {
+	position: static;
+	margin-bottom: 10px;
+	padding: 9px 12px;
+	border-radius: 8px;
+	background: rgba(217, 45, 32, 0.08);
+	border: 1px solid rgba(217, 45, 32, 0.35);
+	color: #b42318;
+	font-size: 12.5px;
+	font-weight: 700;
+	line-height: 1.35;
+}
+
 .gacct-accordion__header {
 	display: flex;
 	align-items: center;

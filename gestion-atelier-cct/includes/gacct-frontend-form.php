@@ -151,6 +151,7 @@ function gacct_demande_build_data() {
 		'i18n'            => array(
 			'aucuneSelection' => __( 'Aucune prestation sélectionnée', 'gestion-atelier-cct' ),
 			'erreurDate'      => __( "Vous devez sélectionner une date d'intervention", 'gestion-atelier-cct' ),
+			'erreurPrestations' => __( 'Vous devez sélectionner au moins une prestation (révision, pliage secours ou suspentes).', 'gestion-atelier-cct' ),
 			'legendeDispo'    => __( 'Disponible', 'gestion-atelier-cct' ),
 			'legendeSelection'=> __( 'Sélectionné', 'gestion-atelier-cct' ),
 			'legendeIndispo'  => __( 'Indisponible', 'gestion-atelier-cct' ),

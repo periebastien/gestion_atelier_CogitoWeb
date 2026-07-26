@@ -51,6 +51,7 @@
 
 		var instanceFp = null;
 		var heuresRequisesCourant = 0;
+		var nbPrestationsCourant = 0;
 
 		/* ---------------------------------------------------------------
 		 * Utilitaires
@@ -192,7 +193,12 @@
 		}
 
 		/* ---------------------------------------------------------------
-		 * Validation de la date au submit
+		 * Validation au submit
+		 *
+		 * Ordre imposé par le parcours : on choisit d'abord ses prestations,
+		 * la date d'atelier n'a de sens qu'ensuite (sa durée dépend d'elles).
+		 * L'erreur de date ne doit donc jamais s'afficher tant qu'aucune
+		 * prestation n'est cochée — et une demande vide est refusée.
 		 * ------------------------------------------------------------- */
 
 		function dateRow() {
@@ -228,21 +234,73 @@
 			row.scrollIntoView( { behavior: 'smooth', block: 'center' } );
 		}
 
-		// Sans champ date dans ce formulaire, il n'y a rien a valider : ne jamais
-		// poser le blocage (il rendrait le formulaire impossible a soumettre).
-		if ( inputDate ) {
-			form.addEventListener(
-				'submit',
-				function ( e ) {
-					if ( inputDate.value.trim() === '' ) {
-						e.preventDefault();
-						e.stopImmediatePropagation();
-						showDateError();
-					}
-				},
-				true
-			);
+		// Message d'erreur des prestations : posé au-dessus du premier accordéon,
+		// donc visible quel que soit le groupe déplié (les corps d'accordéon
+		// sont longs : sous le dernier groupe, il serait hors écran).
+		var erreurPrestations = null;
+
+		function clearPrestationsError() {
+			if ( erreurPrestations && erreurPrestations.parentNode ) {
+				erreurPrestations.parentNode.removeChild( erreurPrestations );
+			}
+			erreurPrestations = null;
+			accordions.forEach( function ( acc ) {
+				acc.row.classList.remove( 'is-error' );
+			} );
 		}
+
+		function showPrestationsError() {
+			if ( ! accordions.length ) {
+				return;
+			}
+			accordions.forEach( function ( acc ) {
+				acc.row.classList.add( 'is-error' );
+			} );
+
+			if ( ! erreurPrestations ) {
+				erreurPrestations = document.createElement( 'div' );
+				// Classe maison uniquement : les classes d'erreur JFB sont
+				// positionnées en absolu par le CSS de la page, le message
+				// partait se coller dans la carte du calendrier.
+				erreurPrestations.className = 'gacct-erreur-prestations';
+				erreurPrestations.setAttribute( 'role', 'alert' );
+				erreurPrestations.textContent =
+					i18n.erreurPrestations || 'Vous devez sélectionner au moins une prestation';
+				var premiere = accordions[ 0 ].row;
+				premiere.parentNode.insertBefore( erreurPrestations, premiere );
+			}
+
+			// Aucun groupe ouvert : on déplie le premier pour montrer où agir.
+			var unOuvert = accordions.some( function ( acc ) {
+				return acc.row.classList.contains( 'is-open' );
+			} );
+			if ( ! unOuvert ) {
+				accordions[ 0 ].setOpen( true );
+			}
+			erreurPrestations.scrollIntoView( { behavior: 'smooth', block: 'center' } );
+		}
+
+		// Sans prestation ni champ date dans ce formulaire, il n'y a rien à
+		// valider : ne jamais poser de blocage (il rendrait le formulaire
+		// impossible à soumettre).
+		form.addEventListener(
+			'submit',
+			function ( e ) {
+				if ( accordions.length && nbPrestationsCourant === 0 ) {
+					e.preventDefault();
+					e.stopImmediatePropagation();
+					clearDateError();
+					showPrestationsError();
+					return;
+				}
+				if ( inputDate && inputDate.value.trim() === '' ) {
+					e.preventDefault();
+					e.stopImmediatePropagation();
+					showDateError();
+				}
+			},
+			true
+		);
 
 		/* ---------------------------------------------------------------
 		 * Sélecteur de couleurs de voile
@@ -543,6 +601,7 @@
 
 		function toutRecalculer() {
 			var heuresRequises = 0;
+			var nbPrestations = 0;
 			var sommePrestations = 0;
 			var sommePort = 0;
 			var sommeAcompte = 0;
@@ -561,6 +620,7 @@
 					var duree = parseFloat( info.duree ) || 0;
 					var titre = info.titre || 'Prestation';
 
+					nbPrestations++;
 					sommePrestations += prix;
 					sommeAcompte += acompteDe( info, prix );
 					heuresRequises += duree;
@@ -609,7 +669,12 @@
 			}
 
 			heuresRequisesCourant = heuresRequises;
+			nbPrestationsCourant = nbPrestations;
 			dernierTotalGlobal = sommePrestations + sommePort;
+
+			if ( nbPrestations > 0 ) {
+				clearPrestationsError();
+			}
 
 			actualiserCalendrier();
 			updateAccordionBadges();
