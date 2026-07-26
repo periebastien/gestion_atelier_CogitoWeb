@@ -142,6 +142,9 @@ function gacct_demande_build_data() {
 			'port'        => 'frais_de_ports',
 			'couleur'     => 'couleur_copy',
 			'prestations' => array( 'revisions_controle', 'pliages_secours', 'suspentes_travaux' ),
+			// Champs de la carte « Votre matériel », dans l'ordre d'affichage :
+			// ils sont validés (par JetFormBuilder) AVANT nos propres contrôles.
+			'materiel'    => array( 'marque', 'modele', 'numero_serie', 'taille', 'ptv', 'couleur_copy' ),
 		),
 		'couleurs'        => gacct_demande_couleurs_js(),
 		'couleursMax'     => 3,

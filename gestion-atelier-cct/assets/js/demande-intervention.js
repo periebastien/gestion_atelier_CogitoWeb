@@ -11,7 +11,8 @@
  *  - recalcul du résumé financier + durée totale à chaque changement d'une
  *    prestation ou du frais de port (jamais date_disponible) ;
  *  - synchronisation du radio caché date_disponible avec la date choisie ;
- *  - validation de la date au submit ;
+ *  - validation au submit dans l'ordre du formulaire mobile : matériel (laissé
+ *    à JetFormBuilder) → prestations → frais de retour (JFB) → date ;
  *  - accordéons sur les groupes de prestations.
  */
 ( function () {
@@ -40,6 +41,8 @@
 		var dateDispoName = champs.dateDispo || '';
 		var dateFieldName = champs.date || 'date_intervention';
 		var dureeFieldName = champs.duree || 'duree_totale_commande';
+
+		var materielNames = champs.materiel || [];
 
 		var prestations = cfg.prestations || {};
 		var dispos = cfg.dispos || {};
@@ -195,11 +198,55 @@
 		/* ---------------------------------------------------------------
 		 * Validation au submit
 		 *
-		 * Ordre imposé par le parcours : on choisit d'abord ses prestations,
-		 * la date d'atelier n'a de sens qu'ensuite (sa durée dépend d'elles).
-		 * L'erreur de date ne doit donc jamais s'afficher tant qu'aucune
-		 * prestation n'est cochée — et une demande vide est refusée.
+		 * L'ordre des erreurs suit l'ordre du formulaire en mobile
+		 * (cf. `order` CSS <= 781px) : matériel → prestations → frais de
+		 * retour → date. Nos deux contrôles maison (prestations, date) ne se
+		 * déclenchent donc qu'une fois les champs qui les précèdent remplis ;
+		 * pour les autres on laisse la main à JetFormBuilder en ne bloquant
+		 * pas, ses propres messages s'affichant alors sous les champs.
 		 * ------------------------------------------------------------- */
+
+		/**
+		 * Premier champ requis vide parmi une liste de champs texte/select.
+		 * On teste la valeur plutôt que checkValidity() : le champ couleur est
+		 * en lecture seule (alimenté par la palette), donc exclu de la
+		 * validation native du navigateur.
+		 */
+		function premierChampVide( names ) {
+			var trouve = null;
+			names.forEach( function ( name ) {
+				if ( trouve ) {
+					return;
+				}
+				fieldInputs( name ).forEach( function ( el ) {
+					if ( trouve || ! el.required || el.type === 'radio' || el.type === 'checkbox' ) {
+						return;
+					}
+					if ( String( el.value || '' ).trim() === '' ) {
+						trouve = el;
+					}
+				} );
+			} );
+			return trouve;
+		}
+
+		/** Groupe de cases requis (frais de retour) sans aucun choix. */
+		function groupeRequisVide( name ) {
+			var requis = false;
+			var choisi = false;
+			fieldInputs( name ).forEach( function ( el ) {
+				if ( el.tagName !== 'INPUT' || ( el.type !== 'radio' && el.type !== 'checkbox' ) ) {
+					return;
+				}
+				if ( el.required ) {
+					requis = true;
+				}
+				if ( el.checked ) {
+					choisi = true;
+				}
+			} );
+			return requis && ! choisi;
+		}
 
 		function dateRow() {
 			return inputDate ? inputDate.closest( '.jet-form-builder-row' ) : null;
@@ -286,6 +333,13 @@
 		form.addEventListener(
 			'submit',
 			function ( e ) {
+				// 1. Matériel incomplet : c'est le premier bloc du formulaire,
+				//    on laisse JetFormBuilder signaler ses champs.
+				if ( premierChampVide( materielNames ) ) {
+					return;
+				}
+
+				// 2. Prestations.
 				if ( accordions.length && nbPrestationsCourant === 0 ) {
 					e.preventDefault();
 					e.stopImmediatePropagation();
@@ -293,6 +347,12 @@
 					showPrestationsError();
 					return;
 				}
+				// 3. Frais de retour : encore un champ JFB, placé avant la date.
+				if ( groupeRequisVide( portName ) ) {
+					return;
+				}
+
+				// 4. Date d'atelier, dernière étape du parcours.
 				if ( inputDate && inputDate.value.trim() === '' ) {
 					e.preventDefault();
 					e.stopImmediatePropagation();
