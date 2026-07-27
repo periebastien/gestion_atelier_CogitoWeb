@@ -285,8 +285,10 @@ function gacct_demande_prestations_map() {
  * regle appliquee par le plugin Kojito Acompte Produit dans le panier
  * (`Kojito_Acompte_Produit::modifier_prix_panier_acompte`) :
  *
- *   - meta `_kojito_montant_acompte` numerique et > 0  -> c'est ce montant qui est facture ;
- *   - sinon                                            -> le produit est facture au prix plein.
+ *   - meta `_kojito_montant_acompte` numerique et >= 0 -> c'est ce montant qui est facture
+ *                                                        (0 = rien a payer a la commande,
+ *                                                        la totalite part dans le solde) ;
+ *   - meta vide / non numerique / negative             -> le produit est facture au prix plein.
  *
  * Le formulaire affiche donc toujours l'acompte que le client va effectivement
  * payer au checkout, y compris pour les produits dont l'acompte n'est pas renseigne.
@@ -298,7 +300,7 @@ function gacct_demande_prestations_map() {
 function gacct_demande_acompte( $product_id, $prix ) {
 	$acompte = get_post_meta( absint( $product_id ), '_kojito_montant_acompte', true );
 
-	if ( '' !== $acompte && is_numeric( $acompte ) && (float) $acompte > 0 ) {
+	if ( '' !== $acompte && is_numeric( $acompte ) && (float) $acompte >= 0 ) {
 		return (float) $acompte;
 	}
 

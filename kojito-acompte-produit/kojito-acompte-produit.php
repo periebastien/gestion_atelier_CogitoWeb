@@ -80,28 +80,50 @@ class Kojito_Acompte_Produit {
 		}
 
 		foreach ( $cart->get_cart() as $cart_item ) {
-			$product_id = $cart_item['variation_id'] ? $cart_item['variation_id'] : $cart_item['product_id'];
-			$acompte   = get_post_meta( $product_id, '_kojito_montant_acompte', true );
+			$acompte = $this->recuperer_acompte_produit(
+				$cart_item['variation_id'] ? $cart_item['variation_id'] : $cart_item['product_id'],
+				$cart_item['variation_id'] ? $cart_item['product_id'] : 0
+			);
 
-			if ( ! $acompte && $cart_item['variation_id'] ) {
-				$acompte = get_post_meta( $cart_item['product_id'], '_kojito_montant_acompte', true );
-			}
-
-			if ( '' !== $acompte && is_numeric( $acompte ) && (float) $acompte > 0 ) {
-				$cart_item['data']->set_price( (float) $acompte );
+			if ( null !== $acompte ) {
+				$cart_item['data']->set_price( $acompte );
 			}
 		}
 	}
 
-	public function stocker_prix_initial_commande( $item, $cart_item_key, $values, $order ) {
-		$product_id = ! empty( $values['variation_id'] ) ? $values['variation_id'] : $values['product_id'];
-		$acompte    = get_post_meta( $product_id, '_kojito_montant_acompte', true );
+	/**
+	 * Lit le montant d'acompte d'un produit.
+	 *
+	 * Champ vide = pas de mecanisme d'acompte (le produit se paie a 100% a la commande).
+	 * Champ a 0  = acompte nul : rien a payer a la commande, la totalite part dans le solde.
+	 *
+	 * @param int $product_id ID du produit (ou de la variation).
+	 * @param int $parent_id  ID du produit parent, si $product_id est une variation.
+	 * @return float|null Montant de l'acompte, ou null si aucun acompte n'est defini.
+	 */
+	private function recuperer_acompte_produit( $product_id, $parent_id = 0 ) {
+		$acompte = get_post_meta( $product_id, '_kojito_montant_acompte', true );
 
-		if ( ! $acompte && ! empty( $values['variation_id'] ) ) {
-			$acompte = get_post_meta( $values['product_id'], '_kojito_montant_acompte', true );
+		// Attention : '0' est falsy en PHP, on teste explicitement la chaine vide.
+		if ( '' === $acompte && $parent_id ) {
+			$acompte = get_post_meta( $parent_id, '_kojito_montant_acompte', true );
 		}
 
-		if ( '' === $acompte || ! is_numeric( $acompte ) || (float) $acompte <= 0 ) {
+		if ( '' === $acompte || ! is_numeric( $acompte ) || (float) $acompte < 0 ) {
+			return null;
+		}
+
+		return (float) $acompte;
+	}
+
+	public function stocker_prix_initial_commande( $item, $cart_item_key, $values, $order ) {
+		$product_id = ! empty( $values['variation_id'] ) ? $values['variation_id'] : $values['product_id'];
+		$acompte    = $this->recuperer_acompte_produit(
+			$product_id,
+			! empty( $values['variation_id'] ) ? $values['product_id'] : 0
+		);
+
+		if ( null === $acompte ) {
 			return;
 		}
 
@@ -116,8 +138,11 @@ class Kojito_Acompte_Produit {
 
 		$item->add_meta_data( self::META_PRIX_TOTAL_INITIAL, $prix_total_initial, true );
 		$item->add_meta_data( self::META_PRIX_UNITAIRE_INITIAL, $prix_unitaire_initial, true );
-		$item->add_meta_data( self::META_ACOMPTE_UNITAIRE, (float) $acompte, true );
-		$item->add_meta_data( __( 'Acompte par unite', 'kojito-acompte' ), wc_price( $acompte ), true );
+		$item->add_meta_data( self::META_ACOMPTE_UNITAIRE, $acompte, true );
+
+		if ( $acompte > 0 ) {
+			$item->add_meta_data( __( 'Acompte par unite', 'kojito-acompte' ), wc_price( $acompte ), true );
+		}
 	}
 
 	public function enregistrer_statut_acompte_paye() {
@@ -186,12 +211,13 @@ class Kojito_Acompte_Produit {
 			return;
 		}
 
-		$total_initial = $this->calculer_total_initial_commande( $order );
-		$acompte_paye  = (float) $order->get_meta( self::META_ACOMPTE_PAYE );
+		$total_initial   = $this->calculer_total_initial_commande( $order );
+		$acompte_enregistre = $order->get_meta( self::META_ACOMPTE_PAYE );
 
-		if ( $acompte_paye <= 0 ) {
-			$acompte_paye = (float) $order->get_total();
-		}
+		// 0 est une valeur d'acompte valide : on ne se rabat sur le total que si la meta est absente.
+		$acompte_paye = '' === $acompte_enregistre
+			? (float) $order->get_total()
+			: (float) $acompte_enregistre;
 
 		$reste_a_payer = round( $total_initial - $acompte_paye, wc_get_price_decimals() );
 
