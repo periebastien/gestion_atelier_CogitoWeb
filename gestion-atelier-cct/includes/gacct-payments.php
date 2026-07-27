@@ -46,56 +46,56 @@ function gacct_pay_default_settings() {
 				'label'   => __( 'Relance paiement par virement', 'gestion-atelier-cct' ),
 				'subject' => __( 'Votre virement est attendu avant le {deadline_date} - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
-					. '<p>Nous n’avons pas encore recu le virement d’acompte de <strong>{deposit_amount}</strong> pour votre commande <strong>{order_number}</strong>.</p>'
-					. '<p><strong>Il vous reste {days_remaining} pour effectuer ce virement.</strong> Votre creneau atelier reste retenu jusqu’au <strong>{deadline_date}</strong>. Sans reception du virement a cette date, le creneau sera libere et la commande annulee automatiquement.</p>'
-					. '<p>Reference a indiquer imperativement dans le libelle du virement : <strong>{order_number}</strong></p>'
+					. '<p>Nous n’avons pas encore reçu le virement d’acompte de <strong>{deposit_amount}</strong> pour votre commande <strong>{order_number}</strong>.</p>'
+					. '<p><strong>Il vous reste {days_remaining} pour effectuer ce virement.</strong> Votre créneau atelier reste retenu jusqu’au <strong>{deadline_date}</strong>. Sans réception du virement à cette date, le créneau sera libéré et la commande annulée automatiquement.</p>'
+					. '<p>Référence à indiquer impérativement dans le libellé du virement : <strong>{order_number}</strong></p>'
 					. '{bank_details}'
-					. '<p>Vous pouvez retrouver ces coordonnees a tout moment sur <a href="{order_url}">votre page de commande</a>.</p>'
-					. '<p>Si votre virement est deja parti, vous n’avez rien a faire : un delai bancaire de 1 a 3 jours ouvres est normal.</p>'
-					. '<p>A tres vite,<br><br>Bastien.</p>',
+					. '<p>Vous pouvez retrouver ces coordonnées à tout moment sur <a href="{order_url}">votre page de commande</a>.</p>'
+					. '<p>Si votre virement est déjà parti, vous n’avez rien à faire : un délai bancaire de 1 à 3 jours ouvrés est normal.</p>'
+					. '<p>À très vite,<br><br>Bastien.</p>',
 			),
 			'bacs_cancel' => array(
 				'enabled' => true,
-				'label'   => __( 'Annulation : virement non recu', 'gestion-atelier-cct' ),
-				'subject' => __( 'Votre commande {order_number} a ete annulee : virement non recu', 'gestion-atelier-cct' ),
+				'label'   => __( 'Annulation : virement non reçu', 'gestion-atelier-cct' ),
+				'subject' => __( 'Votre commande {order_number} a été annulée : virement non reçu', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
-					. '<p>Nous n’avons pas recu le virement d’acompte pour votre commande <strong>{order_number}</strong> avant l’echeance du <strong>{deadline_date}</strong>.</p>'
-					. '<p>Comme prevu, le creneau atelier qui vous etait reserve a ete libere et la commande annulee.</p>'
-					. '<p>Vous pouvez bien sur repasser une commande a tout moment sur les dates encore disponibles : <a href="{new_request_url}">deposer une nouvelle demande</a>.</p>'
-					. '<p>Si votre virement est parti tardivement et arrive chez nous apres cette annulation, contactez-nous : nous trouverons une solution ensemble.</p>'
-					. '<p>A bientot,<br><br>Bastien.</p>',
+					. '<p>Nous n’avons pas reçu le virement d’acompte pour votre commande <strong>{order_number}</strong> avant l’échéance du <strong>{deadline_date}</strong>.</p>'
+					. '<p>Comme prévu, le créneau atelier qui vous était réservé a été libéré et la commande annulée.</p>'
+					. '<p>Vous pouvez bien sûr repasser une commande à tout moment sur les dates encore disponibles : <a href="{new_request_url}">déposer une nouvelle demande</a>.</p>'
+					. '<p>Si votre virement est parti tardivement et arrive chez nous après cette annulation, contactez-nous : nous trouverons une solution ensemble.</p>'
+					. '<p>À bientôt,<br><br>Bastien.</p>',
 			),
 			'abandoned' => array(
 				'enabled' => true,
-				'label'   => __( 'Demande non finalisee (aucune commande passee)', 'gestion-atelier-cct' ),
-				'subject' => __( 'Votre demande d’intervention n’est pas finalisee', 'gestion-atelier-cct' ),
+				'label'   => __( 'Demande non finalisée (aucune commande passée)', 'gestion-atelier-cct' ),
+				'subject' => __( 'Votre demande d’intervention n’est pas finalisée', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
-					. '<p>Vous avez prepare une demande d’intervention pour votre materiel, mais la commande n’a pas ete finalisee.</p>'
-					. '<p>Votre selection est toujours dans votre panier : <a href="{checkout_url}">finaliser ma commande</a>.</p>'
-					. '<p><strong>Il vous reste {time_remaining} pour la finaliser.</strong> Sans validation avant le <strong>{delete_deadline}</strong>, votre demande sera supprimee et il faudra la refaire (le creneau choisi ne sera plus garanti).</p>'
-					. '<p>Besoin d’aide ? Repondez simplement a cet e-mail.</p>'
-					. '<p>A tres vite,<br><br>Bastien.</p>',
+					. '<p>Vous avez préparé une demande d’intervention pour votre matériel, mais la commande n’a pas été finalisée.</p>'
+					. '<p>Votre sélection est toujours dans votre panier : <a href="{checkout_url}">finaliser ma commande</a>.</p>'
+					. '<p><strong>Il vous reste {time_remaining} pour la finaliser.</strong> Sans validation avant le <strong>{delete_deadline}</strong>, votre demande sera supprimée et il faudra la refaire (le créneau choisi ne sera plus garanti).</p>'
+					. '<p>Besoin d’aide ? Répondez simplement à cet e-mail.</p>'
+					. '<p>À très vite,<br><br>Bastien.</p>',
 			),
 			'payment_failed' => array(
 				'enabled' => true,
-				'label'   => __( 'Paiement non abouti (commande passee mais non payee)', 'gestion-atelier-cct' ),
+				'label'   => __( 'Paiement non abouti (commande passée mais non payée)', 'gestion-atelier-cct' ),
 				'subject' => __( 'Votre paiement n’a pas abouti - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
-					. '<p>Votre commande <strong>{order_number}</strong> a bien ete enregistree, mais le paiement de l’acompte de <strong>{deposit_amount}</strong> n’a pas abouti.</p>'
-					. '<p>Votre creneau atelier est encore retenu : vous pouvez reprendre le paiement en un clic, sans refaire votre demande. <a href="{payment_url}">Reprendre le paiement</a>.</p>'
-					. '<p><strong>Il vous reste {time_remaining}.</strong> Sans paiement avant le <strong>{delete_deadline}</strong>, la commande sera annulee et le creneau libere pour d’autres clients.</p>'
-					. '<p>Si vous rencontrez un souci avec votre moyen de paiement, repondez a cet e-mail ou appelez-nous : nous trouverons une solution.</p>'
-					. '<p>A tres vite,<br><br>Bastien.</p>',
+					. '<p>Votre commande <strong>{order_number}</strong> a bien été enregistrée, mais le paiement de l’acompte de <strong>{deposit_amount}</strong> n’a pas abouti.</p>'
+					. '<p>Votre créneau atelier est encore retenu : vous pouvez reprendre le paiement en un clic, sans refaire votre demande. <a href="{payment_url}">Reprendre le paiement</a>.</p>'
+					. '<p><strong>Il vous reste {time_remaining}.</strong> Sans paiement avant le <strong>{delete_deadline}</strong>, la commande sera annulée et le créneau libéré pour d’autres clients.</p>'
+					. '<p>Si vous rencontrez un souci avec votre moyen de paiement, répondez à cet e-mail ou appelez-nous : nous trouverons une solution.</p>'
+					. '<p>À très vite,<br><br>Bastien.</p>',
 			),
 			'unfinished_cancel' => array(
 				'enabled' => true,
-				'label'   => __( 'Annulation : commande non payee', 'gestion-atelier-cct' ),
-				'subject' => __( 'Votre commande {order_number} a ete annulee : paiement non recu', 'gestion-atelier-cct' ),
+				'label'   => __( 'Annulation : commande non payée', 'gestion-atelier-cct' ),
+				'subject' => __( 'Votre commande {order_number} a été annulée : paiement non reçu', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
-					. '<p>Le paiement de votre commande <strong>{order_number}</strong> n’a pas abouti dans le delai imparti.</p>'
-					. '<p>Le creneau atelier qui vous etait reserve a donc ete libere et la commande annulee.</p>'
-					. '<p>Vous pouvez bien sur en repasser une a tout moment sur les dates encore disponibles : <a href="{new_request_url}">deposer une nouvelle demande</a>.</p>'
-					. '<p>A bientot,<br><br>Bastien.</p>',
+					. '<p>Le paiement de votre commande <strong>{order_number}</strong> n’a pas abouti dans le délai imparti.</p>'
+					. '<p>Le créneau atelier qui vous était réservé a donc été libéré et la commande annulée.</p>'
+					. '<p>Vous pouvez bien sûr en repasser une à tout moment sur les dates encore disponibles : <a href="{new_request_url}">déposer une nouvelle demande</a>.</p>'
+					. '<p>À bientôt,<br><br>Bastien.</p>',
 			),
 		),
 	);
@@ -347,6 +347,43 @@ function gacct_pay_email_variables( $order = null, array $extra = array() ) {
 	return apply_filters( 'gacct_pay_email_variables', array_merge( $variables, $extra ), $order );
 }
 
+/**
+ * Habille un contenu avec le gabarit d'email WooCommerce (en-tête + logo,
+ * cartouche, pied de page) ET applique ses styles en inline.
+ *
+ * `wrap_message()` seul ne suffit pas : WooCommerce garde sa CSS dans
+ * `emails/email-styles.php` et ne l'applique qu'au moment du `style_inline()`.
+ * Sans cette seconde étape, le client reçoit du HTML brut sans mise en forme.
+ *
+ * Le rendu suit donc les réglages WooCommerce > Réglages > E-mails (logo,
+ * couleur de base, texte de pied de page) : rien de codé en dur, chaque site
+ * revendu garde sa propre identité.
+ *
+ * @param string $subject Objet (sert de titre dans l'en-tête coloré).
+ * @param string $body    Corps HTML.
+ * @return string
+ */
+function gacct_render_email_html( $subject, $body ) {
+	if ( ! function_exists( 'WC' ) || ! WC() || ! WC()->mailer() ) {
+		return $body;
+	}
+
+	$html = WC()->mailer()->wrap_message( wp_strip_all_tags( $subject ), $body );
+
+	// Inlining des styles WooCommerce (nécessite DOMDocument ; sinon on renvoie
+	// le contenu habillé mais non inliné plutôt que d'échouer).
+	if ( class_exists( 'WC_Email' ) && class_exists( 'DOMDocument' ) ) {
+		try {
+			$styler = new WC_Email();
+			$html   = $styler->style_inline( $html );
+		} catch ( \Throwable $e ) {
+			jwcct_log( 'gacct_render_email_html : style_inline a echoue — ' . $e->getMessage() );
+		}
+	}
+
+	return apply_filters( 'gacct_email_html', $html, $subject, $body );
+}
+
 function gacct_pay_send_email( $to, $template_key, array $variables, $copy_admin = false ) {
 	$settings = gacct_pay_settings();
 	$email    = isset( $settings['emails'][ $template_key ] ) ? $settings['emails'][ $template_key ] : null;
@@ -357,11 +394,7 @@ function gacct_pay_send_email( $to, $template_key, array $variables, $copy_admin
 
 	$subject = strtr( (string) $email['subject'], $variables );
 	$body    = strtr( (string) $email['body'], $variables );
-	$message = $body;
-
-	if ( function_exists( 'WC' ) && WC() && WC()->mailer() ) {
-		$message = WC()->mailer()->wrap_message( wp_strip_all_tags( $subject ), $body );
-	}
+	$message = gacct_render_email_html( $subject, $body );
 
 	$headers = array( 'Content-Type: text/html; charset=UTF-8' );
 

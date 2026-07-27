@@ -1590,11 +1590,12 @@ final class GACCT_Plugin {
 	}
 
 	private function send_notification_email( $to, $subject, $body, array $attachments = array() ) {
-		$message = $body;
-
-		if ( function_exists( 'WC' ) && WC() && WC()->mailer() ) {
-			$message = WC()->mailer()->wrap_message( wp_strip_all_tags( $subject ), $body );
-		}
+		// Gabarit WooCommerce complet (en-tete + logo, cartouche, pied de page)
+		// avec inlining des styles : cf. gacct_render_email_html() dans
+		// includes/gacct-payments.php.
+		$message = function_exists( 'gacct_render_email_html' )
+			? gacct_render_email_html( $subject, $body )
+			: $body;
 
 		return wp_mail(
 			$to,
