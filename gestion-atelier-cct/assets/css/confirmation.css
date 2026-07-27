@@ -26,10 +26,31 @@
 	--r-lg:           var(--gacct-radius-lg, 16px);
 	--r:              var(--gacct-radius, 8px);
 
-	background: var(--c-page);
 	color: var(--c-ink);
 	text-wrap: pretty;
 	-webkit-font-smoothing: antialiased;
+	/* Pas de fond ici : il est peint pleine largeur par .conf et .gacct-conf-main
+	   (voir « Fonds pleine largeur » plus bas). */
+	background: transparent;
+}
+
+/* ── Fonds pleine largeur ──
+   Le template est rendu à l'intérieur d'un conteneur Elementor limité à 1140 px
+   (.e-con-inner), donc les fonds s'arrêtaient au contenu. On peint au-delà avec
+   une ombre portée très étalée, clippée verticalement pour ne pas déborder sur
+   les blocs voisins. Contrairement à `width:100vw`, cette technique n'a AUCUNE
+   incidence sur la mise en page : pas de défilement horizontal parasite, même
+   quand la barre de défilement est visible. */
+.gacct-conf .conf {
+	box-shadow: 0 0 0 100vmax var(--c-surface);
+	clip-path: inset(0 -100vmax);
+}
+.gacct-conf-main {
+	/* `background` peint l'intérieur de la boîte, `box-shadow` le débord :
+	   les deux sont nécessaires (une ombre étalée ne remplit pas l'élément). */
+	background: var(--c-page);
+	box-shadow: 0 0 0 100vmax var(--c-page);
+	clip-path: inset(0 -100vmax);
 }
 .gacct-conf *, .gacct-conf *::before, .gacct-conf *::after { box-sizing: border-box; }
 .gacct-conf a { color: var(--c-accent); text-decoration: none; transition: color 150ms; }
@@ -48,7 +69,10 @@
 .gacct-conf .btn-secondary svg { width: 16px; height: 16px; stroke: var(--c-accent); }
 
 /* ── En-tête de confirmation ── */
-.gacct-conf .conf { background: var(--c-surface); border-bottom: 1px solid rgba(0,0,0,0.07); padding: 52px 0 44px; text-align: center; }
+/* Pas de border-bottom ici : une bordure suit la boîte (1140 px) et laisserait
+   un trait qui s'arrête au milieu de la page. Le passage blanc → gris de
+   .gacct-conf-main fait la séparation, sur toute la largeur. */
+.gacct-conf .conf { background: var(--c-surface); padding: 52px 0 44px; text-align: center; }
 .gacct-conf .conf-mark { width: 68px; height: 68px; margin: 0 auto 22px; border-radius: 999px; background: var(--c-accent-soft); display: flex; align-items: center; justify-content: center; position: relative; }
 .gacct-conf .conf-mark::after { content: ''; position: absolute; inset: -8px; border-radius: 999px; border: 2px solid color-mix(in srgb, var(--c-accent) 22%, transparent); animation: gacct-pulse 2.6s ease-out infinite; }
 @keyframes gacct-pulse { 0% { transform: scale(0.9); opacity: 0.9; } 70% { transform: scale(1.18); opacity: 0; } 100% { opacity: 0; } }
@@ -180,6 +204,12 @@
 
 /* ── Tableau commande ── */
 .gacct-conf .ord { width: 100%; border-collapse: collapse; }
+/* Elementor applique dans son reset `table td, table th { border: 1px solid
+   hsla(0,0%,50%,.502) }` : sans remise à plat, les cellules se retrouvent
+   entourées d'un quadrillage gris. On repart de zéro, puis on ne redessine
+   que les filets horizontaux voulus. */
+.gacct-conf .ord th,
+.gacct-conf .ord td { border: 0; }
 .gacct-conf .ord th { text-align: left; font-size: 9.5px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #bbb; padding: 0 0 12px; border-bottom: 1.5px solid rgba(0,0,0,0.08); background: transparent; }
 .gacct-conf .ord th:last-child, .gacct-conf .ord td:last-child { text-align: right; }
 .gacct-conf .ord td { padding: 15px 0; border-bottom: 1px solid rgba(0,0,0,0.06); vertical-align: top; background: transparent; }
