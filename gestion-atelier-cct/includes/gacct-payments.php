@@ -35,7 +35,9 @@ function gacct_pay_default_settings() {
 		'ref_prefix'        => 'AR',
 		'reminder_days'     => 2,   // relance virement : X jours après la commande.
 		'cancel_days'       => 3,   // annulation : X jours après la commande.
-		'abandoned_minutes' => 60,  // relance panier abandonné : X minutes après la création du CCT.
+		'abandoned_minutes' => 60,  // relance commande non finalisée : X minutes après création.
+		'unfinished_hours'  => 6,   // suppression d'une commande non finalisée : X heures d'ancienneté minimum,
+		                            // effective au premier passage de minuit qui suit.
 		'contact_phone'     => '02 31 69 39 31',
 		'contact_hours'     => 'du lundi au vendredi de 9 h 30 à 17 h 30',
 		'emails'            => array(
@@ -45,7 +47,7 @@ function gacct_pay_default_settings() {
 				'subject' => __( 'Votre virement est attendu avant le {deadline_date} - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
 					. '<p>Nous n’avons pas encore recu le virement d’acompte de <strong>{deposit_amount}</strong> pour votre commande <strong>{order_number}</strong>.</p>'
-					. '<p>Votre creneau atelier reste retenu jusqu’au <strong>{deadline_date}</strong>. Sans reception du virement a cette date, le creneau sera libere et la commande annulee automatiquement.</p>'
+					. '<p><strong>Il vous reste {days_remaining} pour effectuer ce virement.</strong> Votre creneau atelier reste retenu jusqu’au <strong>{deadline_date}</strong>. Sans reception du virement a cette date, le creneau sera libere et la commande annulee automatiquement.</p>'
 					. '<p>Reference a indiquer imperativement dans le libelle du virement : <strong>{order_number}</strong></p>'
 					. '{bank_details}'
 					. '<p>Vous pouvez retrouver ces coordonnees a tout moment sur <a href="{order_url}">votre page de commande</a>.</p>'
@@ -65,14 +67,35 @@ function gacct_pay_default_settings() {
 			),
 			'abandoned' => array(
 				'enabled' => true,
-				'label'   => __( 'Panier abandonne (commande non finalisee)', 'gestion-atelier-cct' ),
+				'label'   => __( 'Demande non finalisee (aucune commande passee)', 'gestion-atelier-cct' ),
 				'subject' => __( 'Votre demande d’intervention n’est pas finalisee', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
 					. '<p>Vous avez prepare une demande d’intervention pour votre materiel, mais la commande n’a pas ete finalisee.</p>'
 					. '<p>Votre selection est toujours dans votre panier : <a href="{checkout_url}">finaliser ma commande</a>.</p>'
-					. '<p>Attention : les demandes non finalisees sont supprimees chaque nuit. Passe ce delai, il faudra refaire votre demande (le creneau choisi n’est pas garanti).</p>'
+					. '<p><strong>Il vous reste {time_remaining} pour la finaliser.</strong> Sans validation avant le <strong>{delete_deadline}</strong>, votre demande sera supprimee et il faudra la refaire (le creneau choisi ne sera plus garanti).</p>'
 					. '<p>Besoin d’aide ? Repondez simplement a cet e-mail.</p>'
 					. '<p>A tres vite,<br><br>Bastien.</p>',
+			),
+			'payment_failed' => array(
+				'enabled' => true,
+				'label'   => __( 'Paiement non abouti (commande passee mais non payee)', 'gestion-atelier-cct' ),
+				'subject' => __( 'Votre paiement n’a pas abouti - commande {order_number}', 'gestion-atelier-cct' ),
+				'body'    => '<p>Bonjour {customer_name},</p>'
+					. '<p>Votre commande <strong>{order_number}</strong> a bien ete enregistree, mais le paiement de l’acompte de <strong>{deposit_amount}</strong> n’a pas abouti.</p>'
+					. '<p>Votre creneau atelier est encore retenu : vous pouvez reprendre le paiement en un clic, sans refaire votre demande. <a href="{payment_url}">Reprendre le paiement</a>.</p>'
+					. '<p><strong>Il vous reste {time_remaining}.</strong> Sans paiement avant le <strong>{delete_deadline}</strong>, la commande sera annulee et le creneau libere pour d’autres clients.</p>'
+					. '<p>Si vous rencontrez un souci avec votre moyen de paiement, repondez a cet e-mail ou appelez-nous : nous trouverons une solution.</p>'
+					. '<p>A tres vite,<br><br>Bastien.</p>',
+			),
+			'unfinished_cancel' => array(
+				'enabled' => true,
+				'label'   => __( 'Annulation : commande non payee', 'gestion-atelier-cct' ),
+				'subject' => __( 'Votre commande {order_number} a ete annulee : paiement non recu', 'gestion-atelier-cct' ),
+				'body'    => '<p>Bonjour {customer_name},</p>'
+					. '<p>Le paiement de votre commande <strong>{order_number}</strong> n’a pas abouti dans le delai imparti.</p>'
+					. '<p>Le creneau atelier qui vous etait reserve a donc ete libere et la commande annulee.</p>'
+					. '<p>Vous pouvez bien sur en repasser une a tout moment sur les dates encore disponibles : <a href="{new_request_url}">deposer une nouvelle demande</a>.</p>'
+					. '<p>A bientot,<br><br>Bastien.</p>',
 			),
 		),
 	);
@@ -101,8 +124,52 @@ function gacct_pay_settings() {
 	$settings['reminder_days']     = max( 1, (int) $settings['reminder_days'] );
 	$settings['cancel_days']       = max( (int) $settings['reminder_days'], (int) $settings['cancel_days'] );
 	$settings['abandoned_minutes'] = max( 15, (int) $settings['abandoned_minutes'] );
+	$settings['unfinished_hours']  = max( 2, (int) $settings['unfinished_hours'] );
+
+	// La suppression ne doit jamais precéder la relance.
+	$settings['unfinished_hours'] = max(
+		$settings['unfinished_hours'],
+		(int) ceil( $settings['abandoned_minutes'] / 60 ) + 1
+	);
 
 	return $settings;
+}
+
+/**
+ * Moment exact de suppression d'une commande / demande non finalisee.
+ *
+ * La purge tourne a minuit : l'element est supprime au premier passage de minuit
+ * ou il aura depasse l'anciennete minimale configuree. On calcule ce moment pour
+ * pouvoir l'annoncer au client dans l'email (pas d'echeance approximative).
+ *
+ * @param int $created_ts Timestamp de creation (UTC).
+ * @return int Timestamp de suppression (UTC).
+ */
+function gacct_pay_deletion_deadline( $created_ts ) {
+	$settings = gacct_pay_settings();
+	$eligible = (int) $created_ts + $settings['unfinished_hours'] * HOUR_IN_SECONDS;
+
+	$date     = ( new DateTimeImmutable( '@' . $eligible ) )->setTimezone( wp_timezone() );
+	$midnight = $date->setTime( 0, 0, 0 );
+
+	if ( $midnight->getTimestamp() < $eligible ) {
+		$midnight = $midnight->modify( '+1 day' );
+	}
+
+	return $midnight->getTimestamp();
+}
+
+/**
+ * Delai restant en clair ("environ 11 heures", "2 jours"), pour les emails.
+ */
+function gacct_pay_time_remaining( $deadline_ts ) {
+	$now = time();
+
+	if ( $deadline_ts <= $now ) {
+		return __( 'moins d’une heure', 'gestion-atelier-cct' );
+	}
+
+	return human_time_diff( $now, $deadline_ts );
 }
 
 /* =============================================================================
@@ -261,6 +328,20 @@ function gacct_pay_email_variables( $order = null, array $extra = array() ) {
 		$variables['{deadline_date}']  = gacct_pay_format_date( $deadlines['cancel'] );
 		$variables['{bank_details}']   = gacct_pay_bank_details_html( $order );
 		$variables['{order_url}']      = esc_url( $order->get_checkout_order_received_url() );
+		$variables['{payment_url}']    = esc_url( $order->get_checkout_payment_url() );
+
+		// Delai restant avant annulation (flux virement).
+		$days = max( 0, (int) ceil( ( $deadlines['cancel'] - time() ) / DAY_IN_SECONDS ) );
+		/* translators: %d: nombre de jours */
+		$variables['{days_remaining}'] = sprintf( _n( '%d jour', '%d jours', $days, 'gestion-atelier-cct' ), $days );
+
+		// Delai restant avant suppression (flux commande non finalisee).
+		$created = $order->get_date_created();
+		if ( $created ) {
+			$delete_ts = gacct_pay_deletion_deadline( $created->getTimestamp() );
+			$variables['{delete_deadline}'] = wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $delete_ts );
+			$variables['{time_remaining}']  = gacct_pay_time_remaining( $delete_ts );
+		}
 	}
 
 	return apply_filters( 'gacct_pay_email_variables', array_merge( $variables, $extra ), $order );
@@ -346,6 +427,7 @@ function gacct_pay_hourly_tick() {
 	}
 
 	gacct_pay_process_bacs_orders();
+	gacct_pay_process_unpaid_orders();
 	gacct_pay_process_abandoned_carts();
 }
 
@@ -374,7 +456,12 @@ function gacct_pay_process_bacs_orders() {
 
 		// 1. Annulation : échéance dépassée.
 		if ( $now >= $deadlines['cancel'] ) {
-			gacct_pay_cancel_unpaid_order( $order, $deadlines );
+			gacct_pay_cancel_unpaid_order(
+				$order,
+				$deadlines['cancel'],
+				'bacs_cancel',
+				__( 'virement non recu', 'gestion-atelier-cct' )
+			);
 			continue;
 		}
 
@@ -403,10 +490,88 @@ function gacct_pay_process_bacs_orders() {
 }
 
 /**
- * Annule une commande virement non payée : libère le créneau, supprime les CCT,
- * prévient le client (+ copie admin) et journalise tout dans la commande.
+ * Relance puis annulation des commandes passées mais jamais payées
+ * (carte refusée, abandon sur la page de paiement…). Même logique que les
+ * demandes non finalisées : relance courte, puis suppression à minuit.
+ *
+ * Le virement est exclu : il a son propre calendrier, en jours.
  */
-function gacct_pay_cancel_unpaid_order( $order, array $deadlines ) {
+function gacct_pay_process_unpaid_orders() {
+	$settings = gacct_pay_settings();
+
+	$orders = wc_get_orders(
+		array(
+			'status'  => array( 'failed', 'pending' ),
+			'limit'   => 100,
+			'orderby' => 'date',
+			'order'   => 'ASC',
+		)
+	);
+
+	$now = time();
+
+	foreach ( $orders as $order ) {
+		// Le flux virement gère ses propres commandes (échéance en jours).
+		if ( 'bacs' === $order->get_payment_method() ) {
+			continue;
+		}
+
+		$created = $order->get_date_created();
+
+		if ( ! $created ) {
+			continue;
+		}
+
+		$created_ts = $created->getTimestamp();
+		$delete_ts  = gacct_pay_deletion_deadline( $created_ts );
+
+		// 1. Suppression : échéance dépassée.
+		if ( $now >= $delete_ts ) {
+			gacct_pay_cancel_unpaid_order(
+				$order,
+				$delete_ts,
+				'unfinished_cancel',
+				__( 'paiement non abouti', 'gestion-atelier-cct' )
+			);
+			continue;
+		}
+
+		// 2. Relance : délai atteint, pas encore relancé.
+		$reminder_ts = $created_ts + $settings['abandoned_minutes'] * MINUTE_IN_SECONDS;
+
+		if ( $now >= $reminder_ts && ! $order->get_meta( GACCT_PAY_META_REMINDER_SENT ) ) {
+			$sent = gacct_pay_send_email(
+				$order->get_billing_email(),
+				'payment_failed',
+				gacct_pay_email_variables( $order )
+			);
+
+			$order->update_meta_data( GACCT_PAY_META_REMINDER_SENT, current_time( 'mysql' ) );
+			$order->add_order_note(
+				$sent
+					? sprintf(
+						/* translators: 1: email, 2: date limite */
+						__( 'Relance paiement non abouti envoyee au client (%1$s), avec lien de reprise du paiement. Suppression prevue le %2$s.', 'gestion-atelier-cct' ),
+						$order->get_billing_email(),
+						wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $delete_ts )
+					)
+					: __( 'Echec d’envoi de la relance paiement non abouti (wp_mail a retourne false).', 'gestion-atelier-cct' )
+			);
+			$order->save();
+		}
+	}
+}
+
+/**
+ * Annule une commande non payée : libère le créneau, supprime les CCT,
+ * prévient le client (+ copie admin) et journalise tout dans la commande.
+ *
+ * @param WC_Order $order         Commande.
+ * @param int      $deadline_ts   Échéance dépassée (pour la note et l'email).
+ * @param string   $template_key  Template d'email à envoyer.
+ * @param string   $reason        Motif affiché dans la note de commande.
+ */
+function gacct_pay_cancel_unpaid_order( $order, $deadline_ts, $template_key = 'bacs_cancel', $reason = '' ) {
 	if ( $order->get_meta( GACCT_PAY_META_AUTO_CANCELLED ) ) {
 		return;
 	}
@@ -417,7 +582,7 @@ function gacct_pay_cancel_unpaid_order( $order, array $deadlines ) {
 	// Email AVANT suppression des données (les variables en dépendent).
 	$sent = gacct_pay_send_email(
 		$order->get_billing_email(),
-		'bacs_cancel',
+		$template_key,
 		gacct_pay_email_variables( $order ),
 		true // copie admin
 	);
@@ -438,15 +603,23 @@ function gacct_pay_cancel_unpaid_order( $order, array $deadlines ) {
 
 	$order->add_order_note(
 		sprintf(
-			/* translators: 1: date limite, 2: liste des CCT supprimes, 3: statut email */
-			__( 'Annulation automatique : virement non recu avant le %1$s. Creneau libere (%2$s). Email d’annulation au client : %3$s (copie admin).', 'gestion-atelier-cct' ),
-			gacct_pay_format_date( $deadlines['cancel'] ),
+			/* translators: 1: motif, 2: date limite, 3: liste des CCT supprimes, 4: statut email */
+			__( 'Annulation automatique : %1$s avant le %2$s. Creneau libere (%3$s). Email d’annulation au client : %4$s (copie admin).', 'gestion-atelier-cct' ),
+			$reason ? $reason : __( 'paiement non recu', 'gestion-atelier-cct' ),
+			wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $deadline_ts ),
 			$deleted ? implode( ', ', $deleted ) : __( 'aucun CCT a supprimer', 'gestion-atelier-cct' ),
 			$sent ? __( 'envoye', 'gestion-atelier-cct' ) : __( 'ECHEC', 'gestion-atelier-cct' )
 		)
 	);
 
-	$order->update_status( 'cancelled', __( 'Virement non recu dans le delai imparti.', 'gestion-atelier-cct' ) );
+	$order->update_status(
+		'cancelled',
+		sprintf(
+			/* translators: %s: motif */
+			__( 'Annulation automatique (%s) : delai imparti depasse.', 'gestion-atelier-cct' ),
+			$reason ? $reason : __( 'paiement non recu', 'gestion-atelier-cct' )
+		)
+	);
 }
 
 /* =============================================================================
@@ -502,12 +675,21 @@ function gacct_pay_process_abandoned_carts() {
 		$user = get_userdata( (int) $row['cct_author_id'] );
 
 		if ( $user && is_email( $user->user_email ) ) {
+			// Échéance de suppression annoncée au client (calculée sur la même
+			// règle que la purge : minuit suivant l'ancienneté minimale).
+			$created_ts = (int) get_gmt_from_date( $row['cct_created'], 'U' );
+			$delete_ts  = gacct_pay_deletion_deadline( $created_ts );
+
 			gacct_pay_send_email(
 				$user->user_email,
 				'abandoned',
 				gacct_pay_email_variables(
 					null,
-					array( '{customer_name}' => $user->display_name ? $user->display_name : $user->user_login )
+					array(
+						'{customer_name}'   => $user->display_name ? $user->display_name : $user->user_login,
+						'{delete_deadline}' => wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $delete_ts ),
+						'{time_remaining}'  => gacct_pay_time_remaining( $delete_ts ),
+					)
 				)
 			);
 		}
@@ -530,12 +712,25 @@ add_action( GACCT_PAY_MIDNIGHT_EVENT, 'gacct_pay_midnight_purge' );
 function gacct_pay_midnight_purge() {
 	global $wpdb;
 
-	// Garde-fou : ne jamais purger un brouillon de moins de 2 h
+	$settings = gacct_pay_settings();
+
+	// Garde-fou : ne jamais purger un brouillon trop récent
 	// (quelqu'un peut être en train de finaliser sa commande).
-	$min_age = (int) apply_filters( 'gacct_pay_purge_min_age', 2 * HOUR_IN_SECONDS );
+	$min_age = (int) apply_filters( 'gacct_pay_purge_min_age', $settings['unfinished_hours'] * HOUR_IN_SECONDS );
 	$cutoff  = gmdate( 'Y-m-d H:i:s', current_time( 'timestamp' ) - $min_age );
 
-	$purged = array();
+	// FILET DE SÉCURITÉ : un CCT référencé par une commande WooCommerce n'est
+	// JAMAIS supprimé, même s'il est resté en draft/order_id 0. Cas réel : la
+	// liaison au checkout (jwcct_process_order_link) échoue quand la commande
+	// n'a pas de compte client (commande invitée) ou quand les IDs en attente
+	// ont expiré — la commande existe pourtant bel et bien.
+	$protected = array(
+		JWCCT_CCT_REVISION   => gacct_pay_referenced_cct_ids( JWCCT_ORDER_REVISION_ID ),
+		JWCCT_CCT_OCCUPATION => gacct_pay_referenced_cct_ids( JWCCT_ORDER_OCCUPATION_ID ),
+	);
+
+	$purged  = array();
+	$skipped = array();
 
 	foreach ( array( JWCCT_CCT_REVISION, JWCCT_CCT_OCCUPATION ) as $slug ) {
 		$table = gacct_pay_cct_table( $slug );
@@ -555,8 +750,15 @@ function gacct_pay_midnight_purge() {
 		);
 
 		foreach ( $ids as $id ) {
-			if ( gacct_pay_delete_cct_item( $slug, (int) $id ) ) {
-				$purged[ $slug ][] = (int) $id;
+			$id = (int) $id;
+
+			if ( in_array( $id, $protected[ $slug ], true ) ) {
+				$skipped[ $slug ][] = $id;
+				continue;
+			}
+
+			if ( gacct_pay_delete_cct_item( $slug, $id ) ) {
+				$purged[ $slug ][] = $id;
 			}
 		}
 	}
@@ -595,6 +797,47 @@ function gacct_pay_midnight_purge() {
 	if ( ! empty( $purged ) ) {
 		jwcct_log( 'midnight_purge : ' . wp_json_encode( $purged ) );
 	}
+
+	if ( ! empty( $skipped ) ) {
+		// Anomalie : un CCT rattaché à une commande n'aurait pas dû rester en draft.
+		// On le signale à l'admin plutôt que de le supprimer silencieusement.
+		jwcct_log( 'midnight_purge SKIPPED (CCT lies a une commande) : ' . wp_json_encode( $skipped ) );
+		update_option( 'gacct_pay_purge_skipped', array( 'time' => current_time( 'mysql' ), 'items' => $skipped ), false );
+	}
+}
+
+/**
+ * IDs de CCT référencés par une commande WooCommerce, quelle que soit la meta.
+ *
+ * Interroge les DEUX stockages (postmeta historique + tables HPOS) : le filet
+ * reste valable si le site bascule sur les commandes haute performance.
+ *
+ * @param string $meta_key Meta de commande (_jwcct_revision_id, _jwcct_occupation_id).
+ * @return int[]
+ */
+function gacct_pay_referenced_cct_ids( $meta_key ) {
+	global $wpdb;
+
+	$ids = $wpdb->get_col(
+		$wpdb->prepare(
+			"SELECT DISTINCT meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s",
+			$meta_key
+		)
+	);
+
+	$hpos_table = $wpdb->prefix . 'wc_orders_meta';
+
+	if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $hpos_table ) ) === $hpos_table ) {
+		$hpos_ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT DISTINCT meta_value FROM {$hpos_table} WHERE meta_key = %s",
+				$meta_key
+			)
+		);
+		$ids = array_merge( $ids, $hpos_ids );
+	}
+
+	return array_values( array_unique( array_filter( array_map( 'absint', $ids ) ) ) );
 }
 
 /* =============================================================================
@@ -713,6 +956,7 @@ function gacct_pay_handle_admin_save() {
 		'reminder_days'     => max( 1, absint( $_POST['reminder_days'] ?? $defaults['reminder_days'] ) ),
 		'cancel_days'       => max( 1, absint( $_POST['cancel_days'] ?? $defaults['cancel_days'] ) ),
 		'abandoned_minutes' => max( 15, absint( $_POST['abandoned_minutes'] ?? $defaults['abandoned_minutes'] ) ),
+		'unfinished_hours'  => max( 2, absint( $_POST['unfinished_hours'] ?? $defaults['unfinished_hours'] ) ),
 		'contact_phone'     => sanitize_text_field( wp_unslash( $_POST['contact_phone'] ?? $defaults['contact_phone'] ) ),
 		'contact_hours'     => sanitize_text_field( wp_unslash( $_POST['contact_hours'] ?? $defaults['contact_hours'] ) ),
 		'emails'            => array(),
@@ -822,15 +1066,36 @@ function gacct_pay_render_admin_page() {
 				</tbody>
 			</table>
 
-			<h2><?php esc_html_e( 'Commandes non finalisees (paniers abandonnes)', 'gestion-atelier-cct' ); ?></h2>
+			<h2><?php esc_html_e( 'Commandes non finalisees (panier abandonne, paiement echoue)', 'gestion-atelier-cct' ); ?></h2>
+			<p class="description" style="max-width:46em;">
+				<?php esc_html_e( 'Couvre les deux cas : formulaire rempli sans passer commande, et commande passee dont le paiement n a pas abouti (carte refusee, abandon sur la page de paiement). Le paiement par virement n est PAS concerne : il suit son propre calendrier ci-dessus.', 'gestion-atelier-cct' ); ?>
+			</p>
 			<table class="form-table" role="presentation">
 				<tbody>
 					<tr>
 						<th scope="row"><label for="gacct_abandoned_minutes"><?php esc_html_e( 'Delai avant relance', 'gestion-atelier-cct' ); ?></label></th>
 						<td>
 							<input type="number" id="gacct_abandoned_minutes" name="abandoned_minutes" class="small-text" min="15" step="15" value="<?php echo esc_attr( $settings['abandoned_minutes'] ); ?>">
-							<?php esc_html_e( 'minutes apres la creation de la demande', 'gestion-atelier-cct' ); ?>
-							<p class="description"><?php esc_html_e( 'Si un client valide le formulaire de demande sans finaliser le paiement, un email de rappel lui est envoye avec un lien vers son panier. Les demandes non finalisees sont ensuite purgees chaque nuit a minuit (jamais avant 2 h d’anciennete).', 'gestion-atelier-cct' ); ?></p>
+							<?php esc_html_e( 'minutes apres la creation', 'gestion-atelier-cct' ); ?>
+							<p class="description"><?php esc_html_e( 'Email de rappel au client, avec un lien pour finaliser sa commande (ou reprendre son paiement) et la date limite avant suppression.', 'gestion-atelier-cct' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="gacct_unfinished_hours"><?php esc_html_e( 'Delai avant suppression', 'gestion-atelier-cct' ); ?></label></th>
+						<td>
+							<input type="number" id="gacct_unfinished_hours" name="unfinished_hours" class="small-text" min="2" value="<?php echo esc_attr( $settings['unfinished_hours'] ); ?>">
+							<?php esc_html_e( 'heures d’anciennete minimum', 'gestion-atelier-cct' ); ?>
+							<p class="description">
+								<?php esc_html_e( 'La suppression a lieu au premier passage de minuit ou la commande depasse cette anciennete : demande supprimee, commande annulee, creneau libere, email au client (copie admin). Cette date exacte est annoncee au client dans l email de relance.', 'gestion-atelier-cct' ); ?>
+								<br>
+								<?php
+								printf(
+									/* translators: %s: exemple d'echeance */
+									esc_html__( 'Exemple : une commande passee maintenant serait supprimee le %s.', 'gestion-atelier-cct' ),
+									'<strong>' . esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), gacct_pay_deletion_deadline( time() ) ) ) . '</strong>'
+								);
+								?>
+							</p>
 						</td>
 					</tr>
 				</tbody>
@@ -888,12 +1153,18 @@ function gacct_pay_render_admin_page() {
 									<code>{order_number}</code>
 									<code>{order_id}</code>
 									<code>{deposit_amount}</code>
-									<code>{deadline_date}</code>
 									<code>{bank_details}</code>
 									<code>{order_url}</code>
+									<code>{payment_url}</code>
 									<code>{checkout_url}</code>
 									<code>{new_request_url}</code>
 									<code>{site_name}</code>
+									<br>
+									<?php esc_html_e( 'Delais (a garder dans les relances) :', 'gestion-atelier-cct' ); ?>
+									<code>{deadline_date}</code> <?php esc_html_e( '(date limite du virement)', 'gestion-atelier-cct' ); ?>
+									<code>{days_remaining}</code> <?php esc_html_e( '(« 2 jours »)', 'gestion-atelier-cct' ); ?>
+									<code>{delete_deadline}</code> <?php esc_html_e( '(date + heure de suppression)', 'gestion-atelier-cct' ); ?>
+									<code>{time_remaining}</code> <?php esc_html_e( '(« environ 11 heures »)', 'gestion-atelier-cct' ); ?>
 								</p>
 							</td>
 						</tr>
