@@ -1,0 +1,279 @@
+/* =============================================================================
+ * Page de confirmation de commande (order-received) — gestion-atelier-cct
+ *
+ * White-label : toutes les couleurs passent par les variables --gacct-* déjà
+ * utilisées par le plugin (surchargées par site dans le kit du thème).
+ * Tout est scopé sous .gacct-conf : aucune fuite vers le reste de la page.
+ * ============================================================================= */
+
+.gacct-conf {
+	/* Tokens (fallback = identité Altitude Révision) */
+	--c-accent:       var(--gacct-accent, #20c4c3);
+	--c-accent-dark:  var(--gacct-accent-dark, #189998);
+	--c-accent-soft:  var(--gacct-accent-soft, #f0fafa);
+	--c-cta:          var(--gacct-cta, #ffbd20);
+	--c-cta-dark:     var(--gacct-cta-dark, #e0a800);
+	--c-ink:          var(--gacct-text, #1a1a1a);
+	--c-muted:        var(--gacct-text-muted, #777);
+	--c-faint:        var(--gacct-text-faint, #999);
+	--c-surface:      var(--gacct-surface, #fff);
+	--c-surface-alt:  var(--gacct-surface-alt, #fafcfc);
+	--c-page:         var(--gacct-page-bg, #f7f7f7);
+	--c-warn:         var(--gacct-warn, #d99a00);
+	--c-warn-ink:     var(--gacct-warn-ink, #8a6200);
+	--c-warn-soft:    var(--gacct-warn-soft, #fff3cc);
+	--c-danger:       var(--gacct-danger, #c0392b);
+	--r-lg:           var(--gacct-radius-lg, 16px);
+	--r:              var(--gacct-radius, 8px);
+
+	background: var(--c-page);
+	color: var(--c-ink);
+	text-wrap: pretty;
+	-webkit-font-smoothing: antialiased;
+}
+.gacct-conf *, .gacct-conf *::before, .gacct-conf *::after { box-sizing: border-box; }
+.gacct-conf a { color: var(--c-accent); text-decoration: none; transition: color 150ms; }
+.gacct-conf a:hover { color: var(--c-accent-dark); }
+.gacct-conf svg { flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+
+.gacct-conf-wrap { max-width: 1120px; margin: 0 auto; padding: 0 48px; }
+.gacct-conf-main { padding: 44px 0 76px; }
+
+/* ── Boutons ── */
+.gacct-conf .btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 9px; background: var(--c-cta); color: var(--c-ink); font-family: inherit; font-weight: 800; font-size: 14px; padding: 13px 22px; border: none; border-radius: var(--r); cursor: pointer; transition: background 150ms; }
+.gacct-conf .btn-primary:hover { background: var(--c-cta-dark); color: var(--c-ink); }
+.gacct-conf .btn-primary svg { width: 17px; height: 17px; stroke-width: 2.5; }
+.gacct-conf .btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: var(--c-ink); font-weight: 700; font-size: 14px; padding: 13px 18px; border: 1.5px solid rgba(0,0,0,0.16); border-radius: var(--r); background: transparent; font-family: inherit; cursor: pointer; transition: border-color 150ms, background 150ms; }
+.gacct-conf .btn-secondary:hover { border-color: var(--c-accent); background: var(--c-accent-soft); color: var(--c-accent-dark); }
+.gacct-conf .btn-secondary svg { width: 16px; height: 16px; stroke: var(--c-accent); }
+
+/* ── En-tête de confirmation ── */
+.gacct-conf .conf { background: var(--c-surface); border-bottom: 1px solid rgba(0,0,0,0.07); padding: 52px 0 44px; text-align: center; }
+.gacct-conf .conf-mark { width: 68px; height: 68px; margin: 0 auto 22px; border-radius: 999px; background: var(--c-accent-soft); display: flex; align-items: center; justify-content: center; position: relative; }
+.gacct-conf .conf-mark::after { content: ''; position: absolute; inset: -8px; border-radius: 999px; border: 2px solid color-mix(in srgb, var(--c-accent) 22%, transparent); animation: gacct-pulse 2.6s ease-out infinite; }
+@keyframes gacct-pulse { 0% { transform: scale(0.9); opacity: 0.9; } 70% { transform: scale(1.18); opacity: 0; } 100% { opacity: 0; } }
+.gacct-conf .conf-mark svg { width: 32px; height: 32px; stroke: var(--c-accent); stroke-width: 3; stroke-dasharray: 60; stroke-dashoffset: 60; animation: gacct-draw 600ms 200ms ease-out forwards; }
+@keyframes gacct-draw { to { stroke-dashoffset: 0; } }
+.gacct-conf .conf-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--c-accent); margin-bottom: 12px; }
+.gacct-conf .conf h1 { font-size: 38px; font-weight: 900; letter-spacing: -0.025em; line-height: 1.12; margin: 0 0 14px; color: var(--c-ink); }
+.gacct-conf .conf h1 em { font-style: normal; color: var(--c-accent); }
+.gacct-conf .conf-sub { font-size: 16px; color: #666; line-height: 1.7; max-width: 560px; margin: 0 auto 26px; }
+.gacct-conf .conf-sub strong { color: var(--c-ink); font-weight: 700; }
+.gacct-conf .conf-meta { display: inline-flex; align-items: stretch; gap: 0; background: var(--c-surface-alt); border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; overflow: hidden; }
+.gacct-conf .conf-meta-item { padding: 14px 24px; border-left: 1px solid rgba(0,0,0,0.07); text-align: left; }
+.gacct-conf .conf-meta-item:first-child { border-left: none; }
+.gacct-conf .conf-meta-label { font-size: 9.5px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #bbb; margin-bottom: 5px; }
+.gacct-conf .conf-meta-val { font-size: 15px; font-weight: 900; color: var(--c-ink); letter-spacing: -0.01em; white-space: nowrap; }
+.gacct-conf .conf-meta-val small { font-size: 12px; font-weight: 700; color: #888; }
+
+/* Variante attente virement */
+.gacct-conf .conf.wait .conf-mark { background: var(--c-warn-soft); }
+.gacct-conf .conf.wait .conf-mark::after { border-color: color-mix(in srgb, var(--c-cta) 35%, transparent); }
+.gacct-conf .conf.wait .conf-mark svg { stroke: var(--c-warn); stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
+.gacct-conf .conf.wait .conf-eyebrow { color: var(--c-warn-ink); }
+.gacct-conf .conf.wait .conf-h1 em { color: var(--c-warn); }
+.gacct-conf .deadline { display: inline-flex; align-items: center; gap: 12px; background: var(--c-warn-soft); border: 1px solid color-mix(in srgb, var(--c-warn) 30%, transparent); border-radius: 999px; padding: 9px 10px 9px 18px; margin-bottom: 22px; }
+.gacct-conf .deadline-txt { font-size: 13.5px; font-weight: 800; color: var(--c-warn-ink); }
+.gacct-conf .deadline-count { display: inline-flex; align-items: baseline; gap: 5px; background: var(--c-ink); color: #fff; border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 900; }
+.gacct-conf .deadline-count b { font-size: 17px; }
+
+/* ── Bloc paiement en deux temps ── */
+.gacct-conf .pay { background: var(--c-ink); color: #fff; border-radius: 20px; padding: 34px 38px; margin-bottom: 22px; }
+.gacct-conf .pay-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 32px; flex-wrap: wrap; margin-bottom: 26px; }
+.gacct-conf .pay-title { font-size: 20px; font-weight: 900; letter-spacing: -0.015em; margin-bottom: 7px; }
+.gacct-conf .pay-title em { font-style: normal; color: var(--c-accent); }
+.gacct-conf .pay-desc { font-size: 13.5px; color: rgba(255,255,255,0.6); line-height: 1.65; max-width: 460px; margin: 0; }
+.gacct-conf .pay-total { text-align: right; }
+.gacct-conf .pay-total-label { font-size: 9.5px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 6px; }
+.gacct-conf .pay-total-val { font-size: 32px; font-weight: 900; letter-spacing: -0.03em; line-height: 1; }
+.gacct-conf .pay-total-val span { font-size: 19px; }
+.gacct-conf .pay-bar { display: flex; height: 12px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,0.10); margin-bottom: 18px; }
+.gacct-conf .pay-bar-paid { background: var(--c-accent); border-radius: 999px 0 0 999px; }
+.gacct-conf .pay-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.gacct-conf .pay-leg { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10); border-radius: 13px; padding: 20px 22px; }
+.gacct-conf .pay-leg.done { border-color: color-mix(in srgb, var(--c-accent) 45%, transparent); }
+.gacct-conf .pay-leg-head { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; }
+.gacct-conf .pay-leg-dot { width: 20px; height: 20px; border-radius: 999px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.gacct-conf .pay-leg.done .pay-leg-dot { background: var(--c-accent); }
+.gacct-conf .pay-leg.done .pay-leg-dot svg { width: 11px; height: 11px; stroke: var(--c-ink); stroke-width: 3.6; }
+.gacct-conf .pay-leg.todo .pay-leg-dot { border: 2px dashed rgba(255,255,255,0.35); }
+.gacct-conf .pay-leg-name { font-size: 13px; font-weight: 800; color: #fff; }
+.gacct-conf .pay-leg-amount { font-size: 26px; font-weight: 900; letter-spacing: -0.025em; line-height: 1; margin-bottom: 8px; }
+.gacct-conf .pay-leg.done .pay-leg-amount { color: var(--c-accent); }
+.gacct-conf .pay-leg-amount span { font-size: 16px; }
+.gacct-conf .pay-leg-note { font-size: 12.5px; color: rgba(255,255,255,0.5); line-height: 1.6; margin: 0; }
+.gacct-conf .pay-leg-note b { color: rgba(255,255,255,0.8); font-weight: 700; }
+.gacct-conf .pay-receipt { display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; font-size: 12px; font-weight: 800; color: var(--c-accent); }
+.gacct-conf .pay-receipt svg { width: 14px; height: 14px; stroke-width: 2.5; }
+
+/* Variante attente virement : bloc paiement clair */
+.gacct-conf .pay.wait { background: var(--c-surface); color: var(--c-ink); border: 1px solid rgba(0,0,0,0.08); }
+.gacct-conf .pay.wait .pay-title em { color: var(--c-warn); }
+.gacct-conf .pay.wait .pay-desc { color: var(--c-muted); }
+.gacct-conf .pay.wait .pay-total-label { color: #bbb; }
+.gacct-conf .pay.wait .pay-bar { background: rgba(0,0,0,0.07); }
+.gacct-conf .pay.wait .pay-bar-paid { background: repeating-linear-gradient(45deg, var(--c-cta), var(--c-cta) 6px, color-mix(in srgb, var(--c-cta) 55%, #fff) 6px, color-mix(in srgb, var(--c-cta) 55%, #fff) 12px); }
+.gacct-conf .pay.wait .pay-leg { background: var(--c-surface-alt); border-color: rgba(0,0,0,0.08); }
+.gacct-conf .pay.wait .pay-leg.now { background: #fffaf0; border-color: color-mix(in srgb, var(--c-warn) 40%, transparent); }
+.gacct-conf .pay.wait .pay-leg-name { color: var(--c-ink); }
+.gacct-conf .pay.wait .pay-leg-note { color: #888; }
+.gacct-conf .pay.wait .pay-leg-note b { color: var(--c-ink); }
+.gacct-conf .pay.wait .pay-leg.now .pay-leg-amount { color: var(--c-warn); }
+.gacct-conf .pay.wait .pay-leg.now .pay-leg-dot { background: var(--c-cta); border: none; }
+.gacct-conf .pay.wait .pay-leg.now .pay-leg-dot svg { width: 11px; height: 11px; stroke: var(--c-ink); stroke-width: 3; }
+.gacct-conf .pay.wait .pay-leg.later .pay-leg-dot { border: 2px dashed rgba(0,0,0,0.20); }
+
+/* ── Mise en page 2 colonnes ── */
+.gacct-conf .cols { display: grid; grid-template-columns: 1fr 350px; gap: 22px; align-items: start; }
+.gacct-conf .card { background: var(--c-surface); border: 1px solid rgba(0,0,0,0.08); border-radius: 18px; padding: 30px 32px; margin-bottom: 22px; scroll-margin-top: 96px; }
+.gacct-conf .card-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+.gacct-conf .card h2 { font-size: 19px; font-weight: 900; letter-spacing: -0.015em; margin: 0; color: var(--c-ink); }
+.gacct-conf .card-hint { font-size: 12px; color: #aaa; font-weight: 600; }
+.gacct-conf .card-head.bank-next { margin: 26px 0 14px; }
+.gacct-conf .card-head.bank-next h2 { font-size: 15px; }
+
+/* ── Coordonnées bancaires ── */
+.gacct-conf .bank { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px; }
+.gacct-conf .bank-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: var(--c-surface-alt); border: 1px solid rgba(0,0,0,0.08); border-radius: 11px; padding: 14px 16px; }
+.gacct-conf .bank-row.ref { background: #fffaf0; border-color: color-mix(in srgb, var(--c-warn) 45%, transparent); }
+.gacct-conf .bank-label { font-size: 9.5px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #bbb; margin-bottom: 4px; }
+.gacct-conf .bank-row.ref .bank-label { color: color-mix(in srgb, var(--c-warn) 85%, #000); }
+.gacct-conf .bank-val { font-size: 15px; font-weight: 900; color: var(--c-ink); letter-spacing: 0.02em; font-variant-numeric: tabular-nums; word-break: break-all; }
+.gacct-conf .bank-copy { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; font-family: inherit; font-size: 12px; font-weight: 800; color: var(--c-accent-dark); background: var(--c-accent-soft); border: 1px solid color-mix(in srgb, var(--c-accent) 30%, transparent); border-radius: var(--r); padding: 9px 13px; cursor: pointer; transition: background 150ms, border-color 150ms; }
+.gacct-conf .bank-copy:hover { background: color-mix(in srgb, var(--c-accent-soft) 80%, var(--c-accent)); border-color: var(--c-accent); }
+.gacct-conf .bank-copy svg { width: 13px; height: 13px; }
+.gacct-conf .bank-warn { display: flex; align-items: flex-start; gap: 11px; background: var(--c-warn-soft); border-radius: 11px; padding: 15px 17px; font-size: 13px; color: var(--c-warn-ink); line-height: 1.6; margin: 0; }
+.gacct-conf .bank-warn svg { width: 17px; height: 17px; stroke: var(--c-warn); stroke-width: 2.3; margin-top: 1px; }
+.gacct-conf .bank-warn strong { color: color-mix(in srgb, var(--c-warn-ink) 80%, #000); }
+.gacct-conf .tl { display: flex; flex-direction: column; }
+.gacct-conf .tl-row { display: grid; grid-template-columns: 110px 1fr; gap: 16px; padding: 12px 0; border-bottom: 1px dashed rgba(0,0,0,0.08); align-items: baseline; }
+.gacct-conf .tl-row:last-child { border-bottom: none; }
+.gacct-conf .tl-when { font-size: 12px; font-weight: 900; color: var(--c-warn); letter-spacing: 0.01em; }
+.gacct-conf .tl-row.cancel .tl-when { color: var(--c-danger); }
+.gacct-conf .tl-what { font-size: 13.5px; color: #666; line-height: 1.6; }
+.gacct-conf .tl-what strong { color: var(--c-ink); }
+
+/* ── Étapes ── */
+.gacct-conf .steps { display: flex; flex-direction: column; }
+.gacct-conf .step { display: grid; grid-template-columns: 34px 1fr; gap: 16px; position: relative; padding-bottom: 24px; }
+.gacct-conf .step:last-child { padding-bottom: 0; }
+.gacct-conf .step::before { content: ''; position: absolute; left: 16px; top: 32px; bottom: 0; width: 2px; background: rgba(0,0,0,0.08); }
+.gacct-conf .step:last-child::before { display: none; }
+.gacct-conf .step-dot { width: 34px; height: 34px; border-radius: 999px; background: #fafafa; border: 2px solid rgba(0,0,0,0.10); display: flex; align-items: center; justify-content: center; z-index: 1; }
+.gacct-conf .step-dot svg { width: 16px; height: 16px; stroke: #bbb; stroke-width: 2.3; }
+.gacct-conf .step.now .step-dot { background: var(--c-accent); border-color: var(--c-accent); box-shadow: 0 0 0 5px color-mix(in srgb, var(--c-accent) 15%, transparent); }
+.gacct-conf .step.now .step-dot svg { stroke: #fff; }
+.gacct-conf .step.done .step-dot { background: var(--c-accent-soft); border-color: var(--c-accent); }
+.gacct-conf .step.done .step-dot svg { stroke: var(--c-accent); }
+.gacct-conf .step.wait .step-dot { background: var(--c-cta); border-color: var(--c-cta); box-shadow: 0 0 0 5px color-mix(in srgb, var(--c-cta) 20%, transparent); }
+.gacct-conf .step.wait .step-dot svg { stroke: var(--c-ink); }
+.gacct-conf .step-body { padding-top: 4px; }
+.gacct-conf .step-title { font-size: 15px; font-weight: 900; color: var(--c-ink); margin-bottom: 5px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.gacct-conf .step.pending .step-title, .gacct-conf .step.locked .step-title { color: var(--c-faint); }
+.gacct-conf .step-flag { font-size: 9.5px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; color: var(--c-accent-dark); background: var(--c-accent-soft); padding: 3px 9px; border-radius: 5px; }
+.gacct-conf .step-flag.wait { color: var(--c-warn-ink); background: var(--c-warn-soft); }
+.gacct-conf .step-flag.lock { color: #888; background: #f0f0f0; }
+.gacct-conf .step-txt { font-size: 13.5px; color: var(--c-muted); line-height: 1.65; margin: 0; }
+.gacct-conf .step-txt strong { color: var(--c-ink); }
+.gacct-conf .step-action { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
+.gacct-conf .step-action .btn-primary, .gacct-conf .step-action .btn-secondary { font-size: 13px; padding: 10px 16px; }
+
+/* ── Tableau commande ── */
+.gacct-conf .ord { width: 100%; border-collapse: collapse; }
+.gacct-conf .ord th { text-align: left; font-size: 9.5px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #bbb; padding: 0 0 12px; border-bottom: 1.5px solid rgba(0,0,0,0.08); background: transparent; }
+.gacct-conf .ord th:last-child, .gacct-conf .ord td:last-child { text-align: right; }
+.gacct-conf .ord td { padding: 15px 0; border-bottom: 1px solid rgba(0,0,0,0.06); vertical-align: top; background: transparent; }
+.gacct-conf .ord-name { font-size: 14.5px; font-weight: 800; color: var(--c-ink); }
+.gacct-conf .ord-name small { display: block; font-size: 12px; color: var(--c-faint); font-weight: 600; margin-top: 3px; line-height: 1.55; }
+.gacct-conf .ord-qty { font-size: 13px; font-weight: 700; color: #888; white-space: nowrap; }
+.gacct-conf .ord-amt { font-size: 15px; font-weight: 900; color: var(--c-ink); white-space: nowrap; }
+.gacct-conf .ord tfoot td { border-bottom: none; padding: 9px 0; }
+.gacct-conf .ord tfoot tr:first-child td { padding-top: 18px; }
+.gacct-conf .ord-lbl { font-size: 13.5px; font-weight: 700; color: #666; }
+.gacct-conf .ord-lbl small { display: block; font-size: 11.5px; color: #aaa; font-weight: 600; margin-top: 2px; }
+.gacct-conf .ord tfoot .tot td { padding-top: 16px; border-top: 1.5px solid rgba(0,0,0,0.10); }
+.gacct-conf .ord tfoot .tot .ord-lbl { font-size: 16px; font-weight: 900; color: var(--c-ink); }
+.gacct-conf .ord tfoot .tot .ord-amt { font-size: 21px; }
+.gacct-conf .ord tfoot .paid .ord-amt { color: var(--c-accent-dark); }
+.gacct-conf .ord tfoot .due td { padding-top: 4px; }
+.gacct-conf .ord tfoot .due .ord-lbl, .gacct-conf .ord tfoot .due .ord-amt { color: var(--c-warn-ink); }
+
+/* ── Encadré expédition ── */
+.gacct-conf .ship-box { background: var(--c-surface-alt); border: 1px dashed color-mix(in srgb, var(--c-accent) 50%, transparent); border-radius: 14px; padding: 22px 24px; margin-top: 20px; }
+.gacct-conf .ship-box-label { font-size: 9.5px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #aaa; margin-bottom: 10px; }
+.gacct-conf .ship-box address { font-style: normal; font-size: 15px; font-weight: 700; color: var(--c-ink); line-height: 1.75; margin-bottom: 16px; }
+.gacct-conf .ship-box address b { color: var(--c-accent-dark); font-weight: 900; }
+.gacct-conf .ship-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.gacct-conf .ship-actions button, .gacct-conf .ship-actions a { font-size: 12.5px; padding: 9px 14px; }
+
+/* ── Colonne latérale ── */
+.gacct-conf .side-card { background: var(--c-surface); border: 1px solid rgba(0,0,0,0.08); border-radius: var(--r-lg); padding: 24px; margin-bottom: 18px; }
+.gacct-conf .side-card h3 { font-size: 15px; font-weight: 900; margin: 0 0 6px; color: var(--c-ink); }
+.gacct-conf .side-card > p { font-size: 13px; color: var(--c-muted); line-height: 1.65; margin: 0 0 16px; }
+.gacct-conf .side-rows { display: flex; flex-direction: column; }
+.gacct-conf .side-row { display: flex; justify-content: space-between; gap: 14px; padding: 10px 0; border-bottom: 1px dashed rgba(0,0,0,0.08); font-size: 13px; }
+.gacct-conf .side-row:last-child { border-bottom: none; padding-bottom: 0; }
+.gacct-conf .side-row span:first-child { color: #888; font-weight: 600; }
+.gacct-conf .side-row span:last-child { color: var(--c-ink); font-weight: 800; text-align: right; }
+.gacct-conf .side-row span.ok { color: var(--c-accent-dark); }
+.gacct-conf .side-row span.warn { color: var(--c-warn-ink); }
+.gacct-conf .side-row span.danger { color: var(--c-danger); }
+.gacct-conf .side-teal { background: linear-gradient(135deg, var(--c-accent) 0%, var(--c-accent-dark) 100%); border: none; color: #fff; }
+.gacct-conf .side-teal h3 { color: #fff; }
+.gacct-conf .side-teal p { color: rgba(255,255,255,0.88); margin-bottom: 0; }
+.gacct-conf .side-tel { display: inline-flex; align-items: center; gap: 9px; margin-top: 16px; background: #fff; color: var(--c-ink); font-weight: 900; font-size: 15px; padding: 11px 18px; border-radius: 9px; }
+.gacct-conf .side-tel:hover { color: var(--c-accent-dark); }
+.gacct-conf .side-tel svg { width: 16px; height: 16px; stroke: var(--c-accent); stroke-width: 2.6; }
+.gacct-conf .side-links { display: flex; flex-direction: column; gap: 9px; }
+.gacct-conf .side-link { display: flex; align-items: center; gap: 11px; padding: 12px 14px; background: #fafafa; border: 1px solid rgba(0,0,0,0.06); border-radius: 10px; transition: border-color 150ms, background 150ms; }
+.gacct-conf .side-link:hover { border-color: color-mix(in srgb, var(--c-accent) 45%, transparent); background: var(--c-accent-soft); }
+.gacct-conf .side-link svg { width: 17px; height: 17px; stroke: var(--c-accent); stroke-width: 2.1; }
+.gacct-conf .side-link strong { display: block; font-size: 13px; font-weight: 800; color: var(--c-ink); }
+.gacct-conf .side-link small { font-size: 11.5px; color: var(--c-faint); }
+.gacct-conf .side-addr { font-size: 13px; color: #666; line-height: 1.75; margin: 0; }
+.gacct-conf .side-addr strong { display: block; color: var(--c-ink); font-weight: 800; margin-bottom: 3px; }
+
+/* ── Toast ── */
+.gacct-conf-toast { position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 20px); background: #1a1a1a; color: #fff; font-size: 13px; font-weight: 700; padding: 13px 20px; border-radius: 10px; box-shadow: 0 12px 34px rgba(0,0,0,0.24); opacity: 0; pointer-events: none; transition: opacity 200ms, transform 200ms; z-index: 400; display: flex; align-items: center; gap: 9px; }
+.gacct-conf-toast.show { opacity: 1; transform: translate(-50%, 0); }
+.gacct-conf-toast svg { width: 15px; height: 15px; stroke: var(--gacct-accent, #20c4c3); fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── Paiement échoué ── */
+.gacct-conf .conf-failed { padding: 52px 0; }
+.gacct-conf .conf-failed p { margin-bottom: 12px; }
+.gacct-conf .conf-failed .btn-primary { margin-right: 10px; }
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+	.gacct-conf .cols { grid-template-columns: 1fr; }
+	.gacct-conf-wrap { padding: 0 28px; }
+	.gacct-conf .pay { padding: 28px; }
+}
+@media (max-width: 767px) {
+	.gacct-conf-wrap { padding: 0 16px; }
+	.gacct-conf .conf { padding: 36px 0 32px; }
+	.gacct-conf .conf h1 { font-size: 27px; }
+	.gacct-conf .conf-sub { font-size: 14.5px; }
+	.gacct-conf .deadline { flex-direction: column; align-items: stretch; gap: 10px; border-radius: 14px; padding: 14px; text-align: center; width: 100%; }
+	.gacct-conf .deadline-count { justify-content: center; }
+	.gacct-conf .conf-meta { display: flex; flex-direction: column; width: 100%; }
+	.gacct-conf .conf-meta-item { border-left: none; border-top: 1px solid rgba(0,0,0,0.07); display: flex; align-items: baseline; justify-content: space-between; gap: 14px; padding: 12px 18px; }
+	.gacct-conf .conf-meta-item:first-child { border-top: none; }
+	.gacct-conf .conf-meta-label { margin-bottom: 0; }
+	.gacct-conf-main { padding: 28px 0 48px; }
+	.gacct-conf .pay { padding: 24px 20px; border-radius: 16px; }
+	.gacct-conf .pay-top { gap: 18px; }
+	.gacct-conf .pay-total { text-align: left; }
+	.gacct-conf .pay-legend { grid-template-columns: 1fr; gap: 12px; }
+	.gacct-conf .card { padding: 24px 20px; border-radius: 16px; }
+	.gacct-conf .card-head { flex-direction: column; align-items: flex-start; gap: 6px; }
+	.gacct-conf .bank-row { flex-direction: column; align-items: stretch; gap: 12px; }
+	.gacct-conf .bank-copy { justify-content: center; }
+	.gacct-conf .tl-row { grid-template-columns: 1fr; gap: 4px; }
+	.gacct-conf .ord th:nth-child(2), .gacct-conf .ord td:nth-child(2) { display: none; }
+	.gacct-conf .ord-name { font-size: 14px; }
+	.gacct-conf .step { grid-template-columns: 30px 1fr; gap: 13px; }
+	.gacct-conf .step::before { left: 14px; top: 30px; }
+	.gacct-conf .step-dot { width: 30px; height: 30px; }
+	.gacct-conf .step-action .btn-primary, .gacct-conf .step-action .btn-secondary { width: 100%; }
+}

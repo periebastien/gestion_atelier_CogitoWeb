@@ -22,7 +22,10 @@ define( 'JWCCT_META_TIMESTAMP',         '_jwcct_pending_timestamp' );
 define( 'JWCCT_ORDER_REVISION_ID',      '_jwcct_revision_id' );
 define( 'JWCCT_ORDER_OCCUPATION_ID',    '_jwcct_occupation_id' );
 define( 'JWCCT_ORDER_LINKED',           '_jwcct_cct_linked' );
-define( 'JWCCT_PENDING_TTL',            HOUR_IN_SECONDS * 2 );
+// TTL des IDs CCT en attente : 24 h (aligne sur la purge de minuit de gacct-payments.php,
+// qui supprime les brouillons orphelins ET nettoie ces metas ; permet au lien de l'email
+// "panier abandonne" de fonctionner jusqu'a la purge). Anciennement 2 h.
+define( 'JWCCT_PENDING_TTL',            DAY_IN_SECONDS );
 define( 'JWCCT_SHOW_FRONTEND_DEBUG',    false );
 
 // ID de la relation JetEngine "revision_to_order".

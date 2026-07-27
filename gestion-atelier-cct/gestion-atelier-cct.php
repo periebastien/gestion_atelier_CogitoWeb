@@ -12,6 +12,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once __DIR__ . '/includes/gacct-checkout.php';
+require_once __DIR__ . '/includes/gacct-payments.php';
+require_once __DIR__ . '/includes/gacct-thankyou.php';
 require_once __DIR__ . '/includes/gacct-frontend.php';
 require_once __DIR__ . '/includes/gacct-frontend-form.php';
 require_once __DIR__ . '/includes/gacct-buttons.php';
