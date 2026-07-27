@@ -18,7 +18,10 @@
 ( function () {
 	'use strict';
 
-	var SELECTOR = '.ar-btn-swap .elementor-button-text';
+	// Le libelle de tout bouton .ar-btn-swap, et en plus l'icone des boutons
+	// .ar-btn-swap-icon : ceux dont l'icone n'est pas une fleche (casque, etc.)
+	// et qui defilent au lieu de pivoter.
+	var SELECTOR = '.ar-btn-swap .elementor-button-text, .ar-btn-swap-icon .elementor-button-icon';
 
 	/**
 	 * Transforme
@@ -32,7 +35,11 @@
 	 * La copie est masquee aux lecteurs d'ecran : le libelle ne doit etre
 	 * annonce qu'une fois.
 	 *
-	 * @param {HTMLElement} label Le noeud .elementor-button-text.
+	 * La meme transformation sert pour l'icone (.elementor-button-icon) des
+	 * boutons .ar-btn-swap-icon : deux copies de l'icone empilees, qui montent
+	 * en meme temps que le libelle.
+	 *
+	 * @param {HTMLElement} label Le noeud a dedoubler.
 	 */
 	function split( label ) {
 		if ( '1' === label.getAttribute( 'data-ar-swap' ) ) {
