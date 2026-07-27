@@ -438,10 +438,7 @@ $is_bacs = ( 'bacs' === $d['variant'] );
 							</thead>
 							<tbody>
 								<?php foreach ( $order->get_items() as $item ) : ?>
-									<?php
-									$initial   = $item->get_meta( '_kojito_prix_total_initial' );
-									$line_full = '' !== $initial ? (float) $initial : (float) $item->get_total();
-									?>
+									<?php $line_full = gacct_kojito_montant_ligne( $item ); ?>
 									<tr>
 										<td><div class="ord-name">
 											<?php echo esc_html( $item->get_name() ); ?>

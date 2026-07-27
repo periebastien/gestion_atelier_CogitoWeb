@@ -19,6 +19,50 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /* =============================================================================
+ *  MONTANTS : DELEGATION AU PLUGIN KOJITO ACOMPTE PRODUIT
+ * ============================================================================= */
+
+/**
+ * Total TTC reellement du par le client (acompte + solde), et non le montant encaisse
+ * a la commande. Le calcul appartient au plugin d'acompte : on l'appelle plutot que de
+ * le recopier. Le repli ne sert qu'au cas ou ce plugin serait desactive.
+ *
+ * @param WC_Order $order
+ * @return float
+ */
+function gacct_kojito_total_initial( $order ) {
+	if ( method_exists( 'Kojito_Acompte_Produit', 'get_total_initial' ) ) {
+		return (float) Kojito_Acompte_Produit::get_total_initial( $order );
+	}
+
+	$total = 0.0;
+
+	foreach ( $order->get_items() as $item ) {
+		$total += (float) $item->get_total() + (float) $item->get_total_tax();
+	}
+
+	return round( max( 0, $total ), wc_get_price_decimals() );
+}
+
+/**
+ * Montant TTC d'une ligne au prix catalogue (et non au montant de l'acompte).
+ *
+ * @param WC_Order_Item $item
+ * @return float
+ */
+function gacct_kojito_montant_ligne( $item ) {
+	if ( method_exists( 'Kojito_Acompte_Produit', 'prix_initial_ttc_ligne' ) ) {
+		$initial = Kojito_Acompte_Produit::prix_initial_ttc_ligne( $item );
+
+		if ( null !== $initial ) {
+			return (float) $initial;
+		}
+	}
+
+	return (float) $item->get_total() + (float) $item->get_total_tax();
+}
+
+/* =============================================================================
  *  OVERRIDE DU TEMPLATE WOOCOMMERCE
  * ============================================================================= */
 
@@ -85,21 +129,14 @@ function gacct_conf_data( $order ) {
 		$variant = 'failed';
 	}
 
-	// --- Montants (miroir de la règle Kojito Acompte Produit) -------------
-	$total_initial = 0.0;
-	foreach ( $order->get_items() as $item ) {
-		$initial        = $item->get_meta( '_kojito_prix_total_initial' );
-		$total_initial += '' !== $initial ? (float) $initial : (float) $item->get_total();
-	}
-	$total_initial += (float) $order->get_shipping_total() + (float) $order->get_shipping_tax()
-		+ (float) $order->get_cart_tax() + (float) $order->get_total_fees()
-		- (float) $order->get_discount_total();
-	$total_initial  = round( max( 0, $total_initial ), wc_get_price_decimals() );
+	// --- Montants ---------------------------------------------------------
+	// Le calcul (TVA comprise) appartient au plugin Kojito Acompte Produit : on ne le
+	// duplique pas ici, sous peine de voir les deux versions diverger.
+	$total_initial = gacct_kojito_total_initial( $order );
 
-	$deposit = (float) $order->get_meta( '_kojito_acompte_paye' );
-	if ( $deposit <= 0 ) {
-		$deposit = (float) $order->get_total();
-	}
+	$deposit = $order->get_meta( '_kojito_acompte_paye' );
+	// 0 est un acompte valide : on ne se rabat sur le total que si la meta est absente.
+	$deposit = '' === $deposit ? (float) $order->get_total() : (float) $deposit;
 	$balance = round( max( 0, $total_initial - $deposit ), wc_get_price_decimals() );
 	$percent = $total_initial > 0 ? round( $deposit / $total_initial * 100, 1 ) : 100;
 

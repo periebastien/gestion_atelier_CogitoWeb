@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Kojito_Acompte_Produit {
 
 	const META_PRIX_TOTAL_INITIAL   = '_kojito_prix_total_initial';
+	const META_PRIX_TOTAL_INITIAL_HT = '_kojito_prix_total_initial_ht';
 	const META_PRIX_UNITAIRE_INITIAL = '_kojito_prix_unitaire_initial';
 	const META_ACOMPTE_UNITAIRE     = '_kojito_acompte_unitaire';
 	const META_TOTAL_INITIAL        = '_kojito_total_initial';
@@ -132,11 +133,19 @@ class Kojito_Acompte_Produit {
 			return;
 		}
 
-		$prix_unitaire_initial = (float) $original_product->get_price();
-		$quantite              = isset( $values['quantity'] ) ? (float) $values['quantity'] : 1;
-		$prix_total_initial    = $prix_unitaire_initial * $quantite;
+		$quantite = isset( $values['quantity'] ) ? (float) $values['quantity'] : 1;
+
+		// Les montants du catalogue peuvent etre saisis TTC ou HT selon la configuration
+		// WooCommerce : on stocke explicitement les deux, car ils n'ont pas le meme usage.
+		// Le TTC sert a calculer ce que le client doit au total (acompte + solde) et a
+		// l'affichage ; le HT sert a reposer les totaux de lignes de commande, que
+		// WooCommerce stocke toujours hors taxe.
+		$prix_unitaire_initial = (float) wc_get_price_including_tax( $original_product );
+		$prix_total_initial    = (float) wc_get_price_including_tax( $original_product, [ 'qty' => $quantite ] );
+		$prix_total_initial_ht = (float) wc_get_price_excluding_tax( $original_product, [ 'qty' => $quantite ] );
 
 		$item->add_meta_data( self::META_PRIX_TOTAL_INITIAL, $prix_total_initial, true );
+		$item->add_meta_data( self::META_PRIX_TOTAL_INITIAL_HT, $prix_total_initial_ht, true );
 		$item->add_meta_data( self::META_PRIX_UNITAIRE_INITIAL, $prix_unitaire_initial, true );
 		$item->add_meta_data( self::META_ACOMPTE_UNITAIRE, $acompte, true );
 
@@ -530,22 +539,99 @@ class Kojito_Acompte_Produit {
 		return false;
 	}
 
-	private function calculer_total_initial_commande( $order ) {
-		$total_lignes = 0;
+	/**
+	 * Prix catalogue TTC d'une ligne de commande dont le prix a ete remplace par un acompte.
+	 *
+	 * @param WC_Order_Item $item
+	 * @return float|null null si la ligne n'a pas ete facturee sous forme d'acompte.
+	 */
+	public static function prix_initial_ttc_ligne( $item ) {
+		$brut = $item->get_meta( self::META_PRIX_TOTAL_INITIAL );
 
-		foreach ( $order->get_items() as $item ) {
-			$prix_total_initial = $item->get_meta( self::META_PRIX_TOTAL_INITIAL );
-			$total_lignes      += '' !== $prix_total_initial ? (float) $prix_total_initial : (float) $item->get_total();
+		if ( '' === $brut ) {
+			return null;
 		}
 
-		$total = $total_lignes
-			+ (float) $order->get_shipping_total()
-			+ (float) $order->get_shipping_tax()
-			+ (float) $order->get_cart_tax()
-			+ (float) $order->get_total_fees()
-			- (float) $order->get_discount_total();
+		// Commandes anterieures a la separation TTC/HT : la meta contient la valeur brute
+		// du catalogue, donc deja TTC si les prix sont saisis TTC. wc_get_price_including_tax
+		// n'ajoute la taxe que dans le cas contraire.
+		if ( '' === $item->get_meta( self::META_PRIX_TOTAL_INITIAL_HT ) ) {
+			$product = $item->get_product();
+
+			if ( $product ) {
+				return (float) wc_get_price_including_tax( $product, [ 'price' => (float) $brut, 'qty' => 1 ] );
+			}
+		}
+
+		return (float) $brut;
+	}
+
+	/**
+	 * Prix catalogue HT d'une ligne de commande, tel que WooCommerce le stocke.
+	 *
+	 * @param WC_Order_Item $item
+	 * @return float|null null si la ligne n'a pas ete facturee sous forme d'acompte.
+	 */
+	public static function prix_initial_ht_ligne( $item ) {
+		$ht = $item->get_meta( self::META_PRIX_TOTAL_INITIAL_HT );
+
+		if ( '' !== $ht ) {
+			return (float) $ht;
+		}
+
+		$brut = $item->get_meta( self::META_PRIX_TOTAL_INITIAL );
+
+		if ( '' === $brut ) {
+			return null;
+		}
+
+		$product = $item->get_product();
+
+		if ( $product ) {
+			return (float) wc_get_price_excluding_tax( $product, [ 'price' => (float) $brut, 'qty' => 1 ] );
+		}
+
+		return (float) $brut;
+	}
+
+	/**
+	 * Montant total TTC reellement du par le client sur la commande (acompte + solde),
+	 * c'est-a-dire le prix catalogue des prestations et non le montant de l'acompte.
+	 *
+	 * Source de verite unique : le plugin Gestion Atelier s'appuie sur cette methode
+	 * pour la page de confirmation de commande.
+	 *
+	 * @param WC_Order $order
+	 * @return float
+	 */
+	public static function get_total_initial( $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			return 0.0;
+		}
+
+		$total = 0;
+
+		foreach ( $order->get_items() as $item ) {
+			$prix_initial_ttc = self::prix_initial_ttc_ligne( $item );
+
+			// Les lignes sans acompte sont deja facturees a leur prix plein : on reconstitue
+			// leur TTC a partir du total HT stocke par WooCommerce et de sa taxe.
+			$total += null !== $prix_initial_ttc
+				? $prix_initial_ttc
+				: (float) $item->get_total() + (float) $item->get_total_tax();
+		}
+
+		foreach ( $order->get_items( [ 'shipping', 'fee' ] ) as $item ) {
+			$total += (float) $item->get_total() + (float) $item->get_total_tax();
+		}
+
+		$total -= (float) $order->get_discount_total() + (float) $order->get_discount_tax();
 
 		return round( max( 0, $total ), wc_get_price_decimals() );
+	}
+
+	private function calculer_total_initial_commande( $order ) {
+		return self::get_total_initial( $order );
 	}
 
 	private function marquer_solde_paye_et_restaurer( $order, $transaction_id = '' ) {
@@ -572,20 +658,30 @@ class Kojito_Acompte_Produit {
 	}
 
 	private function restaurer_commande_finale( $order ) {
-		foreach ( $order->get_items() as $item ) {
-			$prix_total_initial = $item->get_meta( self::META_PRIX_TOTAL_INITIAL );
+		$total_cible = self::get_total_initial( $order );
 
-			if ( '' === $prix_total_initial ) {
+		foreach ( $order->get_items() as $item ) {
+			$prix_initial_ht = self::prix_initial_ht_ligne( $item );
+
+			if ( null === $prix_initial_ht ) {
 				continue;
 			}
 
-			$prix_total_initial = (float) $prix_total_initial;
-			$item->set_subtotal( $prix_total_initial );
-			$item->set_total( $prix_total_initial );
+			// Les totaux de lignes WooCommerce sont hors taxe : calculate_totals() se charge
+			// ensuite de reappliquer la TVA pour retomber sur le prix catalogue TTC.
+			$item->set_subtotal( $prix_initial_ht );
+			$item->set_total( $prix_initial_ht );
 			$item->save();
 		}
 
 		$order->calculate_totals( true );
+
+		// L'arrondi ligne a ligne peut faire deriver le total de quelques centimes :
+		// on impose le prix catalogue, seul montant annonce au client.
+		if ( abs( (float) $order->get_total() - $total_cible ) >= 0.01 ) {
+			$order->set_total( $total_cible );
+		}
+
 		$order->update_meta_data( self::META_TOTAL_INITIAL, $order->get_total() );
 		$order->save();
 	}
