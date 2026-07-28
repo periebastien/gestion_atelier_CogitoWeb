@@ -167,6 +167,7 @@ function gacct_dash_texts() {
 		'state_5' => __( 'Paiement final en attente', 'gestion-atelier-cct' ),
 		'state_6' => __( 'Paiement validé', 'gestion-atelier-cct' ),
 		'state_7' => __( 'Révision terminée', 'gestion-atelier-cct' ),
+		'state_8' => __( 'Devis refusé', 'gestion-atelier-cct' ),
 	);
 
 	$texts = (array) apply_filters( 'gacct_dashboard_texts', $defaults );
@@ -392,8 +393,8 @@ function gacct_dash_data( $user_id = 0 ) {
 		$couleurs       = function_exists( 'gacct_extraire_couleurs' ) ? gacct_extraire_couleurs( (string) $row['couleur'] ) : array();
 		$gradient       = function_exists( 'gacct_degrade_couleurs' ) ? gacct_degrade_couleurs( $couleurs ) : '';
 
-		// --- Compteur « révisions en cours » (états 1 à 6) ------------------
-		if ( $etat >= 1 && $etat <= 6 ) {
+		// --- Compteur « révisions en cours » (états 1 à 6, + 8 devis refusé) --
+		if ( ( $etat >= 1 && $etat <= 6 ) || 8 === $etat ) {
 			$data['counters']['revisions']++;
 		}
 
@@ -442,8 +443,8 @@ function gacct_dash_data( $user_id = 0 ) {
 			}
 		}
 
-		// --- Ligne « mes révisions en cours » (états < 7) ---------------------
-		if ( $etat < 7 ) {
+		// --- Ligne « mes révisions en cours » (états < 7, + 8 devis refusé) ---
+		if ( $etat < 7 || 8 === $etat ) {
 			$revisions[] = array(
 				'revision_id'    => $revision_id,
 				'order_id'       => $order_id,
@@ -640,8 +641,22 @@ function gacct_dash_materiel_label( array $row ) {
  * @return array{pct:int,label:string,step:string,is_action:bool}
  */
 function gacct_dash_tracker( $etat ) {
-	$etat  = max( 0, min( 7, (int) $etat ) );
+	$etat  = (int) $etat;
 	$total = 8;
+
+	// 8 = « Devis refusé » : hors frise, on fige la barre à l'étape devis (4/8).
+	if ( 8 === $etat ) {
+		$tracker = array(
+			'pct'       => 50,
+			'label'     => gacct_dash_text( 'state_8' ),
+			'step'      => sprintf( gacct_dash_text( 'step' ), 4, $total ),
+			'is_action' => false,
+		);
+
+		return (array) apply_filters( 'gacct_dashboard_tracker', $tracker, $etat );
+	}
+
+	$etat = max( 0, min( 7, $etat ) );
 
 	// Progression = étapes franchies / 8, comme la maquette (état 1 → 25 %,
 	// état 3 → 50 %, état 5 → 75 %, état 7 → 100 %).

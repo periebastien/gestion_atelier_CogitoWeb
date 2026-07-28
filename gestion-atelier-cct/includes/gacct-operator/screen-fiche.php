@@ -36,6 +36,134 @@ function gacct_op_fiche_get_slot( array $revision ) {
 }
 
 /**
+ * Carte « Devis complémentaire » (CDC devis, 28/07/2026) :
+ * - état 2 : formulaire d'envoi (produits réparation/suspentes + lignes libres
+ *   avec quantités + commentaire client) — remplace le bouton 2→3 nu ;
+ * - état 3 : récapitulatif du devis en attente + modification/ré-envoi ;
+ * - état 8 : refus (mode retour ou prestations initiales) ;
+ * - états ≥ 4 : rappel de la décision du client si un devis a existé.
+ */
+function gacct_op_render_quote_card( $revision_id, array $revision, $order, $state ) {
+	if ( ! $order || ! function_exists( 'gacct_quote_send' ) ) {
+		return;
+	}
+
+	$decision = gacct_quote_decision( $order );
+	$extras   = gacct_quote_extra_items( $order );
+	$comment  = (string) $order->get_meta( GACCT_QUOTE_META_COMMENT );
+	$sent_at  = (string) $order->get_meta( GACCT_QUOTE_META_SENT_AT );
+
+	// Rien à afficher hors des états concernés et sans historique de devis.
+	$show_form    = in_array( $state, array( 2, 3 ), true );
+	$has_history  = $extras || '' !== $decision['decision'] || '' !== $sent_at;
+
+	if ( ! $show_form && ! $has_history && 8 !== $state ) {
+		return;
+	}
+
+	echo '<div class="gacct-op-card gacct-op-quote-card">';
+	echo '<h2>' . esc_html__( 'Devis complémentaire', 'gestion-atelier-cct' ) . '</h2>';
+	echo '<div class="gacct-op-feedback gacct-op-quote-feedback" aria-live="polite"></div>';
+
+	// ---- Décision du client / état du devis. ----
+	if ( 'accepted' === $decision['decision'] ) {
+		echo '<p class="gacct-op-quote-status is-accepted">✓ ' . esc_html( sprintf(
+			__( 'Devis accepté par le client le %s.', 'gestion-atelier-cct' ),
+			$decision['decided_at'] ? date_i18n( get_option( 'date_format' ) . ' H:i', strtotime( $decision['decided_at'] ) ) : '?'
+		) ) . '</p>';
+	} elseif ( 'refused' === $decision['decision'] ) {
+		echo '<p class="gacct-op-quote-status is-refused">✗ ' . esc_html( sprintf(
+			'return' === $decision['mode']
+				? __( 'Devis REFUSÉ le %s — pure demande de devis : retourner le matériel au client.', 'gestion-atelier-cct' )
+				: __( 'Devis REFUSÉ le %s — réaliser uniquement les prestations initiales.', 'gestion-atelier-cct' ),
+			$decision['decided_at'] ? date_i18n( get_option( 'date_format' ) . ' H:i', strtotime( $decision['decided_at'] ) ) : '?'
+		) ) . '</p>';
+	} elseif ( 3 === $state && $sent_at ) {
+		echo '<p class="gacct-op-quote-status is-pending">⏳ ' . esc_html( sprintf(
+			__( 'Devis envoyé le %s — en attente de la réponse du client.', 'gestion-atelier-cct' ),
+			date_i18n( get_option( 'date_format' ) . ' H:i', strtotime( $sent_at ) )
+		) ) . '</p>';
+	}
+
+	// ---- Lignes du devis en cours (états 3+ : lecture). ----
+	if ( $extras ) {
+		echo '<ul class="gacct-op-items gacct-op-quote-lines">';
+		foreach ( $extras as $item ) {
+			$line = function_exists( 'gacct_kojito_montant_ligne' )
+				? gacct_kojito_montant_ligne( $item )
+				: (float) $item->get_total() + (float) $item->get_total_tax();
+			echo '<li><span class="gacct-op-item-name">' . esc_html( $item->get_name() )
+				. ( $item->get_quantity() > 1 ? ' × ' . (int) $item->get_quantity() : '' )
+				. '</span><span class="gacct-op-item-total">' . wp_kses_post( wc_price( $line, array( 'currency' => $order->get_currency() ) ) ) . '</span></li>';
+		}
+		echo '</ul>';
+
+		if ( '' !== trim( $comment ) ) {
+			echo '<p class="gacct-op-muted"><strong>' . esc_html__( 'Mot de l\'atelier :', 'gestion-atelier-cct' ) . '</strong> ' . esc_html( $comment ) . '</p>';
+		}
+	}
+
+	// ---- Formulaire (état 2 : ouvert ; état 3 : replié derrière « Modifier »). ----
+	if ( $show_form ) {
+		$products = gacct_quote_products();
+
+		// Pré-remplissage à l'état 3 : les lignes du devis en attente.
+		$prefill = array();
+		foreach ( $extras as $item ) {
+			$prefill[] = array(
+				'product_id' => (int) $item->get_product_id(),
+				'label'      => $item->get_name(),
+				'qty'        => (int) $item->get_quantity(),
+				'unit'       => (float) $item->get_meta( '_kojito_prix_unitaire_initial' ),
+			);
+		}
+
+		if ( 3 === $state ) {
+			echo '<button type="button" class="gacct-op-btn secondary" data-op-action="toggle-quote-form" aria-expanded="false">' . esc_html__( 'Modifier le devis…', 'gestion-atelier-cct' ) . '</button>';
+		}
+
+		echo '<div class="gacct-op-quote-form"' . ( 3 === $state ? ' hidden' : '' ) . ' data-quote-prefill="' . esc_attr( wp_json_encode( $prefill ) ) . '">';
+		echo '<script type="application/json" data-quote-products>' . wp_json_encode( $products ) . '</script>';
+
+		echo '<p class="gacct-op-muted">' . esc_html__( 'Ajoutez les travaux constatés : prestations du catalogue (Réparation, Suspentes & travaux) ou lignes libres. Rien n\'est facturé maintenant : le montant s\'ajoute au solde de fin d\'intervention.', 'gestion-atelier-cct' ) . '</p>';
+
+		echo '<table class="gacct-op-quote-table"><thead><tr>'
+			. '<th>' . esc_html__( 'Prestation', 'gestion-atelier-cct' ) . '</th>'
+			. '<th class="col-qty">' . esc_html__( 'Qté', 'gestion-atelier-cct' ) . '</th>'
+			. '<th class="col-price">' . esc_html__( 'PU TTC', 'gestion-atelier-cct' ) . '</th>'
+			. '<th class="col-total">' . esc_html__( 'Total', 'gestion-atelier-cct' ) . '</th>'
+			. '<th class="col-del"></th>'
+			. '</tr></thead><tbody data-quote-rows></tbody></table>';
+
+		echo '<div class="gacct-op-quote-add">';
+		echo '<button type="button" class="gacct-op-btn secondary gacct-op-btn-small" data-op-action="quote-add-catalog">+ ' . esc_html__( 'Prestation du catalogue', 'gestion-atelier-cct' ) . '</button> ';
+		echo '<button type="button" class="gacct-op-btn secondary gacct-op-btn-small" data-op-action="quote-add-free">+ ' . esc_html__( 'Ligne libre', 'gestion-atelier-cct' ) . '</button>';
+		echo '</div>';
+
+		echo '<p class="gacct-op-quote-total">' . esc_html__( 'Total des travaux supplémentaires :', 'gestion-atelier-cct' ) . ' <strong data-quote-total>0,00 €</strong></p>';
+
+		echo '<label class="gacct-op-label">' . esc_html__( 'Mot pour le client (affiché dans l\'email et sur la page du devis)', 'gestion-atelier-cct' ) . '</label>';
+		echo '<textarea rows="3" data-op-field="quote-comment" placeholder="' . esc_attr__( 'Ex. : les suspentes basses présentent une usure avancée, nous recommandons leur remplacement…', 'gestion-atelier-cct' ) . '">' . esc_textarea( $comment ) . '</textarea>';
+
+		echo '<button type="button" class="gacct-op-btn" data-op-action="send-quote">'
+			. ( 3 === $state ? esc_html__( 'Remplacer et renvoyer le devis', 'gestion-atelier-cct' ) : esc_html__( 'Envoyer le devis au client', 'gestion-atelier-cct' ) )
+			. '</button>';
+		echo '<p class="gacct-op-muted">' . esc_html__( 'Le client reçoit un email avec un lien sécurisé pour accepter ou refuser en un clic.', 'gestion-atelier-cct' ) . '</p>';
+
+		echo '</div>'; // .gacct-op-quote-form
+	}
+
+	// ---- État 8 : consigne selon le mode de refus. ----
+	if ( 8 === $state && 'return' === $decision['mode'] ) {
+		echo '<div class="gacct-op-warning">' . esc_html__( 'Dossier terminé côté travaux : préparer le RETOUR du matériel au client (adresse de la commande).', 'gestion-atelier-cct' ) . '</div>';
+	} elseif ( 8 === $state ) {
+		echo '<p class="gacct-op-muted">' . esc_html__( 'Utilisez « Lancer l\'intervention (prestations initiales) » dans les actions ci-dessus pour reprendre le flux normal.', 'gestion-atelier-cct' ) . '</p>';
+	}
+
+	echo '</div>'; // .gacct-op-quote-card
+}
+
+/**
  * Écran fiche : une colonne mobile, 2 colonnes >= 1024 px.
  *
  * @param int $revision_id ID du CCT revision.
@@ -173,10 +301,13 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 	echo '<h2>' . esc_html__( 'Avancement', 'gestion-atelier-cct' ) . '</h2>';
 	echo '<ol class="gacct-op-steps">';
 	foreach ( $labels as $i => $label ) {
+		if ( 8 === $i ) {
+			continue; // « Devis refusé » vit hors frise (badge d'en-tête + carte devis).
+		}
 		$class = 'gacct-op-step';
-		if ( $i < $state ) {
+		if ( 8 === $state ? $i < 3 : $i < $state ) {
 			$class .= ' done';
-		} elseif ( $i === $state ) {
+		} elseif ( $i === $state || ( 8 === $state && 3 === $i ) ) {
 			$class .= ' current';
 		}
 		echo '<li class="' . esc_attr( $class ) . '"><span class="gacct-op-step-dot">' . esc_html( $i ) . '</span><span class="gacct-op-step-label">' . esc_html( $label ) . '</span></li>';
@@ -200,6 +331,9 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 			foreach ( $allowed[ $state ] as $target => $action_label ) {
 				if ( 7 === $target ) {
 					continue; // 6→7 passe par l'upload du rapport, pas par change_state.
+				}
+				if ( 3 === $target && 2 === $state ) {
+					continue; // 2→3 passe par la carte « Devis complémentaire » ci-dessous.
 				}
 				$has_action = true;
 
@@ -289,6 +423,9 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 	}
 
 	echo '</div>'; // actions
+
+	// ---------------------------------------------------------------- Devis complémentaire.
+	gacct_op_render_quote_card( $revision_id, $revision, $order, $state );
 
 	// ---------------------------------------------------------------- Notes + journal.
 	echo '<div class="gacct-op-card gacct-op-notes-card">';

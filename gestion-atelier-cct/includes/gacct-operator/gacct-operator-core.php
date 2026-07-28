@@ -15,7 +15,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Libellés des 8 états (0–7), alignés sur le tracker client.
+ * Libellés des états, alignés sur le tracker client. 0–7 = flux nominal ;
+ * 8 = « Devis refusé » (hors frise : le client a refusé le devis complémentaire,
+ * l'atelier relance en 8→4 sur les prestations initiales, ou retourne le
+ * matériel si la commande était une pure demande de devis).
  */
 function gacct_op_state_labels() {
 	return apply_filters( 'gacct_op_state_labels', array(
@@ -27,6 +30,7 @@ function gacct_op_state_labels() {
 		5 => __( 'Solde à payer', 'gestion-atelier-cct' ),
 		6 => __( 'Paiement validé', 'gestion-atelier-cct' ),
 		7 => __( 'Révision terminée', 'gestion-atelier-cct' ),
+		8 => __( 'Devis refusé', 'gestion-atelier-cct' ),
 	) );
 }
 
@@ -43,6 +47,7 @@ function gacct_op_allowed_transitions() {
 		),
 		4 => array( 5 => __( 'Intervention terminée, demander le solde', 'gestion-atelier-cct' ) ),
 		6 => array( 7 => __( 'Déposer le rapport + clôturer', 'gestion-atelier-cct' ) ),
+		8 => array( 4 => __( 'Lancer l\'intervention (prestations initiales)', 'gestion-atelier-cct' ) ),
 	) );
 }
 
@@ -854,7 +859,8 @@ function gacct_op_reschedule( $occupation_id, $ymd, array $args = array() ) {
 
 	$state = $revision ? absint( $revision['etat_de_la_commande'] ?? 0 ) : 0;
 
-	if ( $state >= 4 ) {
+	// 8 (« Devis refusé ») reste replanifiable librement : l'intervention n'a pas commencé.
+	if ( $state >= 4 && $state <= 7 ) {
 		if ( ! current_user_can( gacct_op_reschedule_admin_cap() ) ) {
 			return new WP_Error( 'gacct_op_reschedule_locked', __( 'À partir de l\'état 4 (intervention en cours), la replanification est réservée aux administrateurs.', 'gestion-atelier-cct' ) );
 		}

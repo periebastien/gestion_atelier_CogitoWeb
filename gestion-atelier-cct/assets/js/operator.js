@@ -304,6 +304,207 @@
 			}
 		} );
 
+		// ─────────────────────────────────────────────────────────────────
+		// Devis complémentaire (carte .gacct-op-quote-card).
+		// ─────────────────────────────────────────────────────────────────
+		var quoteCard = fiche.querySelector( '.gacct-op-quote-card' );
+
+		if ( quoteCard && quoteCard.querySelector( '[data-quote-rows]' ) ) {
+			var quoteRows     = quoteCard.querySelector( '[data-quote-rows]' );
+			var quoteTotalEl  = quoteCard.querySelector( '[data-quote-total]' );
+			var quoteForm     = quoteCard.querySelector( '.gacct-op-quote-form' );
+			var quoteFeedback = quoteCard.querySelector( '.gacct-op-quote-feedback' );
+			var quoteProducts = [];
+
+			try {
+				var productsScript = quoteCard.querySelector( '[data-quote-products]' );
+				quoteProducts = productsScript ? JSON.parse( productsScript.textContent ) : [];
+			} catch ( e ) {
+				quoteProducts = [];
+			}
+
+			function quoteShowFeedback( type, message ) {
+				if ( quoteFeedback ) {
+					quoteFeedback.className   = 'gacct-op-feedback gacct-op-quote-feedback ' + type;
+					quoteFeedback.textContent = message;
+					quoteFeedback.scrollIntoView( { block: 'nearest' } );
+				} else {
+					showFeedback( type, message );
+				}
+			}
+
+			function quoteFormatAmount( n ) {
+				return n.toFixed( 2 ).replace( '.', ',' ) + ' €';
+			}
+
+			function quoteProductById( id ) {
+				for ( var i = 0; i < quoteProducts.length; i++ ) {
+					if ( Number( quoteProducts[ i ].id ) === Number( id ) ) {
+						return quoteProducts[ i ];
+					}
+				}
+				return null;
+			}
+
+			function quoteRecompute() {
+				var total = 0;
+
+				quoteRows.querySelectorAll( 'tr' ).forEach( function ( row ) {
+					var qty  = Math.max( 1, parseInt( row.querySelector( '[data-q-qty]' ).value, 10 ) || 1 );
+					var unit = 0;
+
+					if ( 'catalog' === row.getAttribute( 'data-q-type' ) ) {
+						var product = quoteProductById( row.querySelector( '[data-q-product]' ).value );
+						unit = product ? Number( product.price_ttc ) : 0;
+						row.querySelector( '[data-q-unit-label]' ).textContent = quoteFormatAmount( unit );
+					} else {
+						unit = parseFloat( String( row.querySelector( '[data-q-price]' ).value ).replace( ',', '.' ) ) || 0;
+					}
+
+					var line = unit * qty;
+					row.querySelector( '[data-q-line-total]' ).textContent = quoteFormatAmount( line );
+					total += line;
+				} );
+
+				if ( quoteTotalEl ) {
+					quoteTotalEl.textContent = quoteFormatAmount( total );
+				}
+			}
+
+			function quoteAddRow( type, prefill ) {
+				prefill = prefill || {};
+
+				var row = document.createElement( 'tr' );
+				row.setAttribute( 'data-q-type', type );
+
+				var cellMain = '';
+
+				if ( 'catalog' === type ) {
+					var options = quoteProducts.map( function ( p ) {
+						var selected = Number( prefill.product_id ) === Number( p.id ) ? ' selected' : '';
+						return '<option value="' + p.id + '"' + selected + '>' + p.name + '</option>';
+					} ).join( '' );
+					cellMain = '<select data-q-product>' + options + '</select>';
+				} else {
+					var label = prefill.label ? String( prefill.label ).replace( /"/g, '&quot;' ) : '';
+					cellMain = '<input type="text" data-q-label placeholder="Libellé de la prestation" value="' + label + '">';
+				}
+
+				row.innerHTML =
+					'<td>' + cellMain + '</td>' +
+					'<td class="col-qty"><input type="number" data-q-qty min="1" max="99" value="' + ( prefill.qty || 1 ) + '"></td>' +
+					'<td class="col-price">' + ( 'catalog' === type
+						? '<span data-q-unit-label>—</span>'
+						: '<input type="number" data-q-price min="0" step="0.01" placeholder="0,00" value="' + ( prefill.unit ? prefill.unit : '' ) + '">' ) + '</td>' +
+					'<td class="col-total"><span data-q-line-total>—</span></td>' +
+					'<td class="col-del"><button type="button" class="gacct-op-quote-del" data-op-action="quote-del-row" aria-label="Retirer la ligne">×</button></td>';
+
+				quoteRows.appendChild( row );
+				quoteRecompute();
+			}
+
+			// Pré-remplissage (état 3 : devis en attente à modifier).
+			try {
+				var prefillData = JSON.parse( quoteForm.getAttribute( 'data-quote-prefill' ) || '[]' );
+				prefillData.forEach( function ( line ) {
+					if ( line.product_id && quoteProductById( line.product_id ) ) {
+						quoteAddRow( 'catalog', line );
+					} else {
+						quoteAddRow( 'free', line );
+					}
+				} );
+			} catch ( e ) { /* pas de pré-remplissage */ }
+
+			quoteCard.addEventListener( 'input', quoteRecompute );
+			quoteCard.addEventListener( 'change', quoteRecompute );
+
+			quoteCard.addEventListener( 'click', function ( event ) {
+				var button = event.target.closest( '[data-op-action]' );
+
+				if ( ! button || button.disabled ) {
+					return;
+				}
+
+				var action = button.getAttribute( 'data-op-action' );
+
+				if ( 'toggle-quote-form' === action ) {
+					quoteForm.hidden = ! quoteForm.hidden;
+					button.setAttribute( 'aria-expanded', quoteForm.hidden ? 'false' : 'true' );
+					return;
+				}
+
+				if ( 'quote-add-catalog' === action ) {
+					if ( ! quoteProducts.length ) {
+						quoteShowFeedback( 'error', 'Aucun produit dans les catégories Réparation / Suspentes & travaux.' );
+						return;
+					}
+					quoteAddRow( 'catalog' );
+					return;
+				}
+
+				if ( 'quote-add-free' === action ) {
+					quoteAddRow( 'free' );
+					return;
+				}
+
+				if ( 'quote-del-row' === action ) {
+					var tr = button.closest( 'tr' );
+					if ( tr ) {
+						tr.remove();
+						quoteRecompute();
+					}
+					return;
+				}
+
+				if ( 'send-quote' === action ) {
+					var lines  = [];
+					var error  = '';
+
+					quoteRows.querySelectorAll( 'tr' ).forEach( function ( row ) {
+						var qty = Math.max( 1, parseInt( row.querySelector( '[data-q-qty]' ).value, 10 ) || 1 );
+
+						if ( 'catalog' === row.getAttribute( 'data-q-type' ) ) {
+							lines.push( { product_id: row.querySelector( '[data-q-product]' ).value, qty: qty } );
+						} else {
+							var label = row.querySelector( '[data-q-label]' ).value.trim();
+							var price = parseFloat( String( row.querySelector( '[data-q-price]' ).value ).replace( ',', '.' ) ) || 0;
+
+							if ( '' === label ) {
+								error = 'Chaque ligne libre doit avoir un libellé.';
+							} else if ( price <= 0 ) {
+								error = 'Chaque ligne libre doit avoir un prix TTC supérieur à 0.';
+							}
+							lines.push( { label: label, price: price, qty: qty } );
+						}
+					} );
+
+					if ( error ) {
+						quoteShowFeedback( 'error', error );
+						return;
+					}
+
+					if ( ! lines.length ) {
+						quoteShowFeedback( 'error', 'Ajoutez au moins une ligne au devis.' );
+						return;
+					}
+
+					if ( ! window.confirm( 'Envoyer ce devis au client ? Il recevra un email avec un lien pour accepter ou refuser.' ) ) {
+						return;
+					}
+
+					var commentField = quoteCard.querySelector( '[data-op-field="quote-comment"]' );
+
+					run( button, 'gacct_op_send_quote', {
+						revision_id: revisionId,
+						lines: JSON.stringify( lines ),
+						comment: commentField ? commentField.value.trim() : ''
+					}, function () {
+						window.location.reload();
+					} );
+				}
+			} );
+		}
+
 		// Upload du rapport (transition 6→7).
 		var uploadForm = fiche.querySelector( '[data-op-form="upload-report"]' );
 

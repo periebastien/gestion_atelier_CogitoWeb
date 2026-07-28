@@ -44,6 +44,35 @@ function gacct_op_ajax_change_state() {
 add_action( 'wp_ajax_gacct_op_change_state', 'gacct_op_ajax_change_state' );
 
 /**
+ * Envoi (ou ré-envoi modifié) du devis complémentaire : lignes JSON
+ * [{product_id, qty} | {label, price, qty}] + commentaire. État 2 → 3,
+ * ou remplacement du devis courant à l'état 3 (lien régénéré).
+ */
+function gacct_op_ajax_send_quote() {
+	gacct_op_api_guard();
+
+	$raw   = isset( $_POST['lines'] ) ? wp_unslash( $_POST['lines'] ) : '';
+	$lines = json_decode( (string) $raw, true );
+
+	if ( ! is_array( $lines ) || empty( $lines ) ) {
+		wp_send_json_error( array( 'message' => __( 'Le devis doit contenir au moins une ligne.', 'gestion-atelier-cct' ) ) );
+	}
+
+	$result = gacct_quote_send(
+		isset( $_POST['revision_id'] ) ? absint( $_POST['revision_id'] ) : 0,
+		$lines,
+		isset( $_POST['comment'] ) ? wp_unslash( $_POST['comment'] ) : ''
+	);
+
+	if ( is_wp_error( $result ) ) {
+		wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+	}
+
+	wp_send_json_success( $result );
+}
+add_action( 'wp_ajax_gacct_op_send_quote', 'gacct_op_ajax_send_quote' );
+
+/**
  * Renvoi de l'email d'état (3 : devis, 5 : solde).
  */
 function gacct_op_ajax_resend_email() {

@@ -141,3 +141,73 @@
 	.gacct-op .gacct-op-nav-scan { margin-left: 0; width: 100%; }
 	.gacct-op .gacct-op-nav-scan input[type="search"] { flex: 1; }
 }
+
+/* ── Carte « Devis complémentaire » (fiche) ─────────────────────────── */
+
+.gacct-op .gacct-op-quote-status {
+	margin: 0 0 12px;
+	padding: 10px 12px;
+	border-radius: var(--gacct-radius);
+	font-weight: 600;
+}
+.gacct-op .gacct-op-quote-status.is-accepted { background: #e7f6ee; color: #14804a; }
+.gacct-op .gacct-op-quote-status.is-refused  { background: #fdecea; color: #b3261e; }
+.gacct-op .gacct-op-quote-status.is-pending  { background: #fff7e6; color: #9a6a00; }
+
+.gacct-op .gacct-op-quote-lines { margin-bottom: 12px; }
+
+.gacct-op .gacct-op-quote-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 10px 0 8px;
+}
+.gacct-op .gacct-op-quote-table th {
+	text-align: left;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--gacct-text-soft, #667);
+	padding: 4px 6px 6px 0;
+}
+.gacct-op .gacct-op-quote-table td {
+	padding: 5px 6px 5px 0;
+	border-top: 1px solid var(--gacct-border);
+	vertical-align: middle;
+}
+.gacct-op .gacct-op-quote-table select,
+.gacct-op .gacct-op-quote-table input[type="text"] { width: 100%; }
+.gacct-op .gacct-op-quote-table .col-qty   { width: 64px; }
+.gacct-op .gacct-op-quote-table .col-qty input { width: 60px; }
+.gacct-op .gacct-op-quote-table .col-price { width: 110px; white-space: nowrap; }
+.gacct-op .gacct-op-quote-table .col-price input { width: 100px; }
+.gacct-op .gacct-op-quote-table .col-total { width: 92px; text-align: right; white-space: nowrap; font-weight: 600; }
+.gacct-op .gacct-op-quote-table .col-del   { width: 34px; text-align: center; }
+
+.gacct-op .gacct-op-quote-del {
+	border: 0;
+	background: transparent;
+	color: var(--gacct-danger, #b3261e);
+	font-size: 18px;
+	font-weight: 700;
+	cursor: pointer;
+	line-height: 1;
+	padding: 4px 8px;
+}
+
+.gacct-op .gacct-op-quote-add { margin: 4px 0 10px; }
+
+.gacct-op .gacct-op-quote-total {
+	margin: 8px 0 14px;
+	font-size: 15px;
+}
+
+.gacct-op .gacct-op-quote-form textarea {
+	width: 100%;
+	margin-bottom: 10px;
+}
+
+@media (max-width: 600px) {
+	.gacct-op .gacct-op-quote-table .col-price { width: 84px; }
+	.gacct-op .gacct-op-quote-table .col-price input { width: 78px; }
+	.gacct-op .gacct-op-quote-table .col-total { width: 70px; }
+}

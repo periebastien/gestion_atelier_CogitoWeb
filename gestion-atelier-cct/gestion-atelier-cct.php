@@ -21,6 +21,8 @@ require_once __DIR__ . '/includes/gacct-buttons.php';
 require_once __DIR__ . '/includes/gacct-debug.php';
 require_once __DIR__ . '/includes/gacct-login-gate.php';
 require_once __DIR__ . '/includes/gacct-workorder.php';
+require_once __DIR__ . '/includes/gacct-quote.php';
+require_once __DIR__ . '/includes/gacct-vieworder.php';
 require_once __DIR__ . '/includes/gacct-operator/gacct-operator.php';
 
 final class GACCT_Plugin {
@@ -908,10 +910,6 @@ final class GACCT_Plugin {
 	}
 
 	public function maybe_handle_quote_validation() {
-		if ( empty( $_GET['order_id'] ) || empty( $_GET['token'] ) ) {
-			return;
-		}
-
 		$request_path = isset( $_SERVER['REQUEST_URI'] ) ? wp_parse_url( wp_unslash( $_SERVER['REQUEST_URI'] ), PHP_URL_PATH ) : '';
 
 		// Chemin courant + ancien chemin avec la faute de frappe (« devie- ») :
@@ -929,6 +927,20 @@ final class GACCT_Plugin {
 			wp_die( esc_html__( 'WooCommerce est indisponible.', 'gestion-atelier-cct' ) );
 		}
 
+		// Écrans de confirmation post-décision (sans token : le lien est déjà consommé).
+		if ( isset( $_GET['gacct_quote'] ) ) {
+			$variant = sanitize_key( wp_unslash( $_GET['gacct_quote'] ) );
+
+			if ( in_array( $variant, array( 'accepted', 'refused_partial', 'refused_return' ), true ) ) {
+				$order = ! empty( $_GET['order_id'] ) ? wc_get_order( absint( wp_unslash( $_GET['order_id'] ) ) ) : false;
+				gacct_quote_render_page( $variant, $order ? $order : null );
+			}
+		}
+
+		if ( empty( $_GET['order_id'] ) || empty( $_GET['token'] ) ) {
+			return;
+		}
+
 		$order_id = absint( wp_unslash( $_GET['order_id'] ) );
 		$token    = sanitize_text_field( wp_unslash( $_GET['token'] ) );
 		$order    = wc_get_order( $order_id );
@@ -938,9 +950,8 @@ final class GACCT_Plugin {
 		}
 
 		if ( '' !== (string) $order->get_meta( self::META_VALIDATION_TOKEN_USED_AT ) ) {
-			$order->add_order_note( __( 'Validation devis ignoree : le lien securise a deja ete utilise.', 'gestion-atelier-cct' ) );
-			$order->save();
-			wp_die( esc_html__( 'Ce lien de validation a deja ete utilise.', 'gestion-atelier-cct' ) );
+			// Lien déjà consommé : page douce (le client re-clique souvent le lien de l'email).
+			gacct_quote_render_page( 'used', $order );
 		}
 
 		$stored_hash = (string) $order->get_meta( self::META_VALIDATION_TOKEN_HASH );
@@ -952,6 +963,13 @@ final class GACCT_Plugin {
 			wp_die( esc_html__( 'Lien de validation invalide.', 'gestion-atelier-cct' ) );
 		}
 
+		$action = isset( $_POST['gacct_quote_action'] ) ? sanitize_key( wp_unslash( $_POST['gacct_quote_action'] ) ) : '';
+
+		// GET (ou action inconnue) : afficher le devis, le token n'est PAS consommé.
+		if ( ! in_array( $action, array( 'accept', 'refuse' ), true ) ) {
+			gacct_quote_render_page( 'quote', $order );
+		}
+
 		$revision_id = absint( $order->get_meta( self::META_VALIDATION_REVISION_ID ) );
 
 		if ( ! $revision_id ) {
@@ -959,7 +977,7 @@ final class GACCT_Plugin {
 		}
 
 		if ( ! $revision_id ) {
-			$order->add_order_note( __( 'ERREUR : validation devis impossible, revision introuvable pour cette commande.', 'gestion-atelier-cct' ) );
+			$order->add_order_note( __( 'ERREUR : decision devis impossible, revision introuvable pour cette commande.', 'gestion-atelier-cct' ) );
 			$order->save();
 			wp_die( esc_html__( 'Revision introuvable pour cette commande.', 'gestion-atelier-cct' ) );
 		}
@@ -967,11 +985,36 @@ final class GACCT_Plugin {
 		$prev_revision = $this->get_revision_row( $revision_id );
 
 		if ( empty( $prev_revision ) ) {
-			$order->add_order_note( __( 'ERREUR : validation devis impossible, ligne CCT revision introuvable.', 'gestion-atelier-cct' ) );
+			$order->add_order_note( __( 'ERREUR : decision devis impossible, ligne CCT revision introuvable.', 'gestion-atelier-cct' ) );
 			$order->save();
 			wp_die( esc_html__( 'Revision introuvable.', 'gestion-atelier-cct' ) );
 		}
 
+		// ------------------------------------------------------------- REFUS.
+		if ( 'refuse' === $action ) {
+			$order->update_meta_data( self::META_VALIDATION_TOKEN_USED_AT, current_time( 'mysql' ) );
+			$order->delete_meta_data( self::META_VALIDATION_TOKEN_HASH );
+			$order->save();
+
+			$result = gacct_quote_refuse( $order, $revision_id );
+
+			if ( is_wp_error( $result ) ) {
+				wp_die( esc_html( $result->get_error_message() ) );
+			}
+
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'order_id'    => $order_id,
+						'gacct_quote' => 'return' === $result['mode'] ? 'refused_return' : 'refused_partial',
+					),
+					home_url( trailingslashit( $target_paths[0] ) )
+				)
+			);
+			exit;
+		}
+
+		// ------------------------------------------------------- ACCEPTATION.
 		$updated = $this->update_revision_state( $revision_id, 4 );
 
 		if ( ! $updated ) {
@@ -985,14 +1028,16 @@ final class GACCT_Plugin {
 		$order->add_order_note( __( 'Devis valide par le client via lien securise. Revision passee en etat 4.', 'gestion-atelier-cct' ) );
 		$order->save();
 
+		gacct_quote_mark_decision( $order, 'accepted' );
+
 		$new_revision = $this->get_revision_row( $revision_id );
 		$this->process_revision_state_transition( $revision_id, 4, $new_revision, $prev_revision, 'validation_url' );
 
 		wp_safe_redirect(
 			add_query_arg(
 				array(
-					'order_id'         => $order_id,
-					'gacct_validation' => 'success',
+					'order_id'    => $order_id,
+					'gacct_quote' => 'accepted',
 				),
 				// Toujours le chemin canonique (index 0), meme si le client est
 				// arrive par l'ancien lien « devie- » : cette page-la n'existe pas.
@@ -1559,7 +1604,13 @@ final class GACCT_Plugin {
 				'label'      => __( 'Nouveau devis a valider', 'gestion-atelier-cct' ),
 				'recipients' => array( 'client', 'admin' ),
 				'subject'    => __( 'Action requise : Mise a jour de votre devis - {order_id}', 'gestion-atelier-cct' ),
-				'body'       => '<p>Bonjour {customer_name},</p><p>Suite a l inspection de votre materiel, des travaux complementaires sont necessaires. Merci de consulter et valider votre nouveau devis en cliquant ici : <a href="{validation_url}">Valider mon devis</a>. Le paiement de ce solde tiendra compte de ces ajustements.</p><p>Merci de votre reactivite,<br><br>Bastien.</p>',
+				'body'       => '<p>Bonjour {customer_name},</p>'
+					. '<p>Suite a l inspection de votre materiel, des travaux complementaires sont necessaires :</p>'
+					. '{quote_lines}'
+					. '{quote_comment}'
+					. '<p>Nouveau total de votre commande : <strong>{quote_total}</strong>, soit un solde de <strong>{quote_balance}</strong> a regler a la fin de l intervention (votre acompte deja verse reste inchange).</p>'
+					. '<p><a href="{validation_url}">Consulter le devis et donner ma reponse</a> — vous pourrez l accepter ou le refuser en un clic.</p>'
+					. '<p>Merci de votre reactivite,<br><br>Bastien.</p>',
 			),
 			4 => array(
 				'enabled'    => true,
@@ -1625,6 +1676,23 @@ final class GACCT_Plugin {
 		$balance_amount = $order instanceof WC_Order ? (float) $order->get_meta( self::KOJITO_META_SOLDE_RESTANT ) : 0;
 		$payment_url    = $order instanceof WC_Order ? $order->get_checkout_payment_url() : '';
 
+		// Devis complémentaire : lignes ajoutées, commentaire atelier, nouveaux montants.
+		$quote_lines   = '';
+		$quote_comment = '';
+		$quote_total   = 0.0;
+		$quote_balance = 0.0;
+
+		if ( $order instanceof WC_Order && function_exists( 'gacct_quote_lines_html' ) ) {
+			$quote_lines   = gacct_quote_lines_html( $order );
+			$quote_total   = gacct_kojito_total_initial( $order );
+			$quote_balance = gacct_quote_new_balance( $order );
+
+			$comment = trim( (string) $order->get_meta( GACCT_QUOTE_META_COMMENT ) );
+			if ( '' !== $comment ) {
+				$quote_comment = '<p><em>' . esc_html__( 'Le mot de l atelier :', 'gestion-atelier-cct' ) . ' ' . esc_html( $comment ) . '</em></p>';
+			}
+		}
+
 		return array(
 			'{customer_name}'  => $this->notification_customer_name( $revision_id, $revision, $order ),
 			'{prestations}'    => $this->revision_prestations_label( $revision ),
@@ -1633,6 +1701,10 @@ final class GACCT_Plugin {
 			'{balance_amount}' => function_exists( 'wc_price' ) ? wc_price( $balance_amount ) : (string) $balance_amount,
 			'{payment_url}'    => esc_url( $payment_url ),
 			'{validation_url}' => esc_url( $validation_url ),
+			'{quote_lines}'    => $quote_lines,
+			'{quote_comment}'  => $quote_comment,
+			'{quote_total}'    => function_exists( 'wc_price' ) ? wc_price( $quote_total ) : (string) $quote_total,
+			'{quote_balance}'  => function_exists( 'wc_price' ) ? wc_price( $quote_balance ) : (string) $quote_balance,
 		);
 	}
 

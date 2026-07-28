@@ -509,6 +509,16 @@ function jwcct_render_order_status_tracker( $value ) {
             'label'    => 'Révision terminée',
             'tip'      => 'Voile révisée et retournée. Rapport disponible au téléchargement.'
         ],
+        // 8 : le client a refusé le devis complémentaire. Selon la commande :
+        // intervention sur les prestations initiales, ou retour du matériel
+        // (pure demande de devis). L'atelier reprend la main.
+        8 => [
+            'badge'    => 'warning',
+            'progress' => 'action',
+            'step'     => 3,
+            'label'    => 'Devis refusé',
+            'tip'      => '<strong>Info :</strong> vous avez refusé le devis complémentaire. L\'atelier réalise les prestations initialement prévues, ou vous retourne votre matériel s\'il s\'agissait d\'une demande de devis.'
+        ],
     ];
 
     if ( ! isset( $config[$value] ) ) return $value;

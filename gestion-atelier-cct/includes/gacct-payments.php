@@ -38,6 +38,7 @@ function gacct_pay_default_settings() {
 		'abandoned_minutes' => 60,  // relance commande non finalisée : X minutes après création.
 		'unfinished_hours'  => 6,   // suppression d'une commande non finalisée : X heures d'ancienneté minimum,
 		                            // effective au premier passage de minuit qui suit.
+		'quote_reminder_days' => 3, // relance devis complémentaire sans réponse : X jours après l'envoi.
 		'contact_phone'     => '02 31 69 39 31',
 		'contact_hours'     => 'du lundi au vendredi de 9 h 30 à 17 h 30',
 		'emails'            => array(
@@ -121,6 +122,38 @@ function gacct_pay_default_settings() {
 					. '<p>Sans ces éléments, la partie correspondante de l’intervention ne pourra pas être réalisée. Si vous préférez y renoncer ou si vous avez la moindre question, répondez simplement à cet e-mail ou appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}).</p>'
 					. '<p>À très vite,<br><br>Bastien.</p>',
 			),
+			'quote_reminder' => array(
+				'enabled' => true,
+				'label'   => __( 'Relance devis complémentaire sans réponse', 'gestion-atelier-cct' ),
+				'subject' => __( 'Votre devis attend toujours votre réponse - commande {order_number}', 'gestion-atelier-cct' ),
+				'body'    => '<p>Bonjour {customer_name},</p>'
+					. '<p>Nous vous avons envoyé un devis complémentaire pour votre commande <strong>{order_number}</strong>, et nous n’avons pas encore reçu votre réponse :</p>'
+					. '{quote_lines}'
+					. '<p>Votre matériel attend à l’atelier : tant que le devis n’est ni accepté ni refusé, l’intervention ne peut pas commencer.</p>'
+					. '<p><a href="{validation_url}">Consulter le devis et donner ma réponse</a> — un clic suffit pour l’accepter ou le refuser.</p>'
+					. '<p>Une question ? Répondez à cet e-mail ou appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}).</p>'
+					. '<p>À très vite,<br><br>Bastien.</p>',
+			),
+			'quote_refused_partial' => array(
+				'enabled' => true,
+				'label'   => __( 'Devis refusé : intervention sur les prestations initiales', 'gestion-atelier-cct' ),
+				'subject' => __( 'Devis refusé, nous réalisons les prestations prévues - commande {order_number}', 'gestion-atelier-cct' ),
+				'body'    => '<p>Bonjour {customer_name},</p>'
+					. '<p>Nous avons bien enregistré votre refus du devis complémentaire pour la commande <strong>{order_number}</strong>.</p>'
+					. '<p>Aucun souci : les travaux supplémentaires proposés ne seront pas réalisés. Nous effectuons l’intervention initialement commandée, sans changement de prix.</p>'
+					. '<p>Si vous changez d’avis ou souhaitez en discuter, appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}) ou répondez à cet e-mail.</p>'
+					. '<p>À très vite,<br><br>Bastien.</p>',
+			),
+			'quote_refused_return' => array(
+				'enabled' => true,
+				'label'   => __( 'Devis refusé : retour du matériel (demande de devis seule)', 'gestion-atelier-cct' ),
+				'subject' => __( 'Devis refusé, nous vous retournons votre matériel - commande {order_number}', 'gestion-atelier-cct' ),
+				'body'    => '<p>Bonjour {customer_name},</p>'
+					. '<p>Nous avons bien enregistré votre refus du devis établi pour la commande <strong>{order_number}</strong>.</p>'
+					. '<p>Comme convenu, aucune réparation ne sera engagée : nous préparons le retour de votre matériel à l’adresse indiquée lors de votre commande.</p>'
+					. '<p>Si vous changez d’avis avant l’expédition, appelez-nous vite au <strong>{contact_phone}</strong> ({contact_hours}) : tant que le colis n’est pas parti, tout reste possible.</p>'
+					. '<p>À bientôt,<br><br>Bastien.</p>',
+			),
 			'unfinished_cancel' => array(
 				'enabled' => true,
 				'label'   => __( 'Annulation : commande non payée', 'gestion-atelier-cct' ),
@@ -159,6 +192,7 @@ function gacct_pay_settings() {
 	$settings['cancel_days']       = max( (int) $settings['reminder_days'], (int) $settings['cancel_days'] );
 	$settings['abandoned_minutes'] = max( 15, (int) $settings['abandoned_minutes'] );
 	$settings['unfinished_hours']  = max( 2, (int) $settings['unfinished_hours'] );
+	$settings['quote_reminder_days'] = max( 1, (int) $settings['quote_reminder_days'] );
 
 	// La suppression ne doit jamais precéder la relance.
 	$settings['unfinished_hours'] = max(
@@ -1177,6 +1211,7 @@ function gacct_pay_handle_admin_save() {
 		'cancel_days'       => max( 1, absint( $_POST['cancel_days'] ?? $defaults['cancel_days'] ) ),
 		'abandoned_minutes' => max( 15, absint( $_POST['abandoned_minutes'] ?? $defaults['abandoned_minutes'] ) ),
 		'unfinished_hours'  => max( 2, absint( $_POST['unfinished_hours'] ?? $defaults['unfinished_hours'] ) ),
+		'quote_reminder_days' => max( 1, absint( $_POST['quote_reminder_days'] ?? $defaults['quote_reminder_days'] ) ),
 		'contact_phone'     => sanitize_text_field( wp_unslash( $_POST['contact_phone'] ?? $defaults['contact_phone'] ) ),
 		'contact_hours'     => sanitize_text_field( wp_unslash( $_POST['contact_hours'] ?? $defaults['contact_hours'] ) ),
 		'emails'            => array(),
@@ -1316,6 +1351,20 @@ function gacct_pay_render_admin_page() {
 								);
 								?>
 							</p>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<h2><?php esc_html_e( 'Devis complementaire sans reponse', 'gestion-atelier-cct' ); ?></h2>
+			<table class="form-table" role="presentation">
+				<tbody>
+					<tr>
+						<th scope="row"><label for="gacct_quote_reminder_days"><?php esc_html_e( 'Delai avant relance', 'gestion-atelier-cct' ); ?></label></th>
+						<td>
+							<input type="number" id="gacct_quote_reminder_days" name="quote_reminder_days" class="small-text" min="1" value="<?php echo esc_attr( $settings['quote_reminder_days'] ); ?>">
+							<?php esc_html_e( 'jours apres l envoi du devis', 'gestion-atelier-cct' ); ?>
+							<p class="description"><?php esc_html_e( 'Si le client n a ni accepte ni refuse le devis complementaire, un email de relance part avec un lien regenere (une seule relance par devis envoye).', 'gestion-atelier-cct' ); ?></p>
 						</td>
 					</tr>
 				</tbody>

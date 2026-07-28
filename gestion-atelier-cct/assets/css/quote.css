@@ -1,0 +1,310 @@
+/**
+ * Page /devis-a-valider/ (templates/quote.php) — standalone, hors thème.
+ * White-label : l'accent (--gq-accent) est injecté depuis les réglages
+ * emails WooCommerce ; le reste est neutre.
+ */
+
+:root {
+	--gq-ink: #1c2b33;
+	--gq-muted: #5f7078;
+	--gq-line: #e4e9ec;
+	--gq-bg: #f2f5f6;
+	--gq-card: #ffffff;
+	--gq-accent: #20c4c3;
+	--gq-warn-bg: #fff7ed;
+	--gq-warn-ink: #9a5b1f;
+	--gq-warn-line: #f3ddc0;
+	--gq-danger: #c0392b;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+	margin: 0;
+	padding: 0;
+}
+
+.gq-body {
+	background: var(--gq-bg);
+	color: var(--gq-ink);
+	font: 16px/1.6 "Segoe UI", system-ui, -apple-system, sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+
+.gq-page {
+	max-width: 640px;
+	margin: 0 auto;
+	padding: 24px 16px 48px;
+}
+
+/* ── Marque ─────────────────────────────────────────────────────────── */
+
+.gq-brand {
+	text-align: center;
+	padding: 8px 0 20px;
+}
+
+.gq-logo {
+	max-height: 56px;
+	max-width: 220px;
+	height: auto;
+	width: auto;
+}
+
+.gq-logo-text {
+	font-size: 22px;
+	font-weight: 700;
+	color: var(--gq-ink);
+	text-decoration: none;
+}
+
+/* ── Carte ──────────────────────────────────────────────────────────── */
+
+.gq-card {
+	background: var(--gq-card);
+	border: 1px solid var(--gq-line);
+	border-radius: 14px;
+	padding: 28px 24px;
+	box-shadow: 0 6px 24px rgba(28, 43, 51, 0.06);
+}
+
+.gq-kicker {
+	margin: 0 0 4px;
+	font-size: 13px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--gq-accent);
+}
+
+.gq-title {
+	margin: 0 0 12px;
+	font-size: 26px;
+	line-height: 1.25;
+}
+
+.gq-intro {
+	margin: 0 0 18px;
+	color: var(--gq-muted);
+}
+
+.gq-materiel {
+	display: block;
+	margin-top: 6px;
+	font-weight: 600;
+	color: var(--gq-ink);
+}
+
+/* ── Mot de l'atelier ───────────────────────────────────────────────── */
+
+.gq-comment {
+	margin: 0 0 20px;
+	padding: 14px 16px;
+	border-left: 3px solid var(--gq-accent);
+	background: color-mix(in srgb, var(--gq-accent) 7%, #ffffff);
+	border-radius: 0 10px 10px 0;
+	font-style: italic;
+}
+
+.gq-comment-label {
+	display: block;
+	font-style: normal;
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--gq-accent);
+	margin-bottom: 4px;
+}
+
+/* ── Tableau des prestations ────────────────────────────────────────── */
+
+.gq-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 0 0 14px;
+}
+
+.gq-table td {
+	border: 0;                    /* pas de reset Elementor ici, mais on reste explicite */
+	padding: 9px 0;
+	vertical-align: top;
+	font-size: 15px;
+}
+
+.gq-table tbody tr + tr td {
+	border-top: 1px solid var(--gq-line);
+}
+
+.gq-amount {
+	text-align: right;
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+	font-weight: 600;
+}
+
+.gq-qty {
+	color: var(--gq-muted);
+	font-size: 13px;
+	margin-left: 4px;
+}
+
+.gq-row-sep td {
+	padding-top: 18px;
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--gq-accent);
+	border-top: 0 !important;
+}
+
+.gq-row-extra td {
+	background: color-mix(in srgb, var(--gq-accent) 6%, #ffffff);
+}
+
+.gq-row-extra td:first-child { border-radius: 8px 0 0 8px; padding-left: 8px; }
+.gq-row-extra td:last-child  { border-radius: 0 8px 8px 0; padding-right: 8px; }
+
+.gq-plus {
+	display: inline-block;
+	width: 18px;
+	height: 18px;
+	line-height: 18px;
+	text-align: center;
+	border-radius: 50%;
+	background: var(--gq-accent);
+	color: #fff;
+	font-weight: 700;
+	font-size: 13px;
+	margin-right: 6px;
+}
+
+.gq-table tfoot td {
+	padding: 8px 0;
+}
+
+.gq-total td {
+	border-top: 2px solid var(--gq-ink);
+	font-weight: 700;
+	font-size: 16px;
+}
+
+.gq-paid td {
+	color: var(--gq-muted);
+	font-size: 14px;
+}
+
+.gq-balance td {
+	font-weight: 700;
+	font-size: 18px;
+	color: var(--gq-accent);
+}
+
+/* ── Notes & avertissements ─────────────────────────────────────────── */
+
+.gq-note {
+	margin: 0 0 10px;
+	font-size: 14px;
+	color: var(--gq-muted);
+}
+
+.gq-warning {
+	margin: 0 0 10px;
+	padding: 12px 14px;
+	border: 1px solid var(--gq-warn-line);
+	background: var(--gq-warn-bg);
+	color: var(--gq-warn-ink);
+	border-radius: 10px;
+	font-size: 14px;
+	font-weight: 500;
+}
+
+/* ── Boutons ────────────────────────────────────────────────────────── */
+
+.gq-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-top: 22px;
+}
+
+.gq-actions form { margin: 0; }
+
+.gq-btn {
+	display: block;
+	width: 100%;
+	padding: 14px 20px;
+	border-radius: 10px;
+	border: 0;
+	font: inherit;
+	font-size: 16px;
+	font-weight: 700;
+	text-align: center;
+	text-decoration: none;
+	cursor: pointer;
+	transition: filter 0.15s ease, background 0.15s ease;
+}
+
+.gq-btn-accept {
+	background: var(--gq-accent);
+	color: #ffffff;
+}
+
+.gq-btn-accept:hover { filter: brightness(0.94); }
+
+.gq-btn-refuse {
+	background: transparent;
+	color: var(--gq-danger);
+	border: 1.5px solid color-mix(in srgb, var(--gq-danger) 45%, #ffffff);
+}
+
+.gq-btn-refuse:hover {
+	background: color-mix(in srgb, var(--gq-danger) 6%, #ffffff);
+}
+
+/* ── Écrans de confirmation ─────────────────────────────────────────── */
+
+.gq-card-confirm {
+	text-align: center;
+	padding: 40px 24px;
+}
+
+.gq-card-confirm .gq-btn {
+	display: inline-block;
+	width: auto;
+	min-width: 240px;
+	margin-top: 18px;
+}
+
+.gq-confirm-icon {
+	width: 58px;
+	height: 58px;
+	line-height: 58px;
+	margin: 0 auto 16px;
+	border-radius: 50%;
+	font-size: 26px;
+	font-weight: 700;
+	color: #fff;
+}
+
+.gq-icon-ok   { background: var(--gq-accent); }
+.gq-icon-info { background: var(--gq-muted); }
+
+/* ── Pied de page ───────────────────────────────────────────────────── */
+
+.gq-footer {
+	text-align: center;
+	margin-top: 22px;
+	font-size: 13px;
+	color: var(--gq-muted);
+}
+
+@media (min-width: 540px) {
+	.gq-actions {
+		flex-direction: row;
+	}
+	.gq-actions form { flex: 1; }
+	.gq-page { padding-top: 40px; }
+	.gq-card { padding: 34px 36px; }
+}

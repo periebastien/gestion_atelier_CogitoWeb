@@ -1,0 +1,280 @@
+/**
+ * Page « détail de commande » de l'espace client (templates/view-order.php).
+ *
+ * Rendu à l'intérieur de la zone de contenu mon-compte (Elementor) :
+ * - tableaux : border:0 posé partout AVANT les bordures voulues (le kit
+ *   Elementor met `table td { border:1px solid …; padding:15px }`) ;
+ * - variables --gacct-* surchargeables par site (white-label).
+ */
+
+.gacct-vo {
+	--gacct-vo-ink: var(--gacct-ink, #1c2b33);
+	--gacct-vo-muted: var(--gacct-muted, #5f7078);
+	--gacct-vo-line: var(--gacct-line, #e4e9ec);
+	--gacct-vo-card: var(--gacct-card, #ffffff);
+	--gacct-vo-accent: var(--gacct-accent, #20c4c3);
+	--gacct-vo-warn: #b45309;
+	--gacct-vo-warn-bg: #fff7ed;
+	--gacct-vo-danger: #c0392b;
+	--gacct-vo-radius: 14px;
+
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	color: var(--gacct-vo-ink);
+}
+
+/* ── Cartes ─────────────────────────────────────────────────────────── */
+
+.gacct-vo-card {
+	background: var(--gacct-vo-card);
+	border: 1px solid var(--gacct-vo-line);
+	border-radius: var(--gacct-vo-radius);
+	padding: 22px 22px 20px;
+	box-shadow: 0 4px 18px rgba(28, 43, 51, 0.05);
+}
+
+.gacct-vo-card h3 {
+	margin: 0 0 10px;
+	font-size: 17px;
+	line-height: 1.3;
+}
+
+.gacct-vo-muted { color: var(--gacct-vo-muted); font-size: 14px; }
+
+/* ── En-tête ────────────────────────────────────────────────────────── */
+
+.gacct-vo-head-row {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 14px;
+	flex-wrap: wrap;
+}
+
+.gacct-vo-kicker {
+	margin: 0;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	color: var(--gacct-vo-accent);
+}
+
+.gacct-vo-ref {
+	margin: 2px 0 6px;
+	font-size: 24px;
+	line-height: 1.2;
+}
+
+.gacct-vo-meta {
+	margin: 0;
+	color: var(--gacct-vo-muted);
+	font-size: 14px;
+}
+
+.gacct-vo-materiel { font-weight: 600; color: var(--gacct-vo-ink); }
+
+.gacct-vo-badge {
+	display: inline-block;
+	padding: 6px 14px;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--gacct-vo-accent) 12%, #ffffff);
+	color: color-mix(in srgb, var(--gacct-vo-accent) 70%, #000000);
+	font-size: 13px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.gacct-vo-badge.is-action {
+	background: var(--gacct-vo-warn-bg);
+	color: var(--gacct-vo-warn);
+}
+
+.gacct-vo-badge.is-dead {
+	background: #f1f3f4;
+	color: var(--gacct-vo-muted);
+}
+
+/* Barre de progression. */
+
+.gacct-vo-progress {
+	margin-top: 16px;
+	height: 8px;
+	border-radius: 999px;
+	background: var(--gacct-vo-line);
+	overflow: hidden;
+}
+
+.gacct-vo-progress-bar {
+	height: 100%;
+	border-radius: 999px;
+	background: var(--gacct-vo-accent);
+	transition: width 0.4s ease;
+}
+
+.gacct-vo-progress-bar.is-warning { background: var(--gacct-vo-warn); }
+
+.gacct-vo-state {
+	display: flex;
+	justify-content: space-between;
+	gap: 10px;
+	margin: 8px 0 0;
+	font-size: 14px;
+}
+
+.gacct-vo-state span { color: var(--gacct-vo-muted); }
+
+/* ── Encarts d'action (devis, solde, refus) ─────────────────────────── */
+
+.gacct-vo-alert {
+	border-left: 4px solid var(--gacct-vo-warn);
+	background: var(--gacct-vo-warn-bg);
+	border-color: #f3ddc0;
+	border-left-color: var(--gacct-vo-warn);
+}
+
+.gacct-vo-alert h3 { color: var(--gacct-vo-warn); }
+.gacct-vo-alert p { margin: 0 0 10px; }
+
+.gacct-vo-alert.is-neutral {
+	background: #f5f7f8;
+	border-color: var(--gacct-vo-line);
+	border-left-color: var(--gacct-vo-muted);
+}
+
+.gacct-vo-alert.is-neutral h3 { color: var(--gacct-vo-ink); }
+
+/* ── Tableaux (reset Elementor d'abord !) ───────────────────────────── */
+
+.gacct-vo table.gacct-vo-table,
+.gacct-vo .gacct-vo-table th,
+.gacct-vo .gacct-vo-table td {
+	border: 0;
+	padding: 0;
+	background: transparent;
+}
+
+.gacct-vo-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 4px 0 0;
+}
+
+.gacct-vo-table td {
+	padding: 9px 0;
+	font-size: 15px;
+	vertical-align: top;
+}
+
+.gacct-vo-table tbody tr + tr td { border-top: 1px solid var(--gacct-vo-line); }
+
+.gacct-vo-amount {
+	text-align: right;
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+	font-weight: 600;
+}
+
+.gacct-vo-qty { color: var(--gacct-vo-muted); font-size: 13px; margin-left: 4px; }
+
+.gacct-vo-row-sep td {
+	padding-top: 16px;
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--gacct-vo-accent);
+	border-top: 0 !important;
+}
+
+.gacct-vo-row-extra td { background: color-mix(in srgb, var(--gacct-vo-accent) 6%, #ffffff); }
+.gacct-vo-row-extra td:first-child { border-radius: 8px 0 0 8px; padding-left: 8px; }
+.gacct-vo-row-extra td:last-child  { border-radius: 0 8px 8px 0; padding-right: 8px; }
+
+.gacct-vo-table tfoot td { padding: 8px 0; }
+
+.gacct-vo-total td {
+	border-top: 2px solid var(--gacct-vo-ink);
+	font-weight: 700;
+	font-size: 16px;
+}
+
+.gacct-vo-paid td { color: var(--gacct-vo-muted); font-size: 14px; }
+
+.gacct-vo-balance td {
+	font-weight: 700;
+	font-size: 17px;
+	color: var(--gacct-vo-accent);
+}
+
+.gacct-vo-balance-hint {
+	display: block;
+	font-size: 12px;
+	font-weight: 400;
+	color: var(--gacct-vo-muted);
+}
+
+/* ── Bloc virement ──────────────────────────────────────────────────── */
+
+.gacct-vo-bank-table td { font-size: 14px; }
+.gacct-vo-bank-table .is-highlight td { font-weight: 700; }
+
+/* ── Boutons ────────────────────────────────────────────────────────── */
+
+.gacct-vo-btn,
+.gacct-vo a.gacct-vo-btn {
+	display: inline-block;
+	padding: 12px 22px;
+	border-radius: 10px;
+	background: var(--gacct-vo-accent);
+	color: #ffffff;
+	font-weight: 700;
+	font-size: 15px;
+	text-decoration: none;
+	border: 0;
+	cursor: pointer;
+	transition: filter 0.15s ease;
+}
+
+.gacct-vo-btn:hover { filter: brightness(0.94); color: #ffffff; }
+
+.gacct-vo-btn.is-secondary,
+.gacct-vo a.gacct-vo-btn.is-secondary {
+	background: transparent;
+	color: var(--gacct-vo-accent);
+	border: 1.5px solid color-mix(in srgb, var(--gacct-vo-accent) 55%, #ffffff);
+}
+
+.gacct-vo-btn.is-secondary:hover {
+	background: color-mix(in srgb, var(--gacct-vo-accent) 8%, #ffffff);
+}
+
+/* ── Divers ─────────────────────────────────────────────────────────── */
+
+.gacct-vo-address {
+	margin: 6px 0 14px;
+	padding: 12px 14px;
+	background: #f5f7f8;
+	border-radius: 10px;
+	font-weight: 600;
+	font-size: 14px;
+}
+
+.gacct-vo-billing address {
+	font-style: normal;
+	line-height: 1.6;
+	margin: 0 0 6px;
+}
+
+.gacct-vo-help {
+	margin: 0;
+	text-align: center;
+	color: var(--gacct-vo-muted);
+	font-size: 14px;
+}
+
+@media (max-width: 600px) {
+	.gacct-vo-card { padding: 18px 16px; }
+	.gacct-vo-ref { font-size: 21px; }
+}
