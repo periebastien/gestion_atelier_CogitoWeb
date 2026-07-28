@@ -740,24 +740,28 @@ function gacct_dash_revision_extra( array $row, $order, array $conf ) {
 }
 
 /**
- * URL de la fiche d'une révision (sous-page « Détail de la commande »).
+ * URL de la fiche d'une révision : l'endpoint WooCommerce `view-order`
+ * (page « détail de commande » sur-mesure, gacct-vieworder.php). L'ancienne
+ * sous-page Profile Builder « detail-commande » (template 578) n'existe plus.
+ * Sans commande liée, repli sur la liste « Mes demandes d'interventions ».
  *
- * @param int $revision_id Révision.
+ * @param int $revision_id Révision (inutilisé, conservé pour la signature).
  * @param int $order_id    Commande liée (0 si aucune).
  * @return string
  */
 function gacct_dash_revision_url( $revision_id, $order_id = 0 ) {
-	$base = function_exists( 'jwcct_get_compte_subpage_url' )
-		? jwcct_get_compte_subpage_url( 'detail-commande' )
-		: home_url( '/mon-compte/detail-commande' );
+	$order_id = absint( $order_id );
 
-	$args = array( 'revision_id' => absint( $revision_id ) );
-
-	if ( absint( $order_id ) ) {
-		$args['order_id'] = absint( $order_id );
+	if ( $order_id && function_exists( 'wc_get_order' ) ) {
+		$order = wc_get_order( $order_id );
+		if ( $order ) {
+			return $order->get_view_order_url();
+		}
 	}
 
-	return add_query_arg( $args, $base );
+	return function_exists( 'jwcct_get_compte_subpage_url' )
+		? jwcct_get_compte_subpage_url( 'mes-demandes-interventions' )
+		: home_url( '/mon-compte/' );
 }
 
 /**

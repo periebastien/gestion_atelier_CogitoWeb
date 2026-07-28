@@ -1027,9 +1027,8 @@ function jwcct_render_materiel_historique( $historique ) {
 		return '';
 	}
 
-	$base_url = jwcct_get_compte_subpage_url( 'detail-commande' );
-	$entrees  = explode( ';;', $historique );
-	$liens    = array();
+	$entrees = explode( ';;', $historique );
+	$liens   = array();
 
 	foreach ( $entrees as $entree ) {
 		$parts = explode( '|', $entree );
@@ -1038,19 +1037,24 @@ function jwcct_render_materiel_historique( $historique ) {
 		}
 		list( $revision_id, $timestamp, $order_id ) = $parts;
 
-		$args = array( 'revision_id' => (int) $revision_id );
-		if ( ! empty( $order_id ) && (int) $order_id > 0 ) {
-			$args['order_id'] = (int) $order_id;
-		}
-
-		$url            = add_query_arg( $args, $base_url );
 		$formatted_date = is_numeric( $timestamp ) ? date_i18n( 'j F Y', (int) $timestamp ) : '';
 
-		$liens[] = sprintf(
-			'<a href="%s" class="cmd-link"><span class="cmd-time">%s</span></a>',
-			esc_url( $url ),
-			esc_html( $formatted_date )
-		);
+		// Détail = endpoint WooCommerce view-order (l'ancienne sous-page
+		// « detail-commande » n'existe plus). Sans commande liée : date seule.
+		$order = ( (int) $order_id > 0 && function_exists( 'wc_get_order' ) ) ? wc_get_order( (int) $order_id ) : false;
+
+		if ( $order ) {
+			$liens[] = sprintf(
+				'<a href="%s" class="cmd-link"><span class="cmd-time">%s</span></a>',
+				esc_url( $order->get_view_order_url() ),
+				esc_html( $formatted_date )
+			);
+		} else {
+			$liens[] = sprintf(
+				'<span class="cmd-link"><span class="cmd-time">%s</span></span>',
+				esc_html( $formatted_date )
+			);
+		}
 	}
 
 	if ( empty( $liens ) ) {
