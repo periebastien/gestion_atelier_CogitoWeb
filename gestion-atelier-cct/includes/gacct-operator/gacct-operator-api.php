@@ -250,6 +250,11 @@ function gacct_op_ajax_delete_report() {
 
 	wp_delete_attachment( $attachment_id, true );
 
+	// Rapport généré par un formulaire : son entrée redevient un brouillon.
+	if ( function_exists( 'gacct_report_entry_detach_attachment' ) ) {
+		gacct_report_entry_detach_attachment( $revision_id, $attachment_id );
+	}
+
 	$revision = jwcct_get_cct_item( JWCCT_CCT_REVISION, $revision_id );
 	$order    = $revision ? gacct_op_get_order_for_revision( $revision ) : false;
 

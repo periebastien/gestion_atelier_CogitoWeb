@@ -303,6 +303,25 @@ function gacct_op_enqueue_assets( $hook_suffix ) {
 		true
 	);
 
+	// Fiche : formulaires de rapports de contrôle (calculs temps réel).
+	if ( 'fiche' === gacct_op_current_view() && function_exists( 'gacct_report_calc_config' ) ) {
+		wp_enqueue_style(
+			'gacct-operator-report',
+			$base . '/assets/css/operator-report.css',
+			array( 'gacct-operator' ),
+			GACCT_Plugin::VERSION
+		);
+		wp_enqueue_script(
+			'gacct-operator-report',
+			$base . '/assets/js/operator-report.js',
+			array( 'gacct-operator' ),
+			GACCT_Plugin::VERSION,
+			true
+		);
+		// Source unique PHP des seuils/coefs, mise en miroir côté JS.
+		wp_localize_script( 'gacct-operator-report', 'gacctReportCfg', gacct_report_calc_config() );
+	}
+
 	if ( 'reception' === gacct_op_current_view() ) {
 		wp_enqueue_script(
 			'gacct-operator-reception',

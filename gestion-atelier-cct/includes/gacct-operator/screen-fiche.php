@@ -364,34 +364,8 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 			}
 		}
 
-		// Rapport d'intervention : déposable pendant toute l'intervention (3 à 6),
-		// exigé à l'entrée en 6. Il ne change plus l'état à lui seul.
-		if ( $state >= 3 && $state <= 6 ) {
-			$rapport_ids = gacct_report_ids( $revision['rapport_pdf'] ?? '' );
-
-			echo '<form class="gacct-op-upload-form" data-op-form="upload-report">';
-			echo '<label class="gacct-op-label" for="gacct-op-rapport">' . esc_html__( 'Rapport d\'intervention (PDF, 10 Mo max)', 'gestion-atelier-cct' ) . '</label>';
-
-			if ( $rapport_ids ) {
-				echo '<ul class="gacct-op-report-list">';
-				foreach ( $rapport_ids as $rapport_index => $rapport_id ) {
-					$nom = get_the_title( $rapport_id );
-					echo '<li>';
-					echo '<a href="' . esc_url( gacct_report_download_url( $revision_id, $rapport_id ) ) . '" target="_blank" rel="noopener">'
-						. esc_html( $nom ? $nom : sprintf( __( 'Rapport %d', 'gestion-atelier-cct' ), $rapport_index + 1 ) )
-						. '</a> ';
-					echo '<button type="button" class="gacct-op-report-del" data-op-action="delete-report" data-attachment="' . esc_attr( $rapport_id ) . '" aria-label="' . esc_attr__( 'Supprimer ce rapport', 'gestion-atelier-cct' ) . '">×</button>';
-					echo '</li>';
-				}
-				echo '</ul>';
-				echo '<label class="gacct-op-check"><input type="checkbox" data-op-field="replace-report"> ' . esc_html__( 'Remplacer les rapports existants (sinon le nouveau s\'ajoute)', 'gestion-atelier-cct' ) . '</label>';
-			}
-
-			echo '<input type="file" id="gacct-op-rapport" name="rapport" accept="application/pdf" required>';
-			echo '<button type="submit" class="gacct-op-btn secondary">' . esc_html__( 'Déposer le rapport', 'gestion-atelier-cct' ) . '</button>';
-			echo '<p class="gacct-op-muted">' . esc_html__( 'Le rapport est obligatoire avant de demander le solde ; il ne devient visible du client qu\'une fois le solde réglé.', 'gestion-atelier-cct' ) . '</p>';
-			echo '</form>';
-		}
+		// Le dépôt / la génération des rapports vit désormais dans la carte
+		// « Rapports de contrôle » ci-dessous (états 3 à 6).
 
 		// 7→8 : réexpédition du matériel, suivi transporteur obligatoire.
 		if ( 7 === $state ) {
@@ -472,6 +446,11 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 
 	// ---------------------------------------------------------------- Devis complémentaire.
 	gacct_op_render_quote_card( $revision_id, $revision, $order, $state );
+
+	// ---------------------------------------------------------------- Rapports de contrôle.
+	if ( function_exists( 'gacct_report_render_card' ) ) {
+		gacct_report_render_card( $revision_id, $revision, $order, $state );
+	}
 
 	// ---------------------------------------------------------------- Notes + journal.
 	echo '<div class="gacct-op-card gacct-op-notes-card">';

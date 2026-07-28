@@ -1,0 +1,320 @@
+/**
+ * Rapports de contrôle — carte de la fiche console (mobile-first).
+ * Complète operator.css / operator-fiche.css.
+ */
+
+/* L'attribut [hidden] doit gagner sur les display: flex/grid/inline-block
+   posés par les classes ci-dessous (la règle UA seule perdrait). */
+.gacct-op-reports-card [hidden] {
+	display: none !important;
+}
+
+/* ── Liste des rapports ─────────────────────────────────────────────── */
+.gacct-rf-list {
+	margin: 0 0 12px;
+	padding: 0;
+	list-style: none;
+}
+
+.gacct-rf-item {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 10px;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 10px;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	margin-bottom: 6px;
+	background: #fff;
+}
+
+.gacct-rf-item.is-draft {
+	border-style: dashed;
+	background: #f8fafc;
+}
+
+.gacct-rf-item-main {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 8px;
+	align-items: baseline;
+	min-width: 0;
+}
+
+.gacct-rf-item-number {
+	font-variant-numeric: tabular-nums;
+	color: #475569;
+}
+
+.gacct-rf-item-status {
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	padding: 2px 7px;
+	border-radius: 99px;
+	background: #e2e8f0;
+	color: #334155;
+}
+
+.gacct-rf-item.is-final .gacct-rf-item-status {
+	background: #d1fae5;
+	color: #065f46;
+}
+
+.gacct-rf-item-actions {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	flex-shrink: 0;
+}
+
+.gacct-rf-line-del {
+	border: 0;
+	background: transparent;
+	color: #b91c1c;
+	font-size: 18px;
+	line-height: 1;
+	cursor: pointer;
+	padding: 2px 6px;
+}
+
+/* ── Choix du modèle ────────────────────────────────────────────────── */
+.gacct-rf-new {
+	margin: 10px 0;
+}
+
+.gacct-rf-model-choice {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 10px;
+}
+
+/* ── Formulaire ─────────────────────────────────────────────────────── */
+.gacct-rf-form {
+	margin-top: 14px;
+	border-top: 2px solid #e2e8f0;
+	padding-top: 14px;
+}
+
+.gacct-rf-title {
+	margin: 0 0 10px;
+	font-size: 16px;
+}
+
+.gacct-rf-section {
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	margin: 10px 0;
+	background: #fff;
+}
+
+.gacct-rf-section > summary {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 10px 12px;
+	font-weight: 600;
+	cursor: pointer;
+	list-style: none;
+}
+
+.gacct-rf-section > summary::-webkit-details-marker {
+	display: none;
+}
+
+.gacct-rf-section > summary::after {
+	content: '▾';
+	color: #94a3b8;
+	transition: transform 0.15s ease;
+}
+
+.gacct-rf-section[open] > summary::after {
+	transform: rotate(180deg);
+}
+
+.gacct-rf-section-body {
+	padding: 4px 12px 12px;
+	border-top: 1px solid #f1f5f9;
+}
+
+.gacct-rf-grid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 8px 12px;
+	margin: 8px 0;
+}
+
+@media ( min-width: 600px ) {
+	.gacct-rf-grid {
+		grid-template-columns: repeat( 2, 1fr );
+	}
+
+	.gacct-rf-grid-visual,
+	.gacct-rf-grid-poro {
+		grid-template-columns: repeat( 3, 1fr );
+	}
+
+	.gacct-rf-model-choice {
+		flex-direction: row;
+		flex-wrap: wrap;
+	}
+}
+
+.gacct-rf-field {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	min-width: 0;
+}
+
+.gacct-rf-label {
+	font-size: 12px;
+	font-weight: 600;
+	color: #475569;
+}
+
+.gacct-rf-field input,
+.gacct-rf-field select,
+.gacct-rf-field textarea {
+	width: 100%;
+	max-width: none;
+}
+
+.gacct-rf-seuil-wrap {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+}
+
+/* ── Badges de résultat ─────────────────────────────────────────────── */
+.gacct-rf-badge {
+	display: inline-block;
+	padding: 2px 10px;
+	border-radius: 99px;
+	font-size: 12px;
+	font-weight: 700;
+	background: #e2e8f0;
+	color: #334155;
+	white-space: nowrap;
+}
+
+.gacct-rf-badge-big {
+	font-size: 15px;
+	padding: 6px 16px;
+}
+
+.gacct-rf-badge.is-reforme { background: #fee2e2; color: #991b1b; }
+.gacct-rf-badge.is-limite { background: #ffedd5; color: #9a3412; }
+.gacct-rf-badge.is-acceptable { background: #fef9c3; color: #854d0e; }
+.gacct-rf-badge.is-bon { background: #dcfce7; color: #166534; }
+.gacct-rf-badge.is-tresbon { background: #d1fae5; color: #065f46; }
+.gacct-rf-badge.is-neuf { background: #cffafe; color: #155e75; }
+.gacct-rf-badge.is-na { background: #f1f5f9; color: #64748b; }
+
+.gacct-rf-visual-group {
+	margin: 10px 0;
+	padding: 8px 0 2px;
+	border-top: 1px dashed #e2e8f0;
+}
+
+.gacct-rf-visual-head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 4px;
+}
+
+.gacct-rf-computed {
+	margin: 8px 0 0;
+	font-size: 13px;
+	color: #334155;
+	font-weight: 600;
+}
+
+/* ── Test de rupture ────────────────────────────────────────────────── */
+.gacct-rf-rupture-line {
+	border: 1px dashed #cbd5e1;
+	border-radius: 8px;
+	padding: 8px 10px;
+	margin: 8px 0;
+}
+
+.gacct-rf-rupture-result {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	margin: 4px 0 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: #334155;
+}
+
+.gacct-rf-vr-hint {
+	font-size: 13px;
+	color: #0e7490;
+	font-weight: 600;
+}
+
+/* ── Tableau (calcul réforme suspente) ──────────────────────────────── */
+.gacct-rf-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 8px 0;
+}
+
+.gacct-rf-table th,
+.gacct-rf-table td {
+	border: 1px solid #e2e8f0;
+	padding: 6px 8px;
+	text-align: left;
+	font-size: 13px;
+}
+
+.gacct-rf-table input {
+	width: 100%;
+	max-width: 110px;
+}
+
+.gacct-rf-cell-computed,
+.gacct-rf-row-total td {
+	font-variant-numeric: tabular-nums;
+	font-weight: 600;
+	background: #f8fafc;
+}
+
+/* ── Récapitulatif + actions ────────────────────────────────────────── */
+.gacct-rf-summary {
+	margin: 14px 0;
+	padding: 12px;
+	border-radius: 8px;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+}
+
+.gacct-rf-summary-label {
+	font-weight: 700;
+}
+
+.gacct-rf-summary .gacct-op-muted {
+	flex-basis: 100%;
+	margin: 0;
+}
+
+.gacct-rf-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 12px 0 4px;
+}
+
+.gacct-rf-upload {
+	margin-top: 14px;
+}
