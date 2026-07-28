@@ -293,3 +293,11 @@
 		min-height: 34px;
 	}
 }
+
+/* Bouton « Acompte reçu » dans la colonne Actions */
+.gacct-op-list .gacct-op-list-deposit {
+	min-height: 34px;
+	padding: 4px 12px;
+	font-size: 12px;
+	margin-left: 6px;
+}

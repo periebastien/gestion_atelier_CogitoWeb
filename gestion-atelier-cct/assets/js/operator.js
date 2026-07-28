@@ -10,6 +10,49 @@
 		return;
 	}
 
+	// « Acompte encaissé » : disponible sur TOUTES les vues de la console
+	// (liste ET fiche), d'où sa délégation globale, hors du garde fiche.
+	document.addEventListener( 'click', function ( event ) {
+		var button = event.target.closest( '[data-op-action="confirm-deposit"]' );
+
+		if ( ! button || button.disabled ) {
+			return;
+		}
+
+		var revId = button.getAttribute( 'data-revision-id' )
+			|| ( button.closest( '[data-revision-id]' ) && button.closest( '[data-revision-id]' ).getAttribute( 'data-revision-id' ) );
+
+		if ( ! revId ) {
+			return;
+		}
+
+		if ( ! window.confirm( 'Confirmer l’encaissement de l’acompte (virement reçu) ? Le dossier passera en « En attente de réception ».' ) ) {
+			return;
+		}
+
+		button.disabled = true;
+
+		var body = new FormData();
+		body.append( 'action', 'gacct_op_confirm_deposit' );
+		body.append( 'nonce', window.gacctOp.nonce );
+		body.append( 'revision_id', revId );
+
+		fetch( window.gacctOp.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: body } )
+			.then( function ( r ) { return r.json(); } )
+			.then( function ( json ) {
+				if ( json && json.success ) {
+					window.location.reload();
+				} else {
+					window.alert( ( json && json.data && json.data.message ) || window.gacctOp.i18n.genericError );
+					button.disabled = false;
+				}
+			} )
+			.catch( function () {
+				window.alert( window.gacctOp.i18n.genericError );
+				button.disabled = false;
+			} );
+	} );
+
 	document.addEventListener( 'DOMContentLoaded', function () {
 		var fiche = document.querySelector( '.gacct-op-fiche[data-revision-id]' );
 

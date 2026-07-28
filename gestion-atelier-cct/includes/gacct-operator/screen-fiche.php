@@ -367,6 +367,9 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 
 		if ( $can_remind ) {
 			echo '<div class="gacct-op-feedback gacct-op-pay-feedback" aria-live="polite"></div>';
+			if ( 'bacs' === $order->get_payment_method() && in_array( $order->get_status(), array( 'on-hold', 'pending' ), true ) ) {
+				echo '<p><button type="button" class="gacct-op-btn" data-op-action="confirm-deposit">' . esc_html__( 'Acompte encaissé (virement reçu)', 'gestion-atelier-cct' ) . '</button></p>';
+			}
 			echo '<p><button type="button" class="gacct-op-btn secondary" data-op-action="payment-reminder">' . esc_html__( 'Relancer le paiement maintenant', 'gestion-atelier-cct' ) . '</button></p>';
 		}
 

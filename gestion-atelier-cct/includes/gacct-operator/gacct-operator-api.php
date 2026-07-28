@@ -368,3 +368,42 @@ function gacct_op_ajax_reschedule() {
 	wp_send_json_success( $result );
 }
 add_action( 'wp_ajax_gacct_op_reschedule', 'gacct_op_ajax_reschedule' );
+
+/**
+ * « Acompte encaissé » : le virement d'acompte est arrivé sur le compte.
+ * Passe la commande au statut Kojito `acompte-paye` ; la bascule 0 → 1 de la
+ * révision est assurée par gacct_sync_revision_state_on_payment() (hook
+ * woocommerce_order_status_changed déjà branché — `acompte-paye` fait partie
+ * des statuts « payés » via gacct_paid_order_statuses).
+ */
+function gacct_op_ajax_confirm_deposit() {
+	gacct_op_api_guard();
+
+	$revision_id = isset( $_POST['revision_id'] ) ? absint( $_POST['revision_id'] ) : 0;
+	$revision    = jwcct_get_cct_item( JWCCT_CCT_REVISION, $revision_id );
+	$order       = $revision ? gacct_op_get_order_for_revision( $revision ) : false;
+
+	if ( ! $order ) {
+		wp_send_json_error( array( 'message' => __( 'Commande liée introuvable.', 'gestion-atelier-cct' ) ) );
+	}
+
+	if ( 'bacs' !== $order->get_payment_method() || ! in_array( $order->get_status(), array( 'on-hold', 'pending' ), true ) ) {
+		wp_send_json_error( array( 'message' => __( 'Cette commande n\'est pas en attente de virement.', 'gestion-atelier-cct' ) ) );
+	}
+
+	gacct_op_add_signed_note( $order, __( 'Acompte encaissé : virement reçu, commande passée en « Acompte payé »', 'gestion-atelier-cct' ) );
+
+	if ( ! $order->get_date_paid() ) {
+		$order->set_date_paid( time() );
+	}
+
+	$order->update_status( 'acompte-paye', __( 'Virement d\'acompte encaissé (console atelier).', 'gestion-atelier-cct' ) );
+
+	$updated = jwcct_get_cct_item( JWCCT_CCT_REVISION, $revision_id );
+
+	wp_send_json_success( array(
+		'order_status' => $order->get_status(),
+		'etat'         => absint( $updated['etat_de_la_commande'] ?? 0 ),
+	) );
+}
+add_action( 'wp_ajax_gacct_op_confirm_deposit', 'gacct_op_ajax_confirm_deposit' );

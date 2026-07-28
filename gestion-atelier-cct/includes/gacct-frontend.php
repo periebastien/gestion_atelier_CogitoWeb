@@ -463,6 +463,46 @@ function jwcct_render_order_status_tracker( $value ) {
         $steps_html .= sprintf( '<div class="progress-step %s"></div>', $class );
     }
 
+    // Bouton « Imprimer le bon d'intervention » (états 0-1 : tant que le colis
+    // n'est pas réceptionné). L'objet courant du listing = la ligne CCT revision.
+    $workorder_html = '';
+
+    if ( absint( $value ) <= 1 && function_exists( 'gacct_wo_print_url' ) && function_exists( 'jet_engine' ) ) {
+        // L'objet courant varie selon la requête du listing : ligne CCT brute
+        // (_ID + order_id) ou ligne de requête jointe (revision_id, parfois sans
+        // order_id) → on retombe sur la table revision si besoin.
+        $item     = jet_engine()->listings->data->get_current_object();
+        $order_id = 0;
+
+        if ( is_object( $item ) ) {
+            if ( ! empty( $item->order_id ) ) {
+                $order_id = absint( $item->order_id );
+            } else {
+                $rev_id = absint( $item->revision_id ?? ( $item->_ID ?? 0 ) );
+                if ( $rev_id ) {
+                    global $wpdb;
+                    $order_id = absint( $wpdb->get_var( $wpdb->prepare(
+                        "SELECT order_id FROM {$wpdb->prefix}jet_cct_revision WHERE _ID = %d LIMIT 1",
+                        $rev_id
+                    ) ) );
+                }
+            }
+        }
+
+        $order    = ( $order_id && function_exists( 'wc_get_order' ) ) ? wc_get_order( $order_id ) : false;
+
+        if ( $order && ! $order->has_status( array( 'cancelled', 'refunded', 'trash' ) ) ) {
+            $workorder_html = sprintf(
+                '<a class="gacct-workorder-print" href="%s" target="_blank" rel="noopener">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/></svg>
+                    <span>%s</span>
+                </a>',
+                esc_url( gacct_wo_print_url( $order ) ),
+                esc_html__( 'Imprimer le bon d\'intervention', 'gestion-atelier-cct' )
+            );
+        }
+    }
+
     return sprintf(
         '<div class="status-stack">
             <div class="status-tip">%s</div>
@@ -471,12 +511,14 @@ function jwcct_render_order_status_tracker( $value ) {
             <div class="progress-labels">
                 <span>Paiement</span><span>Réception</span><span>Intervention</span><span>Retour</span>
             </div>
+            %s
         </div>',
         $s['tip'],
         esc_attr( $s['badge'] ),
         esc_html( $s['label'] ),
         esc_attr( $s['progress'] ),
-        $steps_html
+        $steps_html,
+        $workorder_html
     );
 }
 

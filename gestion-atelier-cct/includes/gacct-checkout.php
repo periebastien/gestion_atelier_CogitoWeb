@@ -314,6 +314,16 @@ function gacct_sync_revision_state_on_payment( $order_id, $old_status, $new_stat
 
     $revision_id = absint( $order->get_meta( JWCCT_ORDER_REVISION_ID ) );
 
+    // Repli : meta absente (liaison ratée, commande invitée, dossier créé à la
+    // main) → retrouver la révision par sa colonne order_id.
+    if ( ! $revision_id ) {
+        global $wpdb;
+        $revision_id = absint( $wpdb->get_var( $wpdb->prepare(
+            "SELECT _ID FROM {$wpdb->prefix}jet_cct_revision WHERE order_id = %d AND cct_status = 'publish' LIMIT 1",
+            $order_id
+        ) ) );
+    }
+
     if ( ! $revision_id ) {
         return;
     }

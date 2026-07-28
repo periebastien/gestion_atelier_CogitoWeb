@@ -298,6 +298,9 @@ function gacct_op_render_list_screen() {
 		// Actions.
 		echo '<td data-label="' . esc_attr__( 'Actions', 'gestion-atelier-cct' ) . '" class="gacct-op-list-cell-actions">';
 		echo '<a class="gacct-op-list-action" href="' . esc_url( $fiche ) . '">' . esc_html__( 'Fiche', 'gestion-atelier-cct' ) . '</a>';
+		if ( $order && 'bacs' === $order->get_payment_method() && in_array( $order->get_status(), array( 'on-hold', 'pending' ), true ) ) {
+			echo '<button type="button" class="gacct-op-btn gacct-op-list-deposit" data-op-action="confirm-deposit" data-revision-id="' . esc_attr( $rev_id ) . '">' . esc_html__( 'Acompte reçu', 'gestion-atelier-cct' ) . '</button>';
+		}
 		if ( $order && current_user_can( 'manage_woocommerce' ) ) {
 			echo '<a class="gacct-op-list-action" href="' . esc_url( $order->get_edit_order_url() ) . '" target="_blank" rel="noopener">' . esc_html__( 'Commande', 'gestion-atelier-cct' ) . '</a>';
 		}
