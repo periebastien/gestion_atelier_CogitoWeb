@@ -491,8 +491,9 @@ function gacct_op_expected_items( $order ) {
 			continue;
 		}
 
-		// Les frais de retour/port ne sont pas un contenu de colis.
-		if ( preg_match( '/frais|port|exp[ée]dition|retour/i', $name ) ) {
+		// Les frais de retour/port ne sont pas un contenu de colis
+		// (produits « Frais de port », « Colis 2 kg »…).
+		if ( preg_match( '/frais|port|exp[ée]dition|retour|^colis\b/iu', $name ) ) {
 			continue;
 		}
 

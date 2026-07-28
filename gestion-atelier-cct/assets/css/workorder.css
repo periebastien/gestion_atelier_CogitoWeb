@@ -1,0 +1,531 @@
+/**
+ * Bon d'intervention — feuille A4 imprimable (templates/workorder.php).
+ * Écran : feuille centrée sur fond gris + bouton flottant « Imprimer ».
+ * Impression : A4 portrait, 1 seule page, couleurs exactes.
+ */
+
+:root {
+	--wo-accent: #20c4c3; /* surchargée inline depuis PHP */
+	--wo-ink: #1a1a1a;
+	--wo-muted: #6b7280;
+	--wo-border: #e2e6ea;
+	--wo-card-bg: #ffffff;
+	--wo-soft-bg: #f6f9f9;
+}
+
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+}
+
+body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	color: var(--wo-ink);
+	background: #eef1f3;
+	line-height: 1.45;
+}
+
+/* ── Feuille ─────────────────────────────────────────────────────────── */
+
+.wo-sheet {
+	max-width: 800px;
+	margin: 32px auto 72px;
+	padding: 34px 40px 26px;
+	background: #fff;
+	border-radius: 6px;
+	box-shadow: 0 4px 26px rgba(15, 35, 45, 0.14);
+}
+
+/* ── En-tête ─────────────────────────────────────────────────────────── */
+
+.wo-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 24px;
+}
+
+.wo-logo {
+	display: block;
+	height: 46px;
+	width: auto;
+	max-width: 260px;
+	object-fit: contain;
+}
+
+.wo-logo-text {
+	font-size: 22px;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+}
+
+.wo-head-title {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	text-align: right;
+}
+
+.wo-doc-type {
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	color: var(--wo-accent);
+}
+
+.wo-ref {
+	font-size: 26px;
+	font-weight: 800;
+	letter-spacing: 0.01em;
+	line-height: 1.2;
+}
+
+.wo-slot {
+	font-size: 12px;
+	color: var(--wo-muted);
+}
+
+.wo-rule {
+	height: 3px;
+	border-radius: 2px;
+	background: linear-gradient(90deg, var(--wo-accent), rgba(32, 196, 195, 0.15));
+	margin: 14px 0 20px;
+}
+
+/* ── Corps 2 colonnes ────────────────────────────────────────────────── */
+
+.wo-body {
+	display: flex;
+	gap: 18px;
+	align-items: stretch;
+}
+
+.wo-col-main {
+	flex: 1 1 62%;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.wo-col-side {
+	flex: 0 0 220px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+/* ── Cartes ──────────────────────────────────────────────────────────── */
+
+.wo-card {
+	background: var(--wo-card-bg);
+	border: 1px solid var(--wo-border);
+	border-radius: 8px;
+	padding: 14px 18px;
+}
+
+.wo-card-title {
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: 0.16em;
+	text-transform: uppercase;
+	color: var(--wo-accent);
+	margin-bottom: 8px;
+}
+
+.wo-card-note {
+	margin-top: 8px;
+	font-size: 10.5px;
+	color: var(--wo-muted);
+}
+
+/* Matériel */
+
+.wo-card-materiel {
+	background: var(--wo-soft-bg);
+	border-color: rgba(32, 196, 195, 0.35);
+	border-color: color-mix(in srgb, var(--wo-accent) 40%, #fff);
+}
+
+.wo-materiel-name {
+	font-size: 21px;
+	font-weight: 800;
+	line-height: 1.25;
+	margin-bottom: 10px;
+}
+
+.wo-specs {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.wo-spec {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 13px;
+}
+
+.wo-spec dt {
+	flex: 0 0 92px;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--wo-muted);
+}
+
+.wo-spec dd {
+	font-weight: 600;
+}
+
+.wo-serie {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 15px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	background: #fff;
+	border: 1px solid var(--wo-border);
+	border-radius: 5px;
+	padding: 2px 10px;
+}
+
+.wo-couleurs {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.wo-couleurs > span:first-child {
+	margin-right: 4px;
+	text-transform: capitalize;
+}
+
+.wo-swatch {
+	display: inline-block;
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	border: 1px solid rgba(26, 26, 26, 0.28); /* indispensable pour le blanc */
+	background-clip: padding-box;
+}
+
+/* Prestations : check-list du colis */
+
+.wo-prestations {
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.wo-prestations li {
+	display: flex;
+	align-items: center;
+	gap: 9px;
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.wo-check {
+	flex: 0 0 auto;
+	width: 13px;
+	height: 13px;
+	border: 1.6px solid var(--wo-ink);
+	border-radius: 3px;
+}
+
+/* Client */
+
+.wo-card-client {
+	padding-top: 11px;
+	padding-bottom: 11px;
+}
+
+.wo-client-line {
+	font-size: 12.5px;
+}
+
+.wo-client-sep {
+	color: var(--wo-muted);
+	margin: 0 3px;
+}
+
+/* ── Colonne latérale ────────────────────────────────────────────────── */
+
+.wo-qr-box {
+	border: 2px solid var(--wo-accent);
+	border-radius: 8px;
+	padding: 14px 12px 11px;
+	text-align: center;
+	background: #fff;
+}
+
+.wo-qr {
+	display: flex;
+	justify-content: center;
+}
+
+.wo-qr img,
+.wo-qr canvas {
+	display: block;
+	width: 132px;
+	height: 132px;
+	margin: 0 auto;
+}
+
+.wo-qr-fallback {
+	margin-top: 7px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.wo-qr-caption {
+	margin-top: 3px;
+	font-size: 10.5px;
+	color: var(--wo-muted);
+}
+
+.wo-deadline {
+	border-radius: 8px;
+	padding: 12px 14px;
+	background: var(--wo-accent);
+	color: #fff;
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.wo-deadline-label {
+	font-size: 10.5px;
+	font-weight: 600;
+	letter-spacing: 0.03em;
+	opacity: 0.92;
+}
+
+.wo-deadline-date {
+	font-size: 15.5px;
+	font-weight: 800;
+}
+
+.wo-steps {
+	border: 1px solid var(--wo-border);
+	border-radius: 8px;
+	padding: 12px 14px;
+	background: var(--wo-soft-bg);
+}
+
+.wo-steps-list {
+	list-style: none;
+	counter-reset: wo-step;
+	display: flex;
+	flex-direction: column;
+	gap: 7px;
+	font-size: 11.5px;
+	line-height: 1.35;
+}
+
+.wo-steps-list li {
+	counter-increment: wo-step;
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+}
+
+.wo-steps-list li::before {
+	content: counter(wo-step);
+	flex: 0 0 16px;
+	height: 16px;
+	border-radius: 50%;
+	background: var(--wo-accent);
+	color: #fff;
+	font-size: 10px;
+	font-weight: 700;
+	line-height: 16px;
+	text-align: center;
+	align-self: flex-start;
+}
+
+/* ── Réservé atelier ─────────────────────────────────────────────────── */
+
+.wo-atelier {
+	margin-top: 16px;
+}
+
+.wo-atelier-title {
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: 0.16em;
+	text-transform: uppercase;
+	color: var(--wo-muted);
+	margin-bottom: 6px;
+}
+
+.wo-atelier-zone {
+	border: 1.6px dashed #b7bfc6;
+	border-radius: 8px;
+	height: 40mm;
+	padding: 10px 16px 12px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.wo-atelier-lines {
+	flex: 1 1 auto;
+	background-image: repeating-linear-gradient(
+		to bottom,
+		transparent 0,
+		transparent 25px,
+		#d6dbe0 25px,
+		#d6dbe0 26px
+	);
+}
+
+.wo-atelier-fields {
+	display: flex;
+	gap: 34px;
+	padding-top: 8px;
+	font-size: 11.5px;
+	color: var(--wo-muted);
+}
+
+.wo-atelier-field {
+	display: flex;
+	align-items: flex-end;
+	gap: 8px;
+}
+
+.wo-blank {
+	display: inline-block;
+	width: 120px;
+	border-bottom: 1px solid #9aa2aa;
+}
+
+/* ── Pied de page ────────────────────────────────────────────────────── */
+
+.wo-foot {
+	margin-top: 16px;
+	padding-top: 10px;
+	border-top: 1px solid var(--wo-border);
+	display: flex;
+	justify-content: space-between;
+	gap: 16px;
+	font-size: 10px;
+	color: var(--wo-muted);
+}
+
+/* ── Bouton imprimer (écran seulement) ───────────────────────────────── */
+
+.wo-print-btn {
+	position: fixed;
+	right: 26px;
+	bottom: 26px;
+	z-index: 10;
+	border: 0;
+	border-radius: 999px;
+	padding: 13px 26px;
+	background: var(--wo-accent);
+	color: #fff;
+	font-family: inherit;
+	font-size: 14px;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	cursor: pointer;
+	box-shadow: 0 6px 18px rgba(15, 35, 45, 0.25);
+}
+
+.wo-print-btn:hover {
+	filter: brightness(1.06);
+}
+
+/* ── Écran étroit ────────────────────────────────────────────────────── */
+
+@media screen and (max-width: 680px) {
+	.wo-sheet {
+		margin: 12px;
+		padding: 22px 20px;
+	}
+
+	.wo-body {
+		flex-direction: column;
+	}
+
+	.wo-col-side {
+		flex-basis: auto;
+	}
+}
+
+/* ── Impression : A4, une seule page ─────────────────────────────────── */
+
+@page {
+	size: A4;
+	margin: 12mm;
+}
+
+@media print {
+	html,
+	body {
+		background: #fff;
+	}
+
+	body {
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+	}
+
+	.wo-print-btn {
+		display: none;
+	}
+
+	.wo-sheet {
+		max-width: none;
+		width: 100%;
+		margin: 0;
+		padding: 0;
+		border-radius: 0;
+		box-shadow: none;
+	}
+
+	.wo-head,
+	.wo-body,
+	.wo-card,
+	.wo-qr-box,
+	.wo-deadline,
+	.wo-steps,
+	.wo-atelier,
+	.wo-foot {
+		break-inside: avoid;
+		page-break-inside: avoid;
+	}
+
+	/* Légère compaction pour garantir la tenue sur une page. */
+	.wo-rule {
+		margin: 11px 0 15px;
+	}
+
+	.wo-col-main,
+	.wo-col-side,
+	.wo-body {
+		gap: 12px;
+	}
+
+	.wo-atelier {
+		margin-top: 12px;
+	}
+
+	.wo-foot {
+		margin-top: 12px;
+	}
+}

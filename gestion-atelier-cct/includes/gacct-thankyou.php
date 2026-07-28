@@ -231,7 +231,7 @@ function gacct_conf_links( $order ) {
 		'new_request'    => home_url( '/demande-intervention/' ),
 		'packing_guide'  => home_url( '/controles/' ),           // consignes d'emballage (section expédition).
 		'contact'        => home_url( '/contact/' ),
-		'work_order'     => '#',                                 // TODO : bon d'intervention (générateur à développer).
+		'work_order'     => gacct_wo_print_url( $order ),        // bon d'intervention imprimable (gacct-workorder.php).
 		'receipt'        => '#',                                 // TODO : reçu de l'acompte (PDF).
 		'summary_pdf'    => '#',                                 // TODO : récapitulatif PDF.
 		'rib_pdf'        => '#',                                 // TODO : RIB téléchargeable (PDF).
@@ -262,7 +262,7 @@ function gacct_conf_features() {
 	return apply_filters(
 		'gacct_conf_features',
 		array(
-			'work_order'  => false, // bon d'intervention imprimable (générateur à développer).
+			'work_order'  => true,  // bon d'intervention imprimable (gacct-workorder.php, 28/07/2026).
 			'receipt'     => false, // reçu de l'acompte (PDF).
 			'summary_pdf' => false, // récapitulatif de commande (PDF).
 			'rib_pdf'     => false, // RIB téléchargeable (PDF).
