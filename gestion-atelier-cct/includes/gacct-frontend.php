@@ -607,22 +607,29 @@ function gacct_extraire_couleurs( $saisie ) {
 /**
  * Degrade CSS correspondant a 0, 1, 2 ou 3 couleurs.
  *
+ * `background-image` + `background-clip: padding-box`, PAS le raccourci
+ * `background:` : ce style part en inline sur les vignettes `.voile-swatch`
+ * (bordure semi-transparente arrondie), et le raccourci reinitialiserait
+ * `background-clip` a border-box — le degrade file alors sous la bordure et
+ * dessine un halo sombre dans les angles (bug corrige le 28/07/2026).
+ *
  * @param array<int,array{base:string,light:string}> $couleurs
- * @return string Declaration `background: …;`
+ * @return string Declarations CSS `background-…;` pretes pour un style inline.
  */
 function gacct_degrade_couleurs( array $couleurs ) {
+    $clip = ' background-clip: padding-box;';
     switch ( count( $couleurs ) ) {
         case 1:
-            return sprintf( 'background: linear-gradient(135deg, %s 0%%, %s 100%%);', $couleurs[0]['base'], $couleurs[0]['light'] );
+            return sprintf( 'background-image: linear-gradient(135deg, %s 0%%, %s 100%%);', $couleurs[0]['base'], $couleurs[0]['light'] ) . $clip;
         case 2:
-            return sprintf( 'background: linear-gradient(135deg, %s 50%%, %s 50%%);', $couleurs[0]['base'], $couleurs[1]['base'] );
+            return sprintf( 'background-image: linear-gradient(135deg, %s 50%%, %s 50%%);', $couleurs[0]['base'], $couleurs[1]['base'] ) . $clip;
         case 3:
             return sprintf(
-                'background: linear-gradient(135deg, %s 33.33%%, %s 33.33%% 66.66%%, %s 66.66%%);',
+                'background-image: linear-gradient(135deg, %s 33.33%%, %s 33.33%% 66.66%%, %s 66.66%%);',
                 $couleurs[0]['base'], $couleurs[1]['base'], $couleurs[2]['base']
-            );
+            ) . $clip;
         default:
-            return 'background: #e5e7eb;';
+            return 'background-color: #e5e7eb;' . $clip;
     }
 }
 
@@ -815,8 +822,29 @@ add_filter( 'jet-engine/listings/allowed-callbacks', function( $callbacks ) {
 	$callbacks['jwcct_render_materiel_historique']    = 'JWCCT: Historique des révisions (liens)';
 	$callbacks['jwcct_render_recommander_bouton']     = 'JWCCT: Bouton Recommander une révision';
 	$callbacks['jwcct_render_marque_libelle']         = 'JWCCT: Libellé de la marque (glossaire)';
+	$callbacks['jwcct_render_couleur_swatch']         = 'JWCCT: Vignette couleur de voile';
 	return $callbacks;
 } );
+
+/**
+ * Colonne « Couleur » du tableau Mon Matériel : vignette dégradée identique à
+ * celle de « Mes demandes d'interventions » (classe `.voile-swatch`, stylée dans
+ * le custom CSS des templates Elementor 521 et 1623), à partir de la saisie
+ * brute (« rouge, noir »). Le libellé textuel reste accessible en title.
+ *
+ * @param string $couleur Valeur brute de la colonne `couleur`.
+ * @return string HTML.
+ */
+function jwcct_render_couleur_swatch( $couleur ) {
+	$couleur  = (string) $couleur;
+	$gradient = gacct_degrade_couleurs( gacct_extraire_couleurs( $couleur ) );
+
+	return sprintf(
+		'<div class="voile-swatch" style="%s" title="%s"></div>',
+		esc_attr( $gradient ),
+		esc_attr( $couleur )
+	);
+}
 
 /**
  * Colonne « Marque » du tableau Mon Matériel : le CCT stocke le slug du
