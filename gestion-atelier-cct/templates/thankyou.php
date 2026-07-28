@@ -385,6 +385,9 @@ $is_bacs = ( 'bacs' === $d['variant'] );
 												<?php endif; ?>
 											<?php endif; ?>
 										</p>
+										<p class="step-txt">
+											<?php esc_html_e( 'L’acompte réserve ce créneau pour vous : si le matériel ne nous est pas parvenu la veille au soir, le créneau est libéré et l’acompte reste acquis à l’atelier, car cette place ne peut plus être proposée à un autre client. Un imprévu d’expédition ? Prévenez-nous avant la date, nous en tiendrons compte.', 'gestion-atelier-cct' ); ?>
+										</p>
 										<div class="step-action">
 											<?php if ( gacct_conf_feature( 'work_order' ) ) : ?>
 												<a href="<?php echo esc_url( $d['links']['work_order'] ); ?>" class="btn-primary"><?php esc_html_e( 'Imprimer le bon', 'gestion-atelier-cct' ); ?> <?php echo gacct_conf_icon( 'printer' ); // phpcs:ignore WordPress.Security.EscapeOutput ?></a>

@@ -288,6 +288,10 @@ function jwcct_add_revision_date_to_email( $order, $sent_to_admin, $plain_text, 
             echo "Passé ce délai, la commande est annulée et le créneau remis en ligne.\n";
         }
 
+        if ( $date_colis && $materiel_attendu ) {
+            echo "L'acompte réserve votre créneau : sans réception du matériel la veille au soir, le créneau est libéré et l'acompte reste acquis. Un imprévu ? Prévenez-nous avant la date.\n";
+        }
+
         echo "\n";
         return;
     }
@@ -356,6 +360,12 @@ function jwcct_add_revision_date_to_email( $order, $sent_to_admin, $plain_text, 
     if ( $attend_vir ) {
         echo '<p style="margin:12px 0 0;font-size:13px;color:#8a5a3b;">'
             . esc_html__( 'Passé ce délai, la commande est annulée et votre créneau est remis en ligne. Vous pouvez expédier votre matériel sans attendre l’encaissement.', 'gestion-atelier-cct' )
+            . '</p>';
+    }
+
+    if ( $date_colis && $materiel_attendu ) {
+        echo '<p style="margin:12px 0 0;font-size:13px;color:#666;">'
+            . esc_html__( 'L’acompte réserve votre créneau : sans réception du matériel la veille au soir, le créneau est libéré et l’acompte reste acquis. Un imprévu d’expédition ? Prévenez-nous avant la date, nous en tiendrons compte.', 'gestion-atelier-cct' )
             . '</p>';
     }
 

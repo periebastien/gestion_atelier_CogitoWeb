@@ -87,6 +87,17 @@ function gacct_pay_default_settings() {
 					. '<p>Si vous rencontrez un souci avec votre moyen de paiement, répondez à cet e-mail ou appelez-nous : nous trouverons une solution.</p>'
 					. '<p>À très vite,<br><br>Bastien.</p>',
 			),
+			'noshow_release' => array(
+				'enabled' => true,
+				'label'   => __( 'Créneau libéré : matériel jamais reçu (acompte conservé)', 'gestion-atelier-cct' ),
+				'subject' => __( 'Votre créneau du {slot_date} a dû être libéré - commande {order_number}', 'gestion-atelier-cct' ),
+				'body'    => '<p>Bonjour {customer_name},</p>'
+					. '<p>Nous n’avons malheureusement pas reçu votre matériel pour le créneau du <strong>{slot_date}</strong>, réservé pour votre commande <strong>{order_number}</strong>.</p>'
+					. '<p>Comme indiqué lors de votre commande, ce créneau a été libéré. L’acompte de <strong>{deposit_amount}</strong> reste acquis à l’atelier : il couvre le créneau qui vous était réservé et qui n’a pas pu être proposé à un autre client.</p>'
+					. '<p>Votre dossier n’est pas perdu pour autant : si vous souhaitez replanifier l’intervention, contactez-nous au <strong>{contact_phone}</strong> ({contact_hours}) ou répondez à cet e-mail, nous trouverons une nouvelle date ensemble.</p>'
+					. '<p>Et si votre colis est en route avec du retard, faites-nous signe dès maintenant : nous en tiendrons compte.</p>'
+					. '<p>À bientôt,<br><br>Bastien.</p>',
+			),
 			'unfinished_cancel' => array(
 				'enabled' => true,
 				'label'   => __( 'Annulation : commande non payée', 'gestion-atelier-cct' ),
@@ -349,10 +360,14 @@ function gacct_pay_bank_details_html( $order = null ) {
  * ============================================================================= */
 
 function gacct_pay_email_variables( $order = null, array $extra = array() ) {
+	$settings = gacct_pay_settings();
+
 	$variables = array(
 		'{site_name}'       => get_bloginfo( 'name' ),
 		'{new_request_url}' => esc_url( home_url( '/demande-intervention/' ) ),
 		'{checkout_url}'    => esc_url( function_exists( 'wc_get_checkout_url' ) ? wc_get_checkout_url() : home_url( '/commander/' ) ),
+		'{contact_phone}'   => $settings['contact_phone'],
+		'{contact_hours}'   => $settings['contact_hours'],
 	);
 
 	if ( $order instanceof WC_Order ) {
@@ -873,6 +888,129 @@ function gacct_pay_midnight_purge() {
 		// On le signale à l'admin plutôt que de le supprimer silencieusement.
 		jwcct_log( 'midnight_purge SKIPPED (CCT lies a une commande) : ' . wp_json_encode( $skipped ) );
 		update_option( 'gacct_pay_purge_skipped', array( 'time' => current_time( 'mysql' ), 'items' => $skipped ), false );
+	}
+}
+
+/* =============================================================================
+ *  NO-SHOW : CRÉNEAU LIBÉRÉ SI LE MATÉRIEL N'EST JAMAIS ARRIVÉ
+ *
+ *  Règle métier (28/07/2026) : au passage de minuit qui ouvre le jour du créneau
+ *  — c'est-à-dire la veille au soir —, si la voile n'est toujours pas à l'atelier
+ *  (état de la révision < 2), le créneau est libéré. L'acompte reste acquis :
+ *  quoi qu'il arrive, le créneau est perdu pour l'atelier.
+ *
+ *  Ce qui est fait : occupation supprimée (le jour redevient réservable), relation
+ *  11 nettoyée, e-mail au client (template éditable `noshow_release`) + copie
+ *  admin, note et metas de traçabilité sur la commande. Ce qui est CONSERVÉ : la
+ *  révision, la commande et son paiement — le dossier peut être replanifié à la
+ *  main après contact avec le client.
+ *
+ *  Les commandes non payées ne passent pas par ici : leurs calendriers propres
+ *  (virement J+2/J+3, non finalisé H+1/minuit) annulent et suppriment déjà tout.
+ * ============================================================================= */
+
+define( 'GACCT_PAY_META_NOSHOW_RELEASED', '_gacct_noshow_released' );
+define( 'GACCT_PAY_META_NOSHOW_SLOT', '_gacct_noshow_slot_ts' );
+
+add_action( GACCT_PAY_MIDNIGHT_EVENT, 'gacct_pay_release_noshow_slots', 20 );
+
+function gacct_pay_release_noshow_slots() {
+	global $wpdb;
+
+	$occ_table = gacct_pay_cct_table( JWCCT_CCT_OCCUPATION );
+	$rev_table = gacct_pay_cct_table( JWCCT_CCT_REVISION );
+
+	if ( ! $occ_table || ! $rev_table ) {
+		return;
+	}
+
+	// Les dates de créneau sont stockées à minuit UTC du jour calendaire : la
+	// borne « aujourd'hui inclus » est donc minuit UTC de demain, calculé depuis
+	// la date LOCALE du site (le cron tourne à minuit local, veille du créneau).
+	$limit = strtotime( current_time( 'Y-m-d' ) . ' 00:00:00 +0000' ) + DAY_IN_SECONDS;
+	$limit = (int) apply_filters( 'gacct_pay_noshow_limit_ts', $limit );
+
+	$rows = $wpdb->get_results(
+		$wpdb->prepare(
+			"SELECT o._ID AS occupation_id, o.order_id, o.date_reservee, r._ID AS revision_id, r.etat_de_la_commande AS etat
+			 FROM {$occ_table} o
+			 LEFT JOIN {$rev_table} r ON r.order_id = o.order_id
+			 WHERE o.cct_status = 'publish'
+			   AND o.order_id > 0
+			   AND CAST(o.date_reservee AS UNSIGNED) < %d",
+			$limit
+		),
+		ARRAY_A
+	);
+
+	if ( empty( $rows ) ) {
+		return;
+	}
+
+	foreach ( $rows as $row ) {
+		$order_id      = (int) $row['order_id'];
+		$occupation_id = (int) $row['occupation_id'];
+		$revision_id   = (int) $row['revision_id'];
+		$slot_ts       = (int) $row['date_reservee'];
+		$etat          = null === $row['etat'] ? null : (int) $row['etat'];
+
+		// Matériel arrivé (état >= 2) : le créneau est honoré, rien à faire.
+		if ( null !== $etat && $etat >= 2 ) {
+			continue;
+		}
+
+		$order = wc_get_order( $order_id );
+
+		if ( ! $order instanceof WC_Order ) {
+			jwcct_log( "noshow_release : occupation $occupation_id sans commande valide ($order_id), laissée telle quelle." );
+			continue;
+		}
+
+		// Déjà traitée (occupation résiduelle) ou commande morte : on n'insiste pas.
+		if ( $order->get_meta( GACCT_PAY_META_NOSHOW_RELEASED ) || $order->has_status( array( 'cancelled', 'refunded', 'trash' ) ) ) {
+			continue;
+		}
+
+		// Non payée : les calendriers virement / non finalisé s'en chargent.
+		if ( function_exists( 'gacct_order_payment_received' ) && ! gacct_order_payment_received( $order ) ) {
+			jwcct_log( "noshow_release : commande $order_id non payée au jour du créneau, laissée au calendrier de paiement." );
+			continue;
+		}
+
+		// --- Libération -----------------------------------------------------
+		if ( ! gacct_pay_delete_cct_item( JWCCT_CCT_OCCUPATION, $occupation_id ) ) {
+			jwcct_log( "noshow_release : échec de suppression de l'occupation $occupation_id (commande $order_id)." );
+			continue;
+		}
+
+		// Relation 11 uniquement : la révision reste liée à la commande (12) et au client (13).
+		gacct_pay_delete_cct_relations( 0, $occupation_id, 0 );
+
+		$order->update_meta_data( GACCT_PAY_META_NOSHOW_RELEASED, current_time( 'mysql' ) );
+		$order->update_meta_data( GACCT_PAY_META_NOSHOW_SLOT, $slot_ts );
+		$order->delete_meta_data( JWCCT_ORDER_OCCUPATION_ID );
+
+		$slot_label = wp_date( get_option( 'date_format' ), $slot_ts );
+
+		$sent = gacct_pay_send_email(
+			$order->get_billing_email(),
+			'noshow_release',
+			gacct_pay_email_variables( $order, array( '{slot_date}' => $slot_label ) ),
+			true
+		);
+
+		$order->add_order_note(
+			sprintf(
+				/* translators: 1: date du créneau, 2: id de révision, 3: envoi email */
+				__( 'Matériel jamais reçu : créneau du %1$s libéré, acompte conservé. Révision #%2$d conservée pour replanification. %3$s', 'gestion-atelier-cct' ),
+				$slot_label,
+				$revision_id,
+				$sent ? __( 'E-mail envoyé au client (copie admin).', 'gestion-atelier-cct' ) : __( 'ERREUR : e-mail non envoyé.', 'gestion-atelier-cct' )
+			)
+		);
+		$order->save();
+
+		jwcct_log( "noshow_release : créneau du $slot_label libéré (commande $order_id, occupation $occupation_id, révision $revision_id, email " . ( $sent ? 'ok' : 'KO' ) . ')' );
 	}
 }
 
