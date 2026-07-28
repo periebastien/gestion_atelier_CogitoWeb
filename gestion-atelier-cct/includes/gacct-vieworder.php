@@ -134,7 +134,7 @@ function gacct_vo_state_labels() {
 		1 => __( 'En attente de réception', 'gestion-atelier-cct' ),
 		2 => __( 'Voile réceptionnée', 'gestion-atelier-cct' ),
 		3 => __( 'Devis à valider', 'gestion-atelier-cct' ),
-		4 => __( 'Intervention en cours', 'gestion-atelier-cct' ),
+		4 => __( 'Intervention programmée', 'gestion-atelier-cct' ),
 		5 => __( 'Solde à régler', 'gestion-atelier-cct' ),
 		6 => __( 'Paiement validé', 'gestion-atelier-cct' ),
 		7 => __( 'Révision terminée', 'gestion-atelier-cct' ),

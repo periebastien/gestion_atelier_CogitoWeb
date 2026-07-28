@@ -23,6 +23,7 @@ require_once __DIR__ . '/includes/gacct-login-gate.php';
 require_once __DIR__ . '/includes/gacct-workorder.php';
 require_once __DIR__ . '/includes/gacct-quote.php';
 require_once __DIR__ . '/includes/gacct-vieworder.php';
+require_once __DIR__ . '/includes/gacct-client-tables.php';
 require_once __DIR__ . '/includes/gacct-operator/gacct-operator.php';
 
 final class GACCT_Plugin {

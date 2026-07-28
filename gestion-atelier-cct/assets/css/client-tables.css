@@ -1,0 +1,1189 @@
+/**
+ * Tables de l'espace client — responsive + design maquette Claude Design.
+ *
+ * - #scroll          : « Mes demandes d'intervention » (template 521, table Jet 16)
+ * - #scroll-materiel : « Mon Matériel »               (template 1623, table Jet 23)
+ *
+ * Le markup est celui du module jet-engine-dynamic-tables-module (plugin tiers,
+ * NON modifié) : .jet-dynamic-table-wrapper > table.jet-dynamic-table.
+ * ⚠ Toutes les <tr> (thead ET tbody) portent la classe __row--header :
+ *   toujours distinguer par `thead >` / `tbody >`.
+ * Le scoping par ID (#scroll / #scroll-materiel, _element_id des conteneurs
+ * Elementor) donne la spécificité nécessaire pour gagner contre les feuilles
+ * Elementor (réglages du widget + post-<id>.css), sans !important sauf
+ * neutralisation des styles INLINE du module (largeur de colonne).
+ *
+ * Breakpoints (kit Elementor 4) : mobile ≤767, tablette 768–1024, desktop ≥1025.
+ *  - ≥768  : table classique, scroll horizontal dans le wrapper si besoin.
+ *  - ≤767  : bascule en CARTES (transformation CSS du tableau existant).
+ *
+ * Variables : celles du kit (--teal, --ink-*, --line, --bg-soft, --orange-soft…),
+ * ne rien redéfinir en :root ici.
+ */
+
+/* =============================================================================
+ *  1. WRAPPER SCROLLABLE + SKIN DE TABLE (maquette)
+ * ============================================================================= */
+
+#scroll .jet-dynamic-table-wrapper,
+#scroll-materiel .jet-dynamic-table-wrapper {
+	max-width: 100%;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+:is(#scroll, #scroll-materiel) .jet-dynamic-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+@media (min-width: 768px) {
+	#scroll .jet-dynamic-table {
+		min-width: 1000px;
+	}
+
+	#scroll-materiel .jet-dynamic-table {
+		min-width: 1100px;
+	}
+
+	/* Colonne « Etat de la commande » : largeur mini lisible (l'ancien
+	   width:400px inline a été retiré de la config de la table 16). */
+	#scroll .jet-dynamic-table__col--etatdelacommande {
+		min-width: 300px;
+	}
+}
+
+/* Le tracker (listing 552) est rendu dans un conteneur Elementor : on retire
+   la gouttière par défaut (10px) et on force la frise et ses étiquettes à
+   occuper toute la largeur disponible (sinon elles se compressent). */
+#scroll td.jet-dynamic-table__col--etatdelacommande .e-con {
+	--padding-left: 0;
+	--padding-right: 0;
+	padding-left: 0;
+	padding-right: 0;
+}
+
+/* div.progress : la frise seulement — .badge.progress (un span) porte AUSSI
+   la classe progress, il ne doit surtout pas être étiré. */
+#scroll .status-stack div.progress,
+#scroll .status-stack .progress-labels {
+	width: 100%;
+}
+
+/* En-têtes (le style vivait avant dans les réglages Elementor du widget). */
+:is(#scroll, #scroll-materiel) .jet-dynamic-table thead > tr > th {
+	text-align: left;
+	font-size: 11px;
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--ink-3);
+	padding: 14px 16px;
+	background: var(--bg-soft);
+	border: 0;
+	border-bottom: 1px solid var(--line);
+	white-space: nowrap;
+}
+
+/* Angles arrondis du conteneur Elementor (radius 14) sans overflow:hidden,
+   qui couperait la tooltip .status-tip. */
+:is(#scroll, #scroll-materiel) .jet-dynamic-table thead > tr > th:first-child {
+	border-top-left-radius: 13px;
+}
+
+:is(#scroll, #scroll-materiel) .jet-dynamic-table thead > tr > th:last-child {
+	border-top-right-radius: 13px;
+}
+
+/* Cellules du corps. */
+:is(#scroll, #scroll-materiel) .jet-dynamic-table tbody > tr > td {
+	padding: 16px;
+	border: 0;
+	border-bottom: 1px solid var(--line);
+	vertical-align: middle;
+	color: var(--ink-2);
+	font-weight: 600;
+	background: #fff;
+	transition: background 120ms;
+}
+
+:is(#scroll, #scroll-materiel) .jet-dynamic-table tbody > tr:last-child > td {
+	border-bottom: 0;
+}
+
+:is(#scroll, #scroll-materiel) .jet-dynamic-table tbody > tr:last-child > td:first-child {
+	border-bottom-left-radius: 13px;
+}
+
+:is(#scroll, #scroll-materiel) .jet-dynamic-table tbody > tr:last-child > td:last-child {
+	border-bottom-right-radius: 13px;
+}
+
+:is(#scroll, #scroll-materiel) .jet-dynamic-table tbody > tr:hover > td {
+	background: var(--bg-soft);
+}
+
+/* =============================================================================
+ *  2. COMPOSANTS PARTAGÉS (migrés depuis les custom_css des conteneurs 521/1623)
+ * ============================================================================= */
+
+/* --- Badge d'état ----------------------------------------------------------- */
+:is(#scroll, #scroll-materiel) .badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 9px 4px 7px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 800;
+	letter-spacing: -0.005em;
+	width: fit-content;
+	line-height: 1.4;
+}
+
+:is(#scroll, #scroll-materiel) .badge::before {
+	content: '';
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: currentColor;
+	flex-shrink: 0;
+}
+
+:is(#scroll, #scroll-materiel) .badge.done {
+	background: var(--green-soft);
+	color: #047857;
+}
+
+:is(#scroll, #scroll-materiel) .badge.progress {
+	background: var(--indigo-soft);
+	color: #4338ca;
+}
+
+:is(#scroll, #scroll-materiel) .badge.action {
+	background: var(--orange-soft);
+	color: #c45a10;
+}
+
+/* --red-soft n'existe pas dans le kit : valeurs de la maquette en dur. */
+:is(#scroll, #scroll-materiel) .badge.warning {
+	background: #fff7e0;
+	color: #946400;
+}
+
+:is(#scroll, #scroll-materiel) .badge.action.pulse::before {
+	background: var(--orange);
+	box-shadow: 0 0 0 0 rgba(255, 138, 61, 0.5);
+	animation: gacct-badge-pulse 2s infinite;
+}
+
+@keyframes gacct-badge-pulse {
+	0% {
+		transform: scale(0.95);
+		box-shadow: 0 0 0 0 rgba(255, 138, 61, 0.7);
+	}
+	70% {
+		transform: scale(1);
+		box-shadow: 0 0 0 6px rgba(255, 138, 61, 0);
+	}
+	100% {
+		transform: scale(0.95);
+		box-shadow: 0 0 0 0 rgba(255, 138, 61, 0);
+	}
+}
+
+/* --- Vignette + méta voile --------------------------------------------------- */
+:is(#scroll, #scroll-materiel) .voile-stack {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+/* background-clip: padding-box est indispensable : sans lui le dégradé déborde
+   sous la bordure semi-transparente et crée un halo sombre dans les angles. */
+:is(#scroll, #scroll-materiel) .voile-swatch {
+	width: 28px;
+	height: 28px;
+	border-radius: 7px;
+	flex-shrink: 0;
+	border: 1px solid rgba(0, 0, 0, 0.08);
+	background-clip: padding-box;
+	position: relative;
+	overflow: hidden;
+	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Colonne « Couleur » de Mon Matériel : swatch seul, centré dans la cellule. */
+#scroll-materiel .jet-dynamic-table__col--couleur > .voile-swatch {
+	margin: 0 auto;
+}
+
+:is(#scroll, #scroll-materiel) .voile-meta {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	min-width: 0;
+}
+
+:is(#scroll, #scroll-materiel) .voile-brand {
+	font-size: 12.5px;
+	font-weight: 800;
+	color: var(--ink);
+	text-transform: capitalize;
+	line-height: 1.2;
+}
+
+#scroll .voile-model {
+	font-size: 11px;
+	color: var(--ink-3);
+	font-weight: 600;
+	line-height: 1.2;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+#scroll-materiel .voile-model {
+	font-size: 12.5px;
+	color: var(--ink);
+	font-weight: 800;
+	line-height: 1.2;
+}
+
+/* --- Tracker de progression (listing 552) ------------------------------------ */
+:is(#scroll, #scroll-materiel) .status-stack {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	width: 100%;
+	position: relative;
+}
+
+:is(#scroll, #scroll-materiel) .status-stack:hover .status-tip {
+	opacity: 1;
+}
+
+:is(#scroll, #scroll-materiel) .status-tip {
+	position: absolute;
+	top: -8px;
+	left: 0;
+	transform: translateY(-100%);
+	background: var(--ink);
+	color: #fff;
+	font-size: 11px;
+	font-weight: 600;
+	padding: 8px 12px;
+	border-radius: 8px;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 150ms;
+	z-index: 10;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+	max-width: 240px;
+	white-space: normal;
+	line-height: 1.4;
+	text-align: left;
+}
+
+:is(#scroll, #scroll-materiel) .status-tip strong {
+	color: var(--orange);
+}
+
+:is(#scroll, #scroll-materiel) .status-tip::after {
+	content: '';
+	position: absolute;
+	left: 14px;
+	bottom: -4px;
+	width: 8px;
+	height: 8px;
+	background: var(--ink);
+	transform: rotate(45deg);
+}
+
+/* div.progress : ne cible que la frise, pas le span .badge.progress. */
+:is(#scroll, #scroll-materiel) div.progress {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	position: relative;
+	padding: 4px 0;
+}
+
+:is(#scroll, #scroll-materiel) .progress-step {
+	flex: 1;
+	height: 5px;
+	border-radius: 3px;
+	background: rgba(0, 0, 0, 0.07);
+	position: relative;
+}
+
+:is(#scroll, #scroll-materiel) .progress-step.done {
+	background: var(--teal);
+}
+
+:is(#scroll, #scroll-materiel) .progress.action .progress-step.done {
+	background: var(--orange);
+}
+
+:is(#scroll, #scroll-materiel) .progress.done-all .progress-step {
+	background: var(--green);
+}
+
+:is(#scroll, #scroll-materiel) .progress-step.current {
+	background: var(--teal);
+}
+
+:is(#scroll, #scroll-materiel) .progress.action .progress-step.current {
+	background: var(--orange);
+}
+
+:is(#scroll, #scroll-materiel) .progress-step.current::after {
+	content: '';
+	position: absolute;
+	right: 0;
+	top: 50%;
+	transform: translate(50%, -50%);
+	width: 9px;
+	height: 9px;
+	border-radius: 50%;
+	background: var(--teal);
+	border: 2px solid #fff;
+	box-shadow: 0 0 0 1px var(--teal);
+}
+
+:is(#scroll, #scroll-materiel) .progress.action .progress-step.current::after {
+	background: var(--orange);
+	box-shadow: 0 0 0 1px var(--orange);
+}
+
+/* Etat 0 : paiement non reçu — aucune barre remplie, seul le point de départ. */
+:is(#scroll, #scroll-materiel) .progress.zero .progress-step:first-child::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 9px;
+	height: 9px;
+	border-radius: 50%;
+	background: var(--orange);
+	border: 2px solid #fff;
+	box-shadow: 0 0 0 1px var(--orange);
+}
+
+:is(#scroll, #scroll-materiel) .progress-labels {
+	display: flex;
+	justify-content: space-between;
+	font-size: 9px;
+	text-transform: uppercase;
+	font-weight: 800;
+	color: rgba(0, 0, 0, 0.3);
+	margin-top: -2px;
+}
+
+:is(#scroll, #scroll-materiel) .progress-labels span {
+	flex: 1;
+	text-align: center;
+}
+
+:is(#scroll, #scroll-materiel) .progress-labels span:first-child {
+	text-align: left;
+}
+
+:is(#scroll, #scroll-materiel) .progress-labels span:last-child {
+	text-align: right;
+}
+
+/* --- Bouton « Imprimer le bon d'intervention » ------------------------------- */
+:is(#scroll, #scroll-materiel) .status-stack .gacct-workorder-print {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	margin-top: 12px;
+	padding: 9px 16px;
+	border: 1.5px solid var(--teal);
+	border-radius: 8px;
+	background: #fff;
+	color: var(--teal-dark);
+	font-size: 13px;
+	font-weight: 600;
+	text-decoration: none;
+	transition: background 0.15s ease;
+}
+
+:is(#scroll, #scroll-materiel) .status-stack .gacct-workorder-print:hover {
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+}
+
+:is(#scroll, #scroll-materiel) .status-stack .gacct-workorder-print svg {
+	flex: 0 0 auto;
+	display: block;
+}
+
+/* --- Lien commande ------------------------------------------------------------ */
+:is(#scroll, #scroll-materiel) .cmd-link {
+	display: inline-flex;
+	flex-direction: column;
+	gap: 1px;
+	color: var(--teal-dark);
+	font-weight: 700;
+	text-decoration: none;
+	padding: 6px 10px;
+	border-radius: 6px;
+	margin: -6px -10px;
+	transition: background 150ms;
+	text-align: left;
+}
+
+:is(#scroll, #scroll-materiel) .cmd-link:hover {
+	background-color: rgba(0, 0, 0, 0.04);
+}
+
+:is(#scroll, #scroll-materiel) .cmd-link .cmd-id {
+	line-height: 1.2;
+}
+
+:is(#scroll, #scroll-materiel) .cmd-link .cmd-time {
+	font-size: 11px;
+	color: var(--ink-4);
+	font-weight: 600;
+}
+
+/* Historique (Mon Matériel) : liste verticale de liens datés. */
+#scroll-materiel .historique-revisions {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+#scroll-materiel .historique-revisions .cmd-link {
+	flex-direction: row;
+	padding: 4px 8px;
+	margin: -4px -8px;
+}
+
+#scroll-materiel .cmd-link .cmd-time {
+	font-size: 12px;
+}
+
+/* --- Boutons icône (PDF, transporteur) --------------------------------------- */
+:is(#scroll, #scroll-materiel) .icon-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	border-radius: 8px;
+	background: var(--bg-soft);
+	border: 1px solid var(--line);
+	text-decoration: none;
+	transition: all 150ms;
+	cursor: pointer;
+	position: relative;
+}
+
+:is(#scroll, #scroll-materiel) .icon-btn svg {
+	width: 17px;
+	height: 17px;
+	stroke: var(--ink-2);
+	fill: none;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+:is(#scroll, #scroll-materiel) .icon-btn:hover svg {
+	stroke: var(--teal);
+}
+
+:is(#scroll, #scroll-materiel) .icon-btn-pdf {
+	background: #fff;
+}
+
+:is(#scroll, #scroll-materiel) .icon-btn-pdf:hover {
+	background: #fff5f5;
+	border-color: #fbb;
+}
+
+:is(#scroll, #scroll-materiel) .icon-btn-pdf:hover svg {
+	stroke: #c92a2a;
+}
+
+/* --- Prestations (listing 572) ------------------------------------------------ */
+#scroll .presta li {
+	font-size: 12.5px;
+	color: var(--ink-2);
+	font-weight: 600;
+	line-height: 1.4;
+	list-style-type: none;
+	display: inline-block;
+	margin-right: 12px;
+}
+
+#scroll .presta li::before {
+	content: '+ ';
+	margin-right: 4px;
+}
+
+/* --- Bouton « Recommander » (Mon Matériel) ------------------------------------ */
+#scroll-materiel .btn-recommander {
+	display: inline-flex;
+	align-items: center;
+	padding: 8px 16px;
+	border-radius: 8px;
+	background: var(--secondary, var(--teal));
+	color: #fff;
+	font-size: 12.5px;
+	font-weight: 700;
+	text-decoration: none;
+	white-space: nowrap;
+	transition: opacity 150ms;
+}
+
+#scroll-materiel .btn-recommander:hover {
+	opacity: 0.85;
+}
+
+/* =============================================================================
+ *  3. TOOLBAR (stats + tabs + recherche) — shortcode [gacct_interventions_toolbar]
+ * ============================================================================= */
+
+.gacct-tb {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	font-family: inherit;
+}
+
+.gacct-tb-stats {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 12px;
+}
+
+.gacct-tb-stat {
+	background: #fff;
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 14px 16px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.gacct-tb-stat-icon {
+	width: 36px;
+	height: 36px;
+	border-radius: 9px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.gacct-tb-stat-icon svg {
+	width: 18px;
+	height: 18px;
+	fill: none;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.gacct-tb-stat-icon.is-teal {
+	background: var(--teal-soft);
+}
+
+.gacct-tb-stat-icon.is-teal svg {
+	stroke: var(--teal);
+}
+
+.gacct-tb-stat-icon.is-orange {
+	background: var(--orange-soft);
+}
+
+.gacct-tb-stat-icon.is-orange svg {
+	stroke: var(--orange);
+}
+
+.gacct-tb-stat-icon.is-blue {
+	background: var(--blue-soft);
+}
+
+.gacct-tb-stat-icon.is-blue svg {
+	stroke: var(--blue);
+}
+
+.gacct-tb-stat-icon.is-green {
+	background: var(--green-soft);
+}
+
+.gacct-tb-stat-icon.is-green svg {
+	stroke: var(--green);
+}
+
+.gacct-tb-stat-num {
+	font-size: 20px;
+	font-weight: 900;
+	color: var(--ink);
+	line-height: 1;
+}
+
+.gacct-tb-stat-label {
+	font-size: 11px;
+	color: var(--ink-3);
+	font-weight: 600;
+	margin-top: 3px;
+}
+
+.gacct-tb-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.gacct-tb-tabs {
+	display: flex;
+	gap: 4px;
+	background: var(--bg-soft);
+	border-radius: 9px;
+	padding: 4px;
+	border: 1px solid var(--line);
+}
+
+/* Reset appuyé : le kit Elementor style tous les <button> (fond, bordure,
+   padding) — la double classe .gacct-tb .gacct-tb-tab prend le dessus. */
+.gacct-tb .gacct-tb-tab {
+	-webkit-appearance: none;
+	appearance: none;
+	padding: 7px 14px;
+	font-size: 12.5px;
+	font-weight: 700;
+	color: var(--ink-3);
+	background: transparent;
+	border: 0;
+	box-shadow: none;
+	cursor: pointer;
+	border-radius: 6px;
+	font-family: inherit;
+	line-height: 1.4;
+	min-height: 0;
+	text-transform: none;
+	letter-spacing: normal;
+	transition: background 150ms, color 150ms;
+}
+
+.gacct-tb .gacct-tb-tab:hover,
+.gacct-tb .gacct-tb-tab:focus {
+	color: var(--ink);
+	background: transparent;
+	border: 0;
+	box-shadow: none;
+	outline: none;
+}
+
+.gacct-tb .gacct-tb-tab.is-active,
+.gacct-tb .gacct-tb-tab.is-active:hover {
+	background: #fff;
+	color: var(--ink);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.gacct-tb-tab-count {
+	display: inline-block;
+	background: rgba(0, 0, 0, 0.06);
+	color: var(--ink-3);
+	font-size: 10px;
+	font-weight: 800;
+	padding: 1px 6px;
+	border-radius: 999px;
+	margin-left: 4px;
+}
+
+.gacct-tb-tab.is-active .gacct-tb-tab-count {
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+}
+
+.gacct-tb-search {
+	position: relative;
+	flex: 1;
+	max-width: 280px;
+	min-width: 180px;
+}
+
+.gacct-tb-search svg {
+	position: absolute;
+	left: 12px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 14px;
+	height: 14px;
+	stroke: var(--ink-4);
+	fill: none;
+	stroke-width: 2.2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	pointer-events: none;
+}
+
+/* Triple classe : les styles de formulaire du kit ciblent input[type=search]. */
+.gacct-tb .gacct-tb-search .gacct-tb-search-input {
+	width: 100%;
+	font-family: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink);
+	padding: 9px 12px 9px 34px;
+	border: 1px solid var(--line-2);
+	border-radius: 8px;
+	background: #fff;
+	outline: none;
+	min-height: 0;
+	transition: border-color 150ms, box-shadow 150ms;
+}
+
+.gacct-tb .gacct-tb-search .gacct-tb-search-input:focus {
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px rgba(32, 196, 195, 0.15);
+}
+
+/* Message « aucun résultat » injecté par client-tables.js. */
+.gacct-tb-no-result {
+	padding: 28px 16px;
+	text-align: center;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink-3);
+	background: #fff;
+	border-radius: 13px;
+}
+
+/* =============================================================================
+ *  4. MOBILE ≤ 767px : BASCULE EN CARTES
+ * ============================================================================= */
+
+@media (max-width: 767px) {
+
+	/* Le conteneur Elementor perd sa peau de « table-wrap ». */
+	#scroll,
+	#scroll-materiel {
+		border: none !important;
+		background: transparent !important;
+		border-radius: 0 !important;
+	}
+
+	#scroll .jet-dynamic-table-wrapper,
+	#scroll-materiel .jet-dynamic-table-wrapper {
+		display: block;
+		overflow: visible;
+		width: 100%;
+	}
+
+	:is(#scroll, #scroll-materiel) .jet-dynamic-table {
+		display: block;
+		min-width: 0;
+	}
+
+	:is(#scroll, #scroll-materiel) .jet-dynamic-table thead {
+		display: none;
+	}
+
+	:is(#scroll, #scroll-materiel) .jet-dynamic-table tbody {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+
+	/* Chaque ligne devient une carte (design .card de la maquette). */
+	:is(#scroll, #scroll-materiel) .jet-dynamic-table tbody > tr {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: 10px 12px;
+		background: #fff;
+		border: 1px solid var(--line);
+		border-radius: 14px;
+		padding: 16px;
+	}
+
+	/* Reset des cellules : plus de table, plus de styles inline de colonne. */
+	:is(#scroll, #scroll-materiel) .jet-dynamic-table tbody > tr > td {
+		display: block;
+		width: auto !important;
+		min-width: 0 !important;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		text-align: left;
+		transition: none;
+	}
+
+	:is(#scroll, #scroll-materiel) .jet-dynamic-table tbody > tr:hover > td {
+		background: transparent;
+	}
+
+	/* Cellules vides (pas de rapport, pas de suivi…) : on les retire du grid. */
+	:is(#scroll, #scroll-materiel) .jet-dynamic-table tbody > tr > td:empty {
+		display: none;
+	}
+
+	/* =========================================================================
+	 *  4a. Carte « Mes demandes d'intervention » (#scroll)
+	 *  Ordre DOM : interventionprogramme / etatdelacommande / commande /
+	 *              matriel / prestation / rapport / suivitransporteur
+	 * ========================================================================= */
+
+	/* En-tête de carte : n° de commande. */
+	#scroll td.jet-dynamic-table__col--commande {
+		order: 1;
+		grid-column: 1 / -1;
+	}
+
+	#scroll td.jet-dynamic-table__col--commande .cmd-link {
+		padding: 0;
+		margin: 0;
+	}
+
+	#scroll td.jet-dynamic-table__col--commande .cmd-id {
+		font-size: 14px;
+		font-weight: 800;
+	}
+
+	/* État : badge + frise, pleine largeur. */
+	#scroll td.jet-dynamic-table__col--etatdelacommande {
+		order: 2;
+		grid-column: 1 / -1;
+	}
+
+	#scroll td.jet-dynamic-table__col--etatdelacommande .status-tip {
+		display: none;
+	}
+
+	/* Le listing 552 est rendu dans un conteneur Elementor centré : on repasse
+	   tout à gauche dans la carte (stretch, pas flex-start : sinon la frise
+	   se compresse à la largeur de son contenu, c'est-à-dire zéro). */
+	#scroll td.jet-dynamic-table__col--etatdelacommande .e-con {
+		--align-items: stretch;
+		align-items: stretch;
+	}
+
+	#scroll td.jet-dynamic-table__col--etatdelacommande .status-stack {
+		text-align: left;
+	}
+
+	/* Label « Intervention » trop long pour 4 colonnes sur 320px. */
+	#scroll .progress-labels span:nth-child(3) {
+		font-size: 0;
+	}
+
+	#scroll .progress-labels span:nth-child(3)::before {
+		content: 'Interv.';
+		font-size: 9px;
+	}
+
+	/* Bon d'intervention : bouton pleine largeur. */
+	#scroll .status-stack .gacct-workorder-print {
+		width: 100%;
+		justify-content: center;
+		margin-top: 8px;
+	}
+
+	/* Zone info : Voile / Révision / Prestation sur fond doux. */
+	#scroll td.jet-dynamic-table__col--matriel,
+	#scroll td.jet-dynamic-table__col--interventionprogramme,
+	#scroll td.jet-dynamic-table__col--prestation {
+		background: var(--bg-soft);
+		border-radius: 10px;
+		padding: 12px;
+		font-size: 12.5px;
+		font-weight: 700;
+		color: var(--ink);
+	}
+
+	#scroll td.jet-dynamic-table__col--matriel {
+		order: 3;
+	}
+
+	#scroll td.jet-dynamic-table__col--interventionprogramme {
+		order: 4;
+	}
+
+	#scroll td.jet-dynamic-table__col--prestation {
+		order: 5;
+		grid-column: 1 / -1;
+	}
+
+	/* Étiquettes des tuiles (maquette .card-info-label). */
+	#scroll td.jet-dynamic-table__col--matriel::before,
+	#scroll td.jet-dynamic-table__col--interventionprogramme::before,
+	#scroll td.jet-dynamic-table__col--prestation::before {
+		display: block;
+		font-size: 9.5px;
+		font-weight: 800;
+		letter-spacing: 0.07em;
+		text-transform: uppercase;
+		color: var(--ink-4);
+		margin-bottom: 4px;
+	}
+
+	#scroll td.jet-dynamic-table__col--matriel::before {
+		content: 'Voile';
+	}
+
+	#scroll td.jet-dynamic-table__col--interventionprogramme::before {
+		content: 'Révision';
+	}
+
+	#scroll td.jet-dynamic-table__col--prestation::before {
+		content: 'Prestation';
+	}
+
+	#scroll td.jet-dynamic-table__col--matriel .voile-stack {
+		gap: 8px;
+	}
+
+	#scroll td.jet-dynamic-table__col--matriel .voile-swatch {
+		width: 22px;
+		height: 22px;
+	}
+
+	#scroll td.jet-dynamic-table__col--prestation .presta li {
+		display: block;
+		margin-right: 0;
+	}
+
+	/* Rangée d'actions : Rapport / Suivi en boutons larges (maquette .card-action). */
+	#scroll td.jet-dynamic-table__col--rapport {
+		order: 6;
+	}
+
+	#scroll td.jet-dynamic-table__col--suivitransporteur {
+		order: 7;
+	}
+
+	/* Si l'un des deux manque (cellule vide masquée), l'autre prend toute la
+	   largeur de la rangée d'actions. */
+	#scroll td.jet-dynamic-table__col--rapport:empty + td.jet-dynamic-table__col--suivitransporteur,
+	#scroll td.jet-dynamic-table__col--rapport:has(+ td.jet-dynamic-table__col--suivitransporteur:empty) {
+		grid-column: 1 / -1;
+	}
+
+	#scroll td.jet-dynamic-table__col--rapport .icon-btn,
+	#scroll td.jet-dynamic-table__col--suivitransporteur .icon-btn {
+		display: flex;
+		width: 100%;
+		height: auto;
+		gap: 6px;
+		padding: 10px;
+		border-radius: 9px;
+		background: var(--bg-soft);
+		border: 1px solid var(--line);
+		color: var(--ink);
+		font-size: 12px;
+		font-weight: 700;
+	}
+
+	#scroll td.jet-dynamic-table__col--rapport .icon-btn svg,
+	#scroll td.jet-dynamic-table__col--suivitransporteur .icon-btn svg {
+		width: 14px;
+		height: 14px;
+		stroke-width: 2;
+	}
+
+	#scroll td.jet-dynamic-table__col--rapport .icon-btn::after {
+		content: 'Rapport';
+	}
+
+	#scroll td.jet-dynamic-table__col--suivitransporteur .icon-btn::after {
+		content: 'Suivi colis';
+	}
+
+	#scroll td.jet-dynamic-table__col--suivitransporteur .icon-btn svg {
+		stroke: var(--teal);
+	}
+
+	/* =========================================================================
+	 *  4b. Carte « Mon Matériel » (#scroll-materiel)
+	 *  Ordre DOM : numrodesrie / marque / modle / taille / couleur / ptv /
+	 *              nbdervisions / dernirervision / historique / recommander
+	 * ========================================================================= */
+
+	/* En-tête : Marque + Modèle à gauche, swatch Couleur à droite. */
+	#scroll-materiel td.jet-dynamic-table__col--marque {
+		grid-area: 1 / 1;
+		font-size: 14px;
+		font-weight: 800;
+		color: var(--ink);
+	}
+
+	#scroll-materiel td.jet-dynamic-table__col--modle {
+		grid-area: 2 / 1;
+		margin-top: -8px;
+		font-size: 12.5px;
+		color: var(--ink-3);
+	}
+
+	#scroll-materiel td.jet-dynamic-table__col--couleur {
+		grid-area: 1 / 2 / 3 / 3;
+		justify-self: end;
+		align-self: start;
+	}
+
+	#scroll-materiel td.jet-dynamic-table__col--couleur > .voile-swatch {
+		margin: 0;
+	}
+
+	/* Zone info : tuiles sur fond doux. */
+	#scroll-materiel td.jet-dynamic-table__col--numrodesrie,
+	#scroll-materiel td.jet-dynamic-table__col--taille,
+	#scroll-materiel td.jet-dynamic-table__col--ptv,
+	#scroll-materiel td.jet-dynamic-table__col--nbdervisions,
+	#scroll-materiel td.jet-dynamic-table__col--dernirervision {
+		background: var(--bg-soft);
+		border-radius: 10px;
+		padding: 12px;
+		font-size: 12.5px;
+		font-weight: 700;
+		color: var(--ink);
+	}
+
+	#scroll-materiel td.jet-dynamic-table__col--numrodesrie {
+		grid-area: 3 / 1;
+	}
+
+	#scroll-materiel td.jet-dynamic-table__col--taille {
+		grid-area: 3 / 2;
+	}
+
+	#scroll-materiel td.jet-dynamic-table__col--ptv {
+		grid-area: 4 / 1;
+	}
+
+	#scroll-materiel td.jet-dynamic-table__col--nbdervisions {
+		grid-area: 4 / 2;
+	}
+
+	#scroll-materiel td.jet-dynamic-table__col--dernirervision {
+		grid-area: 5 / 1 / 6 / 3;
+	}
+
+	#scroll-materiel td.jet-dynamic-table__col--numrodesrie::before {
+		content: 'N° de série';
+	}
+
+	#scroll-materiel td.jet-dynamic-table__col--taille::before {
+		content: 'Taille';
+	}
+
+	#scroll-materiel td.jet-dynamic-table__col--ptv::before {
+		content: 'PTV';
+	}
+
+	#scroll-materiel td.jet-dynamic-table__col--nbdervisions::before {
+		content: 'Révisions';
+	}
+
+	#scroll-materiel td.jet-dynamic-table__col--dernirervision::before {
+		content: 'Dernière révision';
+	}
+
+	/* Le ::before des tuiles porte l'étiquette (même style que .card-info-label). */
+	#scroll-materiel td.jet-dynamic-table__col--numrodesrie::before,
+	#scroll-materiel td.jet-dynamic-table__col--taille::before,
+	#scroll-materiel td.jet-dynamic-table__col--ptv::before,
+	#scroll-materiel td.jet-dynamic-table__col--nbdervisions::before,
+	#scroll-materiel td.jet-dynamic-table__col--dernirervision::before,
+	#scroll-materiel td.jet-dynamic-table__col--historique::before {
+		display: block;
+		font-size: 9.5px;
+		font-weight: 800;
+		letter-spacing: 0.07em;
+		text-transform: uppercase;
+		color: var(--ink-4);
+		margin-bottom: 4px;
+	}
+
+	#scroll-materiel td.jet-dynamic-table__col--numrodesrie .voile-model {
+		font-size: 12.5px;
+		color: var(--ink);
+		font-weight: 700;
+	}
+
+	/* Historique : pleine largeur. */
+	#scroll-materiel td.jet-dynamic-table__col--historique {
+		grid-area: 6 / 1 / 7 / 3;
+	}
+
+	#scroll-materiel td.jet-dynamic-table__col--historique::before {
+		content: 'Historique';
+	}
+
+	/* Recommander : bouton pleine largeur. */
+	#scroll-materiel td.jet-dynamic-table__col--recommander {
+		grid-area: 7 / 1 / 8 / 3;
+	}
+
+	#scroll-materiel .btn-recommander {
+		display: flex;
+		width: 100%;
+		justify-content: center;
+		padding: 11px 16px;
+	}
+
+	/* ---- Toolbar mobile ------------------------------------------------------ */
+	.gacct-tb-stats {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	.gacct-tb-toolbar {
+		gap: 8px;
+	}
+
+	.gacct-tb-tabs {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.gacct-tb .gacct-tb-tab {
+		flex: 1;
+		padding: 7px 8px;
+		font-size: 12px;
+		text-align: center;
+	}
+
+	.gacct-tb-search {
+		max-width: none;
+		flex-basis: 100%;
+		order: -1;
+	}
+}
+
+/* Tablette : stats sur 2 colonnes comme la maquette (≤1180). */
+@media (min-width: 768px) and (max-width: 1180px) {
+	.gacct-tb-stats {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+/* Très petits écrans. */
+@media (max-width: 480px) {
+	.gacct-tb-stats {
+		gap: 8px;
+	}
+
+	.gacct-tb-stat {
+		padding: 12px;
+	}
+
+	.gacct-tb-stat-num {
+		font-size: 18px;
+	}
+
+	:is(#scroll, #scroll-materiel) .jet-dynamic-table tbody > tr {
+		padding: 14px;
+		gap: 10px;
+	}
+}
