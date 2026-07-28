@@ -400,18 +400,19 @@ function gacct_dash_data( $user_id = 0 ) {
 
 		// --- Documents (états 7 et 8 + rapport PDF) -------------------------
 		if ( $etat >= 7 && ! empty( $row['rapport_pdf'] ) ) {
-			$pdf_url = wp_get_attachment_url( (int) $row['rapport_pdf'] );
+			// Coffre-fort : l'URL passe par l'endpoint authentifié.
+			$pdf_ids = function_exists( 'gacct_report_ids' ) ? gacct_report_ids( $row['rapport_pdf'] ) : array();
+			$date_ts = ! empty( $row['cct_modified'] ) ? (int) strtotime( (string) $row['cct_modified'] ) : 0;
 
-			if ( $pdf_url ) {
-				$date_ts     = ! empty( $row['cct_modified'] ) ? (int) strtotime( (string) $row['cct_modified'] ) : 0;
+			foreach ( $pdf_ids as $pdf_index => $pdf_id ) {
 				$documents[] = array(
 					'label'      => sprintf(
 						$texts['document'],
 						$materiel_label ? $materiel_label : $texts['report'],
 						$date_ts ? wp_date( get_option( 'date_format' ), $date_ts ) : ''
-					),
+					) . ( $pdf_index > 0 ? ' (' . ( $pdf_index + 1 ) . ')' : '' ),
 					'date_texte' => $date_ts ? wp_date( get_option( 'date_format' ), $date_ts ) : '',
-					'url'        => $pdf_url,
+					'url'        => gacct_report_download_url( (int) $row['_ID'], $pdf_id ),
 				);
 			}
 		}
@@ -1729,11 +1730,14 @@ function gacct_dash_render_document( $revision_id ) {
 		return '';
 	}
 
-	$url = wp_get_attachment_url( (int) $row['rapport_pdf'] );
+	// Coffre-fort : endpoint authentifié, jamais l'URL uploads (cf. gacct-reports.php).
+	$ids = function_exists( 'gacct_report_ids' ) ? gacct_report_ids( $row['rapport_pdf'] ) : array();
 
-	if ( ! $url ) {
+	if ( empty( $ids ) ) {
 		return '';
 	}
+
+	$url = gacct_report_download_url( (int) $row['_ID'], $ids[0] );
 
 	$materiel = gacct_dash_materiel_label( $row );
 	$date_ts  = ! empty( $row['cct_modified'] ) ? (int) strtotime( (string) $row['cct_modified'] ) : 0;

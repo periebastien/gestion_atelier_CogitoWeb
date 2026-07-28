@@ -367,14 +367,26 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 		// Rapport d'intervention : déposable pendant toute l'intervention (3 à 6),
 		// exigé à l'entrée en 6. Il ne change plus l'état à lui seul.
 		if ( $state >= 3 && $state <= 6 ) {
-			$rapport_id  = absint( $revision['rapport_pdf'] ?? 0 );
-			$rapport_url = $rapport_id ? wp_get_attachment_url( $rapport_id ) : '';
+			$rapport_ids = gacct_report_ids( $revision['rapport_pdf'] ?? '' );
 
 			echo '<form class="gacct-op-upload-form" data-op-form="upload-report">';
 			echo '<label class="gacct-op-label" for="gacct-op-rapport">' . esc_html__( 'Rapport d\'intervention (PDF, 10 Mo max)', 'gestion-atelier-cct' ) . '</label>';
-			if ( $rapport_url ) {
-				echo '<p class="gacct-op-muted">✓ <a href="' . esc_url( $rapport_url ) . '" target="_blank" rel="noopener">' . esc_html__( 'Rapport déjà déposé', 'gestion-atelier-cct' ) . '</a> — ' . esc_html__( 'en redéposer un le remplacera.', 'gestion-atelier-cct' ) . '</p>';
+
+			if ( $rapport_ids ) {
+				echo '<ul class="gacct-op-report-list">';
+				foreach ( $rapport_ids as $rapport_index => $rapport_id ) {
+					$nom = get_the_title( $rapport_id );
+					echo '<li>';
+					echo '<a href="' . esc_url( gacct_report_download_url( $revision_id, $rapport_id ) ) . '" target="_blank" rel="noopener">'
+						. esc_html( $nom ? $nom : sprintf( __( 'Rapport %d', 'gestion-atelier-cct' ), $rapport_index + 1 ) )
+						. '</a> ';
+					echo '<button type="button" class="gacct-op-report-del" data-op-action="delete-report" data-attachment="' . esc_attr( $rapport_id ) . '" aria-label="' . esc_attr__( 'Supprimer ce rapport', 'gestion-atelier-cct' ) . '">×</button>';
+					echo '</li>';
+				}
+				echo '</ul>';
+				echo '<label class="gacct-op-check"><input type="checkbox" data-op-field="replace-report"> ' . esc_html__( 'Remplacer les rapports existants (sinon le nouveau s\'ajoute)', 'gestion-atelier-cct' ) . '</label>';
 			}
+
 			echo '<input type="file" id="gacct-op-rapport" name="rapport" accept="application/pdf" required>';
 			echo '<button type="submit" class="gacct-op-btn secondary">' . esc_html__( 'Déposer le rapport', 'gestion-atelier-cct' ) . '</button>';
 			echo '<p class="gacct-op-muted">' . esc_html__( 'Le rapport est obligatoire avant de demander le solde ; il ne devient visible du client qu\'une fois le solde réglé.', 'gestion-atelier-cct' ) . '</p>';
@@ -424,9 +436,14 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 
 		// États 6+ : lien du rapport pour l'atelier (le client ne le voit qu'à 7).
 		if ( $state >= 6 ) {
-			$rapport_url = ! empty( $revision['rapport_pdf'] ) ? wp_get_attachment_url( absint( $revision['rapport_pdf'] ) ) : '';
-			if ( $rapport_url ) {
-				echo '<p><a class="gacct-op-btn secondary" href="' . esc_url( $rapport_url ) . '" target="_blank" rel="noopener">' . esc_html__( 'Voir le rapport PDF', 'gestion-atelier-cct' ) . '</a></p>';
+			$rapport_ids = gacct_report_ids( $revision['rapport_pdf'] ?? '' );
+			if ( $rapport_ids ) {
+				foreach ( $rapport_ids as $rapport_index => $rapport_id ) {
+					$libelle = $rapport_index > 0
+						? sprintf( __( 'Voir le rapport PDF %d', 'gestion-atelier-cct' ), $rapport_index + 1 )
+						: __( 'Voir le rapport PDF', 'gestion-atelier-cct' );
+					echo '<p><a class="gacct-op-btn secondary" href="' . esc_url( gacct_report_download_url( $revision_id, $rapport_id ) ) . '" target="_blank" rel="noopener">' . esc_html( $libelle ) . '</a></p>';
+				}
 			} else {
 				echo '<p class="gacct-op-muted">' . esc_html__( 'Rapport introuvable.', 'gestion-atelier-cct' ) . '</p>';
 			}

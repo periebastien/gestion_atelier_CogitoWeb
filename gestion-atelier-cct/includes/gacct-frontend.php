@@ -144,28 +144,41 @@ add_filter( 'jet-engine/listings/allowed-callbacks', function( $callbacks ) {
 } );
 
 function jwcct_get_pdf_icon_link( $value ) {
-    // Si pas d'ID ou pas numérique, on ne retourne rien
-    if ( empty( $value ) || ! is_numeric( $value ) ) {
+    // Le champ rapport_pdf peut contenir plusieurs pièces jointes (« 558,600 »).
+    $ids = function_exists( 'gacct_report_ids' ) ? gacct_report_ids( $value ) : array();
+
+    if ( empty( $ids ) ) {
         return '';
     }
 
-    $url = wp_get_attachment_url( $value );
-
-    if ( ! $url ) {
-        return '';
-    }
-
-    // On retourne uniquement l'icône SVG dans le lien
-    return sprintf(
-        '<a href="%s" class="icon-btn icon-btn-pdf" download target="_blank" title="Télécharger le rapport">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    $icone = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
   <path d="M14 2v6h6"></path>
   <path fill="#e63946" stroke="none" d="M9 14h2v4H9zM13 14h1.5a1.5 1.5 0 010 3H13v1h-1v-4h1zm0 1v1h1.5a.5.5 0 000-1H13zM16 14h2v1h-1v.7h.8v1H17V18h-1v-4z"></path>
-</svg>
-        </a>',
-        esc_url( $url )
-    );
+</svg>';
+
+    // Les PDF vivent dans le coffre-fort : l'URL passe par l'endpoint
+    // authentifié (cf. includes/gacct-reports.php), jamais par uploads.
+    $html = '';
+
+    foreach ( $ids as $index => $attachment_id ) {
+        $url = function_exists( 'gacct_report_url_for_attachment' ) ? gacct_report_url_for_attachment( $attachment_id ) : '';
+
+        if ( ! $url ) {
+            continue;
+        }
+
+        $html .= sprintf(
+            '<a href="%1$s" class="icon-btn icon-btn-pdf" target="_blank" rel="noopener" title="%2$s">%3$s</a>',
+            esc_url( $url ),
+            esc_attr( $index > 0
+                ? sprintf( __( 'Télécharger le rapport (%d)', 'gestion-atelier-cct' ), $index + 1 )
+                : __( 'Télécharger le rapport', 'gestion-atelier-cct' ) ),
+            $icone
+        );
+    }
+
+    return $html;
 }
 
 

@@ -242,7 +242,15 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 				<?php endif; ?>
 			<?php endif; ?>
 			<?php if ( $vo_show_report ) : ?>
-				<p><a class="gacct-vo-btn is-secondary" href="<?php echo esc_url( $d['rapport_url'] ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Télécharger le rapport d\'intervention (PDF)', 'gestion-atelier-cct' ); ?></a></p>
+				<?php foreach ( ( ! empty( $d['rapport_liens'] ) ? $d['rapport_liens'] : array( array( 'url' => $d['rapport_url'], 'index' => 0 ) ) ) as $vo_rapport ) : ?>
+					<p><a class="gacct-vo-btn is-secondary" href="<?php echo esc_url( $vo_rapport['url'] ); ?>" target="_blank" rel="noopener"><?php
+						if ( $vo_rapport['index'] > 0 ) {
+							printf( esc_html__( 'Télécharger le rapport d\'intervention %d (PDF)', 'gestion-atelier-cct' ), (int) $vo_rapport['index'] + 1 );
+						} else {
+							esc_html_e( 'Télécharger le rapport d\'intervention (PDF)', 'gestion-atelier-cct' );
+						}
+					?></a></p>
+					<?php endforeach; ?>
 			<?php endif; ?>
 		</div>
 	<?php endif; ?>

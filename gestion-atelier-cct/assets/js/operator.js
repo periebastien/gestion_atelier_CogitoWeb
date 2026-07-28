@@ -220,6 +220,20 @@
 				return;
 			}
 
+			if ( 'delete-report' === opAction ) {
+				if ( ! window.confirm( 'Supprimer définitivement ce rapport PDF ?' ) ) {
+					return;
+				}
+
+				run( button, 'gacct_op_delete_report', {
+					revision_id: revisionId,
+					attachment_id: button.getAttribute( 'data-attachment' )
+				}, function () {
+					window.location.reload();
+				} );
+				return;
+			}
+
 			if ( 'resend-email' === opAction ) {
 				run( button, 'gacct_op_resend_email', { revision_id: revisionId }, function () {
 					showFeedback( 'success', 'Email renvoyé.' );
@@ -538,9 +552,12 @@
 					return;
 				}
 
+				var replace = uploadForm.querySelector( '[data-op-field="replace-report"]' );
+
 				var data = new FormData();
 				data.append( 'revision_id', revisionId );
 				data.append( 'rapport', input.files[ 0 ] );
+				data.append( 'replace', replace && replace.checked ? 1 : 0 );
 
 				run( submit, 'gacct_op_upload_report', data, function () {
 					window.location.reload();

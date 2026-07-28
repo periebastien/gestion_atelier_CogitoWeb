@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once __DIR__ . '/includes/gacct-checkout.php';
 require_once __DIR__ . '/includes/gacct-payments.php';
 require_once __DIR__ . '/includes/gacct-thankyou.php';
+require_once __DIR__ . '/includes/gacct-reports.php';
 require_once __DIR__ . '/includes/gacct-frontend.php';
 require_once __DIR__ . '/includes/gacct-frontend-form.php';
 require_once __DIR__ . '/includes/gacct-dashboard.php';
@@ -1532,15 +1533,15 @@ final class GACCT_Plugin {
 		$attachments = array();
 
 		if ( 7 === $state ) {
-			$attachment = $this->revision_report_pdf_path( $revision );
+			// TOUS les rapports déposés sur le dossier (le champ accepte
+			// plusieurs PDF depuis le 28/07/2026).
+			$attachments = $this->revision_report_pdf_paths( $revision );
 
-			if ( '' === $attachment ) {
+			if ( empty( $attachments ) ) {
 				$order->add_order_note( __( 'ERREUR : email etat 7 non envoye, rapport PDF introuvable ou inaccessible.', 'gestion-atelier-cct' ) );
 				$order->save();
 				return;
 			}
-
-			$attachments[] = $attachment;
 		}
 
 		$variables = $this->notification_variables( $revision_id, $revision, $order, $validation_url );
@@ -2073,8 +2074,21 @@ final class GACCT_Plugin {
 	}
 
 	private function revision_report_pdf_path( array $revision ) {
+		$paths = $this->revision_report_pdf_paths( $revision );
+
+		return $paths ? $paths[0] : '';
+	}
+
+	/**
+	 * Chemins absolus de TOUS les rapports PDF du dossier (le champ
+	 * rapport_pdf accepte plusieurs pièces jointes, cf. gacct-reports.php).
+	 *
+	 * @param array $revision Ligne CCT.
+	 * @return string[]
+	 */
+	private function revision_report_pdf_paths( array $revision ) {
 		if ( empty( $revision['rapport_pdf'] ) ) {
-			return '';
+			return array();
 		}
 
 		$values = $this->normalize_checkbox_values( $revision['rapport_pdf'] );
@@ -2083,15 +2097,17 @@ final class GACCT_Plugin {
 			$values = array( $revision['rapport_pdf'] );
 		}
 
+		$paths = array();
+
 		foreach ( $values as $value ) {
 			$path = $this->resolve_media_path( $value );
 
-			if ( '' !== $path ) {
-				return $path;
+			if ( '' !== $path && ! in_array( $path, $paths, true ) ) {
+				$paths[] = $path;
 			}
 		}
 
-		return '';
+		return $paths;
 	}
 
 	private function resolve_media_path( $value ) {

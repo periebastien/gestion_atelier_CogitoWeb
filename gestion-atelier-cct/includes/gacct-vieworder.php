@@ -102,10 +102,21 @@ function gacct_vo_data( $order ) {
 		$status_label = __( 'Acompte payé', 'gestion-atelier-cct' );
 	}
 
-	$rapport_url = '';
+	// Rapport(s) : URL de l'endpoint authentifié (coffre-fort, gacct-reports.php).
+	$rapport_url   = '';
+	$rapport_liens = array();
 
-	if ( is_array( $revision ) && ! empty( $revision['rapport_pdf'] ) ) {
-		$rapport_url = (string) wp_get_attachment_url( absint( $revision['rapport_pdf'] ) );
+	if ( is_array( $revision ) && ! empty( $revision['rapport_pdf'] ) && function_exists( 'gacct_report_ids' ) ) {
+		foreach ( gacct_report_ids( $revision['rapport_pdf'] ) as $rapport_index => $rapport_id ) {
+			$rapport_liens[] = array(
+				'url'   => gacct_report_download_url( $revision_id, $rapport_id ),
+				'index' => $rapport_index,
+			);
+		}
+
+		if ( $rapport_liens ) {
+			$rapport_url = $rapport_liens[0]['url'];
+		}
 	}
 
 	$suivi = is_array( $revision ) ? trim( (string) ( $revision['suivi_transporteur'] ?? '' ) ) : '';
@@ -119,6 +130,7 @@ function gacct_vo_data( $order ) {
 		'quote'         => function_exists( 'gacct_quote_decision' ) ? gacct_quote_decision( $order ) : array( 'decision' => '', 'decided_at' => '', 'mode' => '' ),
 		'quote_sent_at' => (string) $order->get_meta( GACCT_QUOTE_META_SENT_AT ),
 		'rapport_url'   => $rapport_url,
+		'rapport_liens' => $rapport_liens,
 		'suivi'         => $suivi,
 		'pay_url'       => $order->get_checkout_payment_url(),
 		'solde_du'      => (float) $order->get_meta( '_kojito_solde_restant' ),

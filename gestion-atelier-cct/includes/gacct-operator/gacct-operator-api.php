@@ -161,6 +161,12 @@ function gacct_op_ajax_upload_report() {
 
 	wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $upload['file'] ) );
 
+	// Coffre-fort : le fichier ne doit jamais rester servable par Apache.
+	if ( ! gacct_report_move_to_vault( $attachment_id ) ) {
+		wp_delete_attachment( $attachment_id, true );
+		wp_send_json_error( array( 'message' => __( 'Impossible de sécuriser le fichier (coffre-fort inaccessible).', 'gestion-atelier-cct' ) ) );
+	}
+
 	$revision = jwcct_get_cct_item( JWCCT_CCT_REVISION, $revision_id );
 
 	if ( ! $revision ) {
@@ -168,7 +174,14 @@ function gacct_op_ajax_upload_report() {
 		wp_send_json_error( array( 'message' => __( 'Dossier introuvable.', 'gestion-atelier-cct' ) ) );
 	}
 
-	$fields = array( 'rapport_pdf' => $attachment_id );
+	// Plusieurs rapports possibles : on AJOUTE par défaut, on remplace sur demande.
+	$replace  = ! empty( $_POST['replace'] );
+	$previous = gacct_report_ids( $revision['rapport_pdf'] ?? '' );
+	$ids      = $replace ? array() : $previous;
+	$ids[]    = $attachment_id;
+	$ids      = array_values( array_unique( array_map( 'absint', $ids ) ) );
+
+	$fields = array( 'rapport_pdf' => implode( ',', $ids ) );
 
 	// « Réalisé par » : renseigné à la première dépose si personne n'est encore
 	// enregistré (l'entrée en 6 le repose de toute façon).
@@ -187,9 +200,66 @@ function gacct_op_ajax_upload_report() {
 		gacct_op_add_signed_note( $order, __( 'Rapport d\'intervention (PDF) déposé', 'gestion-atelier-cct' ) );
 	}
 
-	wp_send_json_success( array( 'attachment_id' => $attachment_id ) );
+	// Remplacement : les anciens fichiers sont retirés du coffre.
+	if ( $replace ) {
+		foreach ( $previous as $old_id ) {
+			if ( $old_id !== $attachment_id ) {
+				wp_delete_attachment( $old_id, true );
+			}
+		}
+	}
+
+	wp_send_json_success( array( 'attachment_id' => $attachment_id, 'ids' => $ids ) );
 }
 add_action( 'wp_ajax_gacct_op_upload_report', 'gacct_op_ajax_upload_report' );
+
+/**
+ * Suppression d'un rapport PDF du dossier (fiche console).
+ * Le fichier est retiré du coffre-fort et l'ID sort de rapport_pdf.
+ */
+function gacct_op_ajax_delete_report() {
+	gacct_op_api_guard();
+
+	$revision_id   = isset( $_POST['revision_id'] ) ? absint( $_POST['revision_id'] ) : 0;
+	$attachment_id = isset( $_POST['attachment_id'] ) ? absint( $_POST['attachment_id'] ) : 0;
+	$row           = gacct_report_revision_row( $revision_id );
+
+	if ( ! $row || ! $attachment_id ) {
+		wp_send_json_error( array( 'message' => __( 'Dossier introuvable.', 'gestion-atelier-cct' ) ) );
+	}
+
+	$ids = gacct_report_ids( $row['rapport_pdf'] );
+
+	if ( ! in_array( $attachment_id, $ids, true ) ) {
+		wp_send_json_error( array( 'message' => __( 'Ce document n\'appartient pas à ce dossier.', 'gestion-atelier-cct' ) ) );
+	}
+
+	$state = (int) $row['etat_de_la_commande'];
+
+	// Le rapport est exigé à partir de l'état 6 : on n'autorise pas de vider le
+	// dossier une fois le solde demandé.
+	if ( $state >= 6 && 1 === count( $ids ) ) {
+		wp_send_json_error( array( 'message' => __( 'Impossible de supprimer le dernier rapport : il est exigé à partir de la demande de solde.', 'gestion-atelier-cct' ) ) );
+	}
+
+	$remaining = array_values( array_diff( $ids, array( $attachment_id ) ) );
+
+	if ( ! gacct_report_set_ids( $revision_id, $remaining ) ) {
+		wp_send_json_error( array( 'message' => __( 'La mise à jour du dossier a échoué.', 'gestion-atelier-cct' ) ) );
+	}
+
+	wp_delete_attachment( $attachment_id, true );
+
+	$revision = jwcct_get_cct_item( JWCCT_CCT_REVISION, $revision_id );
+	$order    = $revision ? gacct_op_get_order_for_revision( $revision ) : false;
+
+	if ( $order ) {
+		gacct_op_add_signed_note( $order, __( 'Rapport d\'intervention (PDF) supprimé', 'gestion-atelier-cct' ) );
+	}
+
+	wp_send_json_success( array( 'ids' => $remaining ) );
+}
+add_action( 'wp_ajax_gacct_op_delete_report', 'gacct_op_ajax_delete_report' );
 
 /**
  * Correction manuelle du « réalisé par » (journalisée ancienne → nouvelle valeur).
