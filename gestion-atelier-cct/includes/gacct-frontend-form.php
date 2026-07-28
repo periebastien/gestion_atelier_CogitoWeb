@@ -217,12 +217,15 @@ function gacct_demande_couleur_signature_sql( $colonne ) {
  * revision la plus recente en cas de plusieurs passages en atelier).
  * Vide si l'utilisateur n'est pas connecte ou n'a aucune voile.
  *
+ * @param int $user_id Client cible (0 = utilisateur connecte). Ajoute pour le
+ *                     tableau de bord client (gacct-dashboard.php), qui doit
+ *                     pouvoir interroger un client donne hors contexte de session.
  * @return array<int,array<string,mixed>>
  */
-function gacct_demande_materiels_client() {
+function gacct_demande_materiels_client( $user_id = 0 ) {
 	$materiels = array();
 
-	$user_id = get_current_user_id();
+	$user_id = $user_id ? absint( $user_id ) : get_current_user_id();
 	if ( ! $user_id ) {
 		return $materiels;
 	}

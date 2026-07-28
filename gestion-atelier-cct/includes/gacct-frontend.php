@@ -28,31 +28,95 @@ add_shortcode( 'wp_admin_email', function() {
 
 add_shortcode( 'avatar_initiales', 'generer_avatar_initiales_utilisateur' );
 
-function generer_avatar_initiales_utilisateur() {
-    if ( ! is_user_logged_in() ) {
+/**
+ * Avatar du client : PHOTO du compte si elle existe, INITIALES sinon
+ * (cascade du CDC-dashboard-client.md §2.1.1).
+ *
+ * ⚠ Nom historique conserve : ce shortcode/callback est reference dans
+ * Elementor (bandeau du tableau de bord + menu lateral de l'espace client).
+ *
+ * ⚠ Piege : `get_avatar_url()` ne renvoie JAMAIS vide (silhouette grise
+ * "mystery person" de Gravatar). La detection d'une vraie photo est deleguee a
+ * `gacct_dash_avatar_url()` (gacct-dashboard.php), qui teste la user meta
+ * `{prefixe}_user_avatar` posee par Nextend Social Login.
+ *
+ * Retrocompatibilite : sans attribut, la sortie sans photo est exactement
+ * l'ancienne, `<div class="user-avatar">XY</div>`.
+ *
+ * Attributs :
+ * - `size`    : taille en pixels (pose la variable CSS `--gacct-avatar-size`).
+ * - `class`   : classes CSS supplementaires.
+ * - `user_id` : cible un autre utilisateur (0 = utilisateur connecte).
+ *
+ * @param array<string,string>|string $atts Attributs du shortcode.
+ * @return string HTML.
+ */
+function generer_avatar_initiales_utilisateur( $atts = array() ) {
+    $atts = shortcode_atts(
+        array(
+            'size'    => 0,
+            'class'   => '',
+            'user_id' => 0,
+        ),
+        is_array( $atts ) ? $atts : array(),
+        'avatar_initiales'
+    );
+
+    $user_id = absint( $atts['user_id'] );
+
+    if ( ! $user_id ) {
+        if ( ! is_user_logged_in() ) {
+            return '';
+        }
+        $user_id = get_current_user_id();
+    }
+
+    $user = get_userdata( $user_id );
+
+    if ( ! $user ) {
         return '';
     }
 
-    $user = wp_get_current_user();
-    $prenom = $user->user_firstname;
-    $nom = $user->user_lastname;
-    $initiales = '';
+    // --- Classes et taille -------------------------------------------------
+    $classes = array( 'user-avatar' );
 
-    if ( ! empty($prenom) && ! empty($nom) ) {
-        $initiales = mb_substr($prenom, 0, 1) . mb_substr($nom, 0, 1);
-    } else {
-        $display_name = $user->display_name;
-        $mots = explode(' ', $display_name);
-        if ( count($mots) >= 2 ) {
-            $initiales = mb_substr($mots[0], 0, 1) . mb_substr(end($mots), 0, 1);
-        } else {
-            $initiales = mb_substr($display_name, 0, 2);
+    foreach ( preg_split( '/\s+/', trim( (string) $atts['class'] ) ) as $classe ) {
+        if ( '' !== $classe ) {
+            $classes[] = sanitize_html_class( $classe );
         }
     }
 
-    $initiales = mb_strtoupper($initiales);
+    $size  = absint( $atts['size'] );
+    $style = $size ? sprintf( ' style="--gacct-avatar-size:%dpx"', $size ) : '';
 
-    return '<div class="user-avatar">' . esc_html($initiales) . '</div>';
+    // --- 1. Photo du compte (Nextend / Google, rapatriee en mediatheque) ----
+    $photo = function_exists( 'gacct_dash_avatar_url' )
+        ? gacct_dash_avatar_url( $user_id, $size ? $size : 96 )
+        : null;
+
+    if ( $photo ) {
+        $classes[] = 'user-avatar--photo';
+
+        return sprintf(
+            '<div class="%1$s"%2$s><img src="%3$s" alt="%4$s" loading="lazy" decoding="async"></div>',
+            esc_attr( implode( ' ', $classes ) ),
+            $style,
+            esc_url( $photo ),
+            esc_attr( $user->display_name )
+        );
+    }
+
+    // --- 2. Repli : initiales ----------------------------------------------
+    $initiales = function_exists( 'gacct_dash_initials' )
+        ? gacct_dash_initials( $user_id )
+        : mb_strtoupper( mb_substr( (string) $user->display_name, 0, 2 ) );
+
+    return sprintf(
+        '<div class="%1$s"%2$s>%3$s</div>',
+        esc_attr( implode( ' ', $classes ) ),
+        $style,
+        esc_html( $initiales )
+    );
 }
 
 add_shortcode( 'nom_complet_facturation', 'afficher_nom_complet_facturation_utilisateur' );

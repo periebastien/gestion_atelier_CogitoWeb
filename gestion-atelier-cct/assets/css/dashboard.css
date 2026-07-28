@@ -1,0 +1,951 @@
+/* =============================================================================
+ * Tableau de bord client (/mon-compte/, template Elementor 508)
+ * — gestion-atelier-cct / includes/gacct-dashboard.php
+ *
+ * Périmètre : UNIQUEMENT ce que rend le PHP du plugin, c'est-à-dire les cartes
+ * « Actions attendues de vous » (callback `gacct_dash_render_actions()`) et
+ * l'avatar du shortcode `[avatar_initiales]`. Le reste de la page (bandeau,
+ * compteurs, listings révisions / matériel / documents) est monté en widgets
+ * Elementor natifs et stylé côté template.
+ *
+ * White-label : aucune couleur codée en dur. Tout passe par les variables
+ * `--gacct-*` (surchargeables par site dans le kit Elementor) ; les valeurs de
+ * repli reprennent les tokens « Altitude Révision » de la maquette.
+ *
+ * Chargé uniquement sur la page « compte » du Profile Builder (page 14 ici),
+ * sous-pages comprises — cf. `gacct_dash_should_enqueue()`.
+ * ============================================================================= */
+
+/* Tokens : posés sur :root, mais la feuille n'est chargée QUE sur l'espace
+   client (`gacct_dash_should_enqueue()`) — aucune fuite ailleurs sur le site. */
+:root {
+	--dash-teal:        var(--gacct-accent, #20c4c3);
+	--dash-teal-dark:   var(--gacct-accent-dark, #189998);
+	--dash-teal-soft:   var(--gacct-accent-soft, #e8f8f8);
+	--dash-yellow:      var(--gacct-cta, #ffbd20);
+	--dash-yellow-dark: var(--gacct-cta-dark, #e0a800);
+	--dash-orange:      var(--gacct-warn, #ff8a3d);
+	--dash-orange-soft: var(--gacct-warn-soft, #fff1e8);
+	--dash-orange-ink:  var(--gacct-warn-ink, #c45a10);
+	--dash-blue:        var(--gacct-info, #4a8bf5);
+	--dash-blue-soft:   var(--gacct-info-soft, #ecf3ff);
+	--dash-indigo:      var(--gacct-alt, #6366f1);
+	--dash-indigo-soft: var(--gacct-alt-soft, #eef0ff);
+	--dash-green:       var(--gacct-success, #10b981);
+	--dash-green-soft:  var(--gacct-success-soft, #e6f7f1);
+	--dash-green-ink:   var(--gacct-success-ink, #047857);
+	--dash-red:         var(--gacct-danger, #c92a2a);
+	--dash-red-soft:    var(--gacct-danger-soft, #fff5f5);
+	--dash-red-line:    var(--gacct-danger-line, #ffd7d7);
+	--dash-pdf:         var(--gacct-pdf, #e63946);
+	--dash-ink:         var(--gacct-text, #1a1a1a);
+	--dash-ink-2:       var(--gacct-text-muted, #4a4748);
+	--dash-ink-3:       var(--gacct-text-faint, #6b6b6b);
+	--dash-ink-4:       var(--gacct-text-dim, #9a9a9a);
+	--dash-surface:     var(--gacct-surface, #fff);
+	--dash-surface-alt: var(--gacct-surface-alt, #fafafa);
+	--dash-line:        var(--gacct-line, rgba(0, 0, 0, 0.07));
+	--dash-line-2:      var(--gacct-line-strong, rgba(0, 0, 0, 0.12));
+	--dash-radius:      var(--gacct-radius, 9px);
+	--dash-radius-lg:   var(--gacct-radius-lg, 14px);
+}
+
+/* ── Carte d'action ────────────────────────────────────────────────────── */
+
+.action-card {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	background: var(--dash-surface);
+	border: 1px solid var(--dash-line-2);
+	border-radius: var(--dash-radius-lg);
+	padding: 16px 18px;
+	margin-bottom: 10px;
+	flex-wrap: wrap;
+	box-sizing: border-box;
+}
+
+.action-card * {
+	box-sizing: border-box;
+}
+
+/* Urgent : teinte d'alerte très légère, posée en superposition pour rester
+   lisible quel que soit le fond du conteneur Elementor. */
+.action-card.urgent {
+	border-color: var(--gacct-warn-border, rgba(255, 138, 61, 0.45));
+	background-image: linear-gradient(0deg, var(--dash-orange-soft), var(--dash-orange-soft));
+	background-blend-mode: normal;
+}
+
+.action-icon {
+	width: 42px;
+	height: 42px;
+	border-radius: 11px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.action-icon svg {
+	width: 20px;
+	height: 20px;
+	fill: none;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.action-icon.orange { background: var(--dash-orange-soft); }
+.action-icon.orange svg { stroke: var(--dash-orange); }
+.action-icon.blue { background: var(--dash-blue-soft); }
+.action-icon.blue svg { stroke: var(--dash-blue); }
+.action-icon.indigo { background: var(--dash-indigo-soft); }
+.action-icon.indigo svg { stroke: var(--dash-indigo); }
+.action-icon.teal { background: var(--dash-teal-soft); }
+.action-icon.teal svg { stroke: var(--dash-teal-dark); }
+
+.action-body {
+	flex: 1;
+	min-width: 240px;
+}
+
+.action-title {
+	font-size: 14.5px;
+	font-weight: 800;
+	color: var(--dash-ink);
+	margin-bottom: 3px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.action-text {
+	font-size: 12.5px;
+	color: var(--dash-ink-2);
+	font-weight: 600;
+	line-height: 1.5;
+}
+
+.action-text .hl {
+	color: var(--dash-ink);
+	font-weight: 800;
+}
+
+.action-note {
+	font-size: 11.5px;
+	color: var(--dash-ink-3);
+	font-weight: 600;
+	margin-top: 4px;
+}
+
+/* ── Pastille de délai ─────────────────────────────────────────────────── */
+
+.chip-delay {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	background: var(--dash-orange-soft);
+	color: var(--dash-orange-ink);
+	font-size: 11px;
+	font-weight: 800;
+	padding: 3px 9px;
+	border-radius: 999px;
+}
+
+.chip-delay svg {
+	width: 11px;
+	height: 11px;
+	stroke: currentColor;
+	fill: none;
+	stroke-width: 2.4;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+/* ── Bouton d'action ───────────────────────────────────────────────────── */
+
+.action-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	padding: 10px 16px;
+	border-radius: var(--dash-radius);
+	font-size: 12.5px;
+	font-weight: 800;
+	text-decoration: none;
+	white-space: nowrap;
+	transition: background 150ms, border-color 150ms, color 150ms;
+}
+
+.action-btn.primary {
+	background: var(--dash-yellow);
+	color: var(--dash-ink);
+	box-shadow: 0 1px 0 var(--dash-yellow-dark);
+}
+
+.action-btn.primary:hover,
+.action-btn.primary:focus {
+	background: var(--dash-yellow-dark);
+	color: var(--dash-ink);
+}
+
+.action-btn.ghost {
+	background: var(--dash-surface);
+	color: var(--dash-ink);
+	border: 1px solid var(--dash-line-2);
+}
+
+.action-btn.ghost:hover,
+.action-btn.ghost:focus {
+	border-color: var(--dash-ink-3);
+	color: var(--dash-ink);
+}
+
+.action-btn svg {
+	width: 13px;
+	height: 13px;
+	stroke: currentColor;
+	fill: none;
+	stroke-width: 2.4;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	flex-shrink: 0;
+}
+
+/* ── Avatar : photo du compte ou initiales (shortcode [avatar_initiales]) ─
+   `.user-avatar` est déjà stylé par les templates de l'espace client (taille,
+   dégradé, arrondi) : on ne fait qu'ajouter le support de la photo et de
+   l'attribut `size` (variable `--gacct-avatar-size`). */
+
+.user-avatar {
+	overflow: hidden;
+}
+
+.user-avatar[style*="--gacct-avatar-size"] {
+	width: var(--gacct-avatar-size);
+	height: var(--gacct-avatar-size);
+	font-size: calc(var(--gacct-avatar-size) * 0.36);
+}
+
+.user-avatar--photo {
+	background: var(--dash-line);
+}
+
+.user-avatar--photo img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	border-radius: inherit;
+	display: block;
+}
+
+/* ── « Rien à faire de votre côté » ────────────────────────────────────── */
+
+.nothing-todo {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 14px 18px;
+	background: var(--dash-green-soft);
+	border: 1px solid var(--gacct-success-border, rgba(16, 185, 129, 0.25));
+	border-radius: 12px;
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--dash-green-ink);
+}
+
+.nothing-todo svg {
+	width: 17px;
+	height: 17px;
+	stroke: var(--dash-green-ink);
+	fill: none;
+	stroke-width: 2.4;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	flex-shrink: 0;
+}
+
+/* ── §2.3 Révisions en cours ───────────────────────────────────────────── */
+
+.rev-card {
+	display: grid;
+	grid-template-columns: minmax(190px, 1.1fr) minmax(220px, 1.4fr) auto;
+	align-items: center;
+	gap: 16px 24px;
+	background: var(--dash-surface);
+	border: 1px solid var(--dash-line);
+	border-radius: var(--dash-radius-lg);
+	padding: 16px 18px;
+	box-sizing: border-box;
+	/* Pas de `margin-bottom` ici : la gouttière verticale entre deux cartes est
+	   posée par le réglage `vertical_gap` (10 px) du widget jet-listing-grid du
+	   template 508. Remettre une marge ici doublerait la gouttière. */
+}
+
+.voile-stack {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+}
+
+.voile-swatch {
+	width: 34px;
+	height: 34px;
+	border-radius: 9px;
+	flex-shrink: 0;
+	border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.voile-meta { min-width: 0; }
+
+.voile-brand {
+	font-size: 13.5px;
+	font-weight: 800;
+	color: var(--dash-ink);
+}
+
+.voile-model {
+	font-size: 11.5px;
+	color: var(--dash-ink-3);
+	font-weight: 600;
+}
+
+.tracker { min-width: 0; }
+
+.tracker-bar {
+	height: 6px;
+	border-radius: 4px;
+	background: rgba(0, 0, 0, 0.07);
+	overflow: hidden;
+}
+
+.tracker-fill {
+	height: 100%;
+	border-radius: 4px;
+	background: var(--dash-teal);
+}
+
+.tracker-fill.action { background: var(--dash-orange); }
+
+.tracker-label {
+	display: flex;
+	justify-content: space-between;
+	gap: 10px;
+	margin-top: 6px;
+	font-size: 11.5px;
+	font-weight: 700;
+}
+
+.tracker-state { color: var(--dash-ink); }
+.tracker-state.action { color: var(--dash-orange-ink); }
+
+.tracker-step {
+	color: var(--dash-ink-4);
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.rev-extra {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	align-items: flex-end;
+	text-align: right;
+}
+
+.rev-extra .label {
+	font-size: 10px;
+	font-weight: 800;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+	color: var(--dash-ink-4);
+}
+
+.rev-extra .value {
+	font-size: 12.5px;
+	font-weight: 700;
+	color: var(--dash-ink);
+}
+
+.rev-extra a.value {
+	color: var(--dash-teal-dark);
+	text-decoration: none;
+}
+
+.rev-extra a.value:hover { text-decoration: underline; }
+
+/* ── §2.5 Mon matériel ─────────────────────────────────────────────────── */
+
+.two-col {
+	display: grid;
+	grid-template-columns: 1.4fr 1fr;
+	gap: 24px;
+	align-items: start;
+}
+
+.gear-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 10px;
+}
+
+.gear-card {
+	background: var(--dash-surface);
+	border: 1px solid var(--dash-line);
+	border-radius: 12px;
+	padding: 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	text-decoration: none;
+	color: inherit;
+	transition: border-color 150ms, box-shadow 150ms;
+}
+
+.gear-card:hover {
+	border-color: var(--dash-teal);
+	color: inherit;
+}
+
+.gear-swatch {
+	width: 100%;
+	height: 52px;
+	border-radius: 8px;
+	border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.gear-name {
+	font-size: 13px;
+	font-weight: 800;
+	color: var(--dash-ink);
+	line-height: 1.3;
+}
+
+.gear-sub {
+	font-size: 11.5px;
+	color: var(--dash-ink-3);
+	font-weight: 600;
+}
+
+/* Alerte révision périodique (le principal levier de fidélisation) */
+.alert-card {
+	background: var(--dash-teal-soft);
+	border: 1px solid var(--gacct-accent-border, rgba(32, 196, 195, 0.35));
+	border-radius: var(--dash-radius-lg);
+	padding: 18px;
+	margin-top: 12px;
+	display: flex;
+	gap: 14px;
+	align-items: flex-start;
+	flex-wrap: wrap;
+	box-sizing: border-box;
+}
+
+.alert-card .action-icon { background: var(--dash-surface); }
+.alert-card .action-icon svg { stroke: var(--dash-teal-dark); }
+
+.alert-body {
+	flex: 1;
+	min-width: 220px;
+}
+
+.alert-title {
+	font-size: 14px;
+	font-weight: 800;
+	color: var(--dash-ink);
+	margin-bottom: 4px;
+}
+
+.alert-text {
+	font-size: 12.5px;
+	color: var(--dash-ink-2);
+	font-weight: 600;
+	line-height: 1.5;
+	margin-bottom: 12px;
+}
+
+.alert-text .hl {
+	font-weight: 800;
+	color: var(--dash-ink);
+}
+
+/* ── §2.6 Mes documents ────────────────────────────────────────────────── */
+
+.doc-list {
+	background: var(--dash-surface);
+	border: 1px solid var(--dash-line);
+	border-radius: var(--dash-radius-lg);
+	overflow: hidden;
+}
+
+.doc-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 14px 16px;
+	border-bottom: 1px solid var(--dash-line);
+	text-decoration: none;
+	color: inherit;
+	transition: background 120ms;
+}
+
+.doc-row:last-child { border-bottom: none; }
+.doc-row:hover { background: var(--dash-surface-alt); color: inherit; }
+
+.doc-icon {
+	width: 36px;
+	height: 36px;
+	border-radius: 9px;
+	background: var(--dash-red-soft);
+	border: 1px solid var(--dash-red-line);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.doc-icon svg {
+	width: 17px;
+	height: 17px;
+	stroke: var(--dash-red);
+	fill: none;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.doc-icon svg .pdf-mark {
+	fill: var(--dash-pdf);
+	stroke: none;
+}
+
+.doc-body {
+	flex: 1;
+	min-width: 0;
+}
+
+.doc-name {
+	font-size: 13px;
+	font-weight: 800;
+	color: var(--dash-ink);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.doc-date {
+	font-size: 11.5px;
+	color: var(--dash-ink-3);
+	font-weight: 600;
+}
+
+.doc-dl {
+	width: 34px;
+	height: 34px;
+	border-radius: 8px;
+	background: var(--dash-surface-alt);
+	border: 1px solid var(--dash-line);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	transition: background 150ms, border-color 150ms;
+}
+
+.doc-row:hover .doc-dl {
+	background: var(--dash-teal-soft);
+	border-color: var(--dash-teal);
+}
+
+.doc-dl svg {
+	width: 15px;
+	height: 15px;
+	stroke: var(--dash-ink-2);
+	fill: none;
+	stroke-width: 2.2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.doc-row:hover .doc-dl svg { stroke: var(--dash-teal-dark); }
+
+/* ── §2.1 Bandeau et compteurs (montés en widgets Elementor) ───────────── */
+
+.hero-title {
+	font-size: 24px;
+	font-weight: 900;
+	letter-spacing: -0.02em;
+	color: var(--dash-ink);
+}
+
+.hero-sub {
+	font-size: 13px;
+	color: var(--dash-ink-3);
+	font-weight: 600;
+	margin-top: 3px;
+}
+
+.hero-counters {
+	display: flex;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.counter {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	background: var(--dash-surface-alt);
+	border: 1px solid var(--dash-line);
+	border-radius: 10px;
+	padding: 9px 14px;
+	font-size: 12.5px;
+	font-weight: 700;
+	color: var(--dash-ink-2);
+}
+
+.counter b {
+	font-size: 17px;
+	font-weight: 900;
+	color: var(--dash-ink);
+}
+
+.counter .dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--dash-orange);
+	flex-shrink: 0;
+}
+
+.section-title {
+	font-size: 17px;
+	font-weight: 900;
+	letter-spacing: -0.015em;
+	color: var(--dash-ink);
+}
+
+.section-link {
+	font-size: 12.5px;
+	font-weight: 700;
+	color: var(--dash-teal-dark);
+	text-decoration: none;
+}
+
+/* ── §3 État vide (première visite) ────────────────────────────────────── */
+
+.empty {
+	max-width: 680px;
+	margin: 24px auto 0;
+	text-align: center;
+}
+
+.empty-illu {
+	width: 76px;
+	height: 76px;
+	border-radius: 50%;
+	background: var(--dash-teal-soft);
+	overflow: hidden;
+	margin: 0 auto 20px;
+	border: 2px solid var(--dash-surface);
+	box-shadow: 0 0 0 1px var(--dash-line-2);
+	padding: 0;
+}
+
+/* La vignette est rendue par un widget Elementor « shortcode »
+   (`[avatar_initiales]`) : ses enveloppes ne doivent pas s'interposer entre le
+   cercle et l'avatar, sans quoi ce dernier n'hérite ni de la taille ni du
+   rognage. `display: contents` les efface de la boîte sans toucher au DOM. */
+.empty-illu > .elementor-widget-container,
+.empty-illu .elementor-shortcode {
+	display: contents;
+}
+
+/* Postérieur à `.user-avatar[style*="--gacct-avatar-size"]` (même spécificité) :
+   l'avatar remplit le cercle plutôt que de le déborder de l'épaisseur de la
+   bordure. */
+.empty-illu .user-avatar {
+	width: 100%;
+	height: 100%;
+	border-radius: inherit;
+}
+
+.empty-title {
+	font-size: 26px;
+	font-weight: 900;
+	letter-spacing: -0.02em;
+	margin-bottom: 8px;
+}
+
+.empty-sub {
+	font-size: 14px;
+	color: var(--dash-ink-2);
+	font-weight: 600;
+	line-height: 1.6;
+	margin-bottom: 32px;
+}
+
+.steps {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 12px;
+	margin-bottom: 32px;
+	text-align: left;
+}
+
+.step-card {
+	background: var(--dash-surface-alt);
+	border: 1px solid var(--dash-line);
+	border-radius: var(--dash-radius-lg);
+	padding: 18px;
+	position: relative;
+}
+
+.step-num {
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	background: var(--dash-teal);
+	color: #fff;
+	font-size: 13px;
+	font-weight: 900;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 12px;
+}
+
+.step-title {
+	font-size: 13.5px;
+	font-weight: 800;
+	color: var(--dash-ink);
+	margin-bottom: 4px;
+}
+
+.step-text {
+	font-size: 12px;
+	color: var(--dash-ink-3);
+	font-weight: 600;
+	line-height: 1.5;
+}
+
+.empty-cta {
+	display: inline-flex;
+	align-items: center;
+	gap: 9px;
+	background: var(--dash-yellow);
+	color: var(--dash-ink);
+	padding: 15px 26px;
+	border-radius: 11px;
+	font-size: 15px;
+	font-weight: 800;
+	text-decoration: none;
+	box-shadow: 0 1px 0 var(--dash-yellow-dark);
+	transition: background 150ms;
+}
+
+.empty-cta:hover {
+	background: var(--dash-yellow-dark);
+	color: var(--dash-ink);
+}
+
+.empty-cta svg {
+	width: 16px;
+	height: 16px;
+	stroke: var(--dash-ink);
+	fill: none;
+	stroke-width: 2.5;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+/* ── Responsive (breakpoints de la maquette : 1020 / 900 / 767) ────────── */
+
+@media (max-width: 1020px) {
+	.two-col { grid-template-columns: 1fr; }
+
+	.rev-card {
+		grid-template-columns: minmax(170px, 1fr) 1.4fr;
+		gap: 12px 20px;
+	}
+
+	.rev-extra {
+		grid-column: 1 / -1;
+		flex-direction: row;
+		justify-content: flex-start;
+		gap: 24px;
+		align-items: baseline;
+		text-align: left;
+		border-top: 1px solid var(--dash-line);
+		padding-top: 10px;
+	}
+}
+
+@media (max-width: 900px) {
+	.hero-counters { width: 100%; }
+	.hero-title { font-size: 20px; }
+}
+
+/* Les colonnes Gutenberg du site s'empilent à 781 px (WP core) : la carte
+   d'action passe en pile à ce seuil plutôt qu'à 767, pour rester alignée sur
+   le reste de l'espace client. Le reste suit la maquette (767). */
+@media (max-width: 781px) {
+	.action-card {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 12px;
+	}
+
+	.action-card .action-btn {
+		width: 100%;
+		justify-content: center;
+	}
+
+	.action-body { min-width: 0; }
+}
+
+@media (max-width: 767px) {
+	.rev-card { grid-template-columns: 1fr; }
+	.rev-extra { flex-wrap: wrap; gap: 12px 24px; }
+	.gear-grid { grid-template-columns: repeat(2, 1fr); }
+	.steps { grid-template-columns: 1fr; }
+	.empty-title { font-size: 22px; }
+	.empty-cta { width: 100%; justify-content: center; }
+	.counter { flex: 1; justify-content: center; }
+}
+
+/* =============================================================================
+ *  PONTAGE ELEMENTOR / JETENGINE — template 508 « Tableau de bord »
+ *
+ *  Les classes de la maquette sont posées sur des ÉLÉMENTS ELEMENTOR (conteneurs
+ *  via `css_classes`, widgets via `_css_classes`) : Elementor et JetEngine
+ *  intercalent un ou deux niveaux entre la classe et le HTML réellement stylé.
+ *  Ces règles rendent ces niveaux transparents pour la mise en page ; elles
+ *  n'inventent aucun style, elles reprennent les valeurs déjà définies plus haut.
+ *
+ *  ⚠ Cette feuille est chargée AVANT toutes les feuilles d'Elementor et de
+ *  JetEngine : à spécificité égale, c'est Elementor qui gagne. Chaque règle de
+ *  pontage doit donc être STRICTEMENT plus spécifique que celle qu'elle corrige
+ *  (spécificité de la règle adverse indiquée en commentaire).
+ * ========================================================================== */
+
+/* Largeur utile du tableau de bord (équivalent de `.main` de la maquette ; le
+   rembourrage vient déjà de la colonne de droite de la page 14).
+   Adversaire : `:is(.elementor-section-wrap, [data-elementor-id]) > .e-con`
+   → max-width: min(100%, var(--width))  (0,2,0). */
+.elementor > .e-con.gacct-dash {
+	max-width: min(100%, 1140px);
+}
+
+/* Titres et textes : la classe porte la typo sur le widget, le texte vit dans
+   `.elementor-heading-title` / `.jet-listing-dynamic-field__content`.
+   Adversaire : `.elementor-widget-heading .elementor-heading-title` (0,2,0),
+   émise dans post-508.css par le kit. */
+.elementor-widget-heading.hero-title .elementor-heading-title,
+.elementor-widget-heading.section-title .elementor-heading-title,
+.elementor-widget-heading.step-title .elementor-heading-title,
+.elementor-widget-heading.step-text .elementor-heading-title,
+.elementor-widget-heading.step-num .elementor-heading-title,
+.elementor-widget-heading.empty-sub .elementor-heading-title,
+.elementor-widget-jet-listing-dynamic-field.empty-title > .jet-listing-dynamic-field__content {
+	font: inherit;
+	color: inherit;
+	letter-spacing: inherit;
+	line-height: inherit;
+	margin: 0;
+}
+
+.elementor-widget-heading.section-link .elementor-heading-title,
+.elementor-widget-heading.section-link .elementor-heading-title a {
+	font: inherit;
+	color: inherit;
+	letter-spacing: inherit;
+	text-decoration: none;
+}
+
+.elementor-widget-heading.section-link .elementor-heading-title a:hover {
+	text-decoration: underline;
+}
+
+/* État « première visite » : Elementor pose `text-align: initial` sur tout
+   conteneur boxed (`.e-con-boxed`, 0,1,0) et neutralise les marges automatiques
+   (`.e-con { margin-inline-start: var(--margin-inline-start) }`). */
+.e-con-boxed.empty {
+	text-align: center;
+	margin-inline: auto;
+}
+
+.e-con-full.steps {
+	text-align: left;
+}
+
+/* Pastille numérotée des étapes : sans `_element_width` côté Elementor, le
+   widget hérite de `--container-widget-width: 100%`. Adversaire (0,2,0). */
+.elementor-element.elementor-widget.step-num {
+	width: 28px;
+	height: 28px;
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* Compteurs du bandeau : le contenu du champ dynamique devient enfant direct de
+   `.counter`, sans quoi la pastille et le chiffre ne sont pas des items flex.
+   Adversaire du `gap` : JetEngine
+   `.jet-engine-optimized-dom .elementor-widget-jet-listing-dynamic-field.elementor-widget`
+   → gap: 0  (0,3,0). */
+.counter > .jet-listing-dynamic-field__content {
+	display: contents;
+}
+
+.elementor-element.elementor-widget.elementor-widget-jet-listing-dynamic-field.counter {
+	gap: 8px;
+}
+
+/* Cartes de révision (listing 1683) : `.rev-card` est un conteneur Elementor,
+   dont `display`, `padding-block-*` et `gap` sont posés par Elementor à partir
+   des réglages du listing (0,1,0 et 0,2,0). */
+.jet-listing-grid__item > .elementor > .rev-card {
+	display: grid;
+	padding: 16px 18px;
+	gap: 16px 24px;
+}
+
+.rev-card > .elementor-element,
+.rev-card > .elementor-element > .jet-listing-dynamic-field__content {
+	display: contents;
+}
+
+/* Vignettes matériel (1684) et lignes de document (1685) : le HTML du callback
+   doit devenir l'enfant direct de `.jet-listing-grid__item`. */
+.gacct-dash-gear-item,
+.gacct-dash-doc-item,
+.jet-listing-grid__item > .elementor > .gacct-dash-gear-item,
+.jet-listing-grid__item > .elementor > .gacct-dash-doc-item,
+.gacct-dash-gear-item > .elementor-element,
+.gacct-dash-doc-item > .elementor-element,
+.gacct-dash-gear-item > .elementor-element > .jet-listing-dynamic-field__content,
+.gacct-dash-doc-item > .elementor-element > .jet-listing-dynamic-field__content {
+	display: contents;
+}
+
+.jet-listing-grid__item:last-child .doc-row {
+	border-bottom: none;
+}
+
+/* Le matériel du tableau de bord est plafonné à 3 vignettes : la limite d'une
+   requête SQL avancée n'est pas réglable côté widget, et la query 22 est
+   partagée avec l'onglet « Mon matériel » — on ne la duplique pas. */
+.gacct-dash-gear-grid .jet-listing-grid__item:nth-child(n + 4) {
+	display: none;
+}
+
+@media (max-width: 1020px) {
+	.jet-listing-grid__item > .elementor > .rev-card {
+		gap: 12px 20px;
+	}
+}

@@ -16,6 +16,7 @@ require_once __DIR__ . '/includes/gacct-payments.php';
 require_once __DIR__ . '/includes/gacct-thankyou.php';
 require_once __DIR__ . '/includes/gacct-frontend.php';
 require_once __DIR__ . '/includes/gacct-frontend-form.php';
+require_once __DIR__ . '/includes/gacct-dashboard.php';
 require_once __DIR__ . '/includes/gacct-buttons.php';
 require_once __DIR__ . '/includes/gacct-debug.php';
 require_once __DIR__ . '/includes/gacct-login-gate.php';
@@ -40,6 +41,9 @@ final class GACCT_Plugin {
 	const TABLE_REVISION_OPT   = 'gacct_table_revision';
 	const WORKING_DAYS_OPT     = 'gacct_working_days';
 	const NOTIFICATION_SETTINGS_OPT = 'gacct_notification_settings';
+	// Seuil (en jours) de l'alerte "prochaine revision" du tableau de bord client
+	// (cf. includes/gacct-dashboard.php, CDC-dashboard-client.md §2.5).
+	const NEXT_REVISION_DAYS_OPT    = 'gacct_next_revision_days';
 	const REL_REV_OCC      = 11;
 	const REL_REV_ORDER    = 12;
 	const REL_CLIENT_REV   = 13;
@@ -398,6 +402,24 @@ final class GACCT_Plugin {
 						</tr>
 						<tr>
 							<th scope="row">
+								<label for="gacct_next_revision_days"><?php esc_html_e( 'Alerte prochaine revision (jours)', 'gestion-atelier-cct' ); ?></label>
+							</th>
+							<td>
+								<input
+									type="number"
+									id="gacct_next_revision_days"
+									name="next_revision_days"
+									min="1"
+									max="730"
+									step="1"
+									value="<?php echo esc_attr( function_exists( 'gacct_dash_next_revision_threshold' ) ? gacct_dash_next_revision_threshold() : 60 ); ?>"
+									required
+								>
+								<p class="description"><?php esc_html_e( 'Tableau de bord client : la voile est signalee "a reviser" quand la date de prochaine revision saisie par l operateur tombe dans ce delai (ou est deja depassee). Defaut : 60 jours.', 'gestion-atelier-cct' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
 								<label for="gacct_table_revision"><?php esc_html_e( 'Table des revisions', 'gestion-atelier-cct' ); ?></label>
 							</th>
 							<td>
@@ -687,8 +709,17 @@ final class GACCT_Plugin {
 			return new WP_Error( 'gacct_no_working_days', __( 'Selectionnez au moins un jour travaille.', 'gestion-atelier-cct' ) );
 		}
 
+		// Seuil de l'alerte "prochaine revision" du tableau de bord client
+		// (includes/gacct-dashboard.php) : valide AVANT tout enregistrement.
+		$next_revision_days = isset( $_POST['next_revision_days'] ) ? absint( wp_unslash( $_POST['next_revision_days'] ) ) : 0;
+
+		if ( $next_revision_days < 1 || $next_revision_days > 730 ) {
+			return new WP_Error( 'gacct_bad_next_revision_days', __( 'Le delai d alerte de prochaine revision doit etre compris entre 1 et 730 jours.', 'gestion-atelier-cct' ) );
+		}
+
 		update_option( self::OPENING_TIME_OPT, $opening_time, false );
 		update_option( self::WORKING_DAYS_OPT, $working_days, false );
+		update_option( self::NEXT_REVISION_DAYS_OPT, $next_revision_days, false );
 
 		$table_inputs = array(
 			'revision'           => 'table_revision',
