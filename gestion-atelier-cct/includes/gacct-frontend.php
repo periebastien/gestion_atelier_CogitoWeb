@@ -814,8 +814,38 @@ add_filter( 'jet-engine/listings/allowed-callbacks', function( $callbacks ) {
 	$callbacks['jwcct_render_materiel_client_info']  = 'JWCCT: Matériel client (marque/modèle/S-N)';
 	$callbacks['jwcct_render_materiel_historique']    = 'JWCCT: Historique des révisions (liens)';
 	$callbacks['jwcct_render_recommander_bouton']     = 'JWCCT: Bouton Recommander une révision';
+	$callbacks['jwcct_render_marque_libelle']         = 'JWCCT: Libellé de la marque (glossaire)';
 	return $callbacks;
 } );
+
+/**
+ * Colonne « Marque » du tableau Mon Matériel : le CCT stocke le slug du
+ * glossaire JetEngine « Marque » (id 2), ex. « gin-gliders » — on affiche le
+ * libellé humain (« Gin Gliders »). Repli : slug capitalisé si absent du
+ * glossaire (marque saisie avant une mise à jour de la liste, par exemple).
+ *
+ * @param string $slug Slug de marque tel que stocké dans le CCT revision.
+ * @return string Libellé de la marque.
+ */
+function jwcct_render_marque_libelle( $slug ) {
+	static $libelles = null;
+
+	if ( null === $libelles ) {
+		$libelles = array();
+		$row      = $GLOBALS['wpdb']->get_var(
+			"SELECT meta_fields FROM {$GLOBALS['wpdb']->prefix}jet_post_types WHERE id = 2 AND status = 'glossary'"
+		);
+		foreach ( (array) maybe_unserialize( (string) $row ) as $entree ) {
+			if ( isset( $entree['value'], $entree['label'] ) ) {
+				$libelles[ $entree['value'] ] = $entree['label'];
+			}
+		}
+	}
+
+	$slug = trim( (string) $slug );
+
+	return esc_html( $libelles[ $slug ] ?? ucfirst( $slug ) );
+}
 
 /**
  * Colonne « Numéro de série » du tableau Mon Matériel : affiche le numéro de
