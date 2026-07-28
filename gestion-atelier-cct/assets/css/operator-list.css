@@ -1,0 +1,295 @@
+/* Console atelier — écran « File des interventions » (spécifique liste).
+   La base (variables --gacct-*, badges, boutons, cartes) vit dans operator.css. */
+
+/* ---------- En-tête : titre + recherche ---------- */
+.gacct-op .gacct-op-list-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 12px;
+}
+
+.gacct-op .gacct-op-list-head h1 {
+	margin: 0;
+	padding: 0;
+	flex: 1 1 auto;
+}
+
+.gacct-op .gacct-op-list-search {
+	display: flex;
+	flex: 1 1 100%;
+	gap: 8px;
+}
+
+.gacct-op .gacct-op-list-search input[type="search"] {
+	flex: 1 1 auto;
+	min-height: 44px;
+	min-width: 0;
+}
+
+.gacct-op .gacct-op-list-search button {
+	min-height: 44px;
+}
+
+/* ---------- Onglets d'états ---------- */
+.gacct-op .gacct-op-list-tabs {
+	display: flex;
+	gap: 4px;
+	overflow-x: auto;
+	white-space: nowrap;
+	-webkit-overflow-scrolling: touch;
+	border-bottom: 1px solid var(--gacct-border);
+	margin-bottom: 12px;
+}
+
+.gacct-op .gacct-op-list-tab {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 10px 12px;
+	min-height: 44px;
+	box-sizing: border-box;
+	text-decoration: none;
+	color: inherit;
+	border-bottom: 3px solid transparent;
+	flex: 0 0 auto;
+}
+
+.gacct-op .gacct-op-list-tab:hover {
+	border-bottom-color: var(--gacct-border);
+}
+
+.gacct-op .gacct-op-list-tab.is-active {
+	border-bottom-color: currentColor;
+	font-weight: 600;
+}
+
+.gacct-op .gacct-op-list-tab.is-empty {
+	opacity: 0.55;
+}
+
+.gacct-op .gacct-op-list-count {
+	font-size: 0.85em;
+	background: rgba(0, 0, 0, 0.07);
+	border-radius: 10px;
+	padding: 1px 7px;
+}
+
+/* ---------- Filtre opérateur ---------- */
+.gacct-op .gacct-op-list-operator {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.gacct-op .gacct-op-list-operator select,
+.gacct-op .gacct-op-list-operator button {
+	min-height: 44px;
+}
+
+/* ---------- Divers ---------- */
+.gacct-op .gacct-op-list-muted {
+	color: #757575;
+	font-size: 0.92em;
+}
+
+.gacct-op .gacct-op-list-serial {
+	font-family: monospace;
+}
+
+.gacct-op .gacct-op-list-empty p {
+	margin: 0;
+	padding: 8px 0;
+}
+
+.gacct-op .gacct-op-list-sort {
+	text-decoration: none;
+	color: inherit;
+	display: inline-block;
+	min-height: 44px;
+	line-height: 44px;
+}
+
+.gacct-op .gacct-op-list-sort.is-sorted {
+	font-weight: 700;
+}
+
+.gacct-op .gacct-op-list-arrow {
+	font-size: 0.75em;
+}
+
+.gacct-op .gacct-op-list-action {
+	display: inline-flex;
+	align-items: center;
+	min-height: 44px;
+	padding: 0 10px;
+	text-decoration: none;
+}
+
+/* ---------- Mobile-first : le tableau est une pile de cartes ---------- */
+.gacct-op .gacct-op-list-table {
+	display: block;
+	width: 100%;
+	border-collapse: collapse;
+	margin-bottom: 16px;
+}
+
+.gacct-op .gacct-op-list-table thead {
+	display: none;
+}
+
+.gacct-op .gacct-op-list-table tbody {
+	display: block;
+}
+
+.gacct-op .gacct-op-list-table tr {
+	display: block;
+	border: 1px solid var(--gacct-border);
+	border-radius: 8px;
+	background: #fff;
+	padding: 8px 12px;
+	margin-bottom: 12px;
+}
+
+.gacct-op .gacct-op-list-table td {
+	display: flex;
+	align-items: baseline;
+	flex-wrap: wrap;
+	gap: 4px 8px;
+	border: 0;
+	padding: 6px 0;
+	border-bottom: 1px dashed var(--gacct-border);
+}
+
+.gacct-op .gacct-op-list-table tr td:last-child {
+	border-bottom: 0;
+}
+
+.gacct-op .gacct-op-list-table td::before {
+	content: attr(data-label);
+	flex: 0 0 9em;
+	font-size: 0.8em;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: #757575;
+}
+
+.gacct-op .gacct-op-list-cell-actions .gacct-op-list-action {
+	padding-left: 0;
+	padding-right: 16px;
+}
+
+/* ---------- Desktop (> 781 px) : vrai tableau ---------- */
+@media (min-width: 782px) {
+	.gacct-op .gacct-op-list-head h1 {
+		flex: 0 0 auto;
+	}
+
+	.gacct-op .gacct-op-list-search {
+		flex: 1 1 auto;
+		max-width: 480px;
+		margin-left: auto;
+	}
+
+	.gacct-op .gacct-op-list-table {
+		display: table;
+		background: #fff;
+		border: 1px solid var(--gacct-border);
+		border-radius: 8px;
+		border-spacing: 0;
+	}
+
+	.gacct-op .gacct-op-list-table thead {
+		display: table-header-group;
+	}
+
+	.gacct-op .gacct-op-list-table tbody {
+		display: table-row-group;
+	}
+
+	.gacct-op .gacct-op-list-table tr {
+		display: table-row;
+		border: 0;
+		border-radius: 0;
+		padding: 0;
+		margin: 0;
+		background: transparent;
+	}
+
+	.gacct-op .gacct-op-list-table tbody tr:hover {
+		background: rgba(0, 0, 0, 0.025);
+	}
+
+	.gacct-op .gacct-op-list-table th,
+	.gacct-op .gacct-op-list-table td {
+		display: table-cell;
+		text-align: left;
+		vertical-align: middle;
+		padding: 10px 12px;
+		border: 0;
+		border-bottom: 1px solid var(--gacct-border);
+	}
+
+	.gacct-op .gacct-op-list-table tbody tr:last-child td {
+		border-bottom: 0;
+	}
+
+	.gacct-op .gacct-op-list-table td::before {
+		content: none;
+	}
+
+	.gacct-op .gacct-op-list-table th {
+		font-weight: 600;
+		white-space: nowrap;
+	}
+
+	.gacct-op .gacct-op-list-sort {
+		min-height: 0;
+		line-height: inherit;
+	}
+
+	.gacct-op .gacct-op-list-action {
+		min-height: 0;
+		padding: 2px 6px;
+	}
+
+	.gacct-op .gacct-op-list-cell-actions {
+		white-space: nowrap;
+	}
+}
+
+/* ---------- Pagination ---------- */
+.gacct-op .gacct-op-list-pagination {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin: 4px 0 16px;
+}
+
+.gacct-op .gacct-op-list-pagelinks .page-numbers {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 34px;
+	min-height: 44px;
+	padding: 0 8px;
+	border: 1px solid var(--gacct-border);
+	border-radius: 6px;
+	text-decoration: none;
+	margin-right: 4px;
+}
+
+.gacct-op .gacct-op-list-pagelinks .page-numbers.current {
+	font-weight: 700;
+	background: rgba(0, 0, 0, 0.05);
+}
+
+@media (min-width: 782px) {
+	.gacct-op .gacct-op-list-pagelinks .page-numbers {
+		min-height: 34px;
+	}
+}

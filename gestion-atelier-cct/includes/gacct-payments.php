@@ -1143,7 +1143,7 @@ function gacct_pay_register_admin_page() {
 	$capability = apply_filters( 'gacct_admin_capability', 'manage_options' );
 
 	add_submenu_page(
-		'gacct-dashboard',
+		GACCT_OP_MENU_SLUG,
 		__( 'Paiements & relances', 'gestion-atelier-cct' ),
 		__( 'Paiements & relances', 'gestion-atelier-cct' ),
 		$capability,

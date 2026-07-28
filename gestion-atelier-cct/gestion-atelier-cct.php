@@ -19,6 +19,7 @@ require_once __DIR__ . '/includes/gacct-frontend-form.php';
 require_once __DIR__ . '/includes/gacct-buttons.php';
 require_once __DIR__ . '/includes/gacct-debug.php';
 require_once __DIR__ . '/includes/gacct-login-gate.php';
+require_once __DIR__ . '/includes/gacct-operator/gacct-operator.php';
 
 final class GACCT_Plugin {
 
@@ -109,18 +110,29 @@ final class GACCT_Plugin {
 	public function register_admin_menu() {
 		$capability = $this->capability();
 
-		$this->admin_pages['dashboard'] = add_menu_page(
+		// La console opérateur est l'écran d'accueil du menu (CDC §3) :
+		// parent accessible avec gacct_operate, sous-pages historiques réservées aux admins.
+		add_menu_page(
 			__( 'Gestion Atelier', 'gestion-atelier-cct' ),
 			__( 'Gestion Atelier', 'gestion-atelier-cct' ),
-			$capability,
-			self::MENU_SLUG,
-			array( $this, 'render_dashboard_page' ),
+			GACCT_OP_CAP,
+			GACCT_OP_MENU_SLUG,
+			'gacct_op_render_console',
 			'dashicons-calendar-alt',
 			26
 		);
 
 		add_submenu_page(
-			self::MENU_SLUG,
+			GACCT_OP_MENU_SLUG,
+			__( 'Interventions', 'gestion-atelier-cct' ),
+			__( 'Interventions', 'gestion-atelier-cct' ),
+			GACCT_OP_CAP,
+			GACCT_OP_MENU_SLUG,
+			'gacct_op_render_console'
+		);
+
+		$this->admin_pages['dashboard'] = add_submenu_page(
+			GACCT_OP_MENU_SLUG,
 			__( 'Tableau de bord', 'gestion-atelier-cct' ),
 			__( 'Tableau de bord', 'gestion-atelier-cct' ),
 			$capability,
@@ -129,7 +141,7 @@ final class GACCT_Plugin {
 		);
 
 		$this->admin_pages['generator'] = add_submenu_page(
-			self::MENU_SLUG,
+			GACCT_OP_MENU_SLUG,
 			__( 'Generer des ouvertures', 'gestion-atelier-cct' ),
 			__( 'Generer des ouvertures', 'gestion-atelier-cct' ),
 			$capability,
@@ -138,7 +150,7 @@ final class GACCT_Plugin {
 		);
 
 		$this->admin_pages['settings'] = add_submenu_page(
-			self::MENU_SLUG,
+			GACCT_OP_MENU_SLUG,
 			__( 'Configuration atelier', 'gestion-atelier-cct' ),
 			__( 'Configuration', 'gestion-atelier-cct' ),
 			$capability,
@@ -147,7 +159,7 @@ final class GACCT_Plugin {
 		);
 
 		$this->admin_pages['notifications'] = add_submenu_page(
-			self::MENU_SLUG,
+			GACCT_OP_MENU_SLUG,
 			__( 'Notifications atelier', 'gestion-atelier-cct' ),
 			__( 'Notifications', 'gestion-atelier-cct' ),
 			$capability,

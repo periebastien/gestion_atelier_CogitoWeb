@@ -1,0 +1,103 @@
+/**
+ * Console atelier — base commune (tokens white-label + éléments partagés).
+ * Les écrans ont leur feuille dédiée : operator-list.css, operator-fiche.css.
+ */
+
+.gacct-op {
+	--gacct-accent: #20c4c3;
+	--gacct-accent-dark: #17908f;
+	--gacct-accent-soft: #e6f8f8;
+	--gacct-cta: #ffd166;
+	--gacct-danger: #d63638;
+	--gacct-warn: #f0b429;
+	--gacct-warn-soft: #fdf3d7;
+	--gacct-surface: #ffffff;
+	--gacct-surface-alt: #f7f9fa;
+	--gacct-border: #dfe5e8;
+	--gacct-text: #1a1a1a;
+	--gacct-text-muted: #5f6b72;
+	--gacct-radius: 8px;
+	--gacct-radius-lg: 14px;
+	--gacct-shadow: 0 1px 3px rgba(20, 40, 45, 0.08);
+
+	color: var(--gacct-text);
+	max-width: 1200px;
+}
+
+/* Badges d'état 0–7 (mêmes familles que le tracker client) */
+.gacct-op .gacct-op-badge {
+	display: inline-block;
+	padding: 3px 10px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.6;
+	white-space: nowrap;
+}
+.gacct-op .gacct-op-badge.etat-0 { background: var(--gacct-warn-soft); color: #8a6d1a; }
+.gacct-op .gacct-op-badge.etat-1 { background: #e8f0fe; color: #1a56b0; }
+.gacct-op .gacct-op-badge.etat-2 { background: #e8f0fe; color: #1a56b0; }
+.gacct-op .gacct-op-badge.etat-3 { background: var(--gacct-warn-soft); color: #8a6d1a; }
+.gacct-op .gacct-op-badge.etat-4 { background: var(--gacct-accent-soft); color: var(--gacct-accent-dark); }
+.gacct-op .gacct-op-badge.etat-5 { background: var(--gacct-warn-soft); color: #8a6d1a; }
+.gacct-op .gacct-op-badge.etat-6 { background: #e6f6e9; color: #1b7a33; }
+.gacct-op .gacct-op-badge.etat-7 { background: #e6f6e9; color: #1b7a33; }
+
+/* Boutons */
+.gacct-op .gacct-op-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 44px;
+	padding: 8px 18px;
+	border: 1px solid var(--gacct-accent-dark);
+	border-radius: var(--gacct-radius);
+	background: var(--gacct-accent);
+	color: #fff;
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+	text-decoration: none;
+	transition: background 0.15s ease;
+}
+.gacct-op .gacct-op-btn:hover { background: var(--gacct-accent-dark); color: #fff; }
+.gacct-op .gacct-op-btn.secondary {
+	background: var(--gacct-surface);
+	color: var(--gacct-accent-dark);
+}
+.gacct-op .gacct-op-btn.secondary:hover { background: var(--gacct-accent-soft); }
+.gacct-op .gacct-op-btn.danger {
+	background: var(--gacct-surface);
+	border-color: var(--gacct-danger);
+	color: var(--gacct-danger);
+}
+.gacct-op .gacct-op-btn.danger:hover { background: #fdeeee; }
+.gacct-op .gacct-op-btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+/* Cartes */
+.gacct-op .gacct-op-card {
+	background: var(--gacct-surface);
+	border: 1px solid var(--gacct-border);
+	border-radius: var(--gacct-radius-lg);
+	box-shadow: var(--gacct-shadow);
+	padding: 20px;
+	margin-bottom: 20px;
+}
+.gacct-op .gacct-op-card h2 {
+	margin: 0 0 14px;
+	font-size: 15px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--gacct-text-muted);
+}
+
+/* Messages AJAX */
+.gacct-op .gacct-op-feedback {
+	padding: 10px 14px;
+	border-radius: var(--gacct-radius);
+	margin: 10px 0;
+	display: none;
+}
+.gacct-op .gacct-op-feedback.success { display: block; background: #e6f6e9; color: #1b7a33; }
+.gacct-op .gacct-op-feedback.error { display: block; background: #fdeeee; color: var(--gacct-danger); }
