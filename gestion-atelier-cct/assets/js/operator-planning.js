@@ -74,7 +74,13 @@
 
 		function successMessage( ref, ymd, data ) {
 			var msg = 'Créneau de ' + ref + ' déplacé au ' + formatFr( ymd ) + '.';
-			msg += ( data && data.notified ) ? ' Email envoyé au client.' : ' Aucun email envoyé.';
+			if ( data && data.notified ) {
+				msg += ' Email envoyé au client.';
+			} else if ( data && data.notify_requested ) {
+				msg += ' ⚠ L\'envoi de l\'email au client a ÉCHOUÉ : prévenez-le par un autre moyen.';
+			} else {
+				msg += ' Aucun email demandé.';
+			}
 			return msg;
 		}
 
@@ -377,5 +383,13 @@
 		} );
 
 		calendar.render();
+
+		// Raccourci « Prochaine occupation : … » → saute le calendrier à cette date.
+		var gotoButton = document.querySelector( '[data-gacct-goto]' );
+		if ( gotoButton ) {
+			gotoButton.addEventListener( 'click', function () {
+				calendar.gotoDate( gotoButton.getAttribute( 'data-gacct-goto' ) );
+			} );
+		}
 	} );
 } )();

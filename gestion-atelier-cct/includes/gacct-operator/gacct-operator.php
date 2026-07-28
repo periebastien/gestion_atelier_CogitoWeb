@@ -140,7 +140,8 @@ function gacct_op_render_console() {
 	$view = gacct_op_current_view();
 
 	echo '<div class="wrap gacct-op gacct-op-navwrap">';
-	gacct_op_render_console_nav( $view );
+	// La fiche est rattachée visuellement à la liste des interventions.
+	gacct_op_render_console_nav( 'fiche' === $view ? 'list' : $view );
 	echo '</div>';
 
 	switch ( $view ) {

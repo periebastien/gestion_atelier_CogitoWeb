@@ -855,9 +855,15 @@ final class GACCT_Plugin {
 		}
 
 		$request_path = isset( $_SERVER['REQUEST_URI'] ) ? wp_parse_url( wp_unslash( $_SERVER['REQUEST_URI'] ), PHP_URL_PATH ) : '';
-		$target_path  = '/' . trim( apply_filters( 'gacct_validation_path', 'devie-a-valider' ), '/' ) . '/';
 
-		if ( untrailingslashit( $request_path ) !== untrailingslashit( $target_path ) ) {
+		// Chemin courant + ancien chemin avec la faute de frappe (« devie- ») :
+		// des liens déjà envoyés par email doivent rester valides.
+		$target_paths = array(
+			'/' . trim( apply_filters( 'gacct_validation_path', 'devis-a-valider' ), '/' ),
+			'/devie-a-valider',
+		);
+
+		if ( ! in_array( untrailingslashit( $request_path ), array_map( 'untrailingslashit', $target_paths ), true ) ) {
 			return;
 		}
 
@@ -1623,7 +1629,7 @@ final class GACCT_Plugin {
 				'order_id' => $order->get_id(),
 				'token'    => $token,
 			),
-			home_url( '/devie-a-valider/' )
+			home_url( '/' . trim( apply_filters( 'gacct_validation_path', 'devis-a-valider' ), '/' ) . '/' )
 		);
 	}
 

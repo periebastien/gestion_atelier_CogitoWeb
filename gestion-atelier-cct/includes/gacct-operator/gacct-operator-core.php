@@ -936,8 +936,9 @@ function gacct_op_reschedule( $occupation_id, $ymd, array $args = array() ) {
 	}
 
 	return array(
-		'old_ts'   => $old_ts,
-		'new_ts'   => $new_ts,
-		'notified' => (bool) $notified,
+		'old_ts'           => $old_ts,
+		'new_ts'           => $new_ts,
+		'notified'         => (bool) $notified,
+		'notify_requested' => (bool) ( $notify && $order ),
 	);
 }

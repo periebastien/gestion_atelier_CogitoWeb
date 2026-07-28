@@ -343,7 +343,9 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 		echo '<dl class="gacct-op-facts">';
 		echo '<div><dt>' . esc_html__( 'Total commande', 'gestion-atelier-cct' ) . '</dt><dd>' . wp_kses_post( wc_price( $order->get_total(), array( 'currency' => $order->get_currency() ) ) ) . '</dd></div>';
 		echo '<div><dt>' . esc_html__( 'Statut', 'gestion-atelier-cct' ) . '</dt><dd>' . esc_html( $status_name ) . '</dd></div>';
-		echo '<div><dt>' . esc_html__( 'Méthode', 'gestion-atelier-cct' ) . '</dt><dd>' . esc_html( $order->get_payment_method_title() ? $order->get_payment_method_title() : '—' ) . '</dd></div>';
+		if ( $order->get_payment_method_title() ) {
+			echo '<div><dt>' . esc_html__( 'Méthode', 'gestion-atelier-cct' ) . '</dt><dd>' . esc_html( $order->get_payment_method_title() ) . '</dd></div>';
+		}
 
 		if ( function_exists( 'gacct_kojito_total_initial' ) ) {
 			$total_initial = gacct_kojito_total_initial( $order );

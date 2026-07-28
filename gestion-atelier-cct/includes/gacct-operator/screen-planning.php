@@ -14,9 +14,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 function gacct_op_render_planning_screen() {
 	$today = wp_date( 'Y-m-d' );
+
+	// Raccourci « prochaine occupation » : premier créneau occupé ≥ aujourd'hui.
+	global $wpdb;
+	$day_start = ( new DateTimeImmutable( $today, wp_timezone() ) )->getTimestamp();
+	$next_ts   = $wpdb->get_var( $wpdb->prepare(
+		"SELECT MIN(CAST(date_reservee AS UNSIGNED)) FROM {$wpdb->prefix}jet_cct_occupation_atelier
+		 WHERE cct_status = 'publish' AND CAST(date_reservee AS UNSIGNED) >= %d",
+		$day_start
+	) );
 	?>
 	<div class="wrap gacct-op gacct-op-planning">
-		<h1><?php esc_html_e( 'Planning atelier', 'gestion-atelier-cct' ); ?></h1>
+		<div class="gacct-op-planning-head">
+			<h1><?php esc_html_e( 'Planning atelier', 'gestion-atelier-cct' ); ?></h1>
+			<?php if ( $next_ts ) : ?>
+				<button type="button" class="gacct-op-btn secondary" data-gacct-goto="<?php echo esc_attr( wp_date( 'Y-m-d', (int) $next_ts ) ); ?>">
+					<?php
+					/* translators: %s: date de la prochaine occupation */
+					echo esc_html( sprintf( __( 'Prochaine occupation : %s', 'gestion-atelier-cct' ), wp_date( get_option( 'date_format' ), (int) $next_ts ) ) );
+					?>
+				</button>
+			<?php endif; ?>
+		</div>
 
 		<div id="gacct-op-planning-feedback" class="gacct-op-feedback" role="status" aria-live="polite"></div>
 

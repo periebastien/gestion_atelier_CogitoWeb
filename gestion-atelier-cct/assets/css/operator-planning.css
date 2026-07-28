@@ -307,3 +307,12 @@
 		padding: 1px 2px;
 	}
 }
+
+/* En-tête planning : titre + raccourci prochaine occupation */
+.gacct-op-planning .gacct-op-planning-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+}

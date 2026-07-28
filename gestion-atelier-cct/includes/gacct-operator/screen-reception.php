@@ -269,9 +269,10 @@ function gacct_op_reception_render_checklist( array $items, array $args ) {
 	echo '<div class="gacct-op-reception-checkwrap"'
 		. ' data-op-checklist="' . esc_attr( $args['mode'] ) . '"'
 		. ' data-label-full="' . esc_attr( $args['button_full'] ) . '"'
+		. ' data-label-partial-one="' . esc_attr( __( 'Confirmer la réception partielle (1 élément manquant)', 'gestion-atelier-cct' ) ) . '"'
 		. ' data-label-partial="' . esc_attr(
 			/* translators: %d: nombre d'éléments non cochés */
-			__( 'Confirmer la réception partielle (%d manquant·s)', 'gestion-atelier-cct' )
+			__( 'Confirmer la réception partielle (%d éléments manquants)', 'gestion-atelier-cct' )
 		) . '"'
 		. ' data-msg-complete="' . esc_attr( $args['msg_complete'] ) . '"'
 		. ' data-msg-partial="' . esc_attr( __( 'Réception partielle enregistrée : un email listant les éléments manquants vient de partir au client. Le passage en intervention restera bloqué tant que tout ne sera pas arrivé.', 'gestion-atelier-cct' ) ) . '"'
@@ -299,6 +300,10 @@ function gacct_op_reception_render_checklist( array $items, array $args ) {
 	echo '<div class="gacct-op-feedback" aria-live="polite"></div>';
 
 	echo '<div class="gacct-op-reception-submitzone">';
+	if ( $disabled ) {
+		echo '<p class="gacct-op-reception-disabled-note">' . esc_html__( 'Bouton inactif : la réception ne sera possible qu\'une fois le paiement encaissé (le dossier passera alors en « En attente de réception »).', 'gestion-atelier-cct' ) . '</p>';
+	}
+
 	echo '<button type="button" class="gacct-op-btn gacct-op-reception-submit" data-op-action="receive"' . ( $disabled ? ' disabled' : '' ) . '>'
 		. esc_html( $args['button_full'] ) . '</button>';
 	echo '</div>';

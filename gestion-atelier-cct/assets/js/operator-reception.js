@@ -54,9 +54,13 @@
 			}
 
 			if ( button && ! button.dataset.locked ) {
-				button.textContent = missing
-					? wrap.getAttribute( 'data-label-partial' ).replace( '%d', missing )
-					: wrap.getAttribute( 'data-label-full' );
+				if ( 0 === missing ) {
+					button.textContent = wrap.getAttribute( 'data-label-full' );
+				} else if ( 1 === missing ) {
+					button.textContent = wrap.getAttribute( 'data-label-partial-one' );
+				} else {
+					button.textContent = wrap.getAttribute( 'data-label-partial' ).replace( '%d', missing );
+				}
 				button.classList.toggle( 'is-partial', missing > 0 );
 			}
 		}

@@ -244,9 +244,10 @@ function gacct_op_render_list_screen() {
 
 		// Matériel.
 		$materiel = trim( ( $item['marque'] ?? '' ) . ' ' . ( $item['modele'] ?? '' ) );
-		$taille   = trim( (string) ( $item['taille'] ?? '' ) );
-		if ( '' !== $taille ) {
-			$materiel = trim( $materiel . ( $materiel ? ' · ' : '' ) . $taille );
+		foreach ( array( trim( (string) ( $item['taille'] ?? '' ) ), trim( (string) ( $item['couleur'] ?? '' ) ) ) as $part ) {
+			if ( '' !== $part ) {
+				$materiel = trim( $materiel . ( $materiel ? ' · ' : '' ) . $part );
+			}
 		}
 		$serie = trim( (string) ( $item['numero_de_serie'] ?? '' ) );
 

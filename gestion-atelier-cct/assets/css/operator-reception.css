@@ -326,3 +326,10 @@
 		min-width: 300px;
 	}
 }
+
+/* Explication sous le bouton inactif (dossier à l'état 0) */
+.gacct-op-reception .gacct-op-reception-disabled-note {
+	color: var(--gacct-text-muted);
+	font-size: 13px;
+	margin: 10px 0 6px;
+}

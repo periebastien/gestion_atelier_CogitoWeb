@@ -127,6 +127,21 @@
 					unlockReason = unlockField ? unlockField.value.trim() : '';
 
 					if ( '' === unlockReason ) {
+						// Erreur affichée à côté du champ, pas seulement en tête de carte.
+						if ( unlockWrap ) {
+							var inlineError = unlockWrap.querySelector( '.gacct-op-inline-error' );
+							if ( ! inlineError ) {
+								inlineError = document.createElement( 'p' );
+								inlineError.className = 'gacct-op-inline-error';
+								inlineError.style.color = 'var(--gacct-danger)';
+								inlineError.style.fontWeight = '600';
+								unlockWrap.insertBefore( inlineError, button );
+							}
+							inlineError.textContent = window.gacctOp.i18n.reasonRequired;
+						}
+						if ( unlockField ) {
+							unlockField.focus();
+						}
 						showFeedback( 'error', window.gacctOp.i18n.reasonRequired );
 						return;
 					}
