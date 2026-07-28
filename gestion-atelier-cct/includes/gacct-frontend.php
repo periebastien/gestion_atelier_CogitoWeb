@@ -196,47 +196,170 @@ function jwcct_get_wc_product_titles_from_ids( $value ) {
 
 
 /* =============================================================================
- *  EMAILS WOOCOMMERCE : DATE DE PRISE EN CHARGE ATELIER
+ *  EMAILS WOOCOMMERCE : ENCART « VOTRE RÉVISION »
+ *
+ *  Injecté au-dessus du tableau de commande des e-mails client. Il porte les trois
+ *  informations que le client cherche en priorité :
+ *    - la date de prise en charge en atelier ;
+ *    - la date limite d'arrivée du colis (veille du créneau) ;
+ *    - s'il reste un virement à faire : montant, référence et date limite.
+ *
+ *  Les dates et échéances viennent de `gacct_conf_data()`, qui alimente déjà la page
+ *  de confirmation : une seule source de calcul pour les deux supports.
  * ============================================================================= */
 
 add_action( 'woocommerce_email_before_order_table', 'jwcct_add_revision_date_to_email', 10, 4 );
 
+/**
+ * E-mails qui reçoivent l'encart.
+ *
+ * Liste blanche volontaire : sur une commande annulée ou remboursée, annoncer une
+ * date d'atelier et réclamer un colis n'a aucun sens.
+ *
+ * @return string[]
+ */
+function jwcct_email_ids_with_revision_block() {
+    return apply_filters( 'jwcct_email_ids_with_revision_block', [
+        'customer_on_hold_order',
+        'customer_processing_order',
+        'customer_invoice',
+        'customer_note',
+    ] );
+}
+
 function jwcct_add_revision_date_to_email( $order, $sent_to_admin, $plain_text, $email ) {
 
-    // On ne l'ajoute que pour les e-mails envoyés au client (Commande en cours ou terminée)
-    if ( $sent_to_admin || ! $order ) {
+    // Uniquement les e-mails client, et seulement ceux de la liste blanche.
+    if ( $sent_to_admin || ! $order instanceof WC_Order ) {
         return;
     }
 
-    // Récupération de l'ID de l'occupation lié à la commande
-    $occupation_id = $order->get_meta( '_jwcct_occupation_id' );
+    $email_id = $email instanceof WC_Email ? $email->id : '';
+
+    if ( $email_id && ! in_array( $email_id, jwcct_email_ids_with_revision_block(), true ) ) {
+        return;
+    }
+
+    $occupation_id = absint( $order->get_meta( JWCCT_ORDER_OCCUPATION_ID ) );
 
     if ( ! $occupation_id ) {
         return;
     }
 
-    // On récupère les données du CCT Occupation via notre fonction helper
-    $occupation = jwcct_get_cct_item( 'occupation_atelier', $occupation_id );
+    $occupation = jwcct_get_cct_item( JWCCT_CCT_OCCUPATION, $occupation_id );
 
-    if ( ! $occupation || empty( $occupation['date_reservee'] ) ) {
+    if ( ! is_array( $occupation ) || empty( $occupation['date_reservee'] ) ) {
         return;
     }
 
-    // Formatage de la date (ex: mardi 12 mai 2026)
-    $timestamp = absint( $occupation['date_reservee'] );
-    $date_formatee = wp_date( 'l d F Y', $timestamp );
+    // Le matériel est-il déjà arrivé ? Au-delà de l'état 1, la date limite du colis
+    // n'a plus lieu d'être rappelée.
+    $etat        = null;
+    $revision_id = absint( $order->get_meta( JWCCT_ORDER_REVISION_ID ) );
 
-    // Rendu du bloc dans l'e-mail
-    if ( ! $plain_text ) {
-        echo '<div style="margin-bottom: 30px; padding: 20px; background-color: #f0f8ff; border-left: 4px solid #0056b3;">';
-        echo '<h2 style="color: #0056b3; margin-top: 0; font-size: 18px;">Informations sur votre révision</h2>';
-        echo '<p style="margin: 0; font-size: 15px; color: #333;">La date de prise en charge en atelier de votre matériel est confirmée pour le : <strong>' . esc_html( ucfirst( $date_formatee ) ) . '</strong>.</p>';
-        echo '</div>';
-    } else {
-        // Version texte brut pour les vieux clients mail
-        echo "--- DATE DE RÉVISION ---\n";
-        echo "La date de prise en charge en atelier est confirmée pour le : " . esc_html( $date_formatee ) . "\n\n";
+    if ( $revision_id ) {
+        $revision = jwcct_get_cct_item( JWCCT_CCT_REVISION, $revision_id );
+
+        if ( is_array( $revision ) && isset( $revision['etat_de_la_commande'] ) ) {
+            $etat = (int) $revision['etat_de_la_commande'];
+        }
     }
+
+    $materiel_attendu = ( null === $etat || $etat <= 1 );
+
+    // Dates et échéances : mêmes calculs que la page de confirmation.
+    $data          = function_exists( 'gacct_conf_data' ) ? gacct_conf_data( $order ) : [];
+    $date_atelier  = wp_date( 'l j F Y', absint( $occupation['date_reservee'] ) );
+    $date_colis    = ! empty( $data['parcel_label'] ) ? $data['parcel_label'] : '';
+    $attend_vir    = function_exists( 'gacct_pay_order_awaits_transfer' ) && gacct_pay_order_awaits_transfer( $order );
+
+    if ( $plain_text ) {
+        echo "--- VOTRE RÉVISION ---\n";
+        echo 'Prise en charge en atelier : ' . esc_html( $date_atelier ) . "\n";
+
+        if ( $date_colis && $materiel_attendu ) {
+            echo 'Votre colis doit nous parvenir avant le : ' . esc_html( $date_colis ) . "\n";
+        }
+
+        if ( $attend_vir ) {
+            echo 'Virement à effectuer : ' . esc_html( wp_strip_all_tags( wc_price( $data['deposit'] ) ) )
+                . ' — référence ' . esc_html( $data['reference'] )
+                . ' — avant le ' . esc_html( $data['deadline_label'] ) . "\n";
+            echo "Passé ce délai, la commande est annulée et le créneau remis en ligne.\n";
+        }
+
+        echo "\n";
+        return;
+    }
+
+    $lignes = [
+        [
+            __( 'Prise en charge en atelier', 'gestion-atelier-cct' ),
+            esc_html( ucfirst( $date_atelier ) ),
+        ],
+    ];
+
+    if ( $date_colis && $materiel_attendu ) {
+        $lignes[] = [
+            __( 'Votre colis doit arriver avant le', 'gestion-atelier-cct' ),
+            esc_html( $date_colis ),
+        ];
+    }
+
+    if ( $attend_vir ) {
+        $lignes[] = [
+            __( 'Virement à effectuer', 'gestion-atelier-cct' ),
+            sprintf(
+                /* translators: 1: montant, 2: référence de commande */
+                esc_html__( '%1$s, avec la référence %2$s en libellé', 'gestion-atelier-cct' ),
+                '<strong>' . esc_html( wp_strip_all_tags( wc_price( $data['deposit'] ) ) ) . '</strong>',
+                '<strong>' . esc_html( $data['reference'] ) . '</strong>'
+            ),
+        ];
+        $lignes[] = [
+            __( 'Date limite du virement', 'gestion-atelier-cct' ),
+            sprintf(
+                /* translators: 1: date limite, 2: nombre de jours restants */
+                esc_html__( '%1$s (%2$s)', 'gestion-atelier-cct' ),
+                '<strong>' . esc_html( $data['deadline_label'] ) . '</strong>',
+                esc_html(
+                    sprintf(
+                        /* translators: %d: nombre de jours */
+                        _n( 'il vous reste %d jour', 'il vous reste %d jours', (int) $data['days_remaining'], 'gestion-atelier-cct' ),
+                        (int) $data['days_remaining']
+                    )
+                )
+            ),
+        ];
+    }
+
+    $accent = $attend_vir ? '#c2410c' : '#0056b3';
+    $fond   = $attend_vir ? '#fff6ef' : '#f0f8ff';
+
+    echo '<div style="margin-bottom:30px;padding:20px;background-color:' . esc_attr( $fond ) . ';border-left:4px solid ' . esc_attr( $accent ) . ';">';
+    echo '<h2 style="color:' . esc_attr( $accent ) . ';margin:0 0 12px;font-size:18px;">'
+        . esc_html__( 'Informations sur votre révision', 'gestion-atelier-cct' ) . '</h2>';
+    echo '<table cellspacing="0" cellpadding="0" border="0" style="width:100%;border:0;">';
+
+    foreach ( $lignes as $ligne ) {
+        echo '<tr>'
+            . '<td style="border:0;padding:0 12px 6px 0;font-size:14px;color:#666;vertical-align:top;white-space:nowrap;">'
+            . esc_html( $ligne[0] ) . '</td>'
+            . '<td style="border:0;padding:0 0 6px;font-size:15px;color:#333;vertical-align:top;">'
+            . $ligne[1] // phpcs:ignore WordPress.Security.EscapeOutput -- contenu construit et échappé ci-dessus.
+            . '</td>'
+            . '</tr>';
+    }
+
+    echo '</table>';
+
+    if ( $attend_vir ) {
+        echo '<p style="margin:12px 0 0;font-size:13px;color:#8a5a3b;">'
+            . esc_html__( 'Passé ce délai, la commande est annulée et votre créneau est remis en ligne. Vous pouvez expédier votre matériel sans attendre l’encaissement.', 'gestion-atelier-cct' )
+            . '</p>';
+    }
+
+    echo '</div>';
 }
 
 
@@ -253,10 +376,13 @@ function jwcct_render_order_status_tracker( $value ) {
     if ( $value === '' || $value === null ) return '';
 
     $config = [
+        // step 0 : rien n'est engage tant que le paiement n'est pas arrive. Aucune barre
+        // n'est remplie (la boucle ci-dessous ne pose ni "done" ni "current"), la classe
+        // "zero" se contente d'afficher le point de depart.
         0 => [
             'badge'    => 'warning',
-            'progress' => 'action',
-            'step'     => 1,
+            'progress' => 'action zero',
+            'step'     => 0,
             'label'    => 'En attente de paiement',
             'tip'      => '<strong>Action requise :</strong> finalisez le paiement de l\'acompte pour démarrer la procédure.'
         ],

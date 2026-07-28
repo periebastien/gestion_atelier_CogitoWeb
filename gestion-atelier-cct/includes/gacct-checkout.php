@@ -208,11 +208,13 @@ function jwcct_process_order_link( $order_id ) {
     // --- Mises à jour JetEngine CCT (Order ID + Passage en Publish) ---
 
     if ( $revision_id ) {
-        // On injecte l'Order ID ET on change le statut en "publish" en une seule requête
+        // On injecte l'Order ID ET on change le statut en "publish" en une seule requête.
+        // L'etat de depart depend du paiement : 0 tant que rien n'est encaisse (virement
+        // en attente, paiement echoue), 1 des que l'acompte est recu.
         $rev_ok = jwcct_update_cct_item( JWCCT_CCT_REVISION, $revision_id, [
             'order_id'             => $order_id,
             'cct_status'           => 'publish',
-            'etat_de_la_commande'  => 1
+            'etat_de_la_commande'  => gacct_initial_revision_state( $order )
         ] );
 
         // Mise à jour de la Relation JetEngine
@@ -246,6 +248,96 @@ function jwcct_process_order_link( $order_id ) {
 
     if ( ( ! $revision_id || $rev_ok ) && ( ! $occupation_id || $occ_ok ) ) {
         jwcct_clear_pending_ids( $user_id );
+    }
+}
+
+
+/* =============================================================================
+ *  ETAT 0 / 1 : LE DOSSIER SUIT LE PAIEMENT
+ *
+ *  Le tracker de l'espace client prevoit un etat 0 « En attente de paiement »
+ *  (badge orange, action requise). Il n'etait jamais ecrit : le checkout posait
+ *  1 en dur, si bien qu'un virement non recu affichait « nous attendons votre
+ *  materiel » alors que rien n'etait encaisse.
+ *
+ *  Regle : 0 tant que le paiement n'est pas arrive, 1 des qu'il l'est.
+ *  L'expedition du materiel n'est pas conditionnee a l'etat : le client peut
+ *  envoyer sa voile pendant qu'il fait son virement.
+ * ============================================================================= */
+
+/**
+ * Le paiement a-t-il ete encaisse ?
+ *
+ * `wc_get_is_paid_statuses()` ne connait que processing/completed. Le statut
+ * custom `acompte-paye` du plugin Kojito vaut paiement pour nous : il est pose
+ * precisement au moment ou l'acompte est recu.
+ *
+ * @param WC_Order|mixed $order
+ * @return bool
+ */
+function gacct_order_payment_received( $order ) {
+
+    if ( ! $order instanceof WC_Order ) {
+        return false;
+    }
+
+    $paid_statuses = array_merge( wc_get_is_paid_statuses(), [ 'acompte-paye' ] );
+
+    return $order->has_status( apply_filters( 'gacct_paid_order_statuses', $paid_statuses, $order ) );
+}
+
+/**
+ * Etat a poser sur la revision au moment de la liaison commande <-> CCT.
+ *
+ * @param WC_Order|mixed $order
+ * @return int 0 (attente paiement) ou 1 (attente reception)
+ */
+function gacct_initial_revision_state( $order ) {
+    return gacct_order_payment_received( $order ) ? 1 : 0;
+}
+
+/**
+ * Bascule 0 -> 1 quand le paiement arrive (encaissement carte, passage manuel
+ * de la commande en « En cours » apres reception du virement, acompte Kojito).
+ *
+ * On ne touche qu'a l'etat 0 : un dossier deja avance (voile receptionnee,
+ * devis en cours...) ne doit jamais reculer parce qu'un statut de commande
+ * change en cours de route.
+ */
+add_action( 'woocommerce_order_status_changed', 'gacct_sync_revision_state_on_payment', 20, 4 );
+
+function gacct_sync_revision_state_on_payment( $order_id, $old_status, $new_status, $order ) {
+
+    if ( ! gacct_order_payment_received( $order ) ) {
+        return;
+    }
+
+    $revision_id = absint( $order->get_meta( JWCCT_ORDER_REVISION_ID ) );
+
+    if ( ! $revision_id ) {
+        return;
+    }
+
+    $revision = jwcct_get_cct_item( JWCCT_CCT_REVISION, $revision_id );
+
+    if ( ! is_array( $revision ) || ! isset( $revision['etat_de_la_commande'] ) ) {
+        return;
+    }
+
+    if ( 0 !== (int) $revision['etat_de_la_commande'] ) {
+        return;
+    }
+
+    $updated = jwcct_update_cct_item( JWCCT_CCT_REVISION, $revision_id, [
+        'etat_de_la_commande' => 1,
+    ] );
+
+    if ( $updated ) {
+        $order->add_order_note(
+            __( 'Paiement recu : dossier atelier passe en « En attente de reception ».', 'gestion-atelier-cct' )
+        );
+    } else {
+        jwcct_log( "sync_revision_state : echec du passage 0 -> 1 pour la revision $revision_id (order $order_id)." );
     }
 }
 

@@ -229,6 +229,43 @@ function gacct_pay_order_awaits_transfer( $order ) {
 		&& $order->has_status( array( 'on-hold', 'pending' ) );
 }
 
+/**
+ * Libellé de statut lisible par le client, pour UNE commande donnée.
+ *
+ * WooCommerce affiche « En attente » pour le statut `on-hold`, qui est générique :
+ * il sert aussi au chèque, aux mises en attente manuelles, à d'autres passerelles.
+ * On ne renomme donc PAS le statut globalement (filtre `wc_order_statuses`), ce qui
+ * mentirait sur toutes ces commandes-là : on précise le libellé au cas par cas,
+ * uniquement quand il s'agit bien d'un virement en attente.
+ *
+ * @param WC_Order|mixed $order
+ * @return string
+ */
+function gacct_pay_order_status_label( $order ) {
+
+	if ( ! $order instanceof WC_Order ) {
+		return '';
+	}
+
+	$label = gacct_pay_order_awaits_transfer( $order )
+		? __( 'En attente de virement', 'gestion-atelier-cct' )
+		: wc_get_order_status_name( $order->get_status() );
+
+	return apply_filters( 'gacct_pay_order_status_label', $label, $order );
+}
+
+/**
+ * Colonne « Statut » de la liste des commandes de l'espace client.
+ *
+ * Le template `myaccount/orders.php` de WooCommerce donne la priorité à cette
+ * action sur son propre rendu : on reprend la main sans surcharger de template.
+ */
+add_action( 'woocommerce_my_account_my_orders_column_order-status', 'gacct_pay_my_orders_status_column' );
+
+function gacct_pay_my_orders_status_column( $order ) {
+	echo esc_html( gacct_pay_order_status_label( $order ) );
+}
+
 /* =============================================================================
  *  COORDONNÉES BANCAIRES (source : réglages WooCommerce > Virement bancaire)
  * ============================================================================= */

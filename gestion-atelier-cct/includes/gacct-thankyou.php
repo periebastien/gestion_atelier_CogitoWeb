@@ -241,6 +241,47 @@ function gacct_conf_links( $order ) {
 }
 
 /**
+ * Fonctionnalités de la page de confirmation, activables une par une.
+ *
+ * Les blocs correspondants sont écrits et stylés dans le template, mais renvoient
+ * vers des fonctionnalités qui n'existent pas encore : on les masque plutôt que de
+ * les supprimer, pour n'avoir qu'un booléen à basculer le jour où elles arrivent.
+ *
+ * Marche à suivre pour en activer une :
+ *   1. renseigner son URL réelle dans `gacct_conf_links()` ;
+ *   2. passer son drapeau à true ici (ou via le filtre `gacct_conf_features`).
+ *
+ * `add_service` est un cas à part : le lien fonctionne, mais il mène au formulaire
+ * de demande d'intervention, qui crée une commande SÉPARÉE — il n'ajoute rien à la
+ * commande en cours. Tant qu'un vrai ajout de prestation n'existe pas, il induit
+ * le client en erreur.
+ *
+ * @return array<string,bool>
+ */
+function gacct_conf_features() {
+	return apply_filters(
+		'gacct_conf_features',
+		array(
+			'work_order'  => false, // bon d'intervention imprimable (générateur à développer).
+			'receipt'     => false, // reçu de l'acompte (PDF).
+			'summary_pdf' => false, // récapitulatif de commande (PDF).
+			'rib_pdf'     => false, // RIB téléchargeable (PDF).
+			'add_service' => false, // ajout d'une prestation à une commande existante.
+		)
+	);
+}
+
+/**
+ * @param string $name Clé de `gacct_conf_features()`.
+ * @return bool
+ */
+function gacct_conf_feature( $name ) {
+	$features = gacct_conf_features();
+
+	return ! empty( $features[ $name ] );
+}
+
+/**
  * Petit helper d'icônes SVG inline (trait, currentColor).
  */
 function gacct_conf_icon( $name ) {

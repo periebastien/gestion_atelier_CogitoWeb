@@ -207,7 +207,9 @@ $is_bacs = ( 'bacs' === $d['variant'] );
 								);
 								?>
 							</p>
-							<a href="<?php echo esc_url( $d['links']['receipt'] ); ?>" class="pay-receipt"><?php echo gacct_conf_icon( 'download' ); // phpcs:ignore WordPress.Security.EscapeOutput ?><?php esc_html_e( 'Télécharger le reçu', 'gestion-atelier-cct' ); ?></a>
+							<?php if ( gacct_conf_feature( 'receipt' ) ) : ?>
+									<a href="<?php echo esc_url( $d['links']['receipt'] ); ?>" class="pay-receipt"><?php echo gacct_conf_icon( 'download' ); // phpcs:ignore WordPress.Security.EscapeOutput ?><?php esc_html_e( 'Télécharger le reçu', 'gestion-atelier-cct' ); ?></a>
+								<?php endif; ?>
 						</div>
 					<?php endif; ?>
 					<div class="pay-leg <?php echo $is_bacs ? 'later' : 'todo'; ?>">
@@ -348,39 +350,49 @@ $is_bacs = ( 'bacs' === $d['variant'] );
 										</div>
 									</div>
 								</div>
-								<div class="step locked">
-									<div class="step-dot"><?php echo gacct_conf_icon( 'lock' ); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
-									<div class="step-body">
-										<div class="step-title"><?php esc_html_e( 'Expédiez votre matériel', 'gestion-atelier-cct' ); ?> <span class="step-flag lock"><?php esc_html_e( 'Après réception du virement', 'gestion-atelier-cct' ); ?></span></div>
-										<p class="step-txt">
-											<?php esc_html_e( 'Le', 'gestion-atelier-cct' ); ?> <strong><?php esc_html_e( 'bon d’intervention', 'gestion-atelier-cct' ); ?></strong> <?php esc_html_e( 's’active dès l’encaissement.', 'gestion-atelier-cct' ); ?>
-											<?php if ( $d['parcel_label'] ) : ?>
-												<?php
-												printf(
-													/* translators: 1: date */
-													esc_html__( ' Votre matériel doit ensuite nous parvenir au plus tard le %s, la veille de votre créneau.', 'gestion-atelier-cct' ),
-													'<strong>' . esc_html( $d['parcel_label'] ) . '</strong>'
-												);
-												?>
-											<?php endif; ?>
-										</p>
-									</div>
-								</div>
-							<?php else : ?>
+								<?php endif; ?>
+
+								<?php
+								/*
+								 * Expedition : jamais bloquee par le paiement. Le client peut envoyer sa voile
+								 * pendant que son virement chemine — il devra regler de toute facon, et l'attente
+								 * ferait perdre des jours sur un creneau deja reserve.
+								 */
+								?>
 								<div class="step now">
 									<div class="step-dot"><?php echo gacct_conf_icon( 'clipboard' ); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
 									<div class="step-body">
 										<div class="step-title"><?php esc_html_e( 'Expédiez votre matériel', 'gestion-atelier-cct' ); ?> <span class="step-flag wait"><?php esc_html_e( 'À faire', 'gestion-atelier-cct' ); ?></span></div>
 										<p class="step-txt">
-											<?php esc_html_e( 'Glissez le', 'gestion-atelier-cct' ); ?> <strong><?php esc_html_e( 'bon d’intervention', 'gestion-atelier-cct' ); ?></strong> <?php esc_html_e( 'dans le colis', 'gestion-atelier-cct' ); ?><?php if ( $d['parcel_label'] ) : ?><?php printf( /* translators: date */ esc_html__( ' et envoyez-le pour qu’il arrive avant le %s', 'gestion-atelier-cct' ), '<strong>' . esc_html( $d['parcel_label'] ) . '</strong>' ); ?><?php endif; ?>. <?php esc_html_e( 'Sans lui, l’identification prend plusieurs jours de plus.', 'gestion-atelier-cct' ); ?>
+											<?php if ( gacct_conf_feature( 'work_order' ) ) : ?>
+												<?php esc_html_e( 'Glissez le', 'gestion-atelier-cct' ); ?> <strong><?php esc_html_e( 'bon d’intervention', 'gestion-atelier-cct' ); ?></strong> <?php esc_html_e( 'dans le colis', 'gestion-atelier-cct' ); ?><?php if ( $d['parcel_label'] ) : ?><?php printf( /* translators: date */ esc_html__( ' et envoyez-le pour qu’il arrive avant le %s', 'gestion-atelier-cct' ), '<strong>' . esc_html( $d['parcel_label'] ) . '</strong>' ); ?><?php endif; ?>. <?php esc_html_e( 'Sans lui, l’identification prend plusieurs jours de plus.', 'gestion-atelier-cct' ); ?>
+											<?php else : ?>
+												<?php
+												printf(
+													/* translators: 1: reference de commande */
+													esc_html__( 'Glissez dans le colis un papier portant votre référence %s : c’est ce qui nous permet d’identifier votre matériel à l’arrivée.', 'gestion-atelier-cct' ),
+													'<strong>' . esc_html( $d['reference'] ) . '</strong>'
+												);
+												?>
+												<?php if ( $d['parcel_label'] ) : ?>
+													<?php
+													printf(
+														/* translators: 1: date */
+														esc_html__( ' Il doit nous parvenir avant le %s, la veille de votre créneau.', 'gestion-atelier-cct' ),
+														'<strong>' . esc_html( $d['parcel_label'] ) . '</strong>'
+													);
+													?>
+												<?php endif; ?>
+											<?php endif; ?>
 										</p>
 										<div class="step-action">
-											<a href="<?php echo esc_url( $d['links']['work_order'] ); ?>" class="btn-primary"><?php esc_html_e( 'Imprimer le bon', 'gestion-atelier-cct' ); ?> <?php echo gacct_conf_icon( 'printer' ); // phpcs:ignore WordPress.Security.EscapeOutput ?></a>
-											<a href="<?php echo esc_url( $d['links']['packing_guide'] ); ?>" class="btn-secondary"><?php echo gacct_conf_icon( 'package' ); // phpcs:ignore WordPress.Security.EscapeOutput ?><?php esc_html_e( 'Consignes d’emballage', 'gestion-atelier-cct' ); ?></a>
+											<?php if ( gacct_conf_feature( 'work_order' ) ) : ?>
+												<a href="<?php echo esc_url( $d['links']['work_order'] ); ?>" class="btn-primary"><?php esc_html_e( 'Imprimer le bon', 'gestion-atelier-cct' ); ?> <?php echo gacct_conf_icon( 'printer' ); // phpcs:ignore WordPress.Security.EscapeOutput ?></a>
+											<?php endif; ?>
+											<a href="<?php echo esc_url( $d['links']['packing_guide'] ); ?>" class="<?php echo gacct_conf_feature( 'work_order' ) ? 'btn-secondary' : 'btn-primary'; ?>"><?php echo gacct_conf_icon( 'package' ); // phpcs:ignore WordPress.Security.EscapeOutput ?><?php esc_html_e( 'Consignes d’emballage', 'gestion-atelier-cct' ); ?></a>
 										</div>
 									</div>
 								</div>
-							<?php endif; ?>
 
 							<div class="step pending">
 								<div class="step-dot"><?php echo gacct_conf_icon( 'check' ); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
@@ -505,21 +517,31 @@ $is_bacs = ( 'bacs' === $d['variant'] );
 								<?php echo gacct_conf_icon( 'user' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 								<span><strong><?php esc_html_e( 'Ouvrir mon espace client', 'gestion-atelier-cct' ); ?></strong><small><?php esc_html_e( 'État, devis et rapports', 'gestion-atelier-cct' ); ?></small></span>
 							</a>
-							<?php if ( $is_bacs ) : ?>
+							<?php if ( $is_bacs && gacct_conf_feature( 'rib_pdf' ) ) : ?>
 								<a href="<?php echo esc_url( $d['links']['rib_pdf'] ); ?>" class="side-link">
 									<?php echo gacct_conf_icon( 'download' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 									<span><strong><?php esc_html_e( 'Télécharger le RIB', 'gestion-atelier-cct' ); ?></strong><small><?php esc_html_e( 'PDF, à donner à votre banque', 'gestion-atelier-cct' ); ?></small></span>
 								</a>
-							<?php else : ?>
+							<?php elseif ( ! $is_bacs && gacct_conf_feature( 'summary_pdf' ) ) : ?>
 								<a href="<?php echo esc_url( $d['links']['summary_pdf'] ); ?>" class="side-link">
 									<?php echo gacct_conf_icon( 'download' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 									<span><strong><?php esc_html_e( 'Télécharger le récapitulatif', 'gestion-atelier-cct' ); ?></strong><small><?php esc_html_e( 'PDF, 1 page', 'gestion-atelier-cct' ); ?></small></span>
 								</a>
 							<?php endif; ?>
-							<a href="<?php echo esc_url( $d['links']['new_request'] ); ?>" class="side-link">
-								<?php echo gacct_conf_icon( 'plus' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-								<span><strong><?php esc_html_e( 'Ajouter une prestation', 'gestion-atelier-cct' ); ?></strong><small><?php esc_html_e( 'Possible jusqu’à l’expédition de votre matériel', 'gestion-atelier-cct' ); ?></small></span>
+							<a href="<?php echo esc_url( $d['links']['packing_guide'] ); ?>" class="side-link">
+								<?php echo gacct_conf_icon( 'package' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+								<span><strong><?php esc_html_e( 'Consignes d’emballage', 'gestion-atelier-cct' ); ?></strong><small><?php esc_html_e( 'Comment plier et protéger votre voile', 'gestion-atelier-cct' ); ?></small></span>
 							</a>
+							<a href="<?php echo esc_url( $d['links']['contact'] ); ?>" class="side-link">
+								<?php echo gacct_conf_icon( 'phone' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+								<span><strong><?php esc_html_e( 'Nous contacter', 'gestion-atelier-cct' ); ?></strong><small><?php esc_html_e( 'Une question sur votre commande', 'gestion-atelier-cct' ); ?></small></span>
+							</a>
+							<?php if ( gacct_conf_feature( 'add_service' ) ) : ?>
+								<a href="<?php echo esc_url( $d['links']['new_request'] ); ?>" class="side-link">
+									<?php echo gacct_conf_icon( 'plus' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+									<span><strong><?php esc_html_e( 'Ajouter une prestation', 'gestion-atelier-cct' ); ?></strong><small><?php esc_html_e( 'Possible jusqu’à l’expédition de votre matériel', 'gestion-atelier-cct' ); ?></small></span>
+								</a>
+							<?php endif; ?>
 						</div>
 					</div>
 
