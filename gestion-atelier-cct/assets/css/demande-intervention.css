@@ -1083,8 +1083,23 @@ span.flatpickr-weekday {
  *  visible uniquement si le client connecté a au moins une voile en base.
  * ========================================================================== */
 
-.gacct-materiel {
-	margin-bottom: 16px;
+/* Le texte d'aide sert de sous-titre à la carte : il se colle au titre
+   « Votre matériel » (le margin-bottom de 20px du titre est trop grand ici),
+   et l'air est reporté SOUS les cartes, avant la grille marque/modèle.
+   Comme pour .card-title, la mise en page « constrained » de Gutenberg impose
+   margin-block: 0 aux enfants du groupe : il faut cette spécificité. */
+.jet-form-builder .form-card > .card-title:has( + .gacct-materiel ),
+.form-card > .card-title:has( + .gacct-materiel ) {
+	margin-bottom: 8px;
+}
+
+.gacct-materiel,
+.jet-form-builder .form-card > .gacct-materiel,
+.form-card > .gacct-materiel {
+	/* margin-top: le block-gap de 24px de Gutenberg se collapse avec le titre et
+	   ré-écarte l'aide — on l'annule ici, le titre garde ses 8px. */
+	margin-top: 0;
+	margin-bottom: 24px;
 }
 
 .gacct-materiel__aide {

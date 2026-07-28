@@ -421,7 +421,7 @@
 			pied.className = 'gacct-couleurs__pied';
 			pied.innerHTML =
 				'<span class="gacct-couleurs__aide">' +
-				( i18n.couleurAide || 'Cliquez vos couleurs, de la plus présente à la moins présente (3 maximum).' ) +
+				( i18n.couleurAide || 'Cliquez sur vos couleurs, 3 maximum.' ) +
 				'</span><span class="gacct-couleurs__apercu" aria-hidden="true"></span>';
 
 			palette.appendChild( grille );

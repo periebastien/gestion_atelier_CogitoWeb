@@ -160,7 +160,7 @@ function gacct_demande_build_data() {
 			'legendeSelection'=> __( 'Sélectionné', 'gestion-atelier-cct' ),
 			'legendeIndispo'  => __( 'Indisponible', 'gestion-atelier-cct' ),
 			'aucuneDate'      => __( 'Aucune date choisie', 'gestion-atelier-cct' ),
-			'couleurAide'     => __( 'Cliquez vos couleurs, de la plus présente à la moins présente (3 maximum).', 'gestion-atelier-cct' ),
+			'couleurAide'     => __( 'Cliquez sur vos couleurs, 3 maximum.', 'gestion-atelier-cct' ),
 			'couleurApercu'   => __( 'Aperçu', 'gestion-atelier-cct' ),
 			'acompte'         => __( 'Acompte à payer', 'gestion-atelier-cct' ),
 			'acompteNote'     => __( 'Montant réglé à la commande. Le solde sera à régler une fois l\'intervention terminée.', 'gestion-atelier-cct' ),
