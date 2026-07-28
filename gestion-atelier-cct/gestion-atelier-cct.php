@@ -147,6 +147,14 @@ final class GACCT_Plugin {
 			'admin.php?page=' . GACCT_OP_MENU_SLUG . '&view=reception'
 		);
 
+		add_submenu_page(
+			GACCT_OP_MENU_SLUG,
+			__( 'Planning', 'gestion-atelier-cct' ),
+			__( 'Planning', 'gestion-atelier-cct' ),
+			GACCT_OP_CAP,
+			'admin.php?page=' . GACCT_OP_MENU_SLUG . '&view=planning'
+		);
+
 		$this->admin_pages['dashboard'] = add_submenu_page(
 			GACCT_OP_MENU_SLUG,
 			__( 'Tableau de bord', 'gestion-atelier-cct' ),
@@ -200,10 +208,19 @@ final class GACCT_Plugin {
 			return;
 		}
 
+		// FullCalendar vendored (assets/vendor/fullcalendar) — plus de CDN (white-label).
 		wp_enqueue_script(
 			'fullcalendar',
-			'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js',
+			plugins_url( 'assets/vendor/fullcalendar/index.global.min.js', __FILE__ ),
 			array(),
+			'6.1.15',
+			true
+		);
+
+		wp_enqueue_script(
+			'fullcalendar-locale-fr',
+			plugins_url( 'assets/vendor/fullcalendar/fr.global.min.js', __FILE__ ),
+			array( 'fullcalendar' ),
 			'6.1.15',
 			true
 		);

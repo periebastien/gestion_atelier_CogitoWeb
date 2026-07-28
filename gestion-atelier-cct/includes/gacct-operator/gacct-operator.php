@@ -26,6 +26,7 @@ require_once __DIR__ . '/screen-today.php';
 require_once __DIR__ . '/screen-list.php';
 require_once __DIR__ . '/screen-fiche.php';
 require_once __DIR__ . '/screen-reception.php';
+require_once __DIR__ . '/screen-planning.php';
 
 /**
  * Création du rôle + distribution de la capacité + champ CCT operateur_id.
@@ -98,7 +99,7 @@ function gacct_op_current_view() {
 
 	$view = isset( $_GET['view'] ) ? sanitize_key( wp_unslash( $_GET['view'] ) ) : '';
 
-	return in_array( $view, array( 'list', 'reception' ), true ) ? $view : 'today';
+	return in_array( $view, array( 'list', 'reception', 'planning' ), true ) ? $view : 'today';
 }
 
 /**
@@ -110,6 +111,7 @@ function gacct_op_render_console_nav( $active ) {
 		'today'     => array( gacct_op_console_url(), __( 'Aujourd\'hui', 'gestion-atelier-cct' ) ),
 		'list'      => array( gacct_op_console_url( 0, array( 'view' => 'list' ) ), __( 'Interventions', 'gestion-atelier-cct' ) ),
 		'reception' => array( gacct_op_console_url( 0, array( 'view' => 'reception' ) ), __( 'Réception colis', 'gestion-atelier-cct' ) ),
+		'planning'  => array( gacct_op_console_url( 0, array( 'view' => 'planning' ) ), __( 'Planning', 'gestion-atelier-cct' ) ),
 	);
 
 	echo '<nav class="gacct-op-nav">';
@@ -150,6 +152,9 @@ function gacct_op_render_console() {
 			break;
 		case 'reception':
 			gacct_op_render_reception_screen();
+			break;
+		case 'planning':
+			gacct_op_render_planning_screen();
 			break;
 		default:
 			gacct_op_render_today_screen();
@@ -277,6 +282,7 @@ function gacct_op_enqueue_assets( $hook_suffix ) {
 		'fiche'     => 'operator-fiche.css',
 		'list'      => 'operator-list.css',
 		'reception' => 'operator-reception.css',
+		'planning'  => 'operator-planning.css',
 		'today'     => 'operator-today.css',
 	);
 	$screen_css = $screen_css_map[ gacct_op_current_view() ];
@@ -301,6 +307,30 @@ function gacct_op_enqueue_assets( $hook_suffix ) {
 			'gacct-operator-reception',
 			$base . '/assets/js/operator-reception.js',
 			array( 'gacct-operator' ),
+			GACCT_Plugin::VERSION,
+			true
+		);
+	}
+
+	if ( 'planning' === gacct_op_current_view() ) {
+		wp_enqueue_script(
+			'fullcalendar',
+			$base . '/assets/vendor/fullcalendar/index.global.min.js',
+			array(),
+			'6.1.15',
+			true
+		);
+		wp_enqueue_script(
+			'fullcalendar-locale-fr',
+			$base . '/assets/vendor/fullcalendar/fr.global.min.js',
+			array( 'fullcalendar' ),
+			'6.1.15',
+			true
+		);
+		wp_enqueue_script(
+			'gacct-operator-planning',
+			$base . '/assets/js/operator-planning.js',
+			array( 'gacct-operator', 'fullcalendar-locale-fr' ),
 			GACCT_Plugin::VERSION,
 			true
 		);

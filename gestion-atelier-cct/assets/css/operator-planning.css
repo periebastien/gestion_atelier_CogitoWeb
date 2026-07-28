@@ -1,0 +1,309 @@
+/**
+ * Console atelier — écran Planning (CDC §4.5).
+ * Fonds de disponibilité, événements occupation par famille d'état,
+ * mini-fiche flottante (bottom sheet mobile / carte desktop).
+ */
+
+/* ------------------------------------------------------------------ */
+/*  Calendrier                                                         */
+/* ------------------------------------------------------------------ */
+
+.gacct-op-planning #gacct-op-calendar {
+	padding: 16px;
+}
+
+/* Toolbar FullCalendar : boutons aux couleurs de la console */
+.gacct-op-planning .fc .fc-toolbar {
+	flex-wrap: wrap;
+	gap: 8px;
+}
+.gacct-op-planning .fc .fc-toolbar-title {
+	font-size: 18px;
+	text-transform: capitalize;
+}
+.gacct-op-planning .fc .fc-button-primary {
+	background: var(--gacct-accent);
+	border-color: var(--gacct-accent-dark);
+	min-height: 40px;
+}
+.gacct-op-planning .fc .fc-button-primary:hover,
+.gacct-op-planning .fc .fc-button-primary:focus {
+	background: var(--gacct-accent-dark);
+	border-color: var(--gacct-accent-dark);
+}
+.gacct-op-planning .fc .fc-button-primary:disabled {
+	background: var(--gacct-accent);
+	border-color: var(--gacct-accent-dark);
+	opacity: 0.6;
+}
+.gacct-op-planning .fc .fc-button-primary.fc-button-active {
+	background: var(--gacct-accent-dark);
+	border-color: var(--gacct-accent-dark);
+}
+
+/* Fonds de disponibilité (événements display:background) */
+.gacct-op-planning .fc .fc-bg-event.gacct-op-day-open {
+	background: rgba(38, 160, 84, 0.10);
+	opacity: 1;
+}
+.gacct-op-planning .fc .fc-bg-event.gacct-op-day-full {
+	background: rgba(214, 54, 56, 0.12);
+	opacity: 1;
+}
+.gacct-op-planning .fc .fc-bg-event .fc-event-title {
+	color: var(--gacct-text-muted);
+	font-size: 10px;
+	font-style: normal;
+	padding: 2px 4px;
+}
+
+/* Un [hidden] doit gagner sur nos display (pill incomplet…) */
+.gacct-op-planning [hidden] {
+	display: none !important;
+}
+
+/* Occupations : barre colorée par famille d'état.
+   FullCalendar peint fond/texte via ses propres variables sur .fc-event-main :
+   les redéfinir ici, sinon titre blanc sur fond blanc. */
+.gacct-op-planning .fc .gacct-op-occ {
+	--fc-event-bg-color: var(--gacct-surface);
+	--fc-event-border-color: var(--gacct-border);
+	--fc-event-text-color: var(--gacct-text);
+	background: var(--gacct-surface);
+	border: 1px solid var(--gacct-border);
+	border-left: 4px solid var(--gacct-text-muted);
+	border-radius: 4px;
+	color: var(--gacct-text);
+	font-size: 12px;
+	line-height: 1.4;
+	padding: 2px 6px;
+	margin-bottom: 2px;
+	cursor: pointer;
+	overflow: hidden;
+}
+.gacct-op-planning .fc .gacct-op-occ .fc-event-main {
+	color: var(--gacct-text);
+}
+.gacct-op-planning .fc .gacct-op-occ .fc-event-title {
+	font-weight: 600;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* 0–1 : avant réception (bleu/gris) */
+.gacct-op-planning .fc .gacct-op-occ-etat-0,
+.gacct-op-planning .fc .gacct-op-occ-etat-1 {
+	border-left-color: #64748b;
+}
+/* 2–4 : en atelier (accent teal) */
+.gacct-op-planning .fc .gacct-op-occ-etat-2,
+.gacct-op-planning .fc .gacct-op-occ-etat-3,
+.gacct-op-planning .fc .gacct-op-occ-etat-4 {
+	border-left-color: var(--gacct-accent);
+}
+/* 5 : solde à payer (warn) */
+.gacct-op-planning .fc .gacct-op-occ-etat-5 {
+	border-left-color: var(--gacct-warn);
+}
+/* 6–7 : payé / terminé (vert) */
+.gacct-op-planning .fc .gacct-op-occ-etat-6,
+.gacct-op-planning .fc .gacct-op-occ-etat-7 {
+	border-left-color: #1b7a33;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Mini-fiche (panneau) + overlay                                     */
+/* ------------------------------------------------------------------ */
+
+.gacct-op-panel-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(15, 25, 30, 0.45);
+	z-index: 100000;
+}
+
+.gacct-op-panel {
+	position: fixed;
+	z-index: 100001;
+	background: var(--gacct-surface, #fff);
+	box-shadow: 0 8px 30px rgba(15, 25, 30, 0.25);
+	padding: 20px;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+
+	/* Mobile-first : bottom sheet pleine largeur */
+	left: 0;
+	right: 0;
+	bottom: 0;
+	max-height: 85vh;
+	border-radius: var(--gacct-radius-lg, 14px) var(--gacct-radius-lg, 14px) 0 0;
+}
+
+@media (min-width: 601px) {
+	.gacct-op-panel {
+		left: auto;
+		right: 32px;
+		top: 90px;
+		bottom: auto;
+		width: 380px;
+		max-width: calc(100vw - 48px);
+		max-height: calc(100vh - 130px);
+		border-radius: var(--gacct-radius-lg, 14px);
+		border: 1px solid var(--gacct-border, #dfe5e8);
+	}
+}
+
+.gacct-op-panel-close {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	width: 44px;
+	height: 44px;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	color: var(--gacct-text-muted);
+	font-size: 18px;
+	line-height: 1;
+	cursor: pointer;
+}
+.gacct-op-panel-close:hover {
+	background: var(--gacct-surface-alt);
+	color: var(--gacct-text);
+}
+
+.gacct-op-panel-ref {
+	margin: 0 36px 2px 0;
+	font-size: 18px;
+}
+.gacct-op-panel-client {
+	margin: 0 0 10px;
+	color: var(--gacct-text-muted);
+	font-size: 14px;
+}
+
+.gacct-op-panel-meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+.gacct-op-pill-incomplet {
+	display: inline-block;
+	padding: 3px 10px;
+	border-radius: 999px;
+	background: var(--gacct-danger);
+	color: #fff;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.6;
+	white-space: nowrap;
+}
+
+.gacct-op-panel-rows {
+	margin: 0 0 14px;
+	border-top: 1px solid var(--gacct-border);
+}
+.gacct-op-panel-row {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 8px 0;
+	border-bottom: 1px solid var(--gacct-border);
+	font-size: 14px;
+}
+.gacct-op-panel-row dt {
+	color: var(--gacct-text-muted);
+	margin: 0;
+}
+.gacct-op-panel-row dd {
+	margin: 0;
+	font-weight: 600;
+	text-align: right;
+}
+
+.gacct-op-planning .gacct-op-panel-fiche {
+	width: 100%;
+	margin-bottom: 16px;
+}
+
+/* Bloc replanification */
+.gacct-op-panel-resched h3 {
+	margin: 0 0 10px;
+	font-size: 13px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--gacct-text-muted);
+}
+.gacct-op-panel-label {
+	display: block;
+	font-size: 13px;
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+.gacct-op-required {
+	color: var(--gacct-danger);
+	font-weight: 400;
+}
+.gacct-op-panel input[type="date"] {
+	width: 100%;
+	min-height: 44px;
+	margin-bottom: 12px;
+	border: 1px solid var(--gacct-border);
+	border-radius: var(--gacct-radius);
+	padding: 6px 10px;
+	font-size: 14px;
+}
+.gacct-op-panel-check {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 44px;
+	margin-bottom: 8px;
+	font-size: 14px;
+	cursor: pointer;
+}
+.gacct-op-panel-check input[type="checkbox"] {
+	width: 20px;
+	height: 20px;
+	margin: 0;
+}
+.gacct-op-panel-reason textarea {
+	width: 100%;
+	border: 1px solid var(--gacct-border);
+	border-radius: var(--gacct-radius);
+	padding: 8px 10px;
+	font-size: 14px;
+	margin-bottom: 8px;
+}
+.gacct-op-planning .gacct-op-panel [data-op-move] {
+	width: 100%;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Petits écrans (≤ 480px) : calendrier compact                       */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 480px) {
+	.gacct-op-planning #gacct-op-calendar {
+		padding: 8px;
+	}
+	.gacct-op-planning .fc .fc-toolbar-title {
+		font-size: 15px;
+	}
+	.gacct-op-planning .fc .fc-button {
+		padding: 4px 8px;
+		font-size: 12px;
+	}
+	.gacct-op-planning .fc .gacct-op-occ {
+		font-size: 10px;
+		padding: 1px 3px;
+		border-left-width: 3px;
+	}
+	.gacct-op-planning .fc .fc-bg-event .fc-event-title {
+		font-size: 8px;
+		padding: 1px 2px;
+	}
+}

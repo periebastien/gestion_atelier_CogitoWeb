@@ -98,6 +98,16 @@ function gacct_pay_default_settings() {
 					. '<p>Et si votre colis est en route avec du retard, faites-nous signe dès maintenant : nous en tiendrons compte.</p>'
 					. '<p>À bientôt,<br><br>Bastien.</p>',
 			),
+			'rescheduled' => array(
+				'enabled' => true,
+				'label'   => __( 'Créneau replanifié', 'gestion-atelier-cct' ),
+				'subject' => __( 'Votre créneau atelier a été déplacé au {new_slot_date} - commande {order_number}', 'gestion-atelier-cct' ),
+				'body'    => '<p>Bonjour {customer_name},</p>'
+					. '<p>Le créneau atelier de votre commande <strong>{order_number}</strong>, initialement prévu le <strong>{old_slot_date}</strong>, a été déplacé au <strong>{new_slot_date}</strong>.</p>'
+					. '<p>Si votre matériel n’est pas encore parti, il doit désormais nous parvenir <strong>avant le {new_slot_date}</strong>.</p>'
+					. '<p>Ce nouveau créneau ne vous convient pas ? Répondez à cet e-mail ou appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}) : nous trouverons une autre date ensemble.</p>'
+					. '<p>À très vite,<br><br>Bastien.</p>',
+			),
 			'missing_items' => array(
 				'enabled' => true,
 				'label'   => __( 'Réception partielle : éléments manquants', 'gestion-atelier-cct' ),

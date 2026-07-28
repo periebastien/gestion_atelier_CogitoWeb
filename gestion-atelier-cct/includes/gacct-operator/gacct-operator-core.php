@@ -701,3 +701,243 @@ function gacct_op_manual_payment_reminder( $order ) {
 		'to'       => $order->get_billing_email(),
 	);
 }
+
+/* =============================================================================
+ *  V3 — Planning atelier & replanification (CDC §4.5)
+ * ============================================================================= */
+
+/**
+ * Capacité requise pour replanifier au-delà de l'état 3 (décision Bastien :
+ * libre jusqu'à l'état 3 inclus, admins + motif ensuite).
+ */
+function gacct_op_reschedule_admin_cap() {
+	return apply_filters( 'gacct_op_reschedule_admin_cap', 'manage_woocommerce' );
+}
+
+/**
+ * Jours ouverts (calendrier_dispo) avec heures occupées, sur une plage.
+ * Même sémantique que le dashboard : correspondance exacte des timestamps,
+ * occupations publish liées à une révision publish (rel 11 → ici simplifié :
+ * occupation portant un revision_id ou un order_id d'une révision publish).
+ *
+ * @return array[] { capacity_id, day_ts, capacity_hours, occupied_hours }
+ */
+function gacct_op_planning_capacities( $start_ts, $end_ts ) {
+	global $wpdb;
+
+	$cal = $wpdb->prefix . 'jet_cct_calendrier_dispo';
+	$occ = $wpdb->prefix . 'jet_cct_' . JWCCT_CCT_OCCUPATION;
+
+	return (array) $wpdb->get_results( $wpdb->prepare(
+		"SELECT c._ID AS capacity_id, CAST(c.date_jour AS UNSIGNED) AS day_ts,
+			CAST(c.heures_totales_dispo AS DECIMAL(10,2)) AS capacity_hours,
+			COALESCE(SUM(TIME_TO_SEC(o.duree_totale_commande) / 3600), 0) AS occupied_hours
+		FROM {$cal} c
+		LEFT JOIN {$occ} o
+			ON CAST(o.date_reservee AS UNSIGNED) = CAST(c.date_jour AS UNSIGNED)
+			AND o.cct_status = 'publish'
+		WHERE c.cct_status = 'publish'
+			AND CAST(c.date_jour AS UNSIGNED) >= %d
+			AND CAST(c.date_jour AS UNSIGNED) < %d
+		GROUP BY c._ID, c.date_jour, c.heures_totales_dispo
+		ORDER BY day_ts ASC",
+		$start_ts,
+		$end_ts
+	), ARRAY_A );
+}
+
+/**
+ * Occupations d'une plage, jointes à leur révision (matériel, état).
+ *
+ * @return array[] Lignes occupation + colonnes révision préfixées rev_.
+ */
+function gacct_op_planning_occupations( $start_ts, $end_ts ) {
+	global $wpdb;
+
+	$occ = $wpdb->prefix . 'jet_cct_' . JWCCT_CCT_OCCUPATION;
+	$rev = $wpdb->prefix . 'jet_cct_' . JWCCT_CCT_REVISION;
+
+	return (array) $wpdb->get_results( $wpdb->prepare(
+		"SELECT o._ID AS occupation_id, CAST(o.date_reservee AS UNSIGNED) AS day_ts,
+			o.duree_totale_commande, o.order_id,
+			r._ID AS rev_id, r.etat_de_la_commande AS rev_etat, r.marque AS rev_marque,
+			r.modele AS rev_modele, r.taille AS rev_taille, r.dossier_incomplet AS rev_incomplet
+		FROM {$occ} o
+		LEFT JOIN {$rev} r
+			ON ( r._ID = o.revision_id OR ( o.order_id > 0 AND r.order_id = o.order_id ) )
+			AND r.cct_status = 'publish'
+		WHERE o.cct_status = 'publish'
+			AND CAST(o.date_reservee AS UNSIGNED) >= %d
+			AND CAST(o.date_reservee AS UNSIGNED) < %d
+		GROUP BY o._ID
+		ORDER BY day_ts ASC",
+		$start_ts,
+		$end_ts
+	), ARRAY_A );
+}
+
+/**
+ * Ligne calendrier_dispo (publish) couvrant un jour local Y-m-d, ou null.
+ */
+function gacct_op_day_capacity_row( $ymd ) {
+	global $wpdb;
+
+	$day = DateTimeImmutable::createFromFormat( '!Y-m-d', $ymd, wp_timezone() );
+
+	if ( ! $day ) {
+		return null;
+	}
+
+	$start = $day->getTimestamp();
+	$end   = $start + DAY_IN_SECONDS;
+
+	$cal = $wpdb->prefix . 'jet_cct_calendrier_dispo';
+
+	return $wpdb->get_row( $wpdb->prepare(
+		"SELECT _ID, CAST(date_jour AS UNSIGNED) AS day_ts,
+			CAST(heures_totales_dispo AS DECIMAL(10,2)) AS capacity_hours
+		FROM {$cal}
+		WHERE cct_status = 'publish'
+			AND CAST(date_jour AS UNSIGNED) >= %d
+			AND CAST(date_jour AS UNSIGNED) < %d
+		ORDER BY day_ts ASC LIMIT 1",
+		$start,
+		$end
+	), ARRAY_A );
+}
+
+/**
+ * Replanification d'une occupation (CDC §4.5).
+ *
+ * Règle (décision Bastien 28/07/2026) : libre jusqu'à l'état 3 inclus ;
+ * à partir de l'état 4, réservée aux admins avec motif obligatoire.
+ * Contrôle de capacité : heures dispo du jour cible − occupations déjà
+ * posées (hors celle déplacée) ≥ durée de l'occupation.
+ *
+ * @param int    $occupation_id ID du CCT occupation_atelier.
+ * @param string $ymd           Jour cible (Y-m-d, doit être ouvert au calendrier).
+ * @param array  $args          { reason: string (motif, obligatoire état ≥ 4),
+ *                               notify: bool (email « créneau replanifié ») }
+ * @return array|WP_Error { old_ts, new_ts, notified: bool }
+ */
+function gacct_op_reschedule( $occupation_id, $ymd, array $args = array() ) {
+	$occupation_id = absint( $occupation_id );
+	$reason        = isset( $args['reason'] ) ? trim( sanitize_textarea_field( $args['reason'] ) ) : '';
+	$notify        = ! empty( $args['notify'] );
+
+	$occupation = jwcct_get_cct_item( JWCCT_CCT_OCCUPATION, $occupation_id );
+
+	if ( ! $occupation ) {
+		return new WP_Error( 'gacct_op_not_found', __( 'Occupation introuvable.', 'gestion-atelier-cct' ) );
+	}
+
+	// Révision liée (par revision_id, sinon par order_id) — lecture SQL directe :
+	// l'état doit être frais, pas servi par le cache d'objet JetEngine.
+	global $wpdb;
+	$rev_table = $wpdb->prefix . 'jet_cct_' . JWCCT_CCT_REVISION;
+	$revision  = null;
+
+	if ( ! empty( $occupation['revision_id'] ) ) {
+		$revision = $wpdb->get_row( $wpdb->prepare(
+			"SELECT * FROM {$rev_table} WHERE _ID = %d LIMIT 1",
+			absint( $occupation['revision_id'] )
+		), ARRAY_A );
+	}
+
+	if ( ! $revision && ! empty( $occupation['order_id'] ) ) {
+		$revision = $wpdb->get_row( $wpdb->prepare(
+			"SELECT * FROM {$rev_table} WHERE order_id = %d AND cct_status = 'publish' LIMIT 1",
+			absint( $occupation['order_id'] )
+		), ARRAY_A );
+	}
+
+	$state = $revision ? absint( $revision['etat_de_la_commande'] ?? 0 ) : 0;
+
+	if ( $state >= 4 ) {
+		if ( ! current_user_can( gacct_op_reschedule_admin_cap() ) ) {
+			return new WP_Error( 'gacct_op_reschedule_locked', __( 'À partir de l\'état 4 (intervention en cours), la replanification est réservée aux administrateurs.', 'gestion-atelier-cct' ) );
+		}
+		if ( '' === $reason ) {
+			return new WP_Error( 'gacct_op_reason_required', __( 'Un motif est obligatoire pour replanifier un dossier en intervention (état ≥ 4).', 'gestion-atelier-cct' ) );
+		}
+	}
+
+	$target = gacct_op_day_capacity_row( $ymd );
+
+	if ( ! $target ) {
+		return new WP_Error( 'gacct_op_day_closed', __( 'Ce jour n\'est pas ouvert au calendrier de l\'atelier.', 'gestion-atelier-cct' ) );
+	}
+
+	$old_ts = absint( $occupation['date_reservee'] ?? 0 );
+	$new_ts = (int) $target['day_ts'];
+
+	if ( $old_ts === $new_ts ) {
+		return new WP_Error( 'gacct_op_same_day', __( 'L\'occupation est déjà sur ce jour.', 'gestion-atelier-cct' ) );
+	}
+
+	// Contrôle de capacité sur le jour cible (hors l'occupation déplacée).
+	$occ_table = $wpdb->prefix . 'jet_cct_' . JWCCT_CCT_OCCUPATION;
+	$occupied  = (float) $wpdb->get_var( $wpdb->prepare(
+		"SELECT COALESCE(SUM(TIME_TO_SEC(duree_totale_commande) / 3600), 0)
+		FROM {$occ_table}
+		WHERE cct_status = 'publish' AND CAST(date_reservee AS UNSIGNED) = %d AND _ID != %d",
+		$new_ts,
+		$occupation_id
+	) );
+
+	$duration_h = (float) $wpdb->get_var( $wpdb->prepare(
+		'SELECT TIME_TO_SEC(%s) / 3600',
+		(string) ( $occupation['duree_totale_commande'] ?? '00:00' )
+	) );
+
+	$available = (float) $target['capacity_hours'] - $occupied;
+
+	if ( $duration_h > $available + 0.001 ) {
+		return new WP_Error( 'gacct_op_no_capacity', sprintf(
+			/* translators: 1: heures restantes, 2: durée demandée */
+			__( 'Capacité insuffisante ce jour-là : %1$s h restantes pour une intervention de %2$s h.', 'gestion-atelier-cct' ),
+			rtrim( rtrim( number_format( max( 0, $available ), 2, ',', ' ' ), '0' ), ',' ),
+			rtrim( rtrim( number_format( $duration_h, 2, ',', ' ' ), '0' ), ',' )
+		) );
+	}
+
+	if ( ! jwcct_update_cct_item( JWCCT_CCT_OCCUPATION, $occupation_id, array( 'date_reservee' => $new_ts ) ) ) {
+		return new WP_Error( 'gacct_op_update_failed', __( 'La mise à jour de l\'occupation a échoué.', 'gestion-atelier-cct' ) );
+	}
+
+	$order    = ! empty( $occupation['order_id'] ) && function_exists( 'wc_get_order' ) ? wc_get_order( absint( $occupation['order_id'] ) ) : false;
+	$date_fmt = get_option( 'date_format' );
+	$old_str  = $old_ts ? wp_date( $date_fmt, $old_ts ) : __( '(aucune)', 'gestion-atelier-cct' );
+	$new_str  = wp_date( $date_fmt, $new_ts );
+	$notified = false;
+
+	if ( $order ) {
+		$message = sprintf( __( 'Créneau replanifié : %1$s → %2$s', 'gestion-atelier-cct' ), $old_str, $new_str );
+		if ( '' !== $reason ) {
+			$message .= sprintf( ' — motif : %s', $reason );
+		}
+		gacct_op_add_signed_note( $order, $message );
+
+		if ( $notify ) {
+			$notified = gacct_pay_send_email(
+				$order->get_billing_email(),
+				'rescheduled',
+				gacct_pay_email_variables( $order, array(
+					'{old_slot_date}' => $old_str,
+					'{new_slot_date}' => $new_str,
+				) )
+			);
+
+			$order->add_order_note( $notified
+				? sprintf( __( 'Email « créneau replanifié » envoyé au client (%s).', 'gestion-atelier-cct' ), $order->get_billing_email() )
+				: __( 'ERREUR : échec de l\'envoi de l\'email « créneau replanifié ».', 'gestion-atelier-cct' ) );
+			$order->save();
+		}
+	}
+
+	return array(
+		'old_ts'   => $old_ts,
+		'new_ts'   => $new_ts,
+		'notified' => (bool) $notified,
+	);
+}
