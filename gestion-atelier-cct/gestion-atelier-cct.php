@@ -124,11 +124,27 @@ final class GACCT_Plugin {
 
 		add_submenu_page(
 			GACCT_OP_MENU_SLUG,
-			__( 'Interventions', 'gestion-atelier-cct' ),
-			__( 'Interventions', 'gestion-atelier-cct' ),
+			__( 'Aujourd\'hui', 'gestion-atelier-cct' ),
+			__( 'Aujourd\'hui', 'gestion-atelier-cct' ),
 			GACCT_OP_CAP,
 			GACCT_OP_MENU_SLUG,
 			'gacct_op_render_console'
+		);
+
+		add_submenu_page(
+			GACCT_OP_MENU_SLUG,
+			__( 'Interventions', 'gestion-atelier-cct' ),
+			__( 'Interventions', 'gestion-atelier-cct' ),
+			GACCT_OP_CAP,
+			'admin.php?page=' . GACCT_OP_MENU_SLUG . '&view=list'
+		);
+
+		add_submenu_page(
+			GACCT_OP_MENU_SLUG,
+			__( 'Réception colis', 'gestion-atelier-cct' ),
+			__( 'Réception colis', 'gestion-atelier-cct' ),
+			GACCT_OP_CAP,
+			'admin.php?page=' . GACCT_OP_MENU_SLUG . '&view=reception'
 		);
 
 		$this->admin_pages['dashboard'] = add_submenu_page(

@@ -98,6 +98,19 @@ function gacct_pay_default_settings() {
 					. '<p>Et si votre colis est en route avec du retard, faites-nous signe dès maintenant : nous en tiendrons compte.</p>'
 					. '<p>À bientôt,<br><br>Bastien.</p>',
 			),
+			'missing_items' => array(
+				'enabled' => true,
+				'label'   => __( 'Réception partielle : éléments manquants', 'gestion-atelier-cct' ),
+				'subject' => __( 'Votre colis est bien arrivé, mais il manque des éléments - commande {order_number}', 'gestion-atelier-cct' ),
+				'body'    => '<p>Bonjour {customer_name},</p>'
+					. '<p>Bonne nouvelle : votre colis pour la commande <strong>{order_number}</strong> est bien arrivé à l’atelier.</p>'
+					. '<p>En le déballant, nous avons toutefois constaté qu’il manque :</p>'
+					. '{missing_items}'
+					. '<p>Pour que nous puissions réaliser l’intervention complète, merci de nous faire parvenir ces éléments dès que possible à l’adresse suivante :</p>'
+					. '<p><strong>{workshop_address}</strong></p>'
+					. '<p>Sans ces éléments, la partie correspondante de l’intervention ne pourra pas être réalisée. Si vous préférez y renoncer ou si vous avez la moindre question, répondez simplement à cet e-mail ou appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}).</p>'
+					. '<p>À très vite,<br><br>Bastien.</p>',
+			),
 			'unfinished_cancel' => array(
 				'enabled' => true,
 				'label'   => __( 'Annulation : commande non payée', 'gestion-atelier-cct' ),

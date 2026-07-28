@@ -51,6 +51,25 @@
 	font-weight: 600;
 }
 
+/* Bandeau « dossier incomplet » (V2) */
+.gacct-op-fiche .gacct-op-incomplete { font-weight: 400; }
+.gacct-op-fiche .gacct-op-incomplete strong { font-weight: 700; }
+.gacct-op-fiche .gacct-op-incomplete-link {
+	display: inline-block;
+	margin-left: 6px;
+	font-weight: 600;
+}
+
+/* Lien « Réceptionner ce colis » (état 1) */
+.gacct-op-fiche .gacct-op-reception-cta {
+	margin: 0 0 14px;
+	font-weight: 600;
+}
+.gacct-op-fiche .gacct-op-reception-cta a { text-decoration: none; }
+
+/* Feedback de la carte Paiements (relance manuelle) */
+.gacct-op-fiche .gacct-op-pay-feedback { margin: 10px 0 0; }
+
 /* Liste de faits (dl) */
 .gacct-op-fiche .gacct-op-facts {
 	margin: 0;

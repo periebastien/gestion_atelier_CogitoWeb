@@ -1,0 +1,328 @@
+/**
+ * Console atelier — écran « Réception d'un colis ».
+ * Mobile-first : téléphone en main, actions au pouce (cibles ≥ 44 px).
+ * Tokens hérités de operator.css (--gacct-*).
+ */
+
+.gacct-op-reception {
+	max-width: 720px;
+}
+
+.gacct-op-reception h1 {
+	font-size: 20px;
+	margin-bottom: 12px;
+}
+
+.gacct-op-reception .gacct-op-reception-hint {
+	color: var(--gacct-text-muted);
+	margin: 8px 0 14px;
+}
+
+/* ---------------------------------------------------------------- recherche */
+
+.gacct-op-reception .gacct-op-reception-search {
+	text-align: center;
+	padding: 28px 20px;
+}
+
+.gacct-op-reception .gacct-op-reception-search-label {
+	display: block;
+	font-size: 16px;
+	font-weight: 600;
+	margin-bottom: 10px;
+}
+
+.gacct-op-reception .gacct-op-reception-search input[type="search"] {
+	display: block;
+	width: 100%;
+	min-height: 52px;
+	padding: 10px 14px;
+	font-size: 18px;
+	border: 1px solid var(--gacct-border);
+	border-radius: var(--gacct-radius);
+	margin-bottom: 12px;
+}
+
+.gacct-op-reception .gacct-op-reception-search input[type="search"]:focus {
+	border-color: var(--gacct-accent);
+	box-shadow: 0 0 0 2px var(--gacct-accent-soft);
+	outline: none;
+}
+
+.gacct-op-reception .gacct-op-reception-search-btn {
+	width: 100%;
+	min-height: 48px;
+	font-size: 16px;
+}
+
+.gacct-op-reception .gacct-op-reception-search .gacct-op-reception-hint {
+	margin: 12px 0 0;
+	font-size: 13px;
+}
+
+.gacct-op-reception .gacct-op-reception-noresult {
+	margin-bottom: 16px;
+}
+
+/* --------------------------------------------------- résultats multiples */
+
+.gacct-op-reception .gacct-op-reception-cards {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-bottom: 20px;
+}
+
+.gacct-op-reception .gacct-op-reception-cardlink {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
+	min-height: 44px;
+	padding: 14px 16px;
+	background: var(--gacct-surface);
+	border: 1px solid var(--gacct-border);
+	border-radius: var(--gacct-radius-lg);
+	box-shadow: var(--gacct-shadow);
+	color: var(--gacct-text);
+	text-decoration: none;
+}
+
+.gacct-op-reception .gacct-op-reception-cardlink:hover,
+.gacct-op-reception .gacct-op-reception-cardlink:focus {
+	border-color: var(--gacct-accent);
+	box-shadow: 0 0 0 2px var(--gacct-accent-soft);
+}
+
+.gacct-op-reception .gacct-op-reception-cardref {
+	font-weight: 700;
+	font-size: 16px;
+}
+
+.gacct-op-reception .gacct-op-reception-cardclient {
+	font-weight: 600;
+}
+
+.gacct-op-reception .gacct-op-reception-cardmat {
+	color: var(--gacct-text-muted);
+	font-size: 13px;
+}
+
+/* ------------------------------------------------------------------ dossier */
+
+.gacct-op-reception .gacct-op-reception-dossier {
+	padding: 0;
+	overflow: hidden;
+}
+
+.gacct-op-reception .gacct-op-reception-head {
+	padding: 16px 16px 14px;
+	border-bottom: 1px solid var(--gacct-border);
+	background: var(--gacct-surface-alt);
+}
+
+.gacct-op-reception .gacct-op-reception-headmain {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+.gacct-op-reception .gacct-op-reception-ref {
+	font-size: 18px;
+	font-weight: 700;
+}
+
+.gacct-op-reception .gacct-op-reception-client {
+	margin: 6px 0 0;
+	font-weight: 600;
+}
+
+.gacct-op-reception .gacct-op-reception-materiel {
+	margin: 2px 0 0;
+	color: var(--gacct-text-muted);
+	font-size: 13px;
+}
+
+.gacct-op-reception .gacct-op-reception-fichelink {
+	display: inline-flex;
+	align-items: center;
+	min-height: 44px;
+	color: var(--gacct-accent-dark);
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.gacct-op-reception .gacct-op-reception-fichelink:hover {
+	text-decoration: underline;
+}
+
+.gacct-op-reception .gacct-op-reception-dossier > .gacct-op-feedback {
+	margin: 16px;
+}
+
+/* Bandeaux d'état du dossier */
+.gacct-op-reception .gacct-op-reception-banner {
+	margin: 16px;
+	padding: 12px 14px;
+	border-radius: var(--gacct-radius);
+	line-height: 1.5;
+}
+
+.gacct-op-reception .gacct-op-reception-banner.info {
+	background: var(--gacct-accent-soft);
+	border: 1px solid var(--gacct-accent);
+	color: var(--gacct-accent-dark);
+}
+
+.gacct-op-reception .gacct-op-reception-banner.warn {
+	background: var(--gacct-warn-soft);
+	border: 1px solid var(--gacct-warn);
+	color: #8a6d1a;
+}
+
+/* --------------------------------------------------------------- check-list */
+
+.gacct-op-reception .gacct-op-reception-checkwrap {
+	padding: 16px;
+}
+
+.gacct-op-reception .gacct-op-reception-checkintro {
+	margin: 0 0 12px;
+	color: var(--gacct-text-muted);
+}
+
+.gacct-op-reception .gacct-op-reception-checklist {
+	list-style: none;
+	margin: 0 0 14px;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+/* Ligne tactile : toute la carte est cliquable, ≥ 48 px */
+.gacct-op-reception .gacct-op-reception-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-height: 48px;
+	padding: 12px 14px;
+	border: 2px solid var(--gacct-border);
+	border-radius: var(--gacct-radius);
+	background: var(--gacct-surface);
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+	transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.gacct-op-reception .gacct-op-reception-row input[type="checkbox"] {
+	width: 24px;
+	height: 24px;
+	margin: 0;
+	flex: none;
+	accent-color: var(--gacct-accent-dark);
+	cursor: pointer;
+}
+
+.gacct-op-reception .gacct-op-reception-rowlabel {
+	font-size: 15px;
+	font-weight: 600;
+	line-height: 1.35;
+}
+
+/* Coché = présent dans le colis */
+.gacct-op-reception .gacct-op-reception-row.is-checked {
+	background: var(--gacct-accent-soft);
+	border-color: var(--gacct-accent);
+}
+
+/* Décoché = manquant, bien visible */
+.gacct-op-reception .gacct-op-reception-row.is-missing {
+	background: var(--gacct-warn-soft);
+	border-color: var(--gacct-warn);
+}
+
+.gacct-op-reception .gacct-op-reception-row.is-missing .gacct-op-reception-rowlabel {
+	color: #8a6d1a;
+}
+
+/* Check-list désactivée (état 0 : paiement non encaissé) */
+.gacct-op-reception .gacct-op-reception-row input[disabled] {
+	cursor: not-allowed;
+}
+
+.gacct-op-reception .gacct-op-reception-row:has(input[disabled]) {
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+
+/* Avertissement réception partielle */
+.gacct-op-reception .gacct-op-reception-partialwarn {
+	margin: 0 0 12px;
+	padding: 12px 14px;
+	border: 1px solid var(--gacct-warn);
+	border-radius: var(--gacct-radius);
+	background: var(--gacct-warn-soft);
+	color: #8a6d1a;
+	line-height: 1.5;
+}
+
+/* Gros bouton collé en bas de la carte, à portée de pouce */
+.gacct-op-reception .gacct-op-reception-submitzone {
+	position: sticky;
+	bottom: 0;
+	margin: 0 -16px -16px;
+	padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+	background: var(--gacct-surface);
+	border-top: 1px solid var(--gacct-border);
+}
+
+.gacct-op-reception .gacct-op-reception-submit {
+	width: 100%;
+	min-height: 52px;
+	font-size: 16px;
+}
+
+.gacct-op-reception .gacct-op-reception-submit.is-partial {
+	background: var(--gacct-warn);
+	border-color: #c79217;
+	color: #4a3a0a;
+}
+
+.gacct-op-reception .gacct-op-reception-submit.is-partial:hover {
+	background: #e0a622;
+}
+
+.gacct-op-reception .gacct-op-reception-fichebtn {
+	margin-top: 10px;
+}
+
+/* ------------------------------------------------------------------ desktop */
+
+@media (min-width: 782px) {
+	.gacct-op-reception {
+		margin-left: auto;
+		margin-right: auto;
+	}
+
+	.gacct-op-reception .gacct-op-reception-search {
+		padding: 36px 40px;
+	}
+
+	.gacct-op-reception .gacct-op-reception-search input[type="search"] {
+		max-width: 480px;
+		margin-left: auto;
+		margin-right: auto;
+	}
+
+	.gacct-op-reception .gacct-op-reception-search-btn {
+		width: auto;
+		min-width: 220px;
+	}
+
+	.gacct-op-reception .gacct-op-reception-submit {
+		width: auto;
+		min-width: 300px;
+	}
+}

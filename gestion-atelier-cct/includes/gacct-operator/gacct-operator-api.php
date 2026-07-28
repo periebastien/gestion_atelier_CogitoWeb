@@ -29,8 +29,9 @@ function gacct_op_ajax_change_state() {
 		isset( $_POST['revision_id'] ) ? absint( $_POST['revision_id'] ) : 0,
 		isset( $_POST['new_state'] ) ? absint( $_POST['new_state'] ) : 0,
 		array(
-			'force'  => ! empty( $_POST['force'] ),
-			'reason' => isset( $_POST['reason'] ) ? wp_unslash( $_POST['reason'] ) : '',
+			'force'         => ! empty( $_POST['force'] ),
+			'reason'        => isset( $_POST['reason'] ) ? wp_unslash( $_POST['reason'] ) : '',
+			'unlock_reason' => isset( $_POST['unlock_reason'] ) ? wp_unslash( $_POST['unlock_reason'] ) : '',
 		)
 	);
 
@@ -204,10 +205,55 @@ function gacct_op_ajax_cancel() {
 
 	gacct_op_add_signed_note( $order, sprintf( __( 'Annulation du dossier — motif : %s', 'gestion-atelier-cct' ), $reason ) );
 
-	$template = ( 'bacs' === $order->get_payment_method() ) ? 'bacs_cancel' : 'unpaid_cancel';
+	$template = ( 'bacs' === $order->get_payment_method() ) ? 'bacs_cancel' : 'unfinished_cancel';
 
 	gacct_pay_cancel_unpaid_order( $order, time(), $template, $reason );
 
 	wp_send_json_success( array( 'redirect' => gacct_op_console_url() ) );
 }
 add_action( 'wp_ajax_gacct_op_cancel', 'gacct_op_ajax_cancel' );
+
+/**
+ * Réception d'un colis (complète ou partielle avec liste des manquants).
+ */
+function gacct_op_ajax_receive() {
+	gacct_op_api_guard();
+
+	$missing = array();
+
+	if ( isset( $_POST['missing'] ) && is_array( $_POST['missing'] ) ) {
+		$missing = array_map( 'sanitize_text_field', wp_unslash( $_POST['missing'] ) );
+	}
+
+	$result = gacct_op_receive(
+		isset( $_POST['revision_id'] ) ? absint( $_POST['revision_id'] ) : 0,
+		$missing
+	);
+
+	if ( is_wp_error( $result ) ) {
+		wp_send_json_error( array( 'message' => $result->get_error_message(), 'code' => $result->get_error_code() ) );
+	}
+
+	wp_send_json_success( $result );
+}
+add_action( 'wp_ajax_gacct_op_receive', 'gacct_op_ajax_receive' );
+
+/**
+ * Relance de paiement manuelle depuis la fiche.
+ */
+function gacct_op_ajax_payment_reminder() {
+	gacct_op_api_guard();
+
+	$revision_id = isset( $_POST['revision_id'] ) ? absint( $_POST['revision_id'] ) : 0;
+	$revision    = jwcct_get_cct_item( JWCCT_CCT_REVISION, $revision_id );
+	$order       = $revision ? gacct_op_get_order_for_revision( $revision ) : false;
+
+	$result = gacct_op_manual_payment_reminder( $order );
+
+	if ( is_wp_error( $result ) ) {
+		wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+	}
+
+	wp_send_json_success( $result );
+}
+add_action( 'wp_ajax_gacct_op_payment_reminder', 'gacct_op_ajax_payment_reminder' );

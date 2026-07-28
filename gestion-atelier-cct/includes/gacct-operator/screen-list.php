@@ -44,6 +44,7 @@ function gacct_op_list_current_args() {
  */
 function gacct_op_list_url( array $current, array $overrides = array() ) {
 	$map = array(
+		'view'      => 'list',
 		'etat'      => $current['state'],
 		's'         => $current['search'],
 		'orderby'   => $current['orderby'],
@@ -120,6 +121,7 @@ function gacct_op_render_list_screen() {
 
 	echo '<form method="get" action="' . esc_url( admin_url( 'admin.php' ) ) . '" class="gacct-op-list-search" role="search">';
 	echo '<input type="hidden" name="page" value="' . esc_attr( GACCT_OP_MENU_SLUG ) . '">';
+	echo '<input type="hidden" name="view" value="list">';
 	if ( null !== $current['state'] ) {
 		echo '<input type="hidden" name="etat" value="' . esc_attr( $current['state'] ) . '">';
 	}
@@ -162,6 +164,7 @@ function gacct_op_render_list_screen() {
 	if ( $operators ) {
 		echo '<form method="get" action="' . esc_url( admin_url( 'admin.php' ) ) . '" class="gacct-op-list-operator">';
 		echo '<input type="hidden" name="page" value="' . esc_attr( GACCT_OP_MENU_SLUG ) . '">';
+	echo '<input type="hidden" name="view" value="list">';
 		if ( null !== $current['state'] ) {
 			echo '<input type="hidden" name="etat" value="' . esc_attr( $current['state'] ) . '">';
 		}

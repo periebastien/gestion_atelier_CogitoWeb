@@ -18,12 +18,14 @@ define( 'GACCT_OP_MENU_SLUG', 'gacct-console' );
 define( 'GACCT_OP_NONCE', 'gacct_op_nonce' );
 define( 'GACCT_OP_ROLE', 'atelier' );
 define( 'GACCT_OP_SETUP_OPT', 'gacct_op_setup_version' );
-define( 'GACCT_OP_SETUP_VERSION', '1' );
+define( 'GACCT_OP_SETUP_VERSION', '2' );
 
 require_once __DIR__ . '/gacct-operator-core.php';
 require_once __DIR__ . '/gacct-operator-api.php';
+require_once __DIR__ . '/screen-today.php';
 require_once __DIR__ . '/screen-list.php';
 require_once __DIR__ . '/screen-fiche.php';
+require_once __DIR__ . '/screen-reception.php';
 
 /**
  * Création du rôle + distribution de la capacité + champ CCT operateur_id.
@@ -87,19 +89,70 @@ function gacct_op_console_url( $revision_id = 0, array $extra = array() ) {
 }
 
 /**
- * Routeur de la page console : fiche si ?revision=, sinon file des interventions.
+ * Vue console courante : today (défaut) | list | reception | fiche (?revision=).
+ */
+function gacct_op_current_view() {
+	if ( ! empty( $_GET['revision'] ) ) {
+		return 'fiche';
+	}
+
+	$view = isset( $_GET['view'] ) ? sanitize_key( wp_unslash( $_GET['view'] ) ) : '';
+
+	return in_array( $view, array( 'list', 'reception' ), true ) ? $view : 'today';
+}
+
+/**
+ * Barre de navigation interne de la console, affichée sur toutes les vues :
+ * les 3 écrans + le champ « scan ou référence » en accès direct (CDC §4.4).
+ */
+function gacct_op_render_console_nav( $active ) {
+	$tabs = array(
+		'today'     => array( gacct_op_console_url(), __( 'Aujourd\'hui', 'gestion-atelier-cct' ) ),
+		'list'      => array( gacct_op_console_url( 0, array( 'view' => 'list' ) ), __( 'Interventions', 'gestion-atelier-cct' ) ),
+		'reception' => array( gacct_op_console_url( 0, array( 'view' => 'reception' ) ), __( 'Réception colis', 'gestion-atelier-cct' ) ),
+	);
+
+	echo '<nav class="gacct-op-nav">';
+	foreach ( $tabs as $key => $tab ) {
+		$class = 'gacct-op-nav-link' . ( $key === $active ? ' is-active' : '' );
+		echo '<a class="' . esc_attr( $class ) . '" href="' . esc_url( $tab[0] ) . '">' . esc_html( $tab[1] ) . '</a>';
+	}
+
+	echo '<form method="get" action="' . esc_url( admin_url( 'admin.php' ) ) . '" class="gacct-op-nav-scan">';
+	echo '<input type="hidden" name="page" value="' . esc_attr( GACCT_OP_MENU_SLUG ) . '">';
+	echo '<input type="hidden" name="view" value="reception">';
+	echo '<input type="search" name="ref" placeholder="' . esc_attr__( 'Scan ou référence…', 'gestion-atelier-cct' ) . '" value="">';
+	echo '<button type="submit" class="gacct-op-btn secondary">' . esc_html__( 'Ouvrir', 'gestion-atelier-cct' ) . '</button>';
+	echo '</form>';
+	echo '</nav>';
+}
+
+/**
+ * Routeur de la page console.
  */
 function gacct_op_render_console() {
 	if ( ! current_user_can( GACCT_OP_CAP ) ) {
 		wp_die( esc_html__( 'Acces refuse.', 'gestion-atelier-cct' ) );
 	}
 
-	$revision_id = isset( $_GET['revision'] ) ? absint( $_GET['revision'] ) : 0;
+	$view = gacct_op_current_view();
 
-	if ( $revision_id ) {
-		gacct_op_render_fiche_screen( $revision_id );
-	} else {
-		gacct_op_render_list_screen();
+	echo '<div class="wrap gacct-op gacct-op-navwrap">';
+	gacct_op_render_console_nav( $view );
+	echo '</div>';
+
+	switch ( $view ) {
+		case 'fiche':
+			gacct_op_render_fiche_screen( absint( $_GET['revision'] ) );
+			break;
+		case 'list':
+			gacct_op_render_list_screen();
+			break;
+		case 'reception':
+			gacct_op_render_reception_screen();
+			break;
+		default:
+			gacct_op_render_today_screen();
 	}
 }
 
@@ -220,7 +273,13 @@ function gacct_op_enqueue_assets( $hook_suffix ) {
 		GACCT_Plugin::VERSION
 	);
 
-	$screen_css = isset( $_GET['revision'] ) ? 'operator-fiche.css' : 'operator-list.css';
+	$screen_css_map = array(
+		'fiche'     => 'operator-fiche.css',
+		'list'      => 'operator-list.css',
+		'reception' => 'operator-reception.css',
+		'today'     => 'operator-today.css',
+	);
+	$screen_css = $screen_css_map[ gacct_op_current_view() ];
 
 	wp_enqueue_style(
 		'gacct-operator-screen',
@@ -236,6 +295,16 @@ function gacct_op_enqueue_assets( $hook_suffix ) {
 		GACCT_Plugin::VERSION,
 		true
 	);
+
+	if ( 'reception' === gacct_op_current_view() ) {
+		wp_enqueue_script(
+			'gacct-operator-reception',
+			$base . '/assets/js/operator-reception.js',
+			array( 'gacct-operator' ),
+			GACCT_Plugin::VERSION,
+			true
+		);
+	}
 
 	wp_localize_script(
 		'gacct-operator',

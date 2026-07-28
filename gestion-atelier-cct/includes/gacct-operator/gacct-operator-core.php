@@ -132,6 +132,23 @@ function gacct_op_change_state( $revision_id, $new_state, array $args = array() 
 		$action_label = $map[ $old_state ][ $new_state ];
 	}
 
+	// Dossier incomplet : le passage en intervention (2→4 et 3→4) est bloqué
+	// tant que tout n'est pas arrivé — déblocage avec motif obligatoire (CDC §4.4).
+	if ( 4 === $new_state && ! empty( $prev['dossier_incomplet'] ) ) {
+		$unlock = isset( $args['unlock_reason'] ) ? trim( sanitize_textarea_field( $args['unlock_reason'] ) ) : '';
+
+		if ( '' === $unlock ) {
+			return new WP_Error(
+				'gacct_op_incomplete_locked',
+				__( 'Dossier incomplet : des éléments attendus ne sont pas arrivés. Le passage en intervention nécessite un motif de déblocage.', 'gestion-atelier-cct' )
+			);
+		}
+
+		$extra['dossier_incomplet']  = '';
+		$extra['elements_manquants'] = '';
+		$args['_unlock_note']        = $unlock;
+	}
+
 	// Clôture 6→7 : rapport PDF obligatoire, « réalisé par » automatique (CDC §2.1).
 	if ( 7 === $new_state ) {
 		$rapport = $extra['rapport_pdf'] ?? ( $prev['rapport_pdf'] ?? '' );
@@ -159,6 +176,9 @@ function gacct_op_change_state( $revision_id, $new_state, array $args = array() 
 		$message = sprintf( '%s (état %d → %d)', $action_label, $old_state, $new_state );
 		if ( $force ) {
 			$message .= sprintf( ' — FORCÉ, motif : %s', $reason );
+		}
+		if ( ! empty( $args['_unlock_note'] ) ) {
+			$message .= sprintf( ' — dossier incomplet débloqué, motif : %s', $args['_unlock_note'] );
 		}
 		gacct_op_add_signed_note( $order, $message );
 	}
@@ -357,21 +377,38 @@ function gacct_op_query_interventions( array $args = array() ) {
 }
 
 /**
- * Installe le champ operateur_id : colonne SQL + déclaration JetEngine
- * (meta_fields du content-type revision), cache JetEngine vidé.
+ * Installe les champs de la console dans le CCT revision : colonnes SQL +
+ * déclarations JetEngine (meta_fields du content-type), cache JetEngine vidé.
+ * Idempotent, appelé par le setup versionné.
  */
 function gacct_op_install_operator_field() {
 	global $wpdb;
 
+	$fields = array(
+		'operateur_id'      => array(
+			'sql'   => 'BIGINT(20) NULL',
+			'type'  => 'number',
+			'title' => 'Réalisé par (ID utilisateur)',
+		),
+		'dossier_incomplet' => array(
+			'sql'   => "VARCHAR(1) NOT NULL DEFAULT ''",
+			'type'  => 'text',
+			'title' => 'Dossier incomplet (1 = éléments manquants)',
+		),
+		'elements_manquants' => array(
+			'sql'   => 'LONGTEXT NULL',
+			'type'  => 'textarea',
+			'title' => 'Éléments manquants (JSON)',
+		),
+	);
+
 	$rev_table = $wpdb->prefix . 'jet_cct_' . JWCCT_CCT_REVISION;
 
-	$column = $wpdb->get_results( $wpdb->prepare(
-		"SHOW COLUMNS FROM {$rev_table} LIKE %s",
-		'operateur_id'
-	) );
-
-	if ( ! $column ) {
-		$wpdb->query( "ALTER TABLE {$rev_table} ADD COLUMN operateur_id BIGINT(20) NULL" );
+	foreach ( $fields as $name => $def ) {
+		$column = $wpdb->get_results( $wpdb->prepare( "SHOW COLUMNS FROM {$rev_table} LIKE %s", $name ) );
+		if ( ! $column ) {
+			$wpdb->query( "ALTER TABLE {$rev_table} ADD COLUMN {$name} {$def['sql']}" );
+		}
 	}
 
 	$cct_row = $wpdb->get_row( $wpdb->prepare(
@@ -389,25 +426,33 @@ function gacct_op_install_operator_field() {
 		return;
 	}
 
-	foreach ( $meta_fields as $field ) {
-		if ( isset( $field['name'] ) && 'operateur_id' === $field['name'] ) {
-			return;
+	$declared = wp_list_pluck( $meta_fields, 'name' );
+	$added    = false;
+
+	foreach ( $fields as $name => $def ) {
+		if ( in_array( $name, $declared, true ) ) {
+			continue;
 		}
+
+		$meta_fields[] = array(
+			'type'            => $def['type'],
+			'title'           => $def['title'],
+			'name'            => $name,
+			'object_type'     => 'field',
+			'width'           => '25%',
+			'options'         => array(),
+			'repeater-fields' => array(),
+			'id'              => wp_rand( 100000, 999999 ),
+			'isNested'        => false,
+			'options_source'  => 'manual',
+			'is_required'     => false,
+		);
+		$added = true;
 	}
 
-	$meta_fields[] = array(
-		'type'            => 'number',
-		'title'           => 'Réalisé par (ID utilisateur)',
-		'name'            => 'operateur_id',
-		'object_type'     => 'field',
-		'width'           => '25%',
-		'options'         => array(),
-		'repeater-fields' => array(),
-		'id'              => wp_rand( 100000, 999999 ),
-		'isNested'        => false,
-		'options_source'  => 'manual',
-		'is_required'     => false,
-	);
+	if ( ! $added ) {
+		return;
+	}
 
 	$wpdb->update(
 		$wpdb->prefix . 'jet_post_types',
@@ -420,4 +465,239 @@ function gacct_op_install_operator_field() {
 		$wpdb->query( "DELETE FROM {$cache_table}" );
 	}
 	wp_cache_flush();
+}
+
+/* =============================================================================
+ *  V2 — Réception de colis, dossiers incomplets, relance paiement manuelle
+ * ============================================================================= */
+
+/**
+ * Check-list du contenu attendu d'un colis : les lignes de la commande
+ * (hors frais de port). CDC §4.4.
+ *
+ * @return string[] Libellés attendus.
+ */
+function gacct_op_expected_items( $order ) {
+	$items = array();
+
+	if ( ! $order ) {
+		return $items;
+	}
+
+	foreach ( $order->get_items() as $item ) {
+		$name = trim( wp_strip_all_tags( $item->get_name() ) );
+
+		if ( '' === $name ) {
+			continue;
+		}
+
+		// Les frais de retour/port ne sont pas un contenu de colis.
+		if ( preg_match( '/frais|port|exp[ée]dition|retour/i', $name ) ) {
+			continue;
+		}
+
+		$items[] = $name;
+	}
+
+	return apply_filters( 'gacct_op_expected_items', array_values( array_unique( $items ) ), $order );
+}
+
+/**
+ * Éléments manquants d'une révision (champ JSON `elements_manquants`).
+ *
+ * @return string[]
+ */
+function gacct_op_missing_items( array $revision ) {
+	if ( empty( $revision['dossier_incomplet'] ) || empty( $revision['elements_manquants'] ) ) {
+		return array();
+	}
+
+	$missing = json_decode( (string) $revision['elements_manquants'], true );
+
+	return is_array( $missing ) ? array_values( array_filter( array_map( 'strval', $missing ) ) ) : array();
+}
+
+/**
+ * Réception d'un colis (CDC §4.4) — complète ou partielle.
+ *
+ * - Première réception (état 1) : passe en état 2 via la machine à états
+ *   (email « voile réceptionnée » du workflow). Si des éléments manquent :
+ *   dossier marqué incomplet + email « éléments manquants » au client.
+ * - Complément (dossier déjà en état ≥ 2 et incomplet) : met à jour la liste ;
+ *   quand plus rien ne manque, le dossier redevient complet (pas de nouvel
+ *   email d'état). Un 2ᵉ email « éléments manquants » part si la liste change
+ *   mais reste non vide.
+ * - Dossier déjà réceptionné et complet : erreur « déjà réceptionné le … ».
+ *
+ * @param int      $revision_id ID du CCT revision.
+ * @param string[] $missing     Libellés manquants (vide = tout est arrivé).
+ * @return array|WP_Error { complete: bool, missing: string[], first: bool }
+ */
+function gacct_op_receive( $revision_id, array $missing = array() ) {
+	$revision_id = absint( $revision_id );
+	$missing     = array_values( array_filter( array_map( static function ( $label ) {
+		return trim( sanitize_text_field( (string) $label ) );
+	}, $missing ) ) );
+
+	$revision = jwcct_get_cct_item( JWCCT_CCT_REVISION, $revision_id );
+
+	if ( ! $revision ) {
+		return new WP_Error( 'gacct_op_not_found', __( 'Dossier introuvable.', 'gestion-atelier-cct' ) );
+	}
+
+	$state = absint( $revision['etat_de_la_commande'] ?? 0 );
+	$order = gacct_op_get_order_for_revision( $revision );
+
+	if ( ! $order ) {
+		return new WP_Error( 'gacct_op_no_order', __( 'Commande liée introuvable.', 'gestion-atelier-cct' ) );
+	}
+
+	$was_incomplete = ! empty( $revision['dossier_incomplet'] );
+
+	// Re-scan d'un dossier complet déjà réceptionné.
+	if ( $state >= 2 && ! $was_incomplete ) {
+		$received_on = (string) $order->get_meta( '_gacct_reception_date' );
+
+		return new WP_Error( 'gacct_op_already_received', sprintf(
+			/* translators: %s: date de réception */
+			__( 'Colis déjà réceptionné le %s.', 'gestion-atelier-cct' ),
+			$received_on ? date_i18n( get_option( 'date_format' ) . ' H:i', strtotime( $received_on ) ) : __( '(date inconnue)', 'gestion-atelier-cct' )
+		) );
+	}
+
+	if ( $state > 4 && $was_incomplete ) {
+		// Sécurité : au-delà de l'intervention, plus de gestion de check-list.
+		return new WP_Error( 'gacct_op_bad_state', __( 'Ce dossier est trop avancé pour une réception.', 'gestion-atelier-cct' ) );
+	}
+
+	$flag_fields = array(
+		'dossier_incomplet'  => $missing ? '1' : '',
+		'elements_manquants' => $missing ? wp_json_encode( $missing ) : '',
+	);
+
+	$first = ( $state < 2 );
+
+	if ( $first ) {
+		if ( 1 !== $state ) {
+			return new WP_Error( 'gacct_op_bad_state', __( 'La réception n\'est possible qu\'à l\'état 1 (en attente de réception).', 'gestion-atelier-cct' ) );
+		}
+
+		// Transition 1→2 par la machine à états (email du workflow inclus).
+		$result = gacct_op_change_state( $revision_id, 2, array( 'extra_fields' => $flag_fields ) );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		$order->update_meta_data( '_gacct_reception_date', current_time( 'mysql' ) );
+		$order->save();
+	} else {
+		// Complément d'un dossier incomplet : pas de changement d'état.
+		if ( ! jwcct_update_cct_item( JWCCT_CCT_REVISION, $revision_id, $flag_fields ) ) {
+			return new WP_Error( 'gacct_op_update_failed', __( 'La mise à jour du dossier a échoué.', 'gestion-atelier-cct' ) );
+		}
+	}
+
+	$previous_missing = gacct_op_missing_items( $revision );
+
+	if ( $missing ) {
+		gacct_op_add_signed_note( $order, sprintf(
+			__( 'Réception partielle — éléments manquants : %s', 'gestion-atelier-cct' ),
+			implode( ', ', $missing )
+		) );
+
+		// Email « éléments manquants » (au 1er marquage ou si la liste change).
+		if ( $first || $missing !== $previous_missing ) {
+			gacct_op_send_missing_items_email( $order, $missing );
+		}
+	} else {
+		gacct_op_add_signed_note( $order, $first
+			? __( 'Réception complète du colis', 'gestion-atelier-cct' )
+			: __( 'Dossier complété : tous les éléments attendus sont arrivés', 'gestion-atelier-cct' ) );
+	}
+
+	return array(
+		'complete' => empty( $missing ),
+		'missing'  => $missing,
+		'first'    => $first,
+	);
+}
+
+/**
+ * Email « éléments manquants » (template éditable `missing_items`,
+ * page Paiements & relances), avec copie admin.
+ */
+function gacct_op_send_missing_items_email( $order, array $missing ) {
+	$list = '<ul>';
+	foreach ( $missing as $label ) {
+		$list .= '<li><strong>' . esc_html( $label ) . '</strong></li>';
+	}
+	$list .= '</ul>';
+
+	$address_parts = array_filter( array(
+		get_option( 'woocommerce_store_address' ),
+		get_option( 'woocommerce_store_address_2' ),
+		trim( get_option( 'woocommerce_store_postcode', '' ) . ' ' . get_option( 'woocommerce_store_city', '' ) ),
+	) );
+
+	$sent = gacct_pay_send_email(
+		$order->get_billing_email(),
+		'missing_items',
+		gacct_pay_email_variables( $order, array(
+			'{missing_items}'    => $list,
+			'{workshop_address}' => esc_html( implode( ', ', $address_parts ) ),
+		) ),
+		true
+	);
+
+	$order->add_order_note( $sent
+		? sprintf( __( 'Email « éléments manquants » envoyé au client (%s).', 'gestion-atelier-cct' ), $order->get_billing_email() )
+		: __( 'ERREUR : échec de l\'envoi de l\'email « éléments manquants ».', 'gestion-atelier-cct' ) );
+	$order->save();
+
+	return $sent;
+}
+
+/**
+ * Relance de paiement manuelle depuis la fiche (CDC §4.3). Choisit le
+ * template selon la situation de la commande ; pas d'anti-doublon (geste
+ * volontaire de l'opérateur), toujours journalisée.
+ *
+ * @return array|WP_Error { template: string, to: string }
+ */
+function gacct_op_manual_payment_reminder( $order ) {
+	if ( ! $order ) {
+		return new WP_Error( 'gacct_op_no_order', __( 'Commande liée introuvable.', 'gestion-atelier-cct' ) );
+	}
+
+	$status = $order->get_status();
+
+	if ( 'bacs' === $order->get_payment_method() && in_array( $status, array( 'on-hold', 'pending' ), true ) ) {
+		$template = 'bacs_reminder';
+	} elseif ( in_array( $status, array( 'pending', 'failed' ), true ) ) {
+		$template = 'payment_failed';
+	} else {
+		return new WP_Error( 'gacct_op_nothing_to_remind', __( 'Aucun paiement en attente à relancer sur cette commande.', 'gestion-atelier-cct' ) );
+	}
+
+	$sent = gacct_pay_send_email(
+		$order->get_billing_email(),
+		$template,
+		gacct_pay_email_variables( $order )
+	);
+
+	if ( ! $sent ) {
+		return new WP_Error( 'gacct_op_send_failed', __( 'L\'envoi de la relance a échoué (wp_mail).', 'gestion-atelier-cct' ) );
+	}
+
+	gacct_op_add_signed_note( $order, sprintf(
+		__( 'Relance de paiement envoyée manuellement (template %1$s) à %2$s', 'gestion-atelier-cct' ),
+		$template,
+		$order->get_billing_email()
+	) );
+
+	return array(
+		'template' => $template,
+		'to'       => $order->get_billing_email(),
+	);
 }

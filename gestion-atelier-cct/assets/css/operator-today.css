@@ -1,0 +1,180 @@
+/* Console atelier — écran « Aujourd'hui » (mobile-first). */
+
+.gacct-op-today .gacct-op-today-grid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 16px;
+	margin-top: 12px;
+}
+
+.gacct-op-today .gacct-op-today-block {
+	padding: 16px;
+	margin: 0;
+}
+
+.gacct-op-today .gacct-op-subtitle {
+	margin: 14px 0 6px;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--gacct-text-muted);
+}
+
+.gacct-op-today .gacct-op-subtitle:first-of-type {
+	margin-top: 8px;
+}
+
+/* --- Lignes ------------------------------------------------------------ */
+
+.gacct-op-today .gacct-op-rows {
+	display: flex;
+	flex-direction: column;
+}
+
+.gacct-op-today .gacct-op-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px 10px;
+	min-height: 44px;
+	padding: 8px 10px;
+	border-bottom: 1px solid var(--gacct-border);
+	border-left: 3px solid transparent;
+	color: var(--gacct-text);
+	text-decoration: none;
+	transition: background-color 0.12s ease;
+}
+
+.gacct-op-today .gacct-op-rows > .gacct-op-row:last-child {
+	border-bottom: 0;
+}
+
+.gacct-op-today a.gacct-op-row:hover,
+.gacct-op-today a.gacct-op-row:focus,
+.gacct-op-today .gacct-op-row.has-action:hover {
+	background: var(--gacct-surface-alt);
+}
+
+.gacct-op-today .gacct-op-row-ref {
+	flex: 0 0 auto;
+	font-family: Consolas, Menlo, monospace;
+	font-size: 12px;
+	color: var(--gacct-text-muted);
+	white-space: nowrap;
+}
+
+.gacct-op-today .gacct-op-row-main {
+	flex: 1 1 160px;
+	min-width: 0;
+}
+
+.gacct-op-today .gacct-op-row-muted {
+	color: var(--gacct-text-muted);
+	font-size: 12px;
+}
+
+.gacct-op-today .gacct-op-row-meta {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	color: var(--gacct-text-muted);
+	white-space: nowrap;
+}
+
+/* Ligne avec action (bloc « En attente du client ») : le lien porte le flex. */
+.gacct-op-today .gacct-op-row.has-action {
+	padding: 0;
+}
+
+.gacct-op-today .gacct-op-row-link {
+	flex: 1 1 auto;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px 10px;
+	min-height: 44px;
+	min-width: 0;
+	padding: 8px 10px;
+	color: inherit;
+	text-decoration: none;
+}
+
+.gacct-op-today .gacct-op-row.has-action > .gacct-op-btn {
+	flex: 0 0 auto;
+	margin: 6px 10px 6px 0;
+}
+
+/* --- États d'alerte ----------------------------------------------------- */
+
+.gacct-op-today .gacct-op-row.is-late {
+	border-left-color: var(--gacct-danger);
+}
+
+.gacct-op-today .gacct-op-row.is-late,
+.gacct-op-today .gacct-op-row.is-late .gacct-op-row-ref,
+.gacct-op-today .gacct-op-row.is-late .gacct-op-row-muted,
+.gacct-op-today .gacct-op-row.is-late .gacct-op-row-meta {
+	color: var(--gacct-danger);
+}
+
+/* Pastille (échéances, « incomplet », « en retard »). */
+.gacct-op .gacct-op-pill {
+	display: inline-block;
+	padding: 1px 8px;
+	border-radius: 999px;
+	border: 1px solid var(--gacct-border);
+	background: var(--gacct-surface-alt);
+	color: var(--gacct-text-muted);
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.6;
+	white-space: nowrap;
+}
+
+.gacct-op .gacct-op-pill.danger {
+	border-color: var(--gacct-danger);
+	background: #fdeeee;
+	color: var(--gacct-danger);
+}
+
+/* --- Divers ------------------------------------------------------------- */
+
+.gacct-op-today .gacct-op-empty {
+	margin: 6px 0 10px;
+	padding: 8px 10px;
+	color: var(--gacct-text-muted);
+	font-style: italic;
+}
+
+.gacct-op-today .gacct-op-see-all {
+	margin: 10px 0 0;
+	text-align: right;
+	font-size: 12px;
+}
+
+.gacct-op-today .gacct-op-see-all a {
+	color: var(--gacct-accent-dark);
+	text-decoration: none;
+	font-weight: 600;
+}
+
+.gacct-op-today .gacct-op-see-all a:hover {
+	text-decoration: underline;
+}
+
+/* --- Desktop : 2 colonnes de cartes ------------------------------------ */
+
+@media (min-width: 1025px) {
+	.gacct-op-today .gacct-op-today-grid {
+		grid-template-columns: 1fr 1fr;
+		gap: 20px;
+		align-items: start;
+	}
+
+	.gacct-op-today .gacct-op-today-block {
+		padding: 20px;
+	}
+}

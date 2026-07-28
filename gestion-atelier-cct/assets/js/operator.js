@@ -118,11 +118,26 @@
 					}
 				}
 
+				// Dossier incomplet : motif de déblocage obligatoire (data-unlock="1").
+				var unlockReason = '';
+
+				if ( '1' === button.getAttribute( 'data-unlock' ) ) {
+					var unlockWrap  = button.closest( '.gacct-op-force-form' );
+					var unlockField = unlockWrap ? unlockWrap.querySelector( '[data-op-field="unlock-reason"]' ) : null;
+					unlockReason = unlockField ? unlockField.value.trim() : '';
+
+					if ( '' === unlockReason ) {
+						showFeedback( 'error', window.gacctOp.i18n.reasonRequired );
+						return;
+					}
+				}
+
 				run( button, 'gacct_op_change_state', {
 					revision_id: revisionId,
 					new_state: button.getAttribute( 'data-state' ),
 					force: force,
-					reason: reason
+					reason: reason,
+					unlock_reason: unlockReason
 				}, function () {
 					window.location.reload();
 				} );
@@ -171,6 +186,40 @@
 						zone.textContent = data.operator_name ? '✓ ' + data.operator_name : '✓ Enregistré';
 					}
 				} );
+				return;
+			}
+
+			if ( 'payment-reminder' === opAction ) {
+				if ( ! window.confirm( 'Envoyer une relance de paiement au client maintenant ?' ) ) {
+					return;
+				}
+
+				var payFeedback = fiche.querySelector( '.gacct-op-pay-feedback' );
+
+				function showPayFeedback( type, message ) {
+					if ( payFeedback ) {
+						payFeedback.className   = 'gacct-op-feedback gacct-op-pay-feedback ' + type;
+						payFeedback.textContent = message;
+					} else {
+						showFeedback( type, message );
+					}
+				}
+
+				button.disabled = true;
+				post( 'gacct_op_payment_reminder', { revision_id: revisionId } )
+					.then( function ( json ) {
+						button.disabled = false;
+						if ( json && json.success ) {
+							showPayFeedback( 'success', 'Relance envoyée à ' + ( ( json.data && json.data.to ) ? json.data.to : '' ) );
+						} else {
+							var msg = ( json && json.data && json.data.message ) ? json.data.message : window.gacctOp.i18n.genericError;
+							showPayFeedback( 'error', msg );
+						}
+					} )
+					.catch( function () {
+						button.disabled = false;
+						showPayFeedback( 'error', window.gacctOp.i18n.genericError );
+					} );
 				return;
 			}
 

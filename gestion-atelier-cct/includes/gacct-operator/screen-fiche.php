@@ -46,7 +46,7 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 
 	if ( ! $revision ) {
 		echo '<div class="wrap gacct-op gacct-op-fiche">';
-		echo '<p class="gacct-op-back"><a href="' . esc_url( gacct_op_console_url() ) . '">&larr; ' . esc_html__( 'Interventions', 'gestion-atelier-cct' ) . '</a></p>';
+		echo '<p class="gacct-op-back"><a href="' . esc_url( gacct_op_console_url( 0, array( 'view' => 'list' ) ) ) . '">&larr; ' . esc_html__( 'Interventions', 'gestion-atelier-cct' ) . '</a></p>';
 		echo '<div class="gacct-op-card"><h2>' . esc_html__( 'Dossier introuvable', 'gestion-atelier-cct' ) . '</h2>';
 		echo '<p>' . esc_html__( 'Aucune fiche ne correspond à cet identifiant.', 'gestion-atelier-cct' ) . '</p></div></div>';
 		return;
@@ -60,10 +60,14 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 
 	$is_cancelled = $order && $order->has_status( array( 'cancelled', 'refunded', 'trash' ) );
 
+	// Dossier incomplet (CDC §4.4) : bandeau + verrou du passage en intervention.
+	$is_incomplete = ( '1' === (string) ( $revision['dossier_incomplet'] ?? '' ) );
+	$reception_url = gacct_op_console_url( 0, array( 'view' => 'reception', 'rev' => $revision_id ) );
+
 	echo '<div class="wrap gacct-op gacct-op-fiche" data-revision-id="' . esc_attr( $revision_id ) . '">';
 
 	// 1. Lien retour.
-	echo '<p class="gacct-op-back"><a href="' . esc_url( gacct_op_console_url() ) . '">&larr; ' . esc_html__( 'Interventions', 'gestion-atelier-cct' ) . '</a></p>';
+	echo '<p class="gacct-op-back"><a href="' . esc_url( gacct_op_console_url( 0, array( 'view' => 'list' ) ) ) . '">&larr; ' . esc_html__( 'Interventions', 'gestion-atelier-cct' ) . '</a></p>';
 
 	echo '<div class="gacct-op-fiche-grid">';
 	echo '<div class="gacct-op-fiche-main">';
@@ -82,6 +86,22 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 
 	if ( ! $order ) {
 		echo '<div class="gacct-op-warning">' . esc_html__( 'Aucune commande liée à ce dossier : les actions sont désactivées (lecture seule).', 'gestion-atelier-cct' ) . '</div>';
+	}
+
+	// Bandeau « dossier incomplet » (CDC §4.4).
+	if ( $is_incomplete ) {
+		$missing_items = gacct_op_missing_items( $revision );
+
+		echo '<div class="gacct-op-warning gacct-op-incomplete">';
+		echo '<strong>' . esc_html__( 'Dossier incomplet', 'gestion-atelier-cct' ) . '</strong> — ' . esc_html__( 'éléments manquants :', 'gestion-atelier-cct' ) . ' ';
+		echo esc_html( $missing_items ? implode( ', ', $missing_items ) : __( '(liste non renseignée)', 'gestion-atelier-cct' ) );
+		echo ' <a class="gacct-op-incomplete-link" href="' . esc_url( $reception_url ) . '">' . esc_html__( 'Compléter la réception', 'gestion-atelier-cct' ) . '</a>';
+		echo '</div>';
+	}
+
+	// État 1 : accès direct à la vue réception du dossier.
+	if ( 1 === $state ) {
+		echo '<p class="gacct-op-reception-cta"><a href="' . esc_url( $reception_url ) . '">' . esc_html__( 'Réceptionner ce colis', 'gestion-atelier-cct' ) . ' &rarr;</a></p>';
 	}
 
 	echo '<dl class="gacct-op-facts">';
@@ -182,6 +202,20 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 					continue; // 6→7 passe par l'upload du rapport, pas par change_state.
 				}
 				$has_action = true;
+
+				// Dossier incomplet : le passage en intervention exige un motif de déblocage (CDC §4.4).
+				if ( 4 === $target && $is_incomplete ) {
+					echo '<div class="gacct-op-force">';
+					echo '<button type="button" class="gacct-op-btn" data-op-action="toggle-force" aria-expanded="false">' . esc_html( $action_label ) . '…</button>';
+					echo '<div class="gacct-op-force-form" hidden>';
+					echo '<p class="gacct-op-muted">' . esc_html__( 'Dossier incomplet : des éléments attendus ne sont pas arrivés.', 'gestion-atelier-cct' ) . '</p>';
+					echo '<label class="gacct-op-label">' . esc_html__( 'Motif de déblocage (obligatoire, journalisé)', 'gestion-atelier-cct' ) . '</label>';
+					echo '<textarea rows="2" data-op-field="unlock-reason"></textarea>';
+					echo '<button type="button" class="gacct-op-btn" data-op-action="change-state" data-state="' . esc_attr( $target ) . '" data-unlock="1">' . esc_html__( 'Débloquer et lancer l\'intervention', 'gestion-atelier-cct' ) . '</button>';
+					echo '</div></div>';
+					continue;
+				}
+
 				echo '<button type="button" class="gacct-op-btn" data-op-action="change-state" data-state="' . esc_attr( $target ) . '">' . esc_html( $action_label ) . '</button>';
 			}
 		}
@@ -212,7 +246,15 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 				echo '<div class="gacct-op-force-form" hidden>';
 				echo '<label class="gacct-op-label">' . esc_html__( 'Motif (obligatoire, journalisé)', 'gestion-atelier-cct' ) . '</label>';
 				echo '<textarea rows="2" data-op-field="force-reason"></textarea>';
-				echo '<button type="button" class="gacct-op-btn" data-op-action="change-state" data-state="' . esc_attr( $target ) . '" data-force="1" data-confirm="1">' . esc_html__( 'Confirmer le forçage', 'gestion-atelier-cct' ) . '</button>';
+
+				// Forçage 3→4 d'un dossier incomplet : motif de déblocage en plus (CDC §4.4).
+				$needs_unlock = ( 4 === $target && $is_incomplete );
+				if ( $needs_unlock ) {
+					echo '<label class="gacct-op-label">' . esc_html__( 'Motif de déblocage du dossier incomplet (obligatoire, journalisé)', 'gestion-atelier-cct' ) . '</label>';
+					echo '<textarea rows="2" data-op-field="unlock-reason"></textarea>';
+				}
+
+				echo '<button type="button" class="gacct-op-btn" data-op-action="change-state" data-state="' . esc_attr( $target ) . '" data-force="1" data-confirm="1"' . ( $needs_unlock ? ' data-unlock="1"' : '' ) . '>' . esc_html__( 'Confirmer le forçage', 'gestion-atelier-cct' ) . '</button>';
 				echo '</div></div>';
 			}
 		}
@@ -316,6 +358,15 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 			echo '<br><a href="' . esc_url( $order->get_checkout_payment_url() ) . '" target="_blank" rel="noopener">' . esc_html__( 'Lien de paiement du solde', 'gestion-atelier-cct' ) . '</a></dd></div>';
 		}
 		echo '</dl>';
+
+		// Relance de paiement manuelle — mêmes conditions que gacct_op_manual_payment_reminder().
+		$can_remind = ( 'bacs' === $order->get_payment_method() && $order->has_status( array( 'on-hold', 'pending' ) ) )
+			|| $order->has_status( array( 'pending', 'failed' ) );
+
+		if ( $can_remind ) {
+			echo '<div class="gacct-op-feedback gacct-op-pay-feedback" aria-live="polite"></div>';
+			echo '<p><button type="button" class="gacct-op-btn secondary" data-op-action="payment-reminder">' . esc_html__( 'Relancer le paiement maintenant', 'gestion-atelier-cct' ) . '</button></p>';
+		}
 
 		if ( current_user_can( 'manage_woocommerce' ) ) {
 			echo '<p><a class="gacct-op-btn secondary" href="' . esc_url( $order->get_edit_order_url() ) . '" target="_blank" rel="noopener">' . esc_html__( 'Ouvrir la commande', 'gestion-atelier-cct' ) . '</a></p>';
