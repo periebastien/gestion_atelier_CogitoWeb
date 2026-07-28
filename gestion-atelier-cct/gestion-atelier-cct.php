@@ -937,7 +937,9 @@ final class GACCT_Plugin {
 					'order_id'         => $order_id,
 					'gacct_validation' => 'success',
 				),
-				home_url( $target_path )
+				// Toujours le chemin canonique (index 0), meme si le client est
+				// arrive par l'ancien lien « devie- » : cette page-la n'existe pas.
+				home_url( trailingslashit( $target_paths[0] ) )
 			)
 		);
 		exit;
