@@ -1076,3 +1076,114 @@ span.flatpickr-weekday {
 	top: auto;
 	margin-top: 10px;
 }
+
+/* =============================================================================
+ *  SÉLECTEUR « VOTRE MATÉRIEL » (voiles déjà suivies chez le client)
+ *  Injecté par le JS juste avant la grille marque/modèle/n° série/taille/ptv,
+ *  visible uniquement si le client connecté a au moins une voile en base.
+ * ========================================================================== */
+
+.gacct-materiel {
+	margin-bottom: 16px;
+}
+
+.gacct-materiel__aide {
+	font-size: 12px;
+	line-height: 1.5;
+	color: var(--gacct-text-muted);
+	margin-bottom: 10px;
+}
+
+.gacct-materiel__liste {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+/* Le thème stylise tous les <button> (fond jaune) : base neutre, comme pour
+   les pastilles de couleur. */
+.gacct-materiel__carte {
+	display: flex !important;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 2px;
+	min-width: 150px;
+	max-width: 220px;
+	padding: 10px 14px !important;
+	background: var(--gacct-surface) !important;
+	border: 1px solid var(--gacct-border) !important;
+	border-radius: var(--gacct-radius);
+	cursor: pointer;
+	font: inherit;
+	color: inherit;
+	text-align: left;
+	transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.gacct-materiel__carte:hover {
+	border-color: var(--gacct-accent) !important;
+}
+
+.gacct-materiel__carte:focus-visible {
+	outline: 2px solid var(--gacct-accent);
+	outline-offset: 2px;
+}
+
+.gacct-materiel__carte.is-active {
+	background: var(--gacct-accent-soft) !important;
+	border-color: var(--gacct-accent) !important;
+}
+
+.gacct-materiel__carte-titre {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--gacct-text);
+	line-height: 1.3;
+}
+
+.gacct-materiel__carte-detail {
+	font-size: 12px;
+	color: var(--gacct-text-muted);
+}
+
+.gacct-materiel__carte--nouveau {
+	flex-direction: row !important;
+	align-items: center;
+	gap: 8px;
+	justify-content: center;
+	color: var(--gacct-text-muted);
+	border-style: dashed !important;
+}
+
+.gacct-materiel__carte--nouveau .gacct-materiel__carte-titre {
+	font-weight: 600;
+	color: inherit;
+}
+
+.gacct-materiel__carte--nouveau.is-active {
+	color: var(--gacct-accent-dark);
+}
+
+.gacct-materiel__carte-icone {
+	flex-shrink: 0;
+}
+
+@media (max-width: 781px) {
+	.gacct-materiel__carte {
+		min-width: 130px;
+		max-width: 45%;
+		flex: 1 1 auto;
+	}
+}
+
+@media (max-width: 480px) {
+	.gacct-materiel__liste {
+		gap: 8px;
+	}
+
+	.gacct-materiel__carte {
+		min-width: 0;
+		max-width: 100%;
+		flex: 1 1 100%;
+	}
+}

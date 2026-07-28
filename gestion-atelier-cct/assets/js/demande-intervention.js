@@ -506,6 +506,253 @@
 		initSelecteurCouleurs();
 
 		/* ---------------------------------------------------------------
+		 * Sélecteur « Votre matériel »
+		 *
+		 * Si le client connecté a déjà des voiles suivies (cfg.materiels),
+		 * on propose des cartes au-dessus du bloc marque/modèle/n° de série/
+		 * taille/ptv/couleur : cliquer une carte préremplit tous ces champs
+		 * (y compris la couleur, via le sélecteur custom déjà en place),
+		 * « Nouvelle voile » les vide. Ne touche jamais aux champs date/
+		 * prestations. `cfg.rematId` (paramètre ?remat=) présélectionne une
+		 * voile au chargement — déjà vérifiée côté serveur comme appartenant
+		 * au client connecté.
+		 * ------------------------------------------------------------- */
+
+		function initSelecteurMateriel() {
+			var materiels = cfg.materiels || [];
+			if ( ! materiels.length ) {
+				return;
+			}
+
+			var champMarque = form.querySelector( '[name="marque"]' );
+			var champModele = form.querySelector( '[name="modele"]' );
+			var champSerie = form.querySelector( '[name="numero_serie"]' );
+			var champTaille = form.querySelector( '[name="taille"]' );
+			var champPtv = form.querySelector( '[name="ptv"]' );
+			var champCouleur = form.querySelector( '[name="' + ( champs.couleur || 'couleur_copy' ) + '"]' );
+
+			// Ancrage : le groupe grid-3 (marque/modèle/n° série/taille/ptv) est le
+			// premier repère fiable du bloc « Votre matériel » dans le DOM.
+			var ancre = form.querySelector( '.grid-3' );
+			if ( ! ancre || ! champMarque ) {
+				return;
+			}
+
+			function remplirChamp( el, valeur ) {
+				if ( ! el ) {
+					return;
+				}
+				valeur = valeur || '';
+
+				if ( el.tagName === 'SELECT' ) {
+					// Champ « Marque » : select-field JetFormBuilder (glossaire), dont les
+					// <option value="..."> sont des slugs ("ozone") alors que la valeur
+					// enregistrée en base peut être le libellé ("Ozone") selon la saisie
+					// d'origine : on cherche d'abord une correspondance exacte, puis
+					// insensible à la casse sur la valeur ET sur le texte de l'option.
+					var match = null;
+					Array.prototype.forEach.call( el.options, function ( opt ) {
+						if ( match || ! valeur ) {
+							return;
+						}
+						if ( opt.value === valeur || opt.text === valeur ) {
+							match = opt;
+						} else if (
+							opt.value.toLowerCase() === valeur.toLowerCase() ||
+							opt.text.toLowerCase() === valeur.toLowerCase()
+						) {
+							match = opt;
+						}
+					} );
+					el.value = match ? match.value : '';
+				} else {
+					el.value = valeur;
+				}
+
+				el.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+				el.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+				// Le select « Marque » est un widget select2 : sa vignette visible
+				// n'écoute que jQuery('change'), pas l'évènement DOM natif.
+				if ( window.jQuery ) {
+					window.jQuery( el ).trigger( 'change' );
+				}
+			}
+
+			function appliquerCouleur( texteCouleur ) {
+				if ( ! champCouleur ) {
+					return;
+				}
+				var noms = ( texteCouleur || '' )
+					.split( /[\s,\/\+\-]+/ )
+					.map( function ( s ) { return s.trim().toLowerCase(); } )
+					.filter( function ( s ) { return s.length; } );
+
+				var couleursConnues = ( cfg.couleurs || [] ).map( function ( c ) { return c.nom; } );
+				// Reconstitue les noms composés ("jaune fluo") avant la découpe
+				// simple, comme côté PHP (gacct_extraire_couleurs) : on cherche
+				// d'abord si le texte brut contient un nom composé entier.
+				var brut = ( texteCouleur || '' ).toLowerCase();
+				var trouvees = [];
+				couleursConnues.forEach( function ( nom ) {
+					if ( brut.indexOf( nom ) > -1 && trouvees.indexOf( nom ) === -1 ) {
+						trouvees.push( nom );
+					}
+				} );
+
+				champCouleur.value = trouvees.join( ', ' );
+				champCouleur.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+				champCouleur.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+
+				// Le sélecteur custom de couleurs lit sa sélection initiale depuis
+				// la valeur du champ au montage ; une fois monté, il ne se
+				// resynchronise pas tout seul sur un changement externe de valeur.
+				// On reconstruit donc sa palette pour refléter la nouvelle sélection.
+				var paletteExistante = champCouleur.parentNode
+					? champCouleur.parentNode.querySelector( '.gacct-couleurs' )
+					: null;
+				if ( paletteExistante ) {
+					paletteExistante.parentNode.removeChild( paletteExistante );
+					initSelecteurCouleurs();
+				}
+			}
+
+			function appliquerVoile( materiel ) {
+				if ( ! materiel ) {
+					remplirChamp( champMarque, '' );
+					remplirChamp( champModele, '' );
+					remplirChamp( champSerie, '' );
+					remplirChamp( champTaille, '' );
+					remplirChamp( champPtv, '' );
+					appliquerCouleur( '' );
+					return;
+				}
+				remplirChamp( champMarque, materiel.marque );
+				remplirChamp( champModele, materiel.modele );
+				remplirChamp( champSerie, materiel.numero_serie );
+				remplirChamp( champTaille, materiel.taille );
+				remplirChamp( champPtv, materiel.ptv );
+				appliquerCouleur( materiel.couleur );
+			}
+
+			var bloc = document.createElement( 'div' );
+			bloc.className = 'gacct-materiel';
+
+			// Pas de titre ici : la carte « Votre matériel » du formulaire porte déjà
+			// ce libellé (icône étoile) juste au-dessus de ce bloc. Un second titre
+			// identique créerait une redite visuelle.
+			var aide = document.createElement( 'div' );
+			aide.className = 'gacct-materiel__aide';
+			aide.textContent = i18n.materielAide || '';
+			bloc.appendChild( aide );
+
+			var liste = document.createElement( 'div' );
+			liste.className = 'gacct-materiel__liste';
+			liste.setAttribute( 'role', 'radiogroup' );
+			liste.setAttribute( 'aria-label', i18n.materielTitre || 'Votre matériel' );
+			bloc.appendChild( liste );
+
+			/**
+			 * Le champ Marque est un select-field JetFormBuilder dont la valeur
+			 * enregistrée est le slug de l'<option> ("gin-gliders"), pas son
+			 * libellé affiché ("Gin Gliders") : on retrouve ce libellé pour
+			 * l'affichage de la carte, avec repli sur la valeur brute si elle ne
+			 * correspond à aucune option connue (marque saisie librement par le
+			 * passé, avant l'ajout du glossaire).
+			 */
+			function libelleMarque( valeur ) {
+				if ( ! valeur || ! champMarque ) {
+					return valeur || '';
+				}
+				var trouve = null;
+				Array.prototype.forEach.call( champMarque.options, function ( opt ) {
+					if ( trouve ) {
+						return;
+					}
+					if ( opt.value.toLowerCase() === valeur.toLowerCase() ) {
+						trouve = opt.text;
+					}
+				} );
+				return trouve || valeur;
+			}
+
+			var cartes = [];
+
+			function selectionner( carte ) {
+				cartes.forEach( function ( c ) {
+					c.el.classList.toggle( 'is-active', c === carte );
+					c.el.setAttribute( 'aria-checked', c === carte ? 'true' : 'false' );
+				} );
+				appliquerVoile( carte.materiel );
+			}
+
+			materiels.forEach( function ( materiel ) {
+				var carte = document.createElement( 'button' );
+				carte.type = 'button';
+				carte.className = 'gacct-materiel__carte';
+				carte.setAttribute( 'role', 'radio' );
+				carte.setAttribute( 'aria-checked', 'false' );
+				carte.innerHTML =
+					'<span class="gacct-materiel__carte-titre">' +
+					escapeHtml( ( libelleMarque( materiel.marque ) || '' ) + ' ' + ( materiel.modele || '' ) ).trim() +
+					'</span>' +
+					'<span class="gacct-materiel__carte-detail">' +
+					escapeHtml( materiel.numero_serie || '' ) +
+					'</span>';
+
+				var entree = { el: carte, materiel: materiel };
+				carte.addEventListener( 'click', function () {
+					selectionner( entree );
+				} );
+				cartes.push( entree );
+				liste.appendChild( carte );
+			} );
+
+			var carteNouvelle = document.createElement( 'button' );
+			carteNouvelle.type = 'button';
+			carteNouvelle.className = 'gacct-materiel__carte gacct-materiel__carte--nouveau';
+			carteNouvelle.setAttribute( 'role', 'radio' );
+			carteNouvelle.setAttribute( 'aria-checked', 'false' );
+			carteNouvelle.innerHTML =
+				'<svg class="gacct-materiel__carte-icone" viewBox="0 0 24 24" width="20" height="20" ' +
+				'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+				'<line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>' +
+				'<span class="gacct-materiel__carte-titre">' +
+				escapeHtml( i18n.materielNouveau || 'Nouvelle voile' ) +
+				'</span>';
+			var entreeNouvelle = { el: carteNouvelle, materiel: null };
+			carteNouvelle.addEventListener( 'click', function () {
+				selectionner( entreeNouvelle );
+			} );
+			cartes.push( entreeNouvelle );
+			liste.appendChild( carteNouvelle );
+
+			ancre.parentNode.insertBefore( bloc, ancre );
+
+			// Présélection via ?remat=<id>, déjà validée côté serveur (appartenance
+			// au client connecté). Ignoré silencieusement si l'ID n'est plus dans
+			// la liste (ex. matériel purgé entre-temps).
+			if ( cfg.rematId ) {
+				var cible = null;
+				cartes.forEach( function ( c ) {
+					if ( c.materiel && Number( c.materiel.revision_id ) === Number( cfg.rematId ) ) {
+						cible = c;
+					}
+				} );
+				if ( cible ) {
+					selectionner( cible );
+				}
+			}
+		}
+
+		function escapeHtml( str ) {
+			var div = document.createElement( 'div' );
+			div.textContent = str == null ? '' : String( str );
+			return div.innerHTML;
+		}
+
+		initSelecteurMateriel();
+
+		/* ---------------------------------------------------------------
 		 * Accordéons sur les groupes de prestations
 		 * ------------------------------------------------------------- */
 

@@ -776,3 +776,130 @@ function jwcct_sitemap_remove_technical_cpts( $post_types ) {
 	}
 	return $post_types;
 }
+
+
+/* =============================================================================
+ *  SOUS-PAGE « MON MATÉRIEL » (espace client, Profile Builder JetEngine)
+ *  Query 22 / Dynamic Table 23 : une ligne par voile distincte (numéro de série
+ *  normalisé), avec historique des révisions et bouton « Recommander ».
+ * ============================================================================= */
+
+/**
+ * URL de la sous-page « Détail de la commande » de l'espace client (Profile Builder).
+ *
+ * Reprend exactement le mécanisme JetEngine utilisé pour construire les URLs de
+ * sous-pages du compte (cf. `Settings::get_subpage_url()`), avec repli sur l'URL
+ * classique si le module Profile Builder n'est pas disponible pour une raison
+ * quelconque (sécurité : ne jamais fatal-error dans un callback de listing).
+ *
+ * @param string $slug Slug de la sous-page cible.
+ * @return string URL absolue, sans slash final, prête à recevoir des paramètres GET.
+ */
+function jwcct_get_compte_subpage_url( $slug ) {
+	$url = false;
+
+	if ( class_exists( '\Jet_Engine\Modules\Profile_Builder\Settings' ) ) {
+		$settings = new \Jet_Engine\Modules\Profile_Builder\Settings();
+		$url      = $settings->get_subpage_url( $slug );
+	}
+
+	if ( ! $url ) {
+		$url = trailingslashit( home_url( '/mon-compte/' . $slug ) );
+	}
+
+	return untrailingslashit( $url );
+}
+
+add_filter( 'jet-engine/listings/allowed-callbacks', function( $callbacks ) {
+	$callbacks['jwcct_render_materiel_client_info']  = 'JWCCT: Matériel client (marque/modèle/S-N)';
+	$callbacks['jwcct_render_materiel_historique']    = 'JWCCT: Historique des révisions (liens)';
+	$callbacks['jwcct_render_recommander_bouton']     = 'JWCCT: Bouton Recommander une révision';
+	return $callbacks;
+} );
+
+/**
+ * Colonne « Numéro de série » du tableau Mon Matériel : affiche le numéro de
+ * série normalisé (colonne `num_serie_norm` de la query 22) qui sert de clé de
+ * regroupement des révisions d'une même voile.
+ *
+ * @param string $num_serie_norm Numéro de série normalisé (UPPER(TRIM(...))).
+ * @return string HTML.
+ */
+function jwcct_render_materiel_client_info( $num_serie_norm ) {
+	return sprintf(
+		'<div class="voile-model">S/N : %s</div>',
+		esc_html( $num_serie_norm ?: '—' )
+	);
+}
+
+/**
+ * Colonne « Historique » du tableau Mon Matériel.
+ *
+ * Transforme la chaîne `historique` produite par la query 22
+ * (GROUP_CONCAT de "revision_id|timestamp_unix|order_id", séparateur `;;`)
+ * en une liste de liens datés vers la sous-page « Détail de la commande »
+ * (paramètre GET `order_id`, et `revision_id` en complément pour les dossiers
+ * sans commande liée — ex. données de démonstration).
+ *
+ * @param string $historique Valeur brute de la colonne `historique`.
+ * @return string HTML (liste de liens).
+ */
+function jwcct_render_materiel_historique( $historique ) {
+	if ( empty( $historique ) ) {
+		return '';
+	}
+
+	$base_url = jwcct_get_compte_subpage_url( 'detail-commande' );
+	$entrees  = explode( ';;', $historique );
+	$liens    = array();
+
+	foreach ( $entrees as $entree ) {
+		$parts = explode( '|', $entree );
+		if ( count( $parts ) < 3 ) {
+			continue;
+		}
+		list( $revision_id, $timestamp, $order_id ) = $parts;
+
+		$args = array( 'revision_id' => (int) $revision_id );
+		if ( ! empty( $order_id ) && (int) $order_id > 0 ) {
+			$args['order_id'] = (int) $order_id;
+		}
+
+		$url            = add_query_arg( $args, $base_url );
+		$formatted_date = is_numeric( $timestamp ) ? date_i18n( 'j F Y', (int) $timestamp ) : '';
+
+		$liens[] = sprintf(
+			'<a href="%s" class="cmd-link"><span class="cmd-time">%s</span></a>',
+			esc_url( $url ),
+			esc_html( $formatted_date )
+		);
+	}
+
+	if ( empty( $liens ) ) {
+		return '';
+	}
+
+	return '<div class="historique-revisions">' . implode( '', $liens ) . '</div>';
+}
+
+/**
+ * Colonne « Recommander » du tableau Mon Matériel : bouton vers le formulaire de
+ * demande d'intervention, pré-rempli via le paramètre GET `remat` (identifiant de
+ * la révision la plus récente pour cette voile). Nom de paramètre imposé par un
+ * autre chantier : NE PAS renommer.
+ *
+ * @param int|string $derniere_revision_id ID de la révision la plus récente.
+ * @return string HTML (bouton).
+ */
+function jwcct_render_recommander_bouton( $derniere_revision_id ) {
+	if ( empty( $derniere_revision_id ) ) {
+		return '';
+	}
+
+	$url = add_query_arg( 'remat', (int) $derniere_revision_id, home_url( '/demande-intervention/' ) );
+
+	return sprintf(
+		'<a href="%s" class="btn-recommander">Recommander une révision</a>',
+		esc_url( $url )
+	);
+}

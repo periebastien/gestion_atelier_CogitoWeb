@@ -151,6 +151,7 @@ function gacct_demande_build_data() {
 		'accordeonOuvert' => 'revisions_controle',
 		'prestations'     => gacct_demande_prestations_map(),
 		'dispos'          => gacct_demande_availability_map(),
+		'materiels'       => gacct_demande_materiels_client(),
 		'i18n'            => array(
 			'aucuneSelection' => __( 'Aucune prestation sélectionnée', 'gestion-atelier-cct' ),
 			'erreurDate'      => __( "Vous devez sélectionner une date d'intervention", 'gestion-atelier-cct' ),
@@ -163,10 +164,151 @@ function gacct_demande_build_data() {
 			'couleurApercu'   => __( 'Aperçu', 'gestion-atelier-cct' ),
 			'acompte'         => __( 'Acompte à payer', 'gestion-atelier-cct' ),
 			'acompteNote'     => __( 'Montant réglé à la commande. Le solde sera à régler une fois l\'intervention terminée.', 'gestion-atelier-cct' ),
+			'materielTitre'   => __( 'Votre matériel', 'gestion-atelier-cct' ),
+			'materielNouveau' => __( 'Nouvelle voile', 'gestion-atelier-cct' ),
+			'materielAide'    => __( 'Sélectionnez une voile déjà suivie chez nous pour préremplir sa fiche, ou déclarez une nouvelle voile.', 'gestion-atelier-cct' ),
 		),
 	);
 
+	$remat_id = gacct_demande_remat_id();
+	if ( $remat_id ) {
+		$data['rematId'] = $remat_id;
+	}
+
 	return apply_filters( 'gacct_demande_data', $data );
+}
+
+/**
+ * Liste des voiles deja suivies (revisions publiees) pour le client connecte,
+ * une entree par numero de serie (dedoublonnage : on garde les valeurs de la
+ * revision la plus recente en cas de plusieurs passages en atelier).
+ * Vide si l'utilisateur n'est pas connecte ou n'a aucune voile.
+ *
+ * @return array<int,array<string,mixed>>
+ */
+function gacct_demande_materiels_client() {
+	$materiels = array();
+
+	$user_id = get_current_user_id();
+	if ( ! $user_id ) {
+		return $materiels;
+	}
+
+	global $wpdb;
+
+	$revision_table = gacct_demande_table_name( 'revision' );
+
+	if ( ! gacct_demande_table_exists( $revision_table ) ) {
+		return $materiels;
+	}
+
+	// Etape 1 : pour chaque numero de serie (normalise), l'_ID de la revision
+	// la plus recente. GROUP_CONCAT + SUBSTRING_INDEX est evite ici : la colonne
+	// `couleur` contient elle-meme des virgules ("bleu, blanc"), ce qui rendrait
+	// tout separateur base sur la virgule ambigu.
+	$ids_sql = $wpdb->prepare(
+		"
+		SELECT SUBSTRING_INDEX( GROUP_CONCAT( r._ID ORDER BY r.cct_created DESC ), ',', 1 ) AS latest_id
+		FROM {$revision_table} r
+		INNER JOIN {$wpdb->prefix}jet_rel_default rel
+			ON rel.rel_id = '13' AND rel.parent_object_id = %d AND rel.child_object_id = r._ID
+		WHERE r.cct_status = %s
+			AND r.numero_de_serie IS NOT NULL
+			AND TRIM(r.numero_de_serie) != ''
+		GROUP BY UPPER(TRIM(r.numero_de_serie))
+		ORDER BY MAX( r.cct_created ) DESC
+		",
+		$user_id,
+		'publish'
+	);
+
+	$latest_ids = array_map( 'absint', (array) $wpdb->get_col( $ids_sql ) );
+	$latest_ids = array_filter( $latest_ids );
+
+	if ( ! $latest_ids ) {
+		return $materiels;
+	}
+
+	// Etape 2 : les valeurs completes de chacune de ces revisions, dans l'ordre
+	// deja etabli (plus recente en tete).
+	$placeholders = implode( ',', array_fill( 0, count( $latest_ids ), '%d' ) );
+	$rows_sql     = $wpdb->prepare(
+		"
+		SELECT _ID, marque, modele, numero_de_serie, taille, couleur, p_t_v
+		FROM {$revision_table}
+		WHERE _ID IN ( {$placeholders} )
+		",
+		$latest_ids
+	);
+
+	$rows_by_id = array();
+	foreach ( (array) $wpdb->get_results( $rows_sql, ARRAY_A ) as $row ) {
+		$rows_by_id[ (int) $row['_ID'] ] = $row;
+	}
+
+	foreach ( $latest_ids as $id ) {
+		if ( empty( $rows_by_id[ $id ] ) ) {
+			continue;
+		}
+		$row         = $rows_by_id[ $id ];
+		$materiels[] = array(
+			'revision_id'  => (int) $row['_ID'],
+			'marque'       => (string) $row['marque'],
+			'modele'       => (string) $row['modele'],
+			'numero_serie' => (string) $row['numero_de_serie'],
+			'taille'       => (string) $row['taille'],
+			'couleur'      => (string) $row['couleur'],
+			'ptv'          => (string) $row['p_t_v'],
+		);
+	}
+
+	return $materiels;
+}
+
+/**
+ * Valide le parametre d'URL `?remat=<revision_id>` : ne renvoie l'ID que si la
+ * revision existe, est publiee et appartient bien au client connecte (relation
+ * 13). Silencieux dans tous les autres cas (utilisateur non connecte, revision
+ * d'un autre client, ID invalide) : jamais d'erreur affichee au client.
+ *
+ * @return int 0 si absent/invalide.
+ */
+function gacct_demande_remat_id() {
+	if ( empty( $_GET['remat'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		return 0;
+	}
+
+	$remat_id = absint( wp_unslash( $_GET['remat'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+	$user_id = get_current_user_id();
+	if ( ! $remat_id || ! $user_id ) {
+		return 0;
+	}
+
+	global $wpdb;
+
+	$revision_table = gacct_demande_table_name( 'revision' );
+
+	if ( ! gacct_demande_table_exists( $revision_table ) ) {
+		return 0;
+	}
+
+	$found = $wpdb->get_var(
+		$wpdb->prepare(
+			"
+			SELECT r._ID
+			FROM {$revision_table} r
+			INNER JOIN {$wpdb->prefix}jet_rel_default rel
+				ON rel.rel_id = '13' AND rel.parent_object_id = %d AND rel.child_object_id = r._ID
+			WHERE r._ID = %d AND r.cct_status = %s
+			",
+			$user_id,
+			$remat_id,
+			'publish'
+		)
+	);
+
+	return $found ? (int) $found : 0;
 }
 
 /**
