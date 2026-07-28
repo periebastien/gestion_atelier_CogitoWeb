@@ -1461,8 +1461,13 @@ final class GACCT_Plugin {
 			return;
 		}
 
-		$order_id = $this->related_object_id( $revision_id, $this->relation_id( 'revision_to_order', self::REL_REV_ORDER ) );
-		$order    = $order_id ? wc_get_order( $order_id ) : false;
+		// Colonne order_id de la révision d'abord (source de vérité du reste du plugin),
+		// relation JetEngine 12 en repli : si les deux divergent, les emails partaient dans le vide.
+		$order_id = isset( $revision['order_id'] ) ? absint( $revision['order_id'] ) : 0;
+		if ( ! $order_id ) {
+			$order_id = $this->related_object_id( $revision_id, $this->relation_id( 'revision_to_order', self::REL_REV_ORDER ) );
+		}
+		$order = $order_id ? wc_get_order( $order_id ) : false;
 
 		if ( ! $order ) {
 			return;

@@ -129,11 +129,12 @@ function gacct_op_render_today_screen() {
 		}
 	}
 
-	// Bloc 2 : sous-groupes états 2, 3, 5.
+	// Bloc 2 : sous-groupes états 2, 3, 5, 7.
 	$workshop_groups = array(
 		2 => array( 'title' => __( 'À diagnostiquer', 'gestion-atelier-cct' ), 'items' => array() ),
 		3 => array( 'title' => __( 'Travaux à faire', 'gestion-atelier-cct' ), 'items' => array() ),
 		5 => array( 'title' => __( 'Travaux à finir (décision devis rendue)', 'gestion-atelier-cct' ), 'items' => array() ),
+		7 => array( 'title' => __( 'Colis à réexpédier', 'gestion-atelier-cct' ), 'items' => array() ),
 	);
 
 	foreach ( array_keys( $workshop_groups ) as $state ) {

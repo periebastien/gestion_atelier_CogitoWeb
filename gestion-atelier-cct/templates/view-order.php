@@ -32,8 +32,17 @@ $vo_fmt = static function ( $amount ) {
 $is_bacs_waiting = ( 'bacs' === $d['variant'] );
 $is_dead         = $order->has_status( array( 'cancelled', 'refunded', 'failed' ) );
 
-// Barre de progression : 9 étapes, 0 à 8.
-$pct       = null === $etat ? 0 : (int) round( ( min( 8, $etat ) + 1 ) / 9 * 100 );
+// Barre de progression : 9 étapes avec devis, 7 sans (les états 4 et 5 sont masqués).
+$has_quote  = function_exists( 'gacct_quote_has_quote_context' ) ? gacct_quote_has_quote_context( $order, $etat ) : true;
+$step_total = $has_quote ? 9 : 7;
+if ( null === $etat ) {
+	$step_pos = 0;
+} elseif ( $has_quote || $etat <= 3 ) {
+	$step_pos = min( 8, $etat ) + 1;
+} else {
+	$step_pos = $etat - 1; // 6→5, 7→6, 8→7 sur la frise à 7 étapes.
+}
+$pct       = null === $etat ? 0 : (int) round( $step_pos / $step_total * 100 );
 $state_txt = null === $etat ? '' : ( isset( $labels[ $etat ] ) ? $labels[ $etat ] : '' );
 $needs_you = in_array( $etat, array( 0, 4, 6 ), true );
 
@@ -75,7 +84,7 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 			</div>
 			<p class="gacct-vo-state">
 				<strong><?php echo esc_html( $state_txt ); ?></strong>
-				<span><?php echo esc_html( sprintf( __( 'étape %1$d sur %2$d', 'gestion-atelier-cct' ), min( 8, $etat ) + 1, 9 ) ); ?></span>
+				<span><?php echo esc_html( sprintf( __( 'étape %1$d sur %2$d', 'gestion-atelier-cct' ), $step_pos, $step_total ) ); ?></span>
 			</p>
 		<?php endif; ?>
 	</div>
