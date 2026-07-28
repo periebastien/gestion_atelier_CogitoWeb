@@ -1160,20 +1160,9 @@ function gacct_pay_delete_cct_relations( $revision_id, $occupation_id, $order_id
  *  PAGE ADMIN "PAIEMENTS & RELANCES"
  * ============================================================================= */
 
-add_action( 'admin_menu', 'gacct_pay_register_admin_page', 20 );
-
-function gacct_pay_register_admin_page() {
-	$capability = apply_filters( 'gacct_admin_capability', 'manage_options' );
-
-	add_submenu_page(
-		GACCT_OP_MENU_SLUG,
-		__( 'Paiements & relances', 'gestion-atelier-cct' ),
-		__( 'Paiements & relances', 'gestion-atelier-cct' ),
-		$capability,
-		GACCT_PAY_PAGE_SLUG,
-		'gacct_pay_render_admin_page'
-	);
-}
+// Depuis le 28/07/2026, cette page est un ONGLET de « Gestion Atelier >
+// Configuration » (GACCT_Plugin::config_tabs, onglet `paiements`) — plus de
+// sous-menu dédié. L'ancienne URL ?page=gacct-payments est redirigée.
 
 function gacct_pay_handle_admin_save() {
 	if ( ! isset( $_POST['_gacct_payments_nonce'] ) || ! wp_verify_nonce( sanitize_key( $_POST['_gacct_payments_nonce'] ), GACCT_PAY_NONCE ) ) {
@@ -1251,7 +1240,7 @@ function gacct_pay_render_admin_page() {
 			</div>
 		<?php endif; ?>
 
-		<form class="gacct-form" method="post" action="<?php echo esc_url( admin_url( 'admin.php?page=' . GACCT_PAY_PAGE_SLUG ) ); ?>">
+		<form class="gacct-form" method="post" action="<?php echo esc_url( GACCT_Plugin::config_tab_url( 'paiements' ) ); ?>">
 			<?php wp_nonce_field( GACCT_PAY_NONCE, '_gacct_payments_nonce' ); ?>
 
 			<h2><?php esc_html_e( 'Reference de commande', 'gestion-atelier-cct' ); ?></h2>

@@ -30,6 +30,7 @@ final class GACCT_Plugin {
 	const GENERATOR_SLUG   = 'gacct-generator';
 	const SETTINGS_SLUG    = 'gacct-settings';
 	const NOTIFICATIONS_SLUG  = 'gacct-notifications';
+	const CONFIG_SLUG      = 'gacct-config';
 	const AJAX_ACTION      = 'gacct_calendar_events';
 	const AJAX_NONCE       = 'gacct_calendar_nonce';
 	const GENERATOR_NONCE  = 'gacct_generate_openings';
@@ -106,6 +107,7 @@ final class GACCT_Plugin {
 
 	private function __construct() {
 		add_action( 'admin_menu', array( $this, 'register_admin_menu' ) );
+		add_action( 'admin_init', array( $this, 'redirect_legacy_admin_pages' ), 2 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 		add_action( 'wp_ajax_' . self::AJAX_ACTION, array( $this, 'ajax_calendar_events' ) );
 		add_action( 'jet-engine/custom-content-types/updated-item/revision', array( $this, 'handle_revision_updated' ), 10, 3 );
@@ -160,41 +162,102 @@ final class GACCT_Plugin {
 			'admin.php?page=' . GACCT_OP_MENU_SLUG . '&view=planning'
 		);
 
-		$this->admin_pages['dashboard'] = add_submenu_page(
+		// Tout le paramétrage vit dans UN seul écran à onglets (décision 28/07/2026) :
+		// Atelier, Ouvertures, Notifications, Paiements & relances. L'ancien
+		// « Tableau de bord » (calendrier admin) n'a plus d'entrée : la vue
+		// Planning de la console le remplace. Anciennes URL redirigées
+		// (redirect_legacy_admin_pages).
+		$this->admin_pages['config'] = add_submenu_page(
 			GACCT_OP_MENU_SLUG,
-			__( 'Tableau de bord', 'gestion-atelier-cct' ),
-			__( 'Tableau de bord', 'gestion-atelier-cct' ),
-			$capability,
-			self::MENU_SLUG,
-			array( $this, 'render_dashboard_page' )
-		);
-
-		$this->admin_pages['generator'] = add_submenu_page(
-			GACCT_OP_MENU_SLUG,
-			__( 'Generer des ouvertures', 'gestion-atelier-cct' ),
-			__( 'Generer des ouvertures', 'gestion-atelier-cct' ),
-			$capability,
-			self::GENERATOR_SLUG,
-			array( $this, 'render_generator_page' )
-		);
-
-		$this->admin_pages['settings'] = add_submenu_page(
-			GACCT_OP_MENU_SLUG,
-			__( 'Configuration atelier', 'gestion-atelier-cct' ),
+			__( 'Configuration', 'gestion-atelier-cct' ),
 			__( 'Configuration', 'gestion-atelier-cct' ),
 			$capability,
-			self::SETTINGS_SLUG,
-			array( $this, 'render_settings_page' )
+			self::CONFIG_SLUG,
+			array( $this, 'render_config_page' )
+		);
+	}
+
+	/**
+	 * Onglets de l'écran Configuration : clé → [ libellé, callback ].
+	 *
+	 * @return array<string,array{0:string,1:callable}>
+	 */
+	public function config_tabs() {
+		$tabs = array(
+			'atelier'       => array( __( 'Atelier', 'gestion-atelier-cct' ), array( $this, 'render_settings_page' ) ),
+			'ouvertures'    => array( __( 'Ouvertures', 'gestion-atelier-cct' ), array( $this, 'render_generator_page' ) ),
+			'notifications' => array( __( 'Notifications', 'gestion-atelier-cct' ), array( $this, 'render_notifications_page' ) ),
 		);
 
-		$this->admin_pages['notifications'] = add_submenu_page(
-			GACCT_OP_MENU_SLUG,
-			__( 'Notifications atelier', 'gestion-atelier-cct' ),
-			__( 'Notifications', 'gestion-atelier-cct' ),
-			$capability,
-			self::NOTIFICATIONS_SLUG,
-			array( $this, 'render_notifications_page' )
+		if ( function_exists( 'gacct_pay_render_admin_page' ) ) {
+			$tabs['paiements'] = array( __( 'Paiements & relances', 'gestion-atelier-cct' ), 'gacct_pay_render_admin_page' );
+		}
+
+		return apply_filters( 'gacct_config_tabs', $tabs );
+	}
+
+	/**
+	 * URL d'un onglet de l'écran Configuration.
+	 */
+	public static function config_tab_url( $tab ) {
+		return add_query_arg(
+			array(
+				'page' => self::CONFIG_SLUG,
+				'tab'  => $tab,
+			),
+			admin_url( 'admin.php' )
 		);
+	}
+
+	public function render_config_page() {
+		if ( ! current_user_can( $this->capability() ) ) {
+			wp_die( esc_html__( 'Acces refuse.', 'gestion-atelier-cct' ) );
+		}
+
+		$tabs    = $this->config_tabs();
+		$current = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
+
+		if ( ! isset( $tabs[ $current ] ) ) {
+			$current = array_key_first( $tabs );
+		}
+
+		echo '<div class="wrap gacct-config-tabs-wrap">';
+		echo '<h1>' . esc_html__( 'Gestion Atelier — Configuration', 'gestion-atelier-cct' ) . '</h1>';
+		echo '<nav class="nav-tab-wrapper">';
+
+		foreach ( $tabs as $key => $tab ) {
+			$class = 'nav-tab' . ( $key === $current ? ' nav-tab-active' : '' );
+			echo '<a class="' . esc_attr( $class ) . '" href="' . esc_url( self::config_tab_url( $key ) ) . '">' . esc_html( $tab[0] ) . '</a>';
+		}
+
+		echo '</nav>';
+		echo '</div>';
+
+		call_user_func( $tabs[ $current ][1] );
+	}
+
+	/**
+	 * Anciennes URL d'admin (pages fusionnées dans Configuration) → nouvel onglet.
+	 */
+	public function redirect_legacy_admin_pages() {
+		if ( wp_doing_ajax() || empty( $_GET['page'] ) ) {
+			return;
+		}
+
+		$map = array(
+			self::MENU_SLUG           => add_query_arg( array( 'page' => GACCT_OP_MENU_SLUG, 'view' => 'planning' ), admin_url( 'admin.php' ) ),
+			self::GENERATOR_SLUG      => self::config_tab_url( 'ouvertures' ),
+			self::SETTINGS_SLUG       => self::config_tab_url( 'atelier' ),
+			self::NOTIFICATIONS_SLUG  => self::config_tab_url( 'notifications' ),
+			'gacct-payments'          => self::config_tab_url( 'paiements' ),
+		);
+
+		$page = sanitize_key( wp_unslash( $_GET['page'] ) );
+
+		if ( isset( $map[ $page ] ) ) {
+			wp_safe_redirect( $map[ $page ] );
+			exit;
+		}
 	}
 
 	public function enqueue_admin_assets( $hook_suffix ) {
@@ -209,46 +272,9 @@ final class GACCT_Plugin {
 			self::VERSION
 		);
 
-		if ( $hook_suffix !== $this->admin_pages['dashboard'] ) {
-			return;
-		}
-
-		// FullCalendar vendored (assets/vendor/fullcalendar) — plus de CDN (white-label).
-		wp_enqueue_script(
-			'fullcalendar',
-			plugins_url( 'assets/vendor/fullcalendar/index.global.min.js', __FILE__ ),
-			array(),
-			'6.1.15',
-			true
-		);
-
-		wp_enqueue_script(
-			'fullcalendar-locale-fr',
-			plugins_url( 'assets/vendor/fullcalendar/fr.global.min.js', __FILE__ ),
-			array( 'fullcalendar' ),
-			'6.1.15',
-			true
-		);
-
-		wp_enqueue_script(
-			'gacct-admin-calendar',
-			plugins_url( 'assets/admin-calendar.js', __FILE__ ),
-			array( 'fullcalendar' ),
-			self::VERSION,
-			true
-		);
-
-		wp_localize_script(
-			'gacct-admin-calendar',
-			'GACCTCalendar',
-			array(
-				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'action'  => self::AJAX_ACTION,
-				'nonce'   => wp_create_nonce( self::AJAX_NONCE ),
-				'locale'  => substr( get_user_locale(), 0, 2 ),
-				'openingTime' => $this->opening_time(),
-			)
-		);
+		// L'ancien « Tableau de bord » (calendrier admin) n'a plus de page dédiée :
+		// la vue Planning de la console le remplace. render_dashboard_page(),
+		// assets/admin-calendar.js et l'endpoint AJAX restent en place au cas où.
 	}
 
 	public function render_dashboard_page() {
@@ -282,7 +308,7 @@ final class GACCT_Plugin {
 					<strong><?php esc_html_e( 'Disponibilites', 'gestion-atelier-cct' ); ?></strong>
 					<span><?php esc_html_e( 'capacite CCT moins occupations reservees', 'gestion-atelier-cct' ); ?></span>
 				</div>
-				<a class="button button-primary" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::GENERATOR_SLUG ) ); ?>">
+				<a class="button button-primary" href="<?php echo esc_url( self::config_tab_url( 'ouvertures' ) ); ?>">
 					<?php esc_html_e( 'Generer des ouvertures', 'gestion-atelier-cct' ); ?>
 				</a>
 			</div>
@@ -309,7 +335,7 @@ final class GACCT_Plugin {
 
 			<?php $this->render_generator_notice( $result ); ?>
 
-			<form class="gacct-form" method="post" action="<?php echo esc_url( admin_url( 'admin.php?page=' . self::GENERATOR_SLUG ) ); ?>">
+			<form class="gacct-form" method="post" action="<?php echo esc_url( self::config_tab_url( 'ouvertures' ) ); ?>">
 				<?php wp_nonce_field( self::GENERATOR_NONCE, '_gacct_nonce' ); ?>
 
 				<table class="form-table" role="presentation">
@@ -365,7 +391,7 @@ final class GACCT_Plugin {
 
 			<?php $this->render_settings_notice( $result ); ?>
 
-			<form class="gacct-form" method="post" action="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SETTINGS_SLUG ) ); ?>">
+			<form class="gacct-form" method="post" action="<?php echo esc_url( self::config_tab_url( 'atelier' ) ); ?>">
 				<?php wp_nonce_field( self::SETTINGS_NONCE, '_gacct_settings_nonce' ); ?>
 
 				<table class="form-table" role="presentation">
@@ -473,7 +499,7 @@ final class GACCT_Plugin {
 
 			<?php $this->render_notifications_notice( $result ); ?>
 
-			<form class="gacct-form" method="post" action="<?php echo esc_url( admin_url( 'admin.php?page=' . self::NOTIFICATIONS_SLUG ) ); ?>">
+			<form class="gacct-form" method="post" action="<?php echo esc_url( self::config_tab_url( 'notifications' ) ); ?>">
 				<?php wp_nonce_field( self::NOTIFICATIONS_NONCE, '_gacct_notifications_nonce' ); ?>
 
 				<table class="form-table" role="presentation">
