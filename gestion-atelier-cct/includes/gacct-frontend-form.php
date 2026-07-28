@@ -179,8 +179,41 @@ function gacct_demande_build_data() {
 }
 
 /**
+ * Fragment SQL construisant la signature "couleurs" d'une colonne, insensible
+ * a l'ordre de saisie du client (ex. "rouge, noir" et "noir, rouge" produisent
+ * la meme signature). La palette est fermee (15 couleurs, source unique
+ * gacct_couleurs_voile() dans gacct-frontend.php) : on genere ici un test de
+ * presence (FIND_IN_SET) par couleur, dans l'ordre de cette palette, plutot
+ * que de trier en SQL (MariaDB n'a pas de split/sort natif sur une liste).
+ *
+ * Doit produire exactement la meme cle que la GROUP BY de la query JetEngine
+ * 22 (Mon Materiel) : si la palette change, les deux se regenerent ensemble.
+ *
+ * NB : REGEXP_REPLACE (pas REPLACE) - le validateur SQL "advanced mode" de ce
+ * JetEngine bloque le token REPLACE (pense a REPLACE INTO) meme utilise comme
+ * simple fonction de chaine ; sans objet ici (requete PHP classique, non en
+ * advanced_mode), mais on garde la meme fonction que la query 22 par coherence.
+ *
+ * @param string $colonne Expression SQL de la colonne `couleur` (deja
+ *                        qualifiee, ex. "r.couleur").
+ * @return string Expression SQL `CONCAT(...)`.
+ */
+function gacct_demande_couleur_signature_sql( $colonne ) {
+	$parts = array();
+
+	foreach ( array_keys( gacct_couleurs_voile() ) as $nom ) {
+		$nom_sql = esc_sql( $nom );
+		$parts[] = "IF(FIND_IN_SET('{$nom_sql}', REGEXP_REPLACE({$colonne}, ', ', ','))>0,'{$nom_sql};','')";
+	}
+
+	return 'CONCAT(' . implode( ',', $parts ) . ')';
+}
+
+/**
  * Liste des voiles deja suivies (revisions publiees) pour le client connecte,
- * une entree par numero de serie (dedoublonnage : on garde les valeurs de la
+ * une entree par voile (dedoublonnage : marque + modele normalise + taille
+ * normalisee + signature couleurs insensible a l'ordre — meme cle que le
+ * tableau "Mon Materiel", query JetEngine 22 — on garde les valeurs de la
  * revision la plus recente en cas de plusieurs passages en atelier).
  * Vide si l'utilisateur n'est pas connecte ou n'a aucune voile.
  *
@@ -202,10 +235,17 @@ function gacct_demande_materiels_client() {
 		return $materiels;
 	}
 
-	// Etape 1 : pour chaque numero de serie (normalise), l'_ID de la revision
-	// la plus recente. GROUP_CONCAT + SUBSTRING_INDEX est evite ici : la colonne
-	// `couleur` contient elle-meme des virgules ("bleu, blanc"), ce qui rendrait
-	// tout separateur base sur la virgule ambigu.
+	if ( ! function_exists( 'gacct_couleurs_voile' ) ) {
+		return $materiels;
+	}
+
+	$couleur_sig = gacct_demande_couleur_signature_sql( 'r.couleur' );
+
+	// Etape 1 : pour chaque voile (marque + modele normalise + taille normalisee
+	// + signature couleurs), l'_ID de la revision la plus recente. GROUP_CONCAT +
+	// SUBSTRING_INDEX est evite ici : la colonne `couleur` contient elle-meme des
+	// virgules ("bleu, blanc"), ce qui rendrait tout separateur base sur la
+	// virgule ambigu.
 	$ids_sql = $wpdb->prepare(
 		"
 		SELECT SUBSTRING_INDEX( GROUP_CONCAT( r._ID ORDER BY r.cct_created DESC ), ',', 1 ) AS latest_id
@@ -213,9 +253,9 @@ function gacct_demande_materiels_client() {
 		INNER JOIN {$wpdb->prefix}jet_rel_default rel
 			ON rel.rel_id = '13' AND rel.parent_object_id = %d AND rel.child_object_id = r._ID
 		WHERE r.cct_status = %s
-			AND r.numero_de_serie IS NOT NULL
-			AND TRIM(r.numero_de_serie) != ''
-		GROUP BY UPPER(TRIM(r.numero_de_serie))
+			AND r.marque IS NOT NULL AND TRIM(r.marque) != ''
+			AND r.modele IS NOT NULL AND TRIM(r.modele) != ''
+		GROUP BY r.marque, UPPER(REPLACE(r.modele,' ','')), REGEXP_REPLACE(UPPER(r.taille),'[^A-Z0-9]',''), {$couleur_sig}
 		ORDER BY MAX( r.cct_created ) DESC
 		",
 		$user_id,

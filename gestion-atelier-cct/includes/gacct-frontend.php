@@ -849,10 +849,14 @@ function jwcct_render_marque_libelle( $slug ) {
 
 /**
  * Colonne « Numéro de série » du tableau Mon Matériel : affiche le numéro de
- * série normalisé (colonne `num_serie_norm` de la query 22) qui sert de clé de
- * regroupement des révisions d'une même voile.
+ * série BRUT de la révision la plus récente du groupe (colonne
+ * `num_serie_norm` de la query 22 — nom conservé pour ne pas casser la config
+ * de la Dynamic Table 23, mais la clé de regroupement des révisions d'une même
+ * voile n'est plus le numéro de série ; voir la GROUP BY de la query 22 :
+ * marque + modèle normalisé + taille normalisée + signature couleurs
+ * insensible à l'ordre). Tiret cadratin si la voile n'a pas de numéro de série.
  *
- * @param string $num_serie_norm Numéro de série normalisé (UPPER(TRIM(...))).
+ * @param string $num_serie_norm Numéro de série brut de la révision la plus récente.
  * @return string HTML.
  */
 function jwcct_render_materiel_client_info( $num_serie_norm ) {
