@@ -32,10 +32,15 @@ $vo_fmt = static function ( $amount ) {
 $is_bacs_waiting = ( 'bacs' === $d['variant'] );
 $is_dead         = $order->has_status( array( 'cancelled', 'refunded', 'failed' ) );
 
-// Barre de progression (8 étapes ; état 8 = figé à l'étape devis).
-$pct        = null === $etat ? 0 : ( 8 === $etat ? 50 : (int) round( ( min( 7, $etat ) + 1 ) / 8 * 100 ) );
-$state_txt  = null === $etat ? '' : ( isset( $labels[ $etat ] ) ? $labels[ $etat ] : '' );
-$needs_you  = in_array( $etat, array( 0, 3, 5 ), true );
+// Barre de progression : 9 étapes, 0 à 8.
+$pct       = null === $etat ? 0 : (int) round( ( min( 8, $etat ) + 1 ) / 9 * 100 );
+$state_txt = null === $etat ? '' : ( isset( $labels[ $etat ] ) ? $labels[ $etat ] : '' );
+$needs_you = in_array( $etat, array( 0, 4, 6 ), true );
+
+// État 5 : le libellé précise la décision rendue sur le devis.
+if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
+	$state_txt .= gacct_state5_suffix( $order );
+}
 ?>
 <div class="gacct-vo">
 
@@ -66,18 +71,16 @@ $needs_you  = in_array( $etat, array( 0, 3, 5 ), true );
 
 		<?php if ( null !== $etat && ! $is_dead ) : ?>
 			<div class="gacct-vo-progress" role="img" aria-label="<?php echo esc_attr( $state_txt ); ?>">
-				<div class="gacct-vo-progress-bar<?php echo 8 === $etat ? ' is-warning' : ''; ?>" style="width:<?php echo (int) $pct; ?>%"></div>
+				<div class="gacct-vo-progress-bar<?php echo $needs_you ? ' is-warning' : ''; ?>" style="width:<?php echo (int) $pct; ?>%"></div>
 			</div>
 			<p class="gacct-vo-state">
 				<strong><?php echo esc_html( $state_txt ); ?></strong>
-				<?php if ( 8 !== $etat ) : ?>
-					<span><?php echo esc_html( sprintf( __( 'étape %1$d sur %2$d', 'gestion-atelier-cct' ), min( 7, $etat ) + 1, 8 ) ); ?></span>
-				<?php endif; ?>
+				<span><?php echo esc_html( sprintf( __( 'étape %1$d sur %2$d', 'gestion-atelier-cct' ), min( 8, $etat ) + 1, 9 ) ); ?></span>
 			</p>
 		<?php endif; ?>
 	</div>
 
-	<?php if ( 3 === $etat ) : ?>
+	<?php if ( 4 === $etat ) : ?>
 		<!-- ── Devis en attente de réponse ─────────────────────────── -->
 		<div class="gacct-vo-card gacct-vo-alert">
 			<h3><?php esc_html_e( 'Un devis attend votre réponse', 'gestion-atelier-cct' ); ?></h3>
@@ -98,7 +101,7 @@ $needs_you  = in_array( $etat, array( 0, 3, 5 ), true );
 				?>
 			</p>
 		</div>
-	<?php elseif ( 8 === $etat ) : ?>
+	<?php elseif ( 5 === $etat && 'refused' === $d['quote']['decision'] ) : ?>
 		<div class="gacct-vo-card gacct-vo-alert is-neutral">
 			<h3><?php esc_html_e( 'Devis refusé — c\'est noté', 'gestion-atelier-cct' ); ?></h3>
 			<p>
@@ -109,7 +112,12 @@ $needs_you  = in_array( $etat, array( 0, 3, 5 ), true );
 				?>
 			</p>
 		</div>
-	<?php elseif ( 5 === $etat && $d['solde_du'] > 0 ) : ?>
+	<?php elseif ( 5 === $etat && 'accepted' === $d['quote']['decision'] ) : ?>
+		<div class="gacct-vo-card gacct-vo-alert is-neutral">
+			<h3><?php esc_html_e( 'Devis validé — merci !', 'gestion-atelier-cct' ); ?></h3>
+			<p><?php esc_html_e( 'Les travaux complémentaires sont lancés. Le solde vous sera demandé à la fin de l\'intervention.', 'gestion-atelier-cct' ); ?></p>
+		</div>
+	<?php elseif ( 6 === $etat && $d['solde_du'] > 0 ) : ?>
 		<div class="gacct-vo-card gacct-vo-alert">
 			<h3><?php esc_html_e( 'Votre intervention est terminée !', 'gestion-atelier-cct' ); ?></h3>
 			<p><?php echo esc_html( sprintf( __( 'Il ne reste que le solde de %s à régler pour que votre matériel reparte vers vous.', 'gestion-atelier-cct' ), $vo_fmt( $d['solde_du'] ) ) ); ?></p>
@@ -160,7 +168,7 @@ $needs_you  = in_array( $etat, array( 0, 3, 5 ), true );
 				<tr class="gacct-vo-balance">
 					<td>
 						<?php esc_html_e( 'Reste à payer', 'gestion-atelier-cct' ); ?>
-						<span class="gacct-vo-balance-hint"><?php echo esc_html( 5 === $etat ? __( '(à régler maintenant)', 'gestion-atelier-cct' ) : __( '(demandé à la fin de l\'intervention)', 'gestion-atelier-cct' ) ); ?></span>
+						<span class="gacct-vo-balance-hint"><?php echo esc_html( 6 === $etat ? __( '(à régler maintenant)', 'gestion-atelier-cct' ) : __( '(demandé à la fin de l\'intervention)', 'gestion-atelier-cct' ) ); ?></span>
 					</td>
 					<td class="gacct-vo-amount"><?php echo esc_html( $vo_fmt( $d['balance'] ) ); ?></td>
 				</tr>
@@ -215,10 +223,17 @@ $needs_you  = in_array( $etat, array( 0, 3, 5 ), true );
 		</div>
 	<?php endif; ?>
 
-	<?php if ( '' !== $d['suivi'] || '' !== $d['rapport_url'] ) : ?>
+	<?php
+	// Le rapport n'est visible du client qu'à partir de l'état 7 (solde réglé).
+	$vo_show_report = ( '' !== $d['rapport_url'] && null !== $etat && $etat >= 7 );
+	?>
+	<?php if ( '' !== $d['suivi'] || $vo_show_report ) : ?>
 		<!-- ── Retour & documents ──────────────────────────────────── -->
-		<div class="gacct-vo-card">
+		<div class="gacct-vo-card<?php echo 8 === $etat ? ' is-highlight' : ''; ?>">
 			<h3><?php esc_html_e( 'Retour & documents', 'gestion-atelier-cct' ); ?></h3>
+			<?php if ( 8 === $etat ) : ?>
+				<p><?php esc_html_e( 'Votre matériel est reparti vers vous — suivez son acheminement ci-dessous.', 'gestion-atelier-cct' ); ?></p>
+			<?php endif; ?>
 			<?php if ( '' !== $d['suivi'] ) : ?>
 				<?php if ( preg_match( '#^https?://#i', $d['suivi'] ) ) : ?>
 					<p><a class="gacct-vo-btn is-secondary" href="<?php echo esc_url( $d['suivi'] ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Suivre mon colis retour', 'gestion-atelier-cct' ); ?></a></p>
@@ -226,7 +241,7 @@ $needs_you  = in_array( $etat, array( 0, 3, 5 ), true );
 					<p><?php printf( esc_html__( 'Suivi transporteur : %s', 'gestion-atelier-cct' ), '<strong>' . esc_html( $d['suivi'] ) . '</strong>' ); ?></p>
 				<?php endif; ?>
 			<?php endif; ?>
-			<?php if ( '' !== $d['rapport_url'] ) : ?>
+			<?php if ( $vo_show_report ) : ?>
 				<p><a class="gacct-vo-btn is-secondary" href="<?php echo esc_url( $d['rapport_url'] ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Télécharger le rapport d\'intervention (PDF)', 'gestion-atelier-cct' ); ?></a></p>
 			<?php endif; ?>
 		</div>

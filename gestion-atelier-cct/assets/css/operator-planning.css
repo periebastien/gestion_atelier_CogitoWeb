@@ -96,20 +96,24 @@
 .gacct-op-planning .fc .gacct-op-occ-etat-1 {
 	border-left-color: #64748b;
 }
-/* 2–4 : en atelier (accent teal) */
+/* 2–3 et 5 : en atelier (accent teal) */
 .gacct-op-planning .fc .gacct-op-occ-etat-2,
 .gacct-op-planning .fc .gacct-op-occ-etat-3,
-.gacct-op-planning .fc .gacct-op-occ-etat-4 {
+.gacct-op-planning .fc .gacct-op-occ-etat-5 {
 	border-left-color: var(--gacct-accent);
 }
-/* 5 : solde à payer (warn) */
-.gacct-op-planning .fc .gacct-op-occ-etat-5 {
+/* 4 et 6 : action attendue du client — devis à valider, solde à payer (warn) */
+.gacct-op-planning .fc .gacct-op-occ-etat-4,
+.gacct-op-planning .fc .gacct-op-occ-etat-6 {
 	border-left-color: var(--gacct-warn);
 }
-/* 6–7 : payé / terminé (vert) */
-.gacct-op-planning .fc .gacct-op-occ-etat-6,
+/* 7 : révision finie (vert) */
 .gacct-op-planning .fc .gacct-op-occ-etat-7 {
 	border-left-color: #1b7a33;
+}
+/* 8 : matériel réexpédié, dossier clos (vert sombre) */
+.gacct-op-planning .fc .gacct-op-occ-etat-8 {
+	border-left-color: #14602a;
 }
 
 /* ------------------------------------------------------------------ */

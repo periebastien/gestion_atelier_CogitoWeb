@@ -194,6 +194,12 @@
 	margin-bottom: 10px;
 	max-width: 100%;
 }
+.gacct-op-fiche .gacct-op-ship-form input[type="text"] {
+	display: block;
+	width: 100%;
+	max-width: 420px;
+	margin-bottom: 10px;
+}
 .gacct-op-fiche .gacct-op-force { margin-top: 6px; }
 .gacct-op-fiche .gacct-op-force-form {
 	background: var(--gacct-surface-alt);

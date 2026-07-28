@@ -17,7 +17,7 @@ function gacct_op_list_current_args() {
 	$state = null;
 	if ( isset( $_GET['etat'] ) && '' !== $_GET['etat'] ) {
 		$state = absint( wp_unslash( $_GET['etat'] ) );
-		$state = ( $state >= 0 && $state <= 7 ) ? $state : null;
+		$state = ( $state >= 0 && $state <= 8 ) ? $state : null;
 	}
 
 	$orderby = isset( $_GET['orderby'] ) ? sanitize_key( wp_unslash( $_GET['orderby'] ) ) : 'slot';

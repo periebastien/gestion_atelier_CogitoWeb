@@ -438,7 +438,11 @@ function jwcct_add_revision_date_to_email( $order, $sent_to_admin, $plain_text, 
 
 
 /* =============================================================================
- *  CALLBACK : TRACKER DE PROGRESSION (8 etats 0-7)
+ *  CALLBACK : TRACKER DE PROGRESSION (9 etats 0-8)
+ *
+ *  Une etape de frise par etat. Les etats 4 (devis a valider) et 5 (intervention
+ *  a finir) n'existent que si un devis complementaire est entre en jeu : sans
+ *  devis, la frise n'affiche que 7 etapes. Aucun numero interne cote client.
  * ============================================================================= */
 
 add_filter( 'jet-engine/listings/allowed-callbacks', function( $callbacks ) {
@@ -446,135 +450,234 @@ add_filter( 'jet-engine/listings/allowed-callbacks', function( $callbacks ) {
     return $callbacks;
 } );
 
-function jwcct_render_order_status_tracker( $value ) {
-    if ( $value === '' || $value === null ) return '';
-
-    $config = [
-        // step 0 : rien n'est engage tant que le paiement n'est pas arrive. Aucune barre
-        // n'est remplie (la boucle ci-dessous ne pose ni "done" ni "current"), la classe
-        // "zero" se contente d'afficher le point de depart.
+/**
+ * Configuration d'affichage des 9 etats.
+ *
+ * @return array<int,array{badge:string,progress:string,group:string,label:string,tip:string}>
+ */
+function jwcct_tracker_config() {
+    return apply_filters( 'jwcct_tracker_config', [
+        // 0 : rien n'est engage tant que le paiement n'est pas arrive. La classe
+        // "zero" affiche le seul point de depart, aucune barre n'est remplie.
         0 => [
-            'badge'    => 'warning',
+            'badge'    => 'action pulse',
             'progress' => 'action zero',
-            'step'     => 0,
+            'group'    => 'paiement',
             'label'    => 'En attente de paiement',
             'tip'      => '<strong>Action requise :</strong> finalisez le paiement de l\'acompte pour démarrer la procédure.'
         ],
         1 => [
             'badge'    => 'progress',
             'progress' => '',
-            'step'     => 1,
+            'group'    => 'reception',
             'label'    => 'En attente de réception',
             'tip'      => '<strong>Info :</strong> nous attendons la réception de votre matériel à l\'atelier.'
         ],
         2 => [
             'badge'    => 'progress',
             'progress' => '',
-            'step'     => 2,
-            'label'    => 'Voile Réceptionnée',
+            'group'    => 'reception',
+            'label'    => 'Voile réceptionnée',
             'tip'      => '<strong>Info :</strong> matériel reçu. L\'intervention est programmée selon le planning.'
         ],
         3 => [
-            'badge'    => 'action pulse',
-            'progress' => 'action',
-            'step'     => 3,
-            'label'    => 'Nouveau devis à valider',
-            'tip'      => '<strong>Action requise :</strong> des travaux complémentaires sont nécessaires. Merci de valider le devis.'
-        ],
-        4 => [
             'badge'    => 'progress',
             'progress' => '',
-            'step'     => 3,
-            'label'    => 'Devis validé',
-            'tip'      => '<strong>Info :</strong> devis accepté. Nos techniciens sont en cours d\'intervention.'
+            'group'    => 'intervention',
+            'label'    => 'Intervention programmée',
+            'tip'      => '<strong>Info :</strong> nos techniciens travaillent sur votre matériel.'
         ],
-        5 => [
+        4 => [
             'badge'    => 'action pulse',
             'progress' => 'action',
-            'step'     => 3,
-            'label'    => 'Paiement final en attente',
-            'tip'      => '<strong>Action requise :</strong> l\'intervention est terminée. Réglez le solde pour récupérer votre voile.'
+            'group'    => 'intervention',
+            'label'    => 'Devis à valider',
+            'tip'      => '<strong>Action requise :</strong> des travaux complémentaires sont nécessaires. Merci de valider ou de refuser le devis.'
+        ],
+        5 => [
+            'badge'    => 'progress',
+            'progress' => '',
+            'group'    => 'intervention',
+            'label'    => 'Intervention à finir',
+            'tip'      => '<strong>Info :</strong> votre réponse est bien enregistrée, l\'atelier termine l\'intervention.'
         ],
         6 => [
-            'badge'    => 'done',
-            'progress' => '',
-            'step'     => 4,
-            'label'    => 'Paiement validé',
-            'tip'      => '<strong>Info :</strong> paiement reçu. Votre matériel est en cours d\'expédition.'
+            'badge'    => 'action pulse',
+            'progress' => 'action',
+            'group'    => 'intervention',
+            'label'    => 'Solde à régler',
+            'tip'      => '<strong>Action requise :</strong> l\'intervention est terminée. Réglez le solde pour que votre matériel reparte.'
         ],
         7 => [
             'badge'    => 'done',
-            'progress' => 'done-all',
-            'step'     => 4,
+            'progress' => '',
+            'group'    => 'retour',
             'label'    => 'Révision terminée',
-            'tip'      => 'Voile révisée et retournée. Rapport disponible au téléchargement.'
+            'tip'      => '<strong>Info :</strong> révision terminée, votre rapport est disponible. Nous préparons le retour de votre matériel.'
         ],
-        // 8 : le client a refusé le devis complémentaire. Selon la commande :
-        // intervention sur les prestations initiales, ou retour du matériel
-        // (pure demande de devis). L'atelier reprend la main.
         8 => [
-            'badge'    => 'warning',
-            'progress' => 'action',
-            'step'     => 3,
-            'label'    => 'Devis refusé',
-            'tip'      => '<strong>Info :</strong> vous avez refusé le devis complémentaire. L\'atelier réalise les prestations initialement prévues, ou vous retourne votre matériel s\'il s\'agissait d\'une demande de devis.'
+            'badge'    => 'done',
+            'progress' => 'done-all',
+            'group'    => 'retour',
+            'label'    => 'Matériel réexpédié',
+            'tip'      => 'Votre matériel est reparti vers vous. Rapport disponible au téléchargement.'
         ],
-    ];
+    ] );
+}
 
-    if ( ! isset( $config[$value] ) ) return $value;
-    $s = $config[$value];
+/**
+ * Libelles des 4 groupes de la frise (une etiquette pour plusieurs etapes).
+ */
+function jwcct_tracker_groups() {
+    return apply_filters( 'jwcct_tracker_groups', [
+        'paiement'     => __( 'Paiement', 'gestion-atelier-cct' ),
+        'reception'    => __( 'Réception', 'gestion-atelier-cct' ),
+        'intervention' => __( 'Intervention', 'gestion-atelier-cct' ),
+        'retour'       => __( 'Retour', 'gestion-atelier-cct' ),
+    ] );
+}
 
+/**
+ * Commande courante d'un listing JetEngine dont l'objet est une ligne CCT
+ * revision (brute ou jointe). Retourne 0 si rien n'est identifiable.
+ */
+function jwcct_tracker_current_order_id() {
+    if ( ! function_exists( 'jet_engine' ) ) {
+        return 0;
+    }
+
+    $item = jet_engine()->listings->data->get_current_object();
+
+    if ( ! is_object( $item ) ) {
+        return 0;
+    }
+
+    if ( ! empty( $item->order_id ) ) {
+        return absint( $item->order_id );
+    }
+
+    $rev_id = absint( $item->revision_id ?? ( $item->_ID ?? 0 ) );
+
+    if ( ! $rev_id ) {
+        return 0;
+    }
+
+    global $wpdb;
+
+    return absint( $wpdb->get_var( $wpdb->prepare(
+        "SELECT order_id FROM {$wpdb->prefix}jet_cct_revision WHERE _ID = %d LIMIT 1",
+        $rev_id
+    ) ) );
+}
+
+/**
+ * Tracker de progression du client.
+ *
+ * @param mixed $value    Valeur du champ etat_de_la_commande (callback JetEngine).
+ * @param int   $order_id Commande liee, si l'appelant la connait deja (page
+ *                        commande, tableau de bord). Sinon elle est resolue
+ *                        depuis l'objet courant du listing.
+ */
+function jwcct_render_order_status_tracker( $value, $order_id = 0 ) {
+    if ( $value === '' || $value === null ) return '';
+
+    $config = jwcct_tracker_config();
+
+    if ( ! isset( $config[ $value ] ) ) return $value;
+
+    $state = absint( $value );
+    $s     = $config[ $state ];
+
+    $order_id = absint( $order_id );
+
+    if ( ! $order_id ) {
+        $order_id = jwcct_tracker_current_order_id();
+    }
+
+    $order = ( $order_id && function_exists( 'wc_get_order' ) ) ? wc_get_order( $order_id ) : false;
+
+    // Dossier sans devis complementaire : les etapes 4 et 5 ne sont jamais
+    // traversees, elles disparaissent de la frise (7 etapes au lieu de 9).
+    $with_quote = function_exists( 'gacct_quote_has_quote_context' )
+        ? gacct_quote_has_quote_context( $order, $state )
+        : true;
+
+    $visible = [];
+
+    foreach ( array_keys( $config ) as $step_state ) {
+        if ( ! $with_quote && in_array( $step_state, [ 4, 5 ], true ) ) {
+            continue;
+        }
+        $visible[] = $step_state;
+    }
+
+    $position = array_search( $state, $visible, true );
+
+    if ( false === $position ) {
+        $position = 0;
+    }
+
+    // Frise : une barre par etape visible. L'etat 0 n'en remplit aucune.
     $steps_html = '';
-    for ( $i = 1; $i <= 4; $i++ ) {
+
+    foreach ( $visible as $i => $step_state ) {
         $class = '';
-        if ( $s['progress'] === 'done-all' ) {
+
+        if ( 'done-all' === $s['progress'] ) {
             $class = 'done';
-        } elseif ( $i < $s['step'] ) {
+        } elseif ( 0 === $state ) {
+            $class = '';
+        } elseif ( $i < $position ) {
             $class = 'done';
-        } elseif ( $i == $s['step'] ) {
+        } elseif ( $i === $position ) {
             $class = 'current';
         }
+
         $steps_html .= sprintf( '<div class="progress-step %s"></div>', $class );
     }
 
-    // Bouton « Imprimer le bon d'intervention » (états 0-1 : tant que le colis
-    // n'est pas réceptionné). L'objet courant du listing = la ligne CCT revision.
+    // Etiquettes : 4 groupes, chacun large de son nombre d'etapes visibles
+    // (le flex inline garde l'alignement quel que soit le nombre d'etapes).
+    $labels_html = '';
+    $weights     = [];
+
+    foreach ( $visible as $step_state ) {
+        $group = $config[ $step_state ]['group'];
+        $weights[ $group ] = ( $weights[ $group ] ?? 0 ) + 1;
+    }
+
+    foreach ( jwcct_tracker_groups() as $group => $group_label ) {
+        if ( empty( $weights[ $group ] ) ) {
+            continue;
+        }
+        $labels_html .= sprintf(
+            '<span style="flex:%d">%s</span>',
+            (int) $weights[ $group ],
+            esc_html( $group_label )
+        );
+    }
+
+    // Bouton « Imprimer le bon d'intervention » (etats 0-1 : tant que le colis
+    // n'est pas receptionne).
     $workorder_html = '';
 
-    if ( absint( $value ) <= 1 && function_exists( 'gacct_wo_print_url' ) && function_exists( 'jet_engine' ) ) {
-        // L'objet courant varie selon la requête du listing : ligne CCT brute
-        // (_ID + order_id) ou ligne de requête jointe (revision_id, parfois sans
-        // order_id) → on retombe sur la table revision si besoin.
-        $item     = jet_engine()->listings->data->get_current_object();
-        $order_id = 0;
+    if ( $state <= 1 && $order && function_exists( 'gacct_wo_print_url' )
+        && ! $order->has_status( array( 'cancelled', 'refunded', 'trash' ) ) ) {
+        $workorder_html = sprintf(
+            '<a class="gacct-workorder-print" href="%s" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/></svg>
+                <span>%s</span>
+            </a>',
+            esc_url( gacct_wo_print_url( $order ) ),
+            esc_html__( 'Imprimer le bon d\'intervention', 'gestion-atelier-cct' )
+        );
+    }
 
-        if ( is_object( $item ) ) {
-            if ( ! empty( $item->order_id ) ) {
-                $order_id = absint( $item->order_id );
-            } else {
-                $rev_id = absint( $item->revision_id ?? ( $item->_ID ?? 0 ) );
-                if ( $rev_id ) {
-                    global $wpdb;
-                    $order_id = absint( $wpdb->get_var( $wpdb->prepare(
-                        "SELECT order_id FROM {$wpdb->prefix}jet_cct_revision WHERE _ID = %d LIMIT 1",
-                        $rev_id
-                    ) ) );
-                }
-            }
-        }
+    // Etat 5 : le libelle precise la decision rendue sur le devis.
+    $label = $s['label'];
 
-        $order    = ( $order_id && function_exists( 'wc_get_order' ) ) ? wc_get_order( $order_id ) : false;
-
-        if ( $order && ! $order->has_status( array( 'cancelled', 'refunded', 'trash' ) ) ) {
-            $workorder_html = sprintf(
-                '<a class="gacct-workorder-print" href="%s" target="_blank" rel="noopener">
-                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/></svg>
-                    <span>%s</span>
-                </a>',
-                esc_url( gacct_wo_print_url( $order ) ),
-                esc_html__( 'Imprimer le bon d\'intervention', 'gestion-atelier-cct' )
-            );
-        }
+    if ( 5 === $state && function_exists( 'gacct_state5_suffix' ) ) {
+        $label .= gacct_state5_suffix( $order );
     }
 
     return sprintf(
@@ -582,16 +685,15 @@ function jwcct_render_order_status_tracker( $value ) {
             <div class="status-tip">%s</div>
             <span class="badge %s">%s</span>
             <div class="progress %s">%s</div>
-            <div class="progress-labels">
-                <span>Paiement</span><span>Réception</span><span>Intervention</span><span>Retour</span>
-            </div>
+            <div class="progress-labels">%s</div>
             %s
         </div>',
         $s['tip'],
         esc_attr( $s['badge'] ),
-        esc_html( $s['label'] ),
+        esc_html( $label ),
         esc_attr( $s['progress'] ),
         $steps_html,
+        $labels_html,
         $workorder_html
     );
 }

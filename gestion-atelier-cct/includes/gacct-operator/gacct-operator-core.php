@@ -15,39 +15,48 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Libellés des états, alignés sur le tracker client. 0–7 = flux nominal ;
- * 8 = « Devis refusé » (hors frise : le client a refusé le devis complémentaire,
- * l'atelier relance en 8→4 sur les prestations initiales, ou retourne le
- * matériel si la commande était une pure demande de devis).
+ * Libellés des états (référentiel du 28/07/2026, fixe et jamais renuméroté
+ * à l'affichage) :
+ *   0 paiement · 1 réception · 2 voile reçue · 3 intervention programmée
+ *   · 4 devis à valider (optionnel) · 5 intervention à finir (après décision
+ *   du client) · 6 intervention finie, solde à payer · 7 révision finie
+ *   (rapport disponible) · 8 matériel réexpédié (terminal).
+ *
+ * Chemins : sans devis 2→3→6→7→8 ; avec devis 3→4→5→6→7→8.
  */
 function gacct_op_state_labels() {
 	return apply_filters( 'gacct_op_state_labels', array(
 		0 => __( 'En attente de paiement', 'gestion-atelier-cct' ),
 		1 => __( 'En attente de réception', 'gestion-atelier-cct' ),
 		2 => __( 'Voile réceptionnée', 'gestion-atelier-cct' ),
-		3 => __( 'Devis à valider', 'gestion-atelier-cct' ),
-		4 => __( 'Intervention programmée', 'gestion-atelier-cct' ),
-		5 => __( 'Solde à payer', 'gestion-atelier-cct' ),
-		6 => __( 'Paiement validé', 'gestion-atelier-cct' ),
-		7 => __( 'Révision terminée', 'gestion-atelier-cct' ),
-		8 => __( 'Devis refusé', 'gestion-atelier-cct' ),
+		3 => __( 'Intervention programmée', 'gestion-atelier-cct' ),
+		4 => __( 'Devis à valider', 'gestion-atelier-cct' ),
+		5 => __( 'Intervention à finir', 'gestion-atelier-cct' ),
+		6 => __( 'Intervention finie, solde à payer', 'gestion-atelier-cct' ),
+		7 => __( 'Révision finie — rapport disponible', 'gestion-atelier-cct' ),
+		8 => __( 'Matériel réexpédié', 'gestion-atelier-cct' ),
 	) );
 }
 
 /**
  * Transitions opérateur autorisées (CDC §5). Clé = état de départ,
  * valeur = [ état d'arrivée => libellé d'action ].
+ *
+ * 3→4 n'est pas un bouton nu : le devis part par l'éditeur de la fiche
+ * (gacct_quote_send). 4→5 vient du client (lien de validation).
  */
 function gacct_op_allowed_transitions() {
 	return apply_filters( 'gacct_op_allowed_transitions', array(
 		1 => array( 2 => __( 'Confirmer la réception', 'gestion-atelier-cct' ) ),
-		2 => array(
-			3 => __( 'Envoyer le devis complémentaire', 'gestion-atelier-cct' ),
-			4 => __( 'Pas de supplément, lancer l\'intervention', 'gestion-atelier-cct' ),
+		2 => array( 3 => __( 'Démarrer l\'intervention', 'gestion-atelier-cct' ) ),
+		3 => array(
+			// 3→4 n'a pas de bouton nu dans la fiche : la carte « Devis
+			// complémentaire » est la seule porte d'entrée (gacct_quote_send).
+			4 => __( 'Envoyer le devis complémentaire', 'gestion-atelier-cct' ),
+			6 => __( 'Intervention terminée, demander le solde', 'gestion-atelier-cct' ),
 		),
-		4 => array( 5 => __( 'Intervention terminée, demander le solde', 'gestion-atelier-cct' ) ),
-		6 => array( 7 => __( 'Déposer le rapport + clôturer', 'gestion-atelier-cct' ) ),
-		8 => array( 4 => __( 'Lancer l\'intervention (prestations initiales)', 'gestion-atelier-cct' ) ),
+		5 => array( 6 => __( 'Intervention terminée, demander le solde', 'gestion-atelier-cct' ) ),
+		7 => array( 8 => __( 'Matériel réexpédié', 'gestion-atelier-cct' ) ),
 	) );
 }
 
@@ -56,8 +65,8 @@ function gacct_op_allowed_transitions() {
  */
 function gacct_op_forceable_transitions() {
 	return apply_filters( 'gacct_op_forceable_transitions', array(
-		3 => array( 4 => __( 'Forcer la validation du devis', 'gestion-atelier-cct' ) ),
-		5 => array( 6 => __( 'Forcer le paiement du solde', 'gestion-atelier-cct' ) ),
+		4 => array( 5 => __( 'Forcer la décision du devis', 'gestion-atelier-cct' ) ),
+		6 => array( 7 => __( 'Forcer le paiement du solde', 'gestion-atelier-cct' ) ),
 	) );
 }
 
@@ -65,7 +74,26 @@ function gacct_op_forceable_transitions() {
  * États dont l'email de notification peut être renvoyé (état → état simulé de départ).
  */
 function gacct_op_resendable_states() {
-	return array( 3 => 2, 5 => 4 );
+	return array( 4 => 3, 6 => 5 );
+}
+
+/**
+ * État courant d'une révision, lu en SQL direct : les gardes ne doivent jamais
+ * dépendre du cache d'objet JetEngine, qui peut resservir une valeur périmée
+ * au sein d'une même requête.
+ *
+ * @return int|null null si le dossier n'existe pas.
+ */
+function gacct_op_read_state( $revision_id ) {
+	global $wpdb;
+
+	$table = $wpdb->prefix . 'jet_cct_' . JWCCT_CCT_REVISION;
+	$value = $wpdb->get_var( $wpdb->prepare(
+		"SELECT etat_de_la_commande FROM {$table} WHERE _ID = %d LIMIT 1",
+		absint( $revision_id )
+	) );
+
+	return ( null === $value ) ? null : absint( $value );
 }
 
 /**
@@ -92,7 +120,7 @@ function gacct_op_get_order_for_revision( array $revision ) {
  * FONCTION SERVEUR CENTRALE de changement d'état (CDC §3).
  *
  * @param int   $revision_id ID du CCT revision.
- * @param int   $new_state   État cible (0–7).
+ * @param int   $new_state   État cible (0–8).
  * @param array $args        {
  *     @type bool   $force        Transition « forcer » (client) — motif obligatoire.
  *     @type string $reason       Motif (obligatoire si force).
@@ -113,7 +141,13 @@ function gacct_op_change_state( $revision_id, $new_state, array $args = array() 
 		return new WP_Error( 'gacct_op_not_found', __( 'Dossier introuvable.', 'gestion-atelier-cct' ) );
 	}
 
-	$old_state = absint( $prev['etat_de_la_commande'] ?? 0 );
+	// L'état de départ est relu en SQL direct : le cache d'objet JetEngine peut
+	// resservir une valeur périmée au sein d'une même requête.
+	$old_state = gacct_op_read_state( $revision_id );
+
+	if ( null === $old_state ) {
+		$old_state = absint( $prev['etat_de_la_commande'] ?? 0 );
+	}
 
 	if ( $force ) {
 		$map = gacct_op_forceable_transitions();
@@ -137,9 +171,11 @@ function gacct_op_change_state( $revision_id, $new_state, array $args = array() 
 		$action_label = $map[ $old_state ][ $new_state ];
 	}
 
-	// Dossier incomplet : le passage en intervention (2→4 et 3→4) est bloqué
-	// tant que tout n'est pas arrivé — déblocage avec motif obligatoire (CDC §4.4).
-	if ( 4 === $new_state && ! empty( $prev['dossier_incomplet'] ) ) {
+	$order = gacct_op_get_order_for_revision( $prev );
+
+	// Dossier incomplet : le démarrage de l'intervention (2→3) est bloqué tant
+	// que tout n'est pas arrivé — déblocage avec motif obligatoire (CDC §4.4).
+	if ( 3 === $new_state && ! empty( $prev['dossier_incomplet'] ) ) {
 		$unlock = isset( $args['unlock_reason'] ) ? trim( sanitize_textarea_field( $args['unlock_reason'] ) ) : '';
 
 		if ( '' === $unlock ) {
@@ -154,15 +190,43 @@ function gacct_op_change_state( $revision_id, $new_state, array $args = array() 
 		$args['_unlock_note']        = $unlock;
 	}
 
-	// Clôture 6→7 : rapport PDF obligatoire, « réalisé par » automatique (CDC §2.1).
-	if ( 7 === $new_state ) {
-		$rapport = $extra['rapport_pdf'] ?? ( $prev['rapport_pdf'] ?? '' );
-		if ( empty( $rapport ) ) {
-			return new WP_Error( 'gacct_op_report_required', __( 'Le rapport PDF est obligatoire pour clôturer.', 'gestion-atelier-cct' ) );
+	// Entrée en 6 (depuis 3 sans devis, ou depuis 5 après décision du client) :
+	// le rapport d'intervention est exigé AVANT de demander le solde ; il reste
+	// invisible du client tant que l'état est < 7. « Réalisé par » automatique.
+	if ( 6 === $new_state ) {
+		// Produit « demande de devis » dans la commande : le devis est obligatoire,
+		// 3→6 direct n'a pas de sens (il n'y a rien d'autre à facturer).
+		if ( 3 === $old_state && function_exists( 'gacct_quote_order_has_devis_product' ) && gacct_quote_order_has_devis_product( $order ) ) {
+			return new WP_Error(
+				'gacct_op_quote_required',
+				__( 'Cette commande est une demande de devis : envoyez le devis complémentaire au client avant de clore l\'intervention.', 'gestion-atelier-cct' )
+			);
 		}
+
+		$rapport = $extra['rapport_pdf'] ?? ( $prev['rapport_pdf'] ?? '' );
+
+		if ( empty( $rapport ) ) {
+			return new WP_Error( 'gacct_op_report_required', __( 'Déposez d\'abord le rapport d\'intervention (PDF) : il est obligatoire avant de demander le solde.', 'gestion-atelier-cct' ) );
+		}
+
 		if ( empty( $extra['operateur_id'] ) ) {
 			$extra['operateur_id'] = get_current_user_id();
 		}
+	}
+
+	// Entrée en 8 : le matériel repart, le suivi transporteur est obligatoire.
+	if ( 8 === $new_state ) {
+		$tracking = isset( $args['tracking'] ) ? trim( sanitize_text_field( $args['tracking'] ) ) : '';
+
+		if ( '' === $tracking ) {
+			$tracking = trim( (string) ( $extra['suivi_transporteur'] ?? ( $prev['suivi_transporteur'] ?? '' ) ) );
+		}
+
+		if ( '' === $tracking ) {
+			return new WP_Error( 'gacct_op_tracking_required', __( 'Le numéro (ou lien) de suivi transporteur est obligatoire pour déclarer le matériel réexpédié.', 'gestion-atelier-cct' ) );
+		}
+
+		$extra['suivi_transporteur'] = $tracking;
 	}
 
 	$fields = array_merge( $extra, array( 'etat_de_la_commande' => (string) $new_state ) );
@@ -174,8 +238,6 @@ function gacct_op_change_state( $revision_id, $new_state, array $args = array() 
 	// Déclenche le workflow (emails, lien devis, kojito, PDF) — voir en-tête du fichier.
 	$new_item = array_merge( $prev, $fields, array( '_ID' => $revision_id ) );
 	do_action( 'jet-engine/custom-content-types/updated-item/revision', $new_item, $prev, null );
-
-	$order = gacct_op_get_order_for_revision( $prev );
 
 	if ( $order ) {
 		$message = sprintf( '%s (état %d → %d)', $action_label, $old_state, $new_state );
@@ -196,9 +258,9 @@ function gacct_op_change_state( $revision_id, $new_state, array $args = array() 
 }
 
 /**
- * Renvoi de l'email d'un état « en attente du client » (3 ou 5), sans toucher
- * à l'état : on rejoue le hook avec l'état précédent simulé. État 3 : régénère
- * un lien de validation sécurisé. État 5 : rejoue kojito_declencher_paiement_solde
+ * Renvoi de l'email d'un état « en attente du client » (4 ou 6), sans toucher
+ * à l'état : on rejoue le hook avec l'état précédent simulé. État 4 : régénère
+ * un lien de validation sécurisé. État 6 : rejoue kojito_declencher_paiement_solde
  * (idempotent : repose le total au solde restant).
  */
 function gacct_op_resend_state_email( $revision_id ) {
@@ -571,7 +633,7 @@ function gacct_op_receive( $revision_id, array $missing = array() ) {
 		) );
 	}
 
-	if ( $state > 4 && $was_incomplete ) {
+	if ( $state > 3 && $was_incomplete ) {
 		// Sécurité : au-delà de l'intervention, plus de gestion de check-list.
 		return new WP_Error( 'gacct_op_bad_state', __( 'Ce dossier est trop avancé pour une réception.', 'gestion-atelier-cct' ) );
 	}
@@ -713,8 +775,8 @@ function gacct_op_manual_payment_reminder( $order ) {
  * ============================================================================= */
 
 /**
- * Capacité requise pour replanifier au-delà de l'état 3 (décision Bastien :
- * libre jusqu'à l'état 3 inclus, admins + motif ensuite).
+ * Capacité requise pour replanifier au-delà de l'état 2 (libre tant que
+ * l'intervention n'a pas démarré, admins + motif ensuite).
  */
 function gacct_op_reschedule_admin_cap() {
 	return apply_filters( 'gacct_op_reschedule_admin_cap', 'manage_woocommerce' );
@@ -815,8 +877,8 @@ function gacct_op_day_capacity_row( $ymd ) {
 /**
  * Replanification d'une occupation (CDC §4.5).
  *
- * Règle (décision Bastien 28/07/2026) : libre jusqu'à l'état 3 inclus ;
- * à partir de l'état 4, réservée aux admins avec motif obligatoire.
+ * Règle : libre jusqu'à l'état 2 inclus ; à partir de l'état 3
+ * (intervention programmée), réservée aux admins avec motif obligatoire.
  * Contrôle de capacité : heures dispo du jour cible − occupations déjà
  * posées (hors celle déplacée) ≥ durée de l'occupation.
  *
@@ -859,13 +921,14 @@ function gacct_op_reschedule( $occupation_id, $ymd, array $args = array() ) {
 
 	$state = $revision ? absint( $revision['etat_de_la_commande'] ?? 0 ) : 0;
 
-	// 8 (« Devis refusé ») reste replanifiable librement : l'intervention n'a pas commencé.
-	if ( $state >= 4 && $state <= 7 ) {
+	// Libre tant que l'intervention n'a pas démarré (états 0–2) ; ensuite,
+	// admins uniquement et motif obligatoire.
+	if ( $state >= 3 ) {
 		if ( ! current_user_can( gacct_op_reschedule_admin_cap() ) ) {
-			return new WP_Error( 'gacct_op_reschedule_locked', __( 'À partir de l\'état 4 (intervention en cours), la replanification est réservée aux administrateurs.', 'gestion-atelier-cct' ) );
+			return new WP_Error( 'gacct_op_reschedule_locked', __( 'À partir de l\'état 3 (intervention programmée), la replanification est réservée aux administrateurs.', 'gestion-atelier-cct' ) );
 		}
 		if ( '' === $reason ) {
-			return new WP_Error( 'gacct_op_reason_required', __( 'Un motif est obligatoire pour replanifier un dossier en intervention (état ≥ 4).', 'gestion-atelier-cct' ) );
+			return new WP_Error( 'gacct_op_reason_required', __( 'Un motif est obligatoire pour replanifier un dossier en intervention (état ≥ 3).', 'gestion-atelier-cct' ) );
 		}
 	}
 

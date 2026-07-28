@@ -158,16 +158,16 @@ function gacct_dash_texts() {
 		/* translators: 1: matériel, 2: date d'échéance */
 		'alerte_card_overdue' => __( 'Votre %1$s a dépassé sa période de révision (échéance : %2$s). Réservez un créneau dès maintenant pour voler l’esprit tranquille.', 'gestion-atelier-cct' ),
 
-		// --- Libellés des 8 états (identiques au tracker du template 521) -----
+		// --- Libellés des 9 états (identiques au tracker du template 521) ----
 		'state_0' => __( 'En attente de paiement', 'gestion-atelier-cct' ),
 		'state_1' => __( 'En attente de réception', 'gestion-atelier-cct' ),
 		'state_2' => __( 'Voile réceptionnée', 'gestion-atelier-cct' ),
-		'state_3' => __( 'Nouveau devis à valider', 'gestion-atelier-cct' ),
-		'state_4' => __( 'Devis validé', 'gestion-atelier-cct' ),
-		'state_5' => __( 'Paiement final en attente', 'gestion-atelier-cct' ),
-		'state_6' => __( 'Paiement validé', 'gestion-atelier-cct' ),
+		'state_3' => __( 'Intervention programmée', 'gestion-atelier-cct' ),
+		'state_4' => __( 'Devis à valider', 'gestion-atelier-cct' ),
+		'state_5' => __( 'Intervention à finir', 'gestion-atelier-cct' ),
+		'state_6' => __( 'Solde à régler', 'gestion-atelier-cct' ),
 		'state_7' => __( 'Révision terminée', 'gestion-atelier-cct' ),
-		'state_8' => __( 'Devis refusé', 'gestion-atelier-cct' ),
+		'state_8' => __( 'Matériel réexpédié', 'gestion-atelier-cct' ),
 	);
 
 	$texts = (array) apply_filters( 'gacct_dashboard_texts', $defaults );
@@ -393,13 +393,13 @@ function gacct_dash_data( $user_id = 0 ) {
 		$couleurs       = function_exists( 'gacct_extraire_couleurs' ) ? gacct_extraire_couleurs( (string) $row['couleur'] ) : array();
 		$gradient       = function_exists( 'gacct_degrade_couleurs' ) ? gacct_degrade_couleurs( $couleurs ) : '';
 
-		// --- Compteur « révisions en cours » (états 1 à 6, + 8 devis refusé) --
-		if ( ( $etat >= 1 && $etat <= 6 ) || 8 === $etat ) {
+		// --- Compteur « révisions en cours » (états 1 à 7 : tout sauf réexpédié) --
+		if ( $etat >= 1 && $etat <= 7 ) {
 			$data['counters']['revisions']++;
 		}
 
-		// --- Documents (état 7 + rapport PDF) -------------------------------
-		if ( 7 === $etat && ! empty( $row['rapport_pdf'] ) ) {
+		// --- Documents (états 7 et 8 + rapport PDF) -------------------------
+		if ( $etat >= 7 && ! empty( $row['rapport_pdf'] ) ) {
 			$pdf_url = wp_get_attachment_url( (int) $row['rapport_pdf'] );
 
 			if ( $pdf_url ) {
@@ -443,8 +443,8 @@ function gacct_dash_data( $user_id = 0 ) {
 			}
 		}
 
-		// --- Ligne « mes révisions en cours » (états < 7, + 8 devis refusé) ---
-		if ( $etat < 7 || 8 === $etat ) {
+		// --- Ligne « mes révisions en cours » (tout sauf réexpédié) ----------
+		if ( $etat < 8 ) {
 			$revisions[] = array(
 				'revision_id'    => $revision_id,
 				'order_id'       => $order_id,
@@ -634,37 +634,22 @@ function gacct_dash_materiel_label( array $row ) {
 }
 
 /**
- * Mini-tracker compact d'un état (version condensée du tracker 8 états du
+ * Mini-tracker compact d'un état (version condensée du tracker 9 états du
  * template 521 : une barre + le libellé de l'état courant).
  *
- * @param int $etat État 0–7.
+ * @param int $etat État 0–8.
  * @return array{pct:int,label:string,step:string,is_action:bool}
  */
 function gacct_dash_tracker( $etat ) {
-	$etat  = (int) $etat;
-	$total = 8;
+	$total = 9;
+	$etat  = max( 0, min( 8, (int) $etat ) );
 
-	// 8 = « Devis refusé » : hors frise, on fige la barre à l'étape devis (4/8).
-	if ( 8 === $etat ) {
-		$tracker = array(
-			'pct'       => 50,
-			'label'     => gacct_dash_text( 'state_8' ),
-			'step'      => sprintf( gacct_dash_text( 'step' ), 4, $total ),
-			'is_action' => false,
-		);
-
-		return (array) apply_filters( 'gacct_dashboard_tracker', $tracker, $etat );
-	}
-
-	$etat = max( 0, min( 7, $etat ) );
-
-	// Progression = étapes franchies / 8, comme la maquette (état 1 → 25 %,
-	// état 3 → 50 %, état 5 → 75 %, état 7 → 100 %).
+	// Progression = étapes franchies / 9 (état 0 → 11 %, état 8 → 100 %).
 	$tracker = array(
 		'pct'       => (int) round( ( $etat + 1 ) / $total * 100 ),
 		'label'     => gacct_dash_text( 'state_' . $etat ),
 		'step'      => sprintf( gacct_dash_text( 'step' ), $etat + 1, $total ),
-		'is_action' => in_array( $etat, array( 0, 3, 5 ), true ),
+		'is_action' => in_array( $etat, array( 0, 4, 6 ), true ),
 	);
 
 	return (array) apply_filters( 'gacct_dashboard_tracker', $tracker, $etat );
@@ -696,10 +681,10 @@ function gacct_dash_revision_extra( array $row, $order, array $conf ) {
 		return $extra;
 	}
 
-	// 2. Solde à régler (état 5) : le montant prime sur tout le reste.
+	// 2. Solde à régler (état 6) : le montant prime sur tout le reste.
 	$etat = ( '' === (string) ( $row['etat_de_la_commande'] ?? '' ) ) ? 0 : (int) $row['etat_de_la_commande'];
 
-	if ( 5 === $etat && $order instanceof WC_Order ) {
+	if ( 6 === $etat && $order instanceof WC_Order ) {
 		$meta_key = class_exists( 'GACCT_Plugin' ) ? GACCT_Plugin::KOJITO_META_SOLDE_RESTANT : '_kojito_solde_restant';
 		$solde    = $order->get_meta( $meta_key );
 
@@ -839,7 +824,7 @@ function gacct_dash_action_urgent( $type, $default, array $context = array() ) {
  * Un dossier ne produit jamais deux cartes : son état détermine ce qu'on attend
  * du client. L'ordre des tests suit celui du workflow.
  *
- * @param int                 $etat           État 0–7 de la révision.
+ * @param int                 $etat           État 0–8 de la révision.
  * @param array<string,mixed> $row            Ligne CCT revision.
  * @param WC_Order            $order          Commande liée.
  * @param array<string,mixed> $conf           Sortie de `gacct_conf_data()`.
@@ -849,13 +834,13 @@ function gacct_dash_action_urgent( $type, $default, array $context = array() ) {
 function gacct_dash_build_action( $etat, array $row, $order, array $conf, $materiel_label ) {
 	$etat = (int) $etat;
 
-	// --- Devis à valider (état 3) ------------------------------------------
-	if ( 3 === $etat ) {
+	// --- Devis à valider (état 4) ------------------------------------------
+	if ( 4 === $etat ) {
 		return gacct_dash_action_devis( $row, $order, $conf, $materiel_label );
 	}
 
-	// --- Solde à payer (état 5) --------------------------------------------
-	if ( 5 === $etat ) {
+	// --- Solde à payer (état 6) --------------------------------------------
+	if ( 6 === $etat ) {
 		return gacct_dash_action_solde( $row, $order, $conf );
 	}
 
@@ -1624,6 +1609,11 @@ function gacct_dash_render_tracker_compact( $revision_id ) {
 	$etat    = ( '' === (string) ( $row['etat_de_la_commande'] ?? '' ) ) ? 0 : (int) $row['etat_de_la_commande'];
 	$tracker = gacct_dash_tracker( $etat );
 	$action  = ! empty( $tracker['is_action'] ) ? ' action' : '';
+
+	// État 5 : le libellé précise la décision rendue sur le devis.
+	if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
+		$tracker['label'] .= gacct_state5_suffix( absint( $row['order_id'] ?? 0 ) );
+	}
 
 	return sprintf(
 		'<div class="tracker">'

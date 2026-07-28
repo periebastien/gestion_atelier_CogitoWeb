@@ -36,12 +36,13 @@ function gacct_op_fiche_get_slot( array $revision ) {
 }
 
 /**
- * Carte « Devis complémentaire » (CDC devis, 28/07/2026) :
- * - état 2 : formulaire d'envoi (produits réparation/suspentes + lignes libres
- *   avec quantités + commentaire client) — remplace le bouton 2→3 nu ;
- * - état 3 : récapitulatif du devis en attente + modification/ré-envoi ;
- * - état 8 : refus (mode retour ou prestations initiales) ;
- * - états ≥ 4 : rappel de la décision du client si un devis a existé.
+ * Carte « Devis complémentaire » :
+ * - état 3 : formulaire d'envoi (produits réparation/suspentes + lignes libres
+ *   avec quantités + commentaire client) — seule porte d'entrée du 3→4 ;
+ * - état 4 : récapitulatif du devis en attente + modification/ré-envoi ;
+ * - état 5 : décision du client (validé / refusé, mode retour ou prestations
+ *   initiales) ;
+ * - états ≥ 6 : rappel de la décision si un devis a existé.
  */
 function gacct_op_render_quote_card( $revision_id, array $revision, $order, $state ) {
 	if ( ! $order || ! function_exists( 'gacct_quote_send' ) ) {
@@ -54,10 +55,10 @@ function gacct_op_render_quote_card( $revision_id, array $revision, $order, $sta
 	$sent_at  = (string) $order->get_meta( GACCT_QUOTE_META_SENT_AT );
 
 	// Rien à afficher hors des états concernés et sans historique de devis.
-	$show_form    = in_array( $state, array( 2, 3 ), true );
-	$has_history  = $extras || '' !== $decision['decision'] || '' !== $sent_at;
+	$show_form   = in_array( $state, array( 3, 4 ), true );
+	$has_history = $extras || '' !== $decision['decision'] || '' !== $sent_at;
 
-	if ( ! $show_form && ! $has_history && 8 !== $state ) {
+	if ( ! $show_form && ! $has_history ) {
 		return;
 	}
 
@@ -78,14 +79,14 @@ function gacct_op_render_quote_card( $revision_id, array $revision, $order, $sta
 				: __( 'Devis REFUSÉ le %s — réaliser uniquement les prestations initiales.', 'gestion-atelier-cct' ),
 			$decision['decided_at'] ? date_i18n( get_option( 'date_format' ) . ' H:i', strtotime( $decision['decided_at'] ) ) : '?'
 		) ) . '</p>';
-	} elseif ( 3 === $state && $sent_at ) {
+	} elseif ( 4 === $state && $sent_at ) {
 		echo '<p class="gacct-op-quote-status is-pending">⏳ ' . esc_html( sprintf(
 			__( 'Devis envoyé le %s — en attente de la réponse du client.', 'gestion-atelier-cct' ),
 			date_i18n( get_option( 'date_format' ) . ' H:i', strtotime( $sent_at ) )
 		) ) . '</p>';
 	}
 
-	// ---- Lignes du devis en cours (états 3+ : lecture). ----
+	// ---- Lignes du devis en cours (états 4+ : lecture). ----
 	if ( $extras ) {
 		echo '<ul class="gacct-op-items gacct-op-quote-lines">';
 		foreach ( $extras as $item ) {
@@ -103,11 +104,11 @@ function gacct_op_render_quote_card( $revision_id, array $revision, $order, $sta
 		}
 	}
 
-	// ---- Formulaire (état 2 : ouvert ; état 3 : replié derrière « Modifier »). ----
+	// ---- Formulaire (état 3 : ouvert ; état 4 : replié derrière « Modifier »). ----
 	if ( $show_form ) {
 		$products = gacct_quote_products();
 
-		// Pré-remplissage à l'état 3 : les lignes du devis en attente.
+		// Pré-remplissage à l'état 4 : les lignes du devis en attente.
 		$prefill = array();
 		foreach ( $extras as $item ) {
 			$prefill[] = array(
@@ -118,11 +119,11 @@ function gacct_op_render_quote_card( $revision_id, array $revision, $order, $sta
 			);
 		}
 
-		if ( 3 === $state ) {
+		if ( 4 === $state ) {
 			echo '<button type="button" class="gacct-op-btn secondary" data-op-action="toggle-quote-form" aria-expanded="false">' . esc_html__( 'Modifier le devis…', 'gestion-atelier-cct' ) . '</button>';
 		}
 
-		echo '<div class="gacct-op-quote-form"' . ( 3 === $state ? ' hidden' : '' ) . ' data-quote-prefill="' . esc_attr( wp_json_encode( $prefill ) ) . '">';
+		echo '<div class="gacct-op-quote-form"' . ( 4 === $state ? ' hidden' : '' ) . ' data-quote-prefill="' . esc_attr( wp_json_encode( $prefill ) ) . '">';
 		echo '<script type="application/json" data-quote-products>' . wp_json_encode( $products ) . '</script>';
 
 		echo '<p class="gacct-op-muted">' . esc_html__( 'Ajoutez les travaux constatés : prestations du catalogue (Réparation, Suspentes & travaux) ou lignes libres. Rien n\'est facturé maintenant : le montant s\'ajoute au solde de fin d\'intervention.', 'gestion-atelier-cct' ) . '</p>';
@@ -146,18 +147,22 @@ function gacct_op_render_quote_card( $revision_id, array $revision, $order, $sta
 		echo '<textarea rows="3" data-op-field="quote-comment" placeholder="' . esc_attr__( 'Ex. : les suspentes basses présentent une usure avancée, nous recommandons leur remplacement…', 'gestion-atelier-cct' ) . '">' . esc_textarea( $comment ) . '</textarea>';
 
 		echo '<button type="button" class="gacct-op-btn" data-op-action="send-quote">'
-			. ( 3 === $state ? esc_html__( 'Remplacer et renvoyer le devis', 'gestion-atelier-cct' ) : esc_html__( 'Envoyer le devis au client', 'gestion-atelier-cct' ) )
+			. ( 4 === $state ? esc_html__( 'Remplacer et renvoyer le devis', 'gestion-atelier-cct' ) : esc_html__( 'Envoyer le devis au client', 'gestion-atelier-cct' ) )
 			. '</button>';
 		echo '<p class="gacct-op-muted">' . esc_html__( 'Le client reçoit un email avec un lien sécurisé pour accepter ou refuser en un clic.', 'gestion-atelier-cct' ) . '</p>';
 
 		echo '</div>'; // .gacct-op-quote-form
 	}
 
-	// ---- État 8 : consigne selon le mode de refus. ----
-	if ( 8 === $state && 'return' === $decision['mode'] ) {
-		echo '<div class="gacct-op-warning">' . esc_html__( 'Dossier terminé côté travaux : préparer le RETOUR du matériel au client (adresse de la commande).', 'gestion-atelier-cct' ) . '</div>';
-	} elseif ( 8 === $state ) {
-		echo '<p class="gacct-op-muted">' . esc_html__( 'Utilisez « Lancer l\'intervention (prestations initiales) » dans les actions ci-dessus pour reprendre le flux normal.', 'gestion-atelier-cct' ) . '</p>';
+	// ---- État 5 : consigne selon la décision du client. ----
+	if ( 5 === $state && 'refused' === $decision['decision'] ) {
+		if ( 'return' === $decision['mode'] ) {
+			echo '<div class="gacct-op-warning">' . esc_html__( 'Aucun travail supplémentaire : préparer le RETOUR du matériel au client (adresse de la commande), puis clore l\'intervention.', 'gestion-atelier-cct' ) . '</div>';
+		} else {
+			echo '<p class="gacct-op-muted">' . esc_html__( 'Réalisez uniquement les prestations initialement commandées, puis « Intervention terminée, demander le solde ».', 'gestion-atelier-cct' ) . '</p>';
+		}
+	} elseif ( 5 === $state && 'accepted' === $decision['decision'] ) {
+		echo '<p class="gacct-op-muted">' . esc_html__( 'Devis validé : réalisez les travaux complémentaires, puis « Intervention terminée, demander le solde ».', 'gestion-atelier-cct' ) . '</p>';
 	}
 
 	echo '</div>'; // .gacct-op-quote-card
@@ -185,6 +190,11 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 	$state_label = isset( $labels[ $state ] ) ? $labels[ $state ] : (string) $state;
 	$order       = gacct_op_get_order_for_revision( $revision );
 	$slot        = gacct_op_fiche_get_slot( $revision );
+
+	// État 5 : le libellé se précise selon la décision du client sur le devis.
+	if ( 5 === $state ) {
+		$state_label .= gacct_state5_suffix( $order );
+	}
 
 	$is_cancelled = $order && $order->has_status( array( 'cancelled', 'refunded', 'trash' ) );
 
@@ -296,19 +306,19 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 	echo '</dl>';
 	echo '</div>'; // .gacct-op-head
 
-	// ---------------------------------------------------------------- Frise 0→7.
+	// ---------------------------------------------------------------- Frise 0→8.
 	echo '<div class="gacct-op-card gacct-op-steps-card">';
 	echo '<h2>' . esc_html__( 'Avancement', 'gestion-atelier-cct' ) . '</h2>';
 	echo '<ol class="gacct-op-steps">';
 	foreach ( $labels as $i => $label ) {
-		if ( 8 === $i ) {
-			continue; // « Devis refusé » vit hors frise (badge d'en-tête + carte devis).
-		}
 		$class = 'gacct-op-step';
-		if ( 8 === $state ? $i < 3 : $i < $state ) {
+		if ( $i < $state ) {
 			$class .= ' done';
-		} elseif ( $i === $state || ( 8 === $state && 3 === $i ) ) {
+		} elseif ( $i === $state ) {
 			$class .= ' current';
+		}
+		if ( 5 === $i ) {
+			$label .= gacct_state5_suffix( $order );
 		}
 		echo '<li class="' . esc_attr( $class ) . '"><span class="gacct-op-step-dot">' . esc_html( $i ) . '</span><span class="gacct-op-step-label">' . esc_html( $label ) . '</span></li>';
 	}
@@ -329,16 +339,16 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 
 		if ( ! empty( $allowed[ $state ] ) ) {
 			foreach ( $allowed[ $state ] as $target => $action_label ) {
-				if ( 7 === $target ) {
-					continue; // 6→7 passe par l'upload du rapport, pas par change_state.
+				if ( 4 === $target && 3 === $state ) {
+					continue; // 3→4 passe par la carte « Devis complémentaire » ci-dessous.
 				}
-				if ( 3 === $target && 2 === $state ) {
-					continue; // 2→3 passe par la carte « Devis complémentaire » ci-dessous.
+				if ( 8 === $target ) {
+					continue; // 7→8 passe par le formulaire « Expédition retour » ci-dessous.
 				}
 				$has_action = true;
 
-				// Dossier incomplet : le passage en intervention exige un motif de déblocage (CDC §4.4).
-				if ( 4 === $target && $is_incomplete ) {
+				// Dossier incomplet : le démarrage de l'intervention exige un motif de déblocage (CDC §4.4).
+				if ( 3 === $target && $is_incomplete ) {
 					echo '<div class="gacct-op-force">';
 					echo '<button type="button" class="gacct-op-btn" data-op-action="toggle-force" aria-expanded="false">' . esc_html( $action_label ) . '…</button>';
 					echo '<div class="gacct-op-force-form" hidden>';
@@ -354,18 +364,37 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 			}
 		}
 
-		// 6→7 : formulaire d'upload de rapport.
-		if ( 6 === $state ) {
-			$has_action = true;
+		// Rapport d'intervention : déposable pendant toute l'intervention (3 à 6),
+		// exigé à l'entrée en 6. Il ne change plus l'état à lui seul.
+		if ( $state >= 3 && $state <= 6 ) {
+			$rapport_id  = absint( $revision['rapport_pdf'] ?? 0 );
+			$rapport_url = $rapport_id ? wp_get_attachment_url( $rapport_id ) : '';
+
 			echo '<form class="gacct-op-upload-form" data-op-form="upload-report">';
 			echo '<label class="gacct-op-label" for="gacct-op-rapport">' . esc_html__( 'Rapport d\'intervention (PDF, 10 Mo max)', 'gestion-atelier-cct' ) . '</label>';
+			if ( $rapport_url ) {
+				echo '<p class="gacct-op-muted">✓ <a href="' . esc_url( $rapport_url ) . '" target="_blank" rel="noopener">' . esc_html__( 'Rapport déjà déposé', 'gestion-atelier-cct' ) . '</a> — ' . esc_html__( 'en redéposer un le remplacera.', 'gestion-atelier-cct' ) . '</p>';
+			}
 			echo '<input type="file" id="gacct-op-rapport" name="rapport" accept="application/pdf" required>';
-			echo '<button type="submit" class="gacct-op-btn">' . esc_html__( 'Déposer le rapport et clôturer', 'gestion-atelier-cct' ) . '</button>';
-			echo '<p class="gacct-op-muted">' . esc_html__( 'Vous serez enregistré comme ayant réalisé l\'intervention.', 'gestion-atelier-cct' ) . '</p>';
+			echo '<button type="submit" class="gacct-op-btn secondary">' . esc_html__( 'Déposer le rapport', 'gestion-atelier-cct' ) . '</button>';
+			echo '<p class="gacct-op-muted">' . esc_html__( 'Le rapport est obligatoire avant de demander le solde ; il ne devient visible du client qu\'une fois le solde réglé.', 'gestion-atelier-cct' ) . '</p>';
 			echo '</form>';
 		}
 
-		// Renvoi d'email (états 3 et 5).
+		// 7→8 : réexpédition du matériel, suivi transporteur obligatoire.
+		if ( 7 === $state ) {
+			$has_action = true;
+			$suivi_pre  = trim( (string) ( $revision['suivi_transporteur'] ?? '' ) );
+
+			echo '<div class="gacct-op-ship-form">';
+			echo '<label class="gacct-op-label" for="gacct-op-tracking">' . esc_html__( 'Suivi transporteur (numéro ou lien, obligatoire)', 'gestion-atelier-cct' ) . '</label>';
+			echo '<input type="text" id="gacct-op-tracking" data-op-field="tracking" value="' . esc_attr( $suivi_pre ) . '" placeholder="' . esc_attr__( 'Ex. : 6A12345678901 ou https://…', 'gestion-atelier-cct' ) . '">';
+			echo '<button type="button" class="gacct-op-btn" data-op-action="change-state" data-state="8" data-tracking="1">' . esc_html__( 'Matériel réexpédié', 'gestion-atelier-cct' ) . '</button>';
+			echo '<p class="gacct-op-muted">' . esc_html__( 'Le client reçoit un email avec le lien de suivi.', 'gestion-atelier-cct' ) . '</p>';
+			echo '</div>';
+		}
+
+		// Renvoi d'email (états 4 et 6).
 		if ( array_key_exists( $state, gacct_op_resendable_states() ) ) {
 			$has_action = true;
 			echo '<button type="button" class="gacct-op-btn secondary" data-op-action="resend-email">' . esc_html__( 'Renvoyer l\'email au client', 'gestion-atelier-cct' ) . '</button>';
@@ -381,8 +410,8 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 				echo '<label class="gacct-op-label">' . esc_html__( 'Motif (obligatoire, journalisé)', 'gestion-atelier-cct' ) . '</label>';
 				echo '<textarea rows="2" data-op-field="force-reason"></textarea>';
 
-				// Forçage 3→4 d'un dossier incomplet : motif de déblocage en plus (CDC §4.4).
-				$needs_unlock = ( 4 === $target && $is_incomplete );
+				// Forçage vers l'intervention d'un dossier incomplet : motif de déblocage en plus (CDC §4.4).
+				$needs_unlock = ( 3 === $target && $is_incomplete );
 				if ( $needs_unlock ) {
 					echo '<label class="gacct-op-label">' . esc_html__( 'Motif de déblocage du dossier incomplet (obligatoire, journalisé)', 'gestion-atelier-cct' ) . '</label>';
 					echo '<textarea rows="2" data-op-field="unlock-reason"></textarea>';
@@ -393,29 +422,29 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 			}
 		}
 
-		// État 7 : lien du rapport.
-		if ( 7 === $state ) {
+		// États 6+ : lien du rapport pour l'atelier (le client ne le voit qu'à 7).
+		if ( $state >= 6 ) {
 			$rapport_url = ! empty( $revision['rapport_pdf'] ) ? wp_get_attachment_url( absint( $revision['rapport_pdf'] ) ) : '';
 			if ( $rapport_url ) {
 				echo '<p><a class="gacct-op-btn secondary" href="' . esc_url( $rapport_url ) . '" target="_blank" rel="noopener">' . esc_html__( 'Voir le rapport PDF', 'gestion-atelier-cct' ) . '</a></p>';
 			} else {
-				echo '<p class="gacct-op-muted">' . esc_html__( 'Révision terminée — rapport introuvable.', 'gestion-atelier-cct' ) . '</p>';
+				echo '<p class="gacct-op-muted">' . esc_html__( 'Rapport introuvable.', 'gestion-atelier-cct' ) . '</p>';
 			}
 		}
 
 		// Aucun bouton : expliquer qui doit agir.
-		if ( ! $has_action && 7 !== $state ) {
+		if ( ! $has_action && 8 !== $state ) {
 			$waiting = array(
 				0 => __( 'En attente du paiement du client — rien à faire côté atelier.', 'gestion-atelier-cct' ),
-				3 => __( 'En attente de la validation du devis par le client.', 'gestion-atelier-cct' ),
-				5 => __( 'En attente du paiement du solde par le client.', 'gestion-atelier-cct' ),
+				4 => __( 'En attente de la validation du devis par le client.', 'gestion-atelier-cct' ),
+				6 => __( 'En attente du paiement du solde par le client.', 'gestion-atelier-cct' ),
 			);
 			$msg = isset( $waiting[ $state ] ) ? $waiting[ $state ] : __( 'Aucune action disponible pour cet état.', 'gestion-atelier-cct' );
 			echo '<p class="gacct-op-muted">' . esc_html( $msg ) . '</p>';
 		}
 
-		// Annulation du dossier (séparée), masquée si annulée ou terminée.
-		if ( ! $is_cancelled && 7 !== $state ) {
+		// Annulation du dossier (séparée), masquée si annulée ou dossier clos.
+		if ( ! $is_cancelled && $state < 7 ) {
 			echo '<div class="gacct-op-cancel-zone">';
 			echo '<button type="button" class="gacct-op-btn danger" data-op-action="cancel">' . esc_html__( 'Annuler le dossier', 'gestion-atelier-cct' ) . '</button>';
 			echo '</div>';

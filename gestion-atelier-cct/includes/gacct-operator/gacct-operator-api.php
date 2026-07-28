@@ -32,6 +32,7 @@ function gacct_op_ajax_change_state() {
 			'force'         => ! empty( $_POST['force'] ),
 			'reason'        => isset( $_POST['reason'] ) ? wp_unslash( $_POST['reason'] ) : '',
 			'unlock_reason' => isset( $_POST['unlock_reason'] ) ? wp_unslash( $_POST['unlock_reason'] ) : '',
+			'tracking'      => isset( $_POST['tracking'] ) ? wp_unslash( $_POST['tracking'] ) : '',
 		)
 	);
 
@@ -45,8 +46,8 @@ add_action( 'wp_ajax_gacct_op_change_state', 'gacct_op_ajax_change_state' );
 
 /**
  * Envoi (ou ré-envoi modifié) du devis complémentaire : lignes JSON
- * [{product_id, qty} | {label, price, qty}] + commentaire. État 2 → 3,
- * ou remplacement du devis courant à l'état 3 (lien régénéré).
+ * [{product_id, qty} | {label, price, qty}] + commentaire. État 3 → 4,
+ * ou remplacement du devis courant à l'état 4 (lien régénéré).
  */
 function gacct_op_ajax_send_quote() {
 	gacct_op_api_guard();
@@ -73,7 +74,7 @@ function gacct_op_ajax_send_quote() {
 add_action( 'wp_ajax_gacct_op_send_quote', 'gacct_op_ajax_send_quote' );
 
 /**
- * Renvoi de l'email d'état (3 : devis, 5 : solde).
+ * Renvoi de l'email d'état (4 : devis, 6 : solde).
  */
 function gacct_op_ajax_resend_email() {
 	gacct_op_api_guard();
@@ -115,7 +116,9 @@ function gacct_op_ajax_add_note() {
 add_action( 'wp_ajax_gacct_op_add_note', 'gacct_op_ajax_add_note' );
 
 /**
- * Upload du rapport PDF + clôture 6→7 (« réalisé par » automatique, CDC §2.1).
+ * Upload du rapport PDF (états 3 à 6). Il ne change PLUS l'état : le rapport
+ * est exigé à l'ENTRÉE en 6 (demande de solde) et devient visible du client à
+ * l'état 7, atteint au paiement du solde.
  * Le rôle atelier n'a pas upload_files : on gère l'upload nous-mêmes,
  * restreint au PDF, taille max filtrable (défaut 10 Mo).
  */
@@ -158,16 +161,33 @@ function gacct_op_ajax_upload_report() {
 
 	wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $upload['file'] ) );
 
-	$result = gacct_op_change_state( $revision_id, 7, array(
-		'extra_fields' => array( 'rapport_pdf' => $attachment_id ),
-	) );
+	$revision = jwcct_get_cct_item( JWCCT_CCT_REVISION, $revision_id );
 
-	if ( is_wp_error( $result ) ) {
+	if ( ! $revision ) {
 		wp_delete_attachment( $attachment_id, true );
-		wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		wp_send_json_error( array( 'message' => __( 'Dossier introuvable.', 'gestion-atelier-cct' ) ) );
 	}
 
-	wp_send_json_success( array_merge( $result, array( 'attachment_id' => $attachment_id ) ) );
+	$fields = array( 'rapport_pdf' => $attachment_id );
+
+	// « Réalisé par » : renseigné à la première dépose si personne n'est encore
+	// enregistré (l'entrée en 6 le repose de toute façon).
+	if ( empty( $revision['operateur_id'] ) ) {
+		$fields['operateur_id'] = get_current_user_id();
+	}
+
+	if ( ! jwcct_update_cct_item( JWCCT_CCT_REVISION, $revision_id, $fields ) ) {
+		wp_delete_attachment( $attachment_id, true );
+		wp_send_json_error( array( 'message' => __( 'L\'enregistrement du rapport a échoué.', 'gestion-atelier-cct' ) ) );
+	}
+
+	$order = gacct_op_get_order_for_revision( $revision );
+
+	if ( $order ) {
+		gacct_op_add_signed_note( $order, __( 'Rapport d\'intervention (PDF) déposé', 'gestion-atelier-cct' ) );
+	}
+
+	wp_send_json_success( array( 'attachment_id' => $attachment_id ) );
 }
 add_action( 'wp_ajax_gacct_op_upload_report', 'gacct_op_ajax_upload_report' );
 
@@ -345,7 +365,7 @@ function gacct_op_ajax_planning_events() {
 		$ref      = $order ? $order->get_order_number() : ( $row['rev_id'] ? sprintf( __( 'Dossier #%d', 'gestion-atelier-cct' ), $row['rev_id'] ) : __( 'Occupation orpheline', 'gestion-atelier-cct' ) );
 		$client   = $order ? trim( $order->get_formatted_billing_full_name() ) : '';
 		$materiel = trim( implode( ' ', array_filter( array( $row['rev_marque'], $row['rev_modele'] ) ) ) );
-		$free     = ( $state <= 3 );
+		$free     = ( $state <= 2 );
 
 		$events[] = array(
 			'id'            => 'occ-' . absint( $row['occupation_id'] ),

@@ -100,7 +100,8 @@ function gacct_interventions_toolbar_shortcode() {
 
 	if ( function_exists( 'gacct_dash_revision_rows' ) ) {
 		foreach ( gacct_dash_revision_rows( $user_id ) as $row ) {
-			if ( 7 === (int) $row['etat_de_la_commande'] ) {
+			// « Terminées » = dossier clos, matériel réexpédié (état 8).
+			if ( 8 === (int) $row['etat_de_la_commande'] ) {
 				$counters['terminees']++;
 			}
 		}

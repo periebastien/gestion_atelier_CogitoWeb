@@ -1016,23 +1016,25 @@ final class GACCT_Plugin {
 		}
 
 		// ------------------------------------------------------- ACCEPTATION.
-		$updated = $this->update_revision_state( $revision_id, 4 );
+		// L'acceptation comme le refus menent a l'etat 5 « Intervention a finir » :
+		// c'est la meta _gacct_quote_decision qui precise le libelle.
+		$updated = $this->update_revision_state( $revision_id, GACCT_STATE_QUOTE_DECIDED );
 
 		if ( ! $updated ) {
-			$order->add_order_note( __( 'ERREUR : validation devis impossible, echec de la mise a jour de la revision en etat 4.', 'gestion-atelier-cct' ) );
+			$order->add_order_note( __( 'ERREUR : validation devis impossible, echec de la mise a jour de la revision en etat 5.', 'gestion-atelier-cct' ) );
 			$order->save();
 			wp_die( esc_html__( 'Impossible de valider le devis.', 'gestion-atelier-cct' ) );
 		}
 
 		$order->update_meta_data( self::META_VALIDATION_TOKEN_USED_AT, current_time( 'mysql' ) );
 		$order->delete_meta_data( self::META_VALIDATION_TOKEN_HASH );
-		$order->add_order_note( __( 'Devis valide par le client via lien securise. Revision passee en etat 4.', 'gestion-atelier-cct' ) );
+		$order->add_order_note( __( 'Devis valide par le client via lien securise. Revision passee en etat 5 (intervention a finir).', 'gestion-atelier-cct' ) );
 		$order->save();
 
 		gacct_quote_mark_decision( $order, 'accepted' );
 
 		$new_revision = $this->get_revision_row( $revision_id );
-		$this->process_revision_state_transition( $revision_id, 4, $new_revision, $prev_revision, 'validation_url' );
+		$this->process_revision_state_transition( $revision_id, GACCT_STATE_QUOTE_DECIDED, $new_revision, $prev_revision, 'validation_url' );
 
 		wp_safe_redirect(
 			add_query_arg(
@@ -1480,29 +1482,42 @@ final class GACCT_Plugin {
 
 		$validation_url = '';
 
-		if ( 3 === $state ) {
+		if ( 4 === $state ) {
 			$validation_url = $this->create_validation_url( $order, $revision_id );
 			$order->add_order_note( __( 'Lien securise de validation devis genere pour le client.', 'gestion-atelier-cct' ) );
 			$order->save();
 		}
 
-		if ( 5 === $state ) {
-			$order->add_order_note( __( 'Etat 5 detecte : revision finie, preparation du paiement du solde lancee.', 'gestion-atelier-cct' ) );
+		if ( 6 === $state ) {
+			$order->add_order_note( __( 'Etat 6 detecte : intervention finie, preparation du paiement du solde lancee.', 'gestion-atelier-cct' ) );
 			$order->save();
 
 			do_action( 'kojito_declencher_paiement_solde', $order->get_id() );
 
 			$order = wc_get_order( $order->get_id() );
 
-			if ( $order ) {
-				$balance = (float) $order->get_meta( self::KOJITO_META_SOLDE_RESTANT );
-				$order->add_order_note(
-					sprintf(
-						__( 'Preparation du solde terminee. Solde restant courant : %s.', 'gestion-atelier-cct' ),
-						function_exists( 'wc_price' ) ? wp_strip_all_tags( wc_price( $balance ) ) : (string) $balance
-					)
-				);
+			if ( ! $order ) {
+				return;
+			}
+
+			$balance = $this->revision_balance_due( $order );
+
+			$order->add_order_note(
+				sprintf(
+					__( 'Preparation du solde terminee. Solde restant courant : %s.', 'gestion-atelier-cct' ),
+					function_exists( 'wc_price' ) ? wp_strip_all_tags( wc_price( $balance ) ) : (string) $balance
+				)
+			);
+			$order->save();
+
+			// Rien a encaisser : on n'envoie pas de demande de solde, on enchaine
+			// directement sur l'etat 7 (rapport disponible pour le client).
+			if ( $balance <= 0.005 ) {
+				$order->add_order_note( __( 'Solde nul : passage automatique en etat 7 (revision finie, rapport disponible).', 'gestion-atelier-cct' ) );
 				$order->save();
+
+				$this->advance_revision_state( $revision_id, 7, $revision );
+				return;
 			}
 		}
 
@@ -1591,6 +1606,11 @@ final class GACCT_Plugin {
 		$order->save();
 	}
 
+	/**
+	 * Emails du workflow, indexes par etat d'ARRIVEE. Pas d'entree pour 5
+	 * (« Intervention a finir ») : les emails d'acceptation et de refus du devis
+	 * sont ceux de gacct-quote.php.
+	 */
 	private function notification_definitions() {
 		return array(
 			2 => array(
@@ -1601,6 +1621,13 @@ final class GACCT_Plugin {
 				'body'       => '<p>Bonjour {customer_name},</p><p>Nous vous confirmons la reception de votre materiel. L intervention est programmee pour le {date_atelier}. Prestations prevues : {prestations}.</p><p>A tres vite,<br><br>Bastien.</p>',
 			),
 			3 => array(
+				'enabled'    => true,
+				'label'      => __( 'Intervention programmee', 'gestion-atelier-cct' ),
+				'recipients' => array( 'admin' ),
+				'subject'    => __( '[Alerte] Intervention demarree - Commande {order_id}', 'gestion-atelier-cct' ),
+				'body'       => '<p>L intervention sur le materiel de {customer_name} vient de demarrer a l atelier. Prestations prevues : {prestations}.</p>',
+			),
+			4 => array(
 				'enabled'    => true,
 				'label'      => __( 'Nouveau devis a valider', 'gestion-atelier-cct' ),
 				'recipients' => array( 'client', 'admin' ),
@@ -1613,14 +1640,7 @@ final class GACCT_Plugin {
 					. '<p><a href="{validation_url}">Consulter le devis et donner ma reponse</a> — vous pourrez l accepter ou le refuser en un clic.</p>'
 					. '<p>Merci de votre reactivite,<br><br>Bastien.</p>',
 			),
-			4 => array(
-				'enabled'    => true,
-				'label'      => __( 'Devis valide', 'gestion-atelier-cct' ),
-				'recipients' => array( 'admin' ),
-				'subject'    => __( '[Alerte] Devis valide par le client - Commande {order_id}', 'gestion-atelier-cct' ),
-				'body'       => '<p>Le client {customer_name} vient de valider son nouveau devis. Les travaux peuvent commencer.</p>',
-			),
-			5 => array(
+			6 => array(
 				'enabled'    => true,
 				'label'      => __( 'Intervention finie en attente de paiement', 'gestion-atelier-cct' ),
 				'recipients' => array( 'client', 'admin' ),
@@ -1633,6 +1653,13 @@ final class GACCT_Plugin {
 				'recipients' => array( 'client', 'admin' ),
 				'subject'    => __( 'Votre revision est terminee ! Retrouvez votre rapport - {order_id}', 'gestion-atelier-cct' ),
 				'body'       => '<p>Bonjour {customer_name},</p><p>La revision est officiellement terminee. Vous trouverez votre rapport technique complet en piece jointe de cet e-mail.</p><p>Merci de votre confiance,<br><br>Bastien.</p>',
+			),
+			8 => array(
+				'enabled'    => true,
+				'label'      => __( 'Materiel reexpedie', 'gestion-atelier-cct' ),
+				'recipients' => array( 'client', 'admin' ),
+				'subject'    => __( 'Votre materiel est reparti ! - {order_id}', 'gestion-atelier-cct' ),
+				'body'       => '<p>Bonjour {customer_name},</p><p>Votre materiel a quitte l atelier et voyage vers vous.</p><p>Suivi de votre colis : {tracking_link}</p><p>Bons vols,<br><br>Bastien.</p>',
 			),
 		);
 	}
@@ -1694,8 +1721,20 @@ final class GACCT_Plugin {
 			}
 		}
 
+		// Suivi transporteur (etat 8) : lien cliquable si c'en est un, sinon
+		// le numero brut tel que l'operateur l'a saisi.
+		$tracking      = trim( (string) ( $revision['suivi_transporteur'] ?? '' ) );
+		$tracking_link = '';
+
+		if ( '' !== $tracking ) {
+			$tracking_link = preg_match( '#^https?://#i', $tracking )
+				? '<a href="' . esc_url( $tracking ) . '">' . esc_html__( 'suivre mon colis', 'gestion-atelier-cct' ) . '</a>'
+				: '<strong>' . esc_html( $tracking ) . '</strong>';
+		}
+
 		return array(
 			'{customer_name}'  => $this->notification_customer_name( $revision_id, $revision, $order ),
+			'{tracking_link}'  => $tracking_link,
 			'{prestations}'    => $this->revision_prestations_label( $revision ),
 			'{date_atelier}'   => $this->revision_workshop_date_label( $revision_id ),
 			'{order_id}'       => (string) $order_id,
@@ -1861,6 +1900,61 @@ final class GACCT_Plugin {
 			$this->insert_formats_for_data( $data ),
 			array( '%d' )
 		);
+	}
+
+	/**
+	 * Solde restant du sur une commande. Source unique : la meta posee par
+	 * kojito-acompte-produit ; repli sur l'API publique du plugin d'acompte
+	 * (total du - acompte deja verse). Aucun calcul maison.
+	 */
+	private function revision_balance_due( $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			return 0.0;
+		}
+
+		$meta = $order->get_meta( self::KOJITO_META_SOLDE_RESTANT );
+
+		if ( '' !== (string) $meta && null !== $meta ) {
+			return (float) $meta;
+		}
+
+		if ( function_exists( 'gacct_kojito_total_initial' ) && function_exists( 'gacct_quote_deposit_paid' ) ) {
+			return round( gacct_kojito_total_initial( $order ) - gacct_quote_deposit_paid( $order ), 2 );
+		}
+
+		return 0.0;
+	}
+
+	/**
+	 * Avancement automatique d'une revision (enchainement 6 -> 7 quand le solde
+	 * est nul, bascule au paiement du solde). Meme mecanique que
+	 * gacct_op_change_state() : ecriture SQL + hook JetEngine updated-item, pour
+	 * que le workflow (emails, PJ rapport) se declenche normalement.
+	 *
+	 * @return bool
+	 */
+	public function advance_revision_state( $revision_id, $new_state, array $prev_revision = array() ) {
+		$revision_id = absint( $revision_id );
+
+		if ( empty( $prev_revision ) ) {
+			$prev_revision = $this->get_revision_row( $revision_id );
+		}
+
+		if ( ! $this->update_revision_state( $revision_id, $new_state ) ) {
+			return false;
+		}
+
+		$new_revision = $this->get_revision_row( $revision_id );
+
+		if ( empty( $new_revision ) ) {
+			$new_revision = array_merge( $prev_revision, array( 'etat_de_la_commande' => (string) absint( $new_state ) ) );
+		}
+
+		$new_revision['_ID'] = $revision_id;
+
+		do_action( 'jet-engine/custom-content-types/updated-item/revision', $new_revision, $prev_revision, null );
+
+		return true;
 	}
 
 	private function revision_workshop_date_label( $revision_id ) {
@@ -2375,3 +2469,54 @@ final class GACCT_Plugin {
 }
 
 GACCT_Plugin::instance();
+
+
+/* =============================================================================
+ *  ETAT 6 -> 7 : LE SOLDE EST PAYE
+ *
+ *  L'ancien etat « paiement valide » a disparu : des que la commande repasse a
+ *  un statut paye apres le lien order-pay du solde, la revision passe a 7 et le
+ *  client recoit son rapport. On ne bascule QUE depuis 6 (un dossier n'avance
+ *  jamais tout seul depuis un autre etat) et on ignore `acompte-paye`, qui ne
+ *  concerne que l'acompte initial (bascule 0 -> 1).
+ * ============================================================================= */
+
+add_action( 'woocommerce_order_status_changed', 'gacct_sync_revision_state_on_balance_payment', 25, 4 );
+
+function gacct_sync_revision_state_on_balance_payment( $order_id, $old_status, $new_status, $order ) {
+
+    if ( ! $order instanceof WC_Order || ! $order->has_status( wc_get_is_paid_statuses() ) ) {
+        return;
+    }
+
+    global $wpdb;
+
+    $revision_id = absint( $order->get_meta( JWCCT_ORDER_REVISION_ID ) );
+
+    // Repli : meta absente (commande invitee, liaison ratee) -> colonne order_id.
+    if ( ! $revision_id ) {
+        $revision_id = absint( $wpdb->get_var( $wpdb->prepare(
+            "SELECT _ID FROM {$wpdb->prefix}jet_cct_revision WHERE order_id = %d AND cct_status = 'publish' LIMIT 1",
+            $order_id
+        ) ) );
+    }
+
+    if ( ! $revision_id ) {
+        return;
+    }
+
+    // Etat lu en SQL direct : le cache d'objet JetEngine peut resservir une
+    // valeur perimee au sein d'une meme requete.
+    $state = gacct_op_read_state( $revision_id );
+
+    if ( 6 !== $state ) {
+        return;
+    }
+
+    $order->add_order_note( __( 'Solde encaisse : dossier atelier passe en « Revision finie, rapport disponible ».', 'gestion-atelier-cct' ) );
+    $order->save();
+
+    if ( ! GACCT_Plugin::instance()->advance_revision_state( $revision_id, 7 ) ) {
+        jwcct_log( "sync_revision_state_on_balance_payment : echec du passage 6 -> 7 pour la revision $revision_id (order $order_id)." );
+    }
+}

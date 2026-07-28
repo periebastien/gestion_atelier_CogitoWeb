@@ -190,12 +190,30 @@
 					}
 				}
 
+				// Réexpédition (7→8) : suivi transporteur obligatoire.
+				var tracking = '';
+
+				if ( '1' === button.getAttribute( 'data-tracking' ) ) {
+					var trackWrap  = button.closest( '.gacct-op-ship-form' ) || fiche;
+					var trackField = trackWrap.querySelector( '[data-op-field="tracking"]' );
+					tracking = trackField ? trackField.value.trim() : '';
+
+					if ( '' === tracking ) {
+						showFeedback( 'error', 'Le suivi transporteur est obligatoire.' );
+						if ( trackField ) {
+							trackField.focus();
+						}
+						return;
+					}
+				}
+
 				run( button, 'gacct_op_change_state', {
 					revision_id: revisionId,
 					new_state: button.getAttribute( 'data-state' ),
 					force: force,
 					reason: reason,
-					unlock_reason: unlockReason
+					unlock_reason: unlockReason,
+					tracking: tracking
 				}, function () {
 					window.location.reload();
 				} );
@@ -505,7 +523,7 @@
 			} );
 		}
 
-		// Upload du rapport (transition 6→7).
+		// Dépôt du rapport d'intervention (états 3 à 6, sans changement d'état).
 		var uploadForm = fiche.querySelector( '[data-op-form="upload-report"]' );
 
 		if ( uploadForm ) {

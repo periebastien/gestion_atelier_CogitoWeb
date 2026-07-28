@@ -129,11 +129,11 @@ function gacct_op_render_today_screen() {
 		}
 	}
 
-	// Bloc 2 : sous-groupes états 2, 4, 6.
+	// Bloc 2 : sous-groupes états 2, 3, 5.
 	$workshop_groups = array(
 		2 => array( 'title' => __( 'À diagnostiquer', 'gestion-atelier-cct' ), 'items' => array() ),
-		4 => array( 'title' => __( 'Travaux à faire', 'gestion-atelier-cct' ), 'items' => array() ),
-		6 => array( 'title' => __( 'Rapport à déposer / colis à expédier', 'gestion-atelier-cct' ), 'items' => array() ),
+		3 => array( 'title' => __( 'Travaux à faire', 'gestion-atelier-cct' ), 'items' => array() ),
+		5 => array( 'title' => __( 'Travaux à finir (décision devis rendue)', 'gestion-atelier-cct' ), 'items' => array() ),
 	);
 
 	foreach ( array_keys( $workshop_groups ) as $state ) {
@@ -146,9 +146,9 @@ function gacct_op_render_today_screen() {
 		$workshop_groups[ $state ]['items'] = $result['items'];
 	}
 
-	// Bloc 3 : états 3 et 5, les plus anciens (cct_modified) d'abord.
+	// Bloc 3 : états 4 et 6, les plus anciens (cct_modified) d'abord.
 	$waiting = array();
-	foreach ( array( 3, 5 ) as $state ) {
+	foreach ( array( 4, 6 ) as $state ) {
 		$result  = gacct_op_query_interventions( array(
 			'state'    => $state,
 			'orderby'  => 'modified',

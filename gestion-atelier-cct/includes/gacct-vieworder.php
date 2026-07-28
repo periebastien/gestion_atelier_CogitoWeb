@@ -133,11 +133,11 @@ function gacct_vo_state_labels() {
 		0 => __( 'En attente de paiement', 'gestion-atelier-cct' ),
 		1 => __( 'En attente de réception', 'gestion-atelier-cct' ),
 		2 => __( 'Voile réceptionnée', 'gestion-atelier-cct' ),
-		3 => __( 'Devis à valider', 'gestion-atelier-cct' ),
-		4 => __( 'Intervention programmée', 'gestion-atelier-cct' ),
-		5 => __( 'Solde à régler', 'gestion-atelier-cct' ),
-		6 => __( 'Paiement validé', 'gestion-atelier-cct' ),
+		3 => __( 'Intervention programmée', 'gestion-atelier-cct' ),
+		4 => __( 'Devis à valider', 'gestion-atelier-cct' ),
+		5 => __( 'Intervention à finir', 'gestion-atelier-cct' ),
+		6 => __( 'Solde à régler', 'gestion-atelier-cct' ),
 		7 => __( 'Révision terminée', 'gestion-atelier-cct' ),
-		8 => __( 'Devis refusé', 'gestion-atelier-cct' ),
+		8 => __( 'Matériel réexpédié', 'gestion-atelier-cct' ),
 	) );
 }

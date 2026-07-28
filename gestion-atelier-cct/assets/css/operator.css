@@ -34,14 +34,16 @@
 	line-height: 1.6;
 	white-space: nowrap;
 }
+/* Orange = la balle est dans le camp du client (0, 4, 6). */
 .gacct-op .gacct-op-badge.etat-0 { background: var(--gacct-warn-soft); color: #8a6d1a; }
 .gacct-op .gacct-op-badge.etat-1 { background: #e8f0fe; color: #1a56b0; }
 .gacct-op .gacct-op-badge.etat-2 { background: #e8f0fe; color: #1a56b0; }
-.gacct-op .gacct-op-badge.etat-3 { background: var(--gacct-warn-soft); color: #8a6d1a; }
-.gacct-op .gacct-op-badge.etat-4 { background: var(--gacct-accent-soft); color: var(--gacct-accent-dark); }
-.gacct-op .gacct-op-badge.etat-5 { background: var(--gacct-warn-soft); color: #8a6d1a; }
-.gacct-op .gacct-op-badge.etat-6 { background: #e6f6e9; color: #1b7a33; }
+.gacct-op .gacct-op-badge.etat-3 { background: var(--gacct-accent-soft); color: var(--gacct-accent-dark); }
+.gacct-op .gacct-op-badge.etat-4 { background: var(--gacct-warn-soft); color: #8a6d1a; }
+.gacct-op .gacct-op-badge.etat-5 { background: var(--gacct-accent-soft); color: var(--gacct-accent-dark); }
+.gacct-op .gacct-op-badge.etat-6 { background: var(--gacct-warn-soft); color: #8a6d1a; }
 .gacct-op .gacct-op-badge.etat-7 { background: #e6f6e9; color: #1b7a33; }
+.gacct-op .gacct-op-badge.etat-8 { background: #d6efdb; color: #14602a; }
 
 /* Boutons */
 .gacct-op .gacct-op-btn {

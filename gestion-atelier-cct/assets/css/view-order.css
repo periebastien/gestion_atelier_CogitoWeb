@@ -278,3 +278,9 @@
 	.gacct-vo-card { padding: 18px 16px; }
 	.gacct-vo-ref { font-size: 21px; }
 }
+
+/* Retour & documents mis en avant quand le matériel est reparti (état 8). */
+.gacct-vo-card.is-highlight {
+	border-color: var(--gacct-vo-accent, #20c4c3);
+	box-shadow: 0 0 0 1px var(--gacct-vo-accent, #20c4c3) inset;
+}

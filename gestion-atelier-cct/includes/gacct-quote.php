@@ -1,22 +1,22 @@
 <?php
 /**
- * Devis complémentaire (état 3) — cœur métier.
+ * Devis complémentaire (état 4) — cœur métier.
  *
- * L'atelier réévalue la commande après inspection : ajout de prestations du
- * catalogue (catégories « réparation » et « suspentes-travaux ») et/ou de
- * lignes libres, avec quantités. Le client reçoit un lien sécurisé vers la
- * page /devis-a-valider/ où il ACCEPTE (état 4) ou REFUSE le devis.
+ * L'atelier réévalue la commande PENDANT l'intervention (état 3) : ajout de
+ * prestations du catalogue (catégories « réparation » et « suspentes-travaux »)
+ * et/ou de lignes libres, avec quantités. L'envoi fait 3→4 ; le client reçoit
+ * un lien sécurisé vers la page /devis-a-valider/ où il ACCEPTE ou REFUSE.
  *
- * Refus (décision Bastien 28/07/2026) :
- * - cas général : les lignes supplémentaires sont retirées, la révision passe
- *   en état 8 « Devis refusé » ; l'atelier relance l'intervention (8→4) sur
- *   les prestations initiales uniquement ;
- * - commande « demande de devis après réception » seule (produit 696) : état 8
- *   terminal, le matériel est retourné au client.
+ * Les DEUX décisions ramènent le dossier à l'état 5 « Intervention à finir » —
+ * le libellé se précise (« devis validé » / « devis refusé ») d'après la meta
+ * de commande `_gacct_quote_decision`. L'atelier termine ensuite par 5→6.
+ * En cas de refus, les lignes supplémentaires sont retirées et l'email envoyé
+ * dépend du périmètre : prestations initiales à réaliser (cas général) ou
+ * retour du matériel (commande « pure demande de devis », produit 696).
  *
  * Montants : les lignes ajoutées portent la sémantique Kojito « acompte 0 »
  * (total de ligne 0 €, prix réel dans les metas _kojito_prix_total_initial*).
- * Rien n'est encaissé à l'envoi du devis : tout part dans le solde (état 5),
+ * Rien n'est encaissé à l'envoi du devis : tout part dans le solde (état 6),
  * calculé par l'API publique de kojito-acompte-produit — aucun recalcul ici.
  *
  * Relance : si le devis reste sans réponse après {quote_reminder_days} jours
@@ -41,8 +41,38 @@ define( 'GACCT_QUOTE_META_DECISION', '_gacct_quote_decision' );
 define( 'GACCT_QUOTE_META_DECIDED_AT', '_gacct_quote_decided_at' );
 define( 'GACCT_QUOTE_META_REFUSAL_MODE', '_gacct_quote_refusal_mode' );
 
-// État CCT terminal/intermédiaire « Devis refusé ».
-define( 'GACCT_STATE_QUOTE_REFUSED', 8 );
+// État atteint après la décision du client, acceptation comme refus :
+// 5 « Intervention à finir » (le satellite « Devis refusé » n'existe plus).
+define( 'GACCT_STATE_QUOTE_DECIDED', 5 );
+
+/**
+ * Suffixe de libellé de l'état 5 selon la décision du client, là où celle-ci
+ * est accessible (fiche console, détail de commande, tableau de bord).
+ *
+ * @param int|WC_Order $order Commande ou ID de commande.
+ * @return string '' | ' — devis validé' | ' — devis refusé'
+ */
+function gacct_state5_suffix( $order ) {
+	if ( ! $order instanceof WC_Order ) {
+		$order = ( absint( $order ) && function_exists( 'wc_get_order' ) ) ? wc_get_order( absint( $order ) ) : false;
+	}
+
+	if ( ! $order instanceof WC_Order ) {
+		return '';
+	}
+
+	$decision = (string) $order->get_meta( GACCT_QUOTE_META_DECISION );
+
+	if ( 'accepted' === $decision ) {
+		return __( ' — devis validé', 'gestion-atelier-cct' );
+	}
+
+	if ( 'refused' === $decision ) {
+		return __( ' — devis refusé', 'gestion-atelier-cct' );
+	}
+
+	return '';
+}
 
 /* =============================================================================
  *  CATALOGUE PROPOSÉ À L'OPÉRATEUR
@@ -103,6 +133,54 @@ function gacct_quote_products() {
  */
 function gacct_quote_devis_product_ids() {
 	return array_map( 'absint', apply_filters( 'gacct_quote_devis_product_ids', array( 696 ) ) );
+}
+
+/**
+ * La commande contient-elle un produit « demande de devis » ? Si oui le devis
+ * complémentaire est OBLIGATOIRE : l'atelier ne peut pas clore l'intervention
+ * (3→6) sans être passé par lui, et la frise client affiche les 9 étapes.
+ */
+function gacct_quote_order_has_devis_product( $order ) {
+	if ( ! $order instanceof WC_Order ) {
+		return false;
+	}
+
+	$devis_ids = gacct_quote_devis_product_ids();
+
+	foreach ( $order->get_items() as $item ) {
+		if ( in_array( absint( $item->get_product_id() ), $devis_ids, true ) ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Le dossier a-t-il un « volet devis » ? Détermine l'affichage des étapes 4 et
+ * 5 de la frise client : un dossier sans devis ne les traverse jamais.
+ *
+ * @param WC_Order|false $order
+ * @param int|null       $etat État courant de la révision (facultatif).
+ */
+function gacct_quote_has_quote_context( $order, $etat = null ) {
+	if ( null !== $etat && in_array( (int) $etat, array( 4, 5 ), true ) ) {
+		return true;
+	}
+
+	if ( ! $order instanceof WC_Order ) {
+		return false;
+	}
+
+	if ( '' !== (string) $order->get_meta( GACCT_QUOTE_META_DECISION ) ) {
+		return true;
+	}
+
+	if ( gacct_quote_extra_items( $order ) ) {
+		return true;
+	}
+
+	return gacct_quote_order_has_devis_product( $order );
 }
 
 /**
@@ -204,7 +282,7 @@ function gacct_quote_ht_from_ttc( $ttc, $product = null ) {
 /**
  * Ajoute les lignes du devis à la commande, sémantique Kojito « acompte 0 » :
  * total de ligne 0 € (rien à payer maintenant), prix réel en metas — le solde
- * de l'état 5 les intégrera automatiquement via get_total_initial().
+ * de l'état 6 les intégrera automatiquement via get_total_initial().
  *
  * @param WC_Order $order
  * @param array[]  $lines Chaque ligne : { product_id: int, qty: int } (catalogue)
@@ -328,8 +406,8 @@ function gacct_quote_remove_extras( $order ) {
 
 /**
  * Construit et envoie le devis complémentaire : pose les lignes, enregistre le
- * commentaire, puis déclenche l'état 3 (email + lien sécurisé du workflow).
- * Rejouable à l'état 3 : les lignes précédentes sont remplacées, le lien
+ * commentaire, puis déclenche l'état 4 (email + lien sécurisé du workflow).
+ * Rejouable à l'état 4 : les lignes précédentes sont remplacées, le lien
  * régénéré et l'email renvoyé.
  *
  * @param int    $revision_id ID du CCT revision.
@@ -345,10 +423,12 @@ function gacct_quote_send( $revision_id, array $lines, $comment = '' ) {
 		return new WP_Error( 'gacct_quote_not_found', __( 'Dossier introuvable.', 'gestion-atelier-cct' ) );
 	}
 
-	$state = absint( $revision['etat_de_la_commande'] ?? 0 );
+	// État lu en SQL direct (cache d'objet JetEngine).
+	$state = gacct_op_read_state( $revision_id );
+	$state = ( null === $state ) ? absint( $revision['etat_de_la_commande'] ?? 0 ) : $state;
 
-	if ( ! in_array( $state, array( 2, 3 ), true ) ) {
-		return new WP_Error( 'gacct_quote_bad_state', __( 'Le devis complémentaire ne peut être envoyé qu\'après réception de la voile (états 2 et 3).', 'gestion-atelier-cct' ) );
+	if ( ! in_array( $state, array( 3, 4 ), true ) ) {
+		return new WP_Error( 'gacct_quote_bad_state', __( 'Le devis complémentaire ne peut être envoyé que pendant l\'intervention (états 3 et 4).', 'gestion-atelier-cct' ) );
 	}
 
 	$order = gacct_op_get_order_for_revision( $revision );
@@ -375,10 +455,10 @@ function gacct_quote_send( $revision_id, array $lines, $comment = '' ) {
 	$order->delete_meta_data( GACCT_QUOTE_META_REFUSAL_MODE );
 	$order->save();
 
-	if ( 2 === $state ) {
-		$result = gacct_op_change_state( $revision_id, 3 );
+	if ( 3 === $state ) {
+		$result = gacct_op_change_state( $revision_id, 4 );
 	} else {
-		// Déjà à l'état 3 : nouveau lien + nouvel email, sans transition.
+		// Déjà à l'état 4 : nouveau lien + nouvel email, sans transition.
 		$result = gacct_op_resend_state_email( $revision_id );
 	}
 
@@ -403,7 +483,7 @@ function gacct_quote_send( $revision_id, array $lines, $comment = '' ) {
 
 	return array(
 		'added'  => $added,
-		'resent' => 3 === $state,
+		'resent' => 4 === $state,
 	);
 }
 
@@ -442,13 +522,13 @@ function gacct_quote_mark_decision( $order, $decision, $mode = '' ) {
 /**
  * Refus du devis par le client (lien sécurisé) :
  * - retire les lignes supplémentaires (la commande revient au périmètre initial) ;
- * - révision → état 8 « Devis refusé » ;
+ * - révision → état 5 « Intervention à finir — devis refusé » (même état que
+ *   l'acceptation : c'est la meta `_gacct_quote_decision` qui les distingue) ;
  * - email client (template `quote_refused_partial` ou `quote_refused_return`
  *   selon que la commande est une pure demande de devis) + copie admin.
  *
- * L'atelier reprend la main : transition 8→4 depuis la console pour lancer
- * l'intervention sur les prestations initiales (cas général), ou retour du
- * matériel (pure demande de devis).
+ * L'atelier reprend la main et termine par 5→6 (cas général), ou retourne le
+ * matériel sans travaux (pure demande de devis).
  *
  * @return array|WP_Error { mode: 'partial'|'return' }
  */
@@ -469,10 +549,11 @@ function gacct_quote_refuse( $order, $revision_id ) {
 
 	gacct_quote_mark_decision( $order, 'refused', $mode );
 
-	// État 8 posé directement : aucune notification d'état n'existe pour 8,
+	// État 5 posé directement : aucune notification d'état n'existe pour 5,
 	// les emails de refus (ci-dessous) sont dédiés. Le hook JetEngine est tout
-	// de même émis pour les éventuels autres écouteurs.
-	$fields = array( 'etat_de_la_commande' => (string) GACCT_STATE_QUOTE_REFUSED );
+	// de même émis pour les éventuels autres écouteurs — même voie que
+	// l'acceptation, qui passe par update_revision_state + le hook.
+	$fields = array( 'etat_de_la_commande' => (string) GACCT_STATE_QUOTE_DECIDED );
 
 	if ( ! jwcct_update_cct_item( JWCCT_CCT_REVISION, $revision_id, $fields ) ) {
 		return new WP_Error( 'gacct_quote_update_failed', __( 'La mise à jour du dossier a échoué.', 'gestion-atelier-cct' ) );
@@ -541,7 +622,7 @@ function gacct_quote_validation_url( $order, $revision_id ) {
 add_action( GACCT_PAY_HOURLY_EVENT, 'gacct_quote_process_reminders', 20 );
 
 /**
- * Relance les devis sans réponse : révisions à l'état 3 dont l'envoi date de
+ * Relance les devis sans réponse : révisions à l'état 4 dont l'envoi date de
  * plus de {quote_reminder_days} jours, une seule relance par devis envoyé.
  */
 function gacct_quote_process_reminders() {
@@ -553,7 +634,7 @@ function gacct_quote_process_reminders() {
 	$rev_table = $wpdb->prefix . 'jet_cct_' . JWCCT_CCT_REVISION;
 	$rows      = $wpdb->get_results(
 		"SELECT _ID, order_id FROM {$rev_table}
-		 WHERE cct_status = 'publish' AND CAST(etat_de_la_commande AS UNSIGNED) = 3 AND order_id > 0",
+		 WHERE cct_status = 'publish' AND CAST(etat_de_la_commande AS UNSIGNED) = 4 AND order_id > 0",
 		ARRAY_A
 	);
 
