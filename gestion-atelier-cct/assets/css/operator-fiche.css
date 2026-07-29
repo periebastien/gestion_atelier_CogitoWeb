@@ -1,6 +1,6 @@
 /**
  * Console atelier — écran « Fiche intervention 360° ».
- * Mobile-first ; la base (tokens, badges, boutons, cartes) vit dans operator.css.
+ * Mobile-first ; boutons/inputs natifs WP, tokens dans operator.css.
  */
 
 .gacct-op-fiche .gacct-op-back {
@@ -22,6 +22,7 @@
 }
 
 /* ------------------------------------------------------------- En-tête */
+.gacct-op-fiche .gacct-op-head { padding-top: 12px; }
 .gacct-op-fiche .gacct-op-head-top {
 	display: flex;
 	flex-wrap: wrap;
@@ -30,23 +31,26 @@
 	margin-bottom: 14px;
 }
 .gacct-op-fiche .gacct-op-ref {
-	font-size: 22px;
-	font-weight: 700;
+	font-size: 20px;
+	font-weight: 600;
+	color: var(--gacct-text);
 }
 .gacct-op-fiche .gacct-op-badge-cancelled {
-	background: #fdeeee;
-	color: var(--gacct-danger);
+	background: #eba3a3;
+	color: #571313;
 }
 .gacct-op-fiche .gacct-op-badge-client {
 	background: var(--gacct-accent-soft);
 	color: var(--gacct-accent-dark);
 }
 
+/* Bandeaux d'avertissement : look notice-warning inline de l'admin. */
 .gacct-op-fiche .gacct-op-warning {
-	background: var(--gacct-warn-soft);
-	border: 1px solid var(--gacct-warn);
-	border-radius: var(--gacct-radius);
-	padding: 10px 14px;
+	background: #fff;
+	border: 1px solid var(--gacct-border);
+	border-left: 4px solid var(--gacct-warn);
+	box-shadow: var(--gacct-shadow);
+	padding: 8px 12px;
 	margin-bottom: 14px;
 	font-weight: 600;
 }
@@ -81,7 +85,7 @@
 	.gacct-op-fiche .gacct-op-head .gacct-op-facts { grid-template-columns: 1fr 1fr; }
 }
 .gacct-op-fiche .gacct-op-facts dt {
-	font-size: 12px;
+	font-size: 11px;
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
 	color: var(--gacct-text-muted);
@@ -89,7 +93,7 @@
 }
 .gacct-op-fiche .gacct-op-facts dd {
 	margin: 0;
-	font-size: 15px;
+	font-size: 14px;
 	overflow-wrap: anywhere;
 }
 
@@ -100,12 +104,11 @@
 	flex-wrap: wrap;
 }
 .gacct-op-fiche .gacct-op-operator-row select { max-width: 100%; }
-.gacct-op-fiche .gacct-op-btn-small { min-height: 36px; padding: 4px 12px; font-size: 13px; }
 .gacct-op-fiche .gacct-op-operator-feedback { display: block; font-size: 13px; color: var(--gacct-accent-dark); }
 
 .gacct-op-fiche .gacct-op-muted { color: var(--gacct-text-muted); }
 
-/* ------------------------------------------------------------- Frise 0→7 */
+/* ------------------------------------------------------------- Frise 0→8 */
 .gacct-op-fiche .gacct-op-steps {
 	list-style: none;
 	display: flex;
@@ -130,7 +133,7 @@
 	left: -50%;
 	width: 100%;
 	height: 2px;
-	background: var(--gacct-border);
+	background: var(--gacct-border-soft);
 }
 .gacct-op-fiche .gacct-op-step:first-child::before { display: none; }
 .gacct-op-fiche .gacct-op-step.done::before,
@@ -176,12 +179,16 @@
 }
 
 /* ------------------------------------------------------------- Actions */
-.gacct-op-fiche .gacct-op-actions-card .gacct-op-btn {
-	width: 100%;
-	margin-bottom: 10px;
+.gacct-op-fiche .gacct-op-actions-card .button {
+	margin: 0 10px 10px 0;
 }
-@media (min-width: 600px) {
-	.gacct-op-fiche .gacct-op-actions-card .gacct-op-btn { width: auto; margin-right: 10px; }
+@media (max-width: 599px) {
+	.gacct-op-fiche .gacct-op-actions-card .button:not(.button-small) {
+		display: block;
+		width: 100%;
+		text-align: center;
+		margin-right: 0;
+	}
 }
 .gacct-op-fiche .gacct-op-label {
 	display: block;
@@ -205,7 +212,7 @@
 	align-items: center;
 	gap: 8px;
 	padding: 6px 0;
-	border-bottom: 1px solid var(--gacct-border);
+	border-bottom: 1px solid var(--gacct-border-soft);
 	font-size: 14px;
 }
 .gacct-op-fiche .gacct-op-report-del {
@@ -213,7 +220,7 @@
 	border: 1px solid var(--gacct-border);
 	background: transparent;
 	color: var(--gacct-danger);
-	border-radius: 4px;
+	border-radius: 3px;
 	width: 24px;
 	height: 24px;
 	line-height: 1;
@@ -223,7 +230,6 @@
 	display: block;
 	margin: 0 0 10px;
 	font-size: 13px;
-	color: var(--gacct-muted, inherit);
 }
 .gacct-op-fiche .gacct-op-ship-form input[type="text"] {
 	display: block;
@@ -234,7 +240,7 @@
 .gacct-op-fiche .gacct-op-force { margin-top: 6px; }
 .gacct-op-fiche .gacct-op-force-form {
 	background: var(--gacct-surface-alt);
-	border: 1px solid var(--gacct-border);
+	border: 1px solid var(--gacct-border-soft);
 	border-radius: var(--gacct-radius);
 	padding: 12px;
 	margin: 6px 0 10px;
@@ -244,10 +250,11 @@
 	width: 100%;
 	margin-bottom: 10px;
 }
+/* Zone destructive : lien rouge natif (button-link-delete), séparé. */
 .gacct-op-fiche .gacct-op-cancel-zone {
-	border-top: 1px solid var(--gacct-border);
+	border-top: 1px solid var(--gacct-border-soft);
 	margin-top: 16px;
-	padding-top: 16px;
+	padding-top: 12px;
 }
 
 /* ------------------------------------------------------------- Journal */
@@ -257,7 +264,7 @@
 	padding: 0;
 }
 .gacct-op-fiche .gacct-op-journal-item {
-	border-left: 3px solid var(--gacct-border);
+	border-left: 3px solid var(--gacct-border-soft);
 	padding: 6px 0 6px 12px;
 	margin-bottom: 12px;
 }
@@ -266,7 +273,7 @@
 	font-size: 12px;
 	color: var(--gacct-text-muted);
 }
-.gacct-op-fiche .gacct-op-journal-content { font-size: 14px; }
+.gacct-op-fiche .gacct-op-journal-content { font-size: 13px; }
 .gacct-op-fiche .gacct-op-journal-content p { margin: 4px 0 0; }
 
 /* ------------------------------------------------------------- Latérale */
@@ -280,8 +287,8 @@
 	justify-content: space-between;
 	gap: 12px;
 	padding: 8px 0;
-	border-bottom: 1px solid var(--gacct-border);
-	font-size: 14px;
+	border-bottom: 1px solid var(--gacct-border-soft);
+	font-size: 13px;
 }
 .gacct-op-fiche .gacct-op-items li:last-child { border-bottom: 0; }
 .gacct-op-fiche .gacct-op-item-total { white-space: nowrap; font-weight: 600; }

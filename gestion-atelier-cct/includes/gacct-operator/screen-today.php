@@ -341,7 +341,7 @@ function gacct_op_render_today_screen() {
 			}
 			echo '</span>';
 			echo '</a>';
-			echo '<button type="button" class="gacct-op-btn secondary" data-op-action="resend-email" data-revision-id="' . esc_attr( (string) absint( $item['_ID'] ) ) . '">'
+			echo '<button type="button" class="button button-small" data-op-action="resend-email" data-revision-id="' . esc_attr( (string) absint( $item['_ID'] ) ) . '">'
 				. esc_html__( 'Renvoyer l\'email', 'gestion-atelier-cct' ) . '</button>';
 			echo '</div>';
 		}

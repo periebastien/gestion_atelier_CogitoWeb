@@ -1,4 +1,4 @@
-/* Console atelier — écran « Aujourd'hui » (mobile-first). */
+/* Console atelier — écran « Aujourd'hui » (mobile-first, palette admin WP). */
 
 .gacct-op-today .gacct-op-today-grid {
 	display: grid;
@@ -8,7 +8,6 @@
 }
 
 .gacct-op-today .gacct-op-today-block {
-	padding: 16px;
 	margin: 0;
 }
 
@@ -39,7 +38,7 @@
 	gap: 4px 10px;
 	min-height: 44px;
 	padding: 8px 10px;
-	border-bottom: 1px solid var(--gacct-border);
+	border-bottom: 1px solid var(--gacct-border-soft);
 	border-left: 3px solid transparent;
 	color: var(--gacct-text);
 	text-decoration: none;
@@ -102,7 +101,7 @@
 	text-decoration: none;
 }
 
-.gacct-op-today .gacct-op-row.has-action > .gacct-op-btn {
+.gacct-op-today .gacct-op-row.has-action > .button {
 	flex: 0 0 auto;
 	margin: 6px 10px 6px 0;
 }
@@ -124,7 +123,7 @@
 .gacct-op .gacct-op-pill {
 	display: inline-block;
 	padding: 1px 8px;
-	border-radius: 999px;
+	border-radius: 2em;
 	border: 1px solid var(--gacct-border);
 	background: var(--gacct-surface-alt);
 	color: var(--gacct-text-muted);
@@ -136,7 +135,7 @@
 
 .gacct-op .gacct-op-pill.danger {
 	border-color: var(--gacct-danger);
-	background: #fdeeee;
+	background: var(--gacct-danger-soft);
 	color: var(--gacct-danger);
 }
 
@@ -156,7 +155,6 @@
 }
 
 .gacct-op-today .gacct-op-see-all a {
-	color: var(--gacct-accent-dark);
 	text-decoration: none;
 	font-weight: 600;
 }
@@ -172,9 +170,5 @@
 		grid-template-columns: 1fr 1fr;
 		gap: 20px;
 		align-items: start;
-	}
-
-	.gacct-op-today .gacct-op-today-block {
-		padding: 20px;
 	}
 }

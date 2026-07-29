@@ -1,16 +1,11 @@
 /**
  * Console atelier — écran « Réception d'un colis ».
  * Mobile-first : téléphone en main, actions au pouce (cibles ≥ 44 px).
- * Tokens hérités de operator.css (--gacct-*).
+ * Boutons natifs (button-hero), palette admin WP via tokens operator.css.
  */
 
 .gacct-op-reception {
 	max-width: 720px;
-}
-
-.gacct-op-reception h1 {
-	font-size: 20px;
-	margin-bottom: 12px;
 }
 
 .gacct-op-reception .gacct-op-reception-hint {
@@ -35,24 +30,14 @@
 .gacct-op-reception .gacct-op-reception-search input[type="search"] {
 	display: block;
 	width: 100%;
-	min-height: 52px;
-	padding: 10px 14px;
-	font-size: 18px;
-	border: 1px solid var(--gacct-border);
-	border-radius: var(--gacct-radius);
+	min-height: 48px;
+	padding: 8px 12px;
+	font-size: 17px;
 	margin-bottom: 12px;
-}
-
-.gacct-op-reception .gacct-op-reception-search input[type="search"]:focus {
-	border-color: var(--gacct-accent);
-	box-shadow: 0 0 0 2px var(--gacct-accent-soft);
-	outline: none;
 }
 
 .gacct-op-reception .gacct-op-reception-search-btn {
 	width: 100%;
-	min-height: 48px;
-	font-size: 16px;
 }
 
 .gacct-op-reception .gacct-op-reception-search .gacct-op-reception-hint {
@@ -79,10 +64,10 @@
 	align-items: flex-start;
 	gap: 4px;
 	min-height: 44px;
-	padding: 14px 16px;
+	padding: 12px 14px;
 	background: var(--gacct-surface);
 	border: 1px solid var(--gacct-border);
-	border-radius: var(--gacct-radius-lg);
+	border-radius: var(--gacct-radius);
 	box-shadow: var(--gacct-shadow);
 	color: var(--gacct-text);
 	text-decoration: none;
@@ -91,12 +76,12 @@
 .gacct-op-reception .gacct-op-reception-cardlink:hover,
 .gacct-op-reception .gacct-op-reception-cardlink:focus {
 	border-color: var(--gacct-accent);
-	box-shadow: 0 0 0 2px var(--gacct-accent-soft);
+	box-shadow: 0 0 0 1px var(--gacct-accent);
 }
 
 .gacct-op-reception .gacct-op-reception-cardref {
-	font-weight: 700;
-	font-size: 16px;
+	font-weight: 600;
+	font-size: 15px;
 }
 
 .gacct-op-reception .gacct-op-reception-cardclient {
@@ -116,7 +101,7 @@
 }
 
 .gacct-op-reception .gacct-op-reception-head {
-	padding: 16px 16px 14px;
+	padding: 14px 16px 12px;
 	border-bottom: 1px solid var(--gacct-border);
 	background: var(--gacct-surface-alt);
 }
@@ -129,8 +114,8 @@
 }
 
 .gacct-op-reception .gacct-op-reception-ref {
-	font-size: 18px;
-	font-weight: 700;
+	font-size: 17px;
+	font-weight: 600;
 }
 
 .gacct-op-reception .gacct-op-reception-client {
@@ -147,8 +132,7 @@
 .gacct-op-reception .gacct-op-reception-fichelink {
 	display: inline-flex;
 	align-items: center;
-	min-height: 44px;
-	color: var(--gacct-accent-dark);
+	min-height: 40px;
 	font-weight: 600;
 	text-decoration: none;
 }
@@ -161,24 +145,23 @@
 	margin: 16px;
 }
 
-/* Bandeaux d'état du dossier */
+/* Bandeaux d'état du dossier : look notice inline de l'admin. */
 .gacct-op-reception .gacct-op-reception-banner {
 	margin: 16px;
-	padding: 12px 14px;
-	border-radius: var(--gacct-radius);
+	padding: 8px 12px;
+	background: #fff;
+	border: 1px solid var(--gacct-border);
+	border-left-width: 4px;
+	box-shadow: var(--gacct-shadow);
 	line-height: 1.5;
 }
 
 .gacct-op-reception .gacct-op-reception-banner.info {
-	background: var(--gacct-accent-soft);
-	border: 1px solid var(--gacct-accent);
-	color: var(--gacct-accent-dark);
+	border-left-color: #72aee6;
 }
 
 .gacct-op-reception .gacct-op-reception-banner.warn {
-	background: var(--gacct-warn-soft);
-	border: 1px solid var(--gacct-warn);
-	color: #8a6d1a;
+	border-left-color: var(--gacct-warn);
 }
 
 /* --------------------------------------------------------------- check-list */
@@ -207,8 +190,8 @@
 	align-items: center;
 	gap: 12px;
 	min-height: 48px;
-	padding: 12px 14px;
-	border: 2px solid var(--gacct-border);
+	padding: 10px 14px;
+	border: 1px solid var(--gacct-border);
 	border-radius: var(--gacct-radius);
 	background: var(--gacct-surface);
 	cursor: pointer;
@@ -221,7 +204,6 @@
 	height: 24px;
 	margin: 0;
 	flex: none;
-	accent-color: var(--gacct-accent-dark);
 	cursor: pointer;
 }
 
@@ -244,7 +226,7 @@
 }
 
 .gacct-op-reception .gacct-op-reception-row.is-missing .gacct-op-reception-rowlabel {
-	color: #8a6d1a;
+	color: var(--gacct-warn-text);
 }
 
 /* Check-list désactivée (état 0 : paiement non encaissé) */
@@ -257,14 +239,14 @@
 	cursor: not-allowed;
 }
 
-/* Avertissement réception partielle */
+/* Avertissement réception partielle : notice-warning inline. */
 .gacct-op-reception .gacct-op-reception-partialwarn {
 	margin: 0 0 12px;
-	padding: 12px 14px;
-	border: 1px solid var(--gacct-warn);
-	border-radius: var(--gacct-radius);
-	background: var(--gacct-warn-soft);
-	color: #8a6d1a;
+	padding: 8px 12px;
+	background: #fff;
+	border: 1px solid var(--gacct-border);
+	border-left: 4px solid var(--gacct-warn);
+	box-shadow: var(--gacct-shadow);
 	line-height: 1.5;
 }
 
@@ -275,23 +257,24 @@
 	margin: 0 -16px -16px;
 	padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
 	background: var(--gacct-surface);
-	border-top: 1px solid var(--gacct-border);
+	border-top: 1px solid var(--gacct-border-soft);
 }
 
 .gacct-op-reception .gacct-op-reception-submit {
 	width: 100%;
-	min-height: 52px;
-	font-size: 16px;
 }
 
+/* Réception partielle : le bouton primaire vire au jaune d'avertissement. */
 .gacct-op-reception .gacct-op-reception-submit.is-partial {
-	background: var(--gacct-warn);
-	border-color: #c79217;
-	color: #4a3a0a;
+	background: #996800;
+	border-color: #996800;
+	color: #fff;
 }
 
-.gacct-op-reception .gacct-op-reception-submit.is-partial:hover {
-	background: #e0a622;
+.gacct-op-reception .gacct-op-reception-submit.is-partial:hover,
+.gacct-op-reception .gacct-op-reception-submit.is-partial:focus {
+	background: #7d5600;
+	border-color: #7d5600;
 }
 
 .gacct-op-reception .gacct-op-reception-fichebtn {
@@ -301,11 +284,6 @@
 /* ------------------------------------------------------------------ desktop */
 
 @media (min-width: 782px) {
-	.gacct-op-reception {
-		margin-left: auto;
-		margin-right: auto;
-	}
-
 	.gacct-op-reception .gacct-op-reception-search {
 		padding: 36px 40px;
 	}

@@ -1,305 +1,71 @@
-/* Console atelier — écran « File des interventions » (spécifique liste).
-   La base (variables --gacct-*, badges, boutons, cartes) vit dans operator.css. */
+/* Console atelier — écran « File des interventions ».
+   Le tableau est une wp-list-table native : la mise en page, le tri et le
+   responsive (≤ 782 px : colonne primaire + bouton toggle-row) viennent du
+   cœur de WordPress. Ne restent ici que les éléments spécifiques : largeurs
+   de colonnes, mini-frise 0–8, menu « Documents », pagination paginate_links. */
 
-/* ---------- En-tête : titre + recherche ---------- */
-.gacct-op .gacct-op-list-head {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 12px;
-	margin-bottom: 12px;
-}
-
-.gacct-op .gacct-op-list-head h1 {
-	margin: 0;
-	padding: 0;
-	flex: 1 1 auto;
-}
-
-.gacct-op .gacct-op-list-search {
-	display: flex;
-	flex: 1 1 100%;
-	gap: 8px;
-}
-
-.gacct-op .gacct-op-list-search input[type="search"] {
-	flex: 1 1 auto;
-	min-height: 44px;
-	min-width: 0;
-}
-
-.gacct-op .gacct-op-list-search button {
-	min-height: 44px;
-}
-
-/* ---------- Onglets d'états ---------- */
-.gacct-op .gacct-op-list-tabs {
-	display: flex;
-	gap: 4px;
-	overflow-x: auto;
-	white-space: nowrap;
-	-webkit-overflow-scrolling: touch;
-	border-bottom: 1px solid var(--gacct-border);
-	margin-bottom: 12px;
-}
-
-.gacct-op .gacct-op-list-tab {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	padding: 10px 12px;
-	min-height: 44px;
-	box-sizing: border-box;
-	text-decoration: none;
-	color: inherit;
-	border-bottom: 3px solid transparent;
-	flex: 0 0 auto;
-}
-
-.gacct-op .gacct-op-list-tab:hover {
-	border-bottom-color: var(--gacct-border);
-}
-
-.gacct-op .gacct-op-list-tab.is-active {
-	border-bottom-color: currentColor;
-	font-weight: 600;
-}
-
-.gacct-op .gacct-op-list-tab.is-empty {
-	opacity: 0.55;
-}
-
-.gacct-op .gacct-op-list-count {
-	font-size: 0.85em;
-	background: rgba(0, 0, 0, 0.07);
-	border-radius: 10px;
-	padding: 1px 7px;
-}
-
-/* ---------- Filtre opérateur ---------- */
-.gacct-op .gacct-op-list-operator {
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: 8px;
-	margin-bottom: 12px;
-}
-
-.gacct-op .gacct-op-list-operator select,
-.gacct-op .gacct-op-list-operator button {
-	min-height: 44px;
-}
+/* ---------- Largeurs de colonnes (layout fixed) ---------- */
+.gacct-op .gacct-op-list-table .column-ref      { width: 12%; }
+.gacct-op .gacct-op-list-table .column-client   { width: 12%; }
+.gacct-op .gacct-op-list-table .column-materiel { width: 19%; }
+.gacct-op .gacct-op-list-table .column-slot     { width: 10%; }
+.gacct-op .gacct-op-list-table .column-etat     { width: 17%; }
+.gacct-op .gacct-op-list-table .column-paiement { width: 10%; }
+.gacct-op .gacct-op-list-table .column-docs     { width: 10%; }
+.gacct-op .gacct-op-list-table .column-modified { width: 10%; }
 
 /* ---------- Divers ---------- */
 .gacct-op .gacct-op-list-muted {
-	color: #757575;
+	color: var(--gacct-text-muted);
 	font-size: 0.92em;
 }
 
 .gacct-op .gacct-op-list-serial {
-	font-family: monospace;
+	font-family: Consolas, Menlo, monospace;
 }
 
-.gacct-op .gacct-op-list-empty p {
-	margin: 0;
-	padding: 8px 0;
+.gacct-op .gacct-op-list-empty {
+	margin: 12px 0;
+	color: var(--gacct-text-muted);
+	font-style: italic;
 }
 
-.gacct-op .gacct-op-list-sort {
+/* Boutons-liens des row-actions (« Acompte reçu ») : mêmes proportions que
+   les liens natifs. */
+.gacct-op .row-actions .button-link {
+	font-size: inherit;
+	line-height: inherit;
+	padding: 0;
 	text-decoration: none;
-	color: inherit;
+	color: #2271b1;
+}
+.gacct-op .row-actions .button-link:hover {
+	color: #135e96;
+}
+
+/* ---------- Pagination (paginate_links dans une tablenav native) ---------- */
+.gacct-op .tablenav-pages .page-numbers {
 	display: inline-block;
-	min-height: 44px;
-	line-height: 44px;
-}
-
-.gacct-op .gacct-op-list-sort.is-sorted {
-	font-weight: 700;
-}
-
-.gacct-op .gacct-op-list-arrow {
-	font-size: 0.75em;
-}
-
-.gacct-op .gacct-op-list-action {
-	display: inline-flex;
-	align-items: center;
-	min-height: 44px;
-	padding: 0 10px;
+	min-width: 17px;
+	padding: 3px 8px;
+	margin-right: 2px;
+	border: 1px solid var(--gacct-border);
+	border-radius: 2px;
+	background: var(--gacct-surface-alt);
+	font-size: 13px;
+	line-height: 1.5;
+	text-align: center;
 	text-decoration: none;
 }
-
-/* ---------- Mobile-first : le tableau est une pile de cartes ---------- */
-.gacct-op .gacct-op-list-table {
-	display: block;
-	width: 100%;
-	border-collapse: collapse;
-	margin-bottom: 16px;
+.gacct-op .tablenav-pages .page-numbers.current {
+	background: var(--gacct-border-soft);
+	border-color: var(--gacct-border);
+	color: var(--gacct-text);
+	font-weight: 600;
 }
-
-.gacct-op .gacct-op-list-table thead {
-	display: none;
-}
-
-.gacct-op .gacct-op-list-table tbody {
-	display: block;
-}
-
-.gacct-op .gacct-op-list-table tr {
-	display: block;
-	border: 1px solid var(--gacct-border);
-	border-radius: 8px;
-	background: #fff;
-	padding: 8px 12px;
-	margin-bottom: 12px;
-}
-
-.gacct-op .gacct-op-list-table td {
-	display: flex;
-	align-items: baseline;
-	flex-wrap: wrap;
-	gap: 4px 8px;
-	border: 0;
-	padding: 6px 0;
-	border-bottom: 1px dashed var(--gacct-border);
-}
-
-.gacct-op .gacct-op-list-table tr td:last-child {
-	border-bottom: 0;
-}
-
-.gacct-op .gacct-op-list-table td::before {
-	content: attr(data-label);
-	flex: 0 0 9em;
-	font-size: 0.8em;
-	text-transform: uppercase;
-	letter-spacing: 0.03em;
-	color: #757575;
-}
-
-.gacct-op .gacct-op-list-cell-actions .gacct-op-list-action {
-	padding-left: 0;
-	padding-right: 16px;
-}
-
-/* ---------- Desktop (> 781 px) : vrai tableau ---------- */
-@media (min-width: 782px) {
-	.gacct-op .gacct-op-list-head h1 {
-		flex: 0 0 auto;
-	}
-
-	.gacct-op .gacct-op-list-search {
-		flex: 1 1 auto;
-		max-width: 480px;
-		margin-left: auto;
-	}
-
-	.gacct-op .gacct-op-list-table {
-		display: table;
-		background: #fff;
-		border: 1px solid var(--gacct-border);
-		border-radius: 8px;
-		border-spacing: 0;
-	}
-
-	.gacct-op .gacct-op-list-table thead {
-		display: table-header-group;
-	}
-
-	.gacct-op .gacct-op-list-table tbody {
-		display: table-row-group;
-	}
-
-	.gacct-op .gacct-op-list-table tr {
-		display: table-row;
-		border: 0;
-		border-radius: 0;
-		padding: 0;
-		margin: 0;
-		background: transparent;
-	}
-
-	.gacct-op .gacct-op-list-table tbody tr:hover {
-		background: rgba(0, 0, 0, 0.025);
-	}
-
-	.gacct-op .gacct-op-list-table th,
-	.gacct-op .gacct-op-list-table td {
-		display: table-cell;
-		text-align: left;
-		vertical-align: middle;
-		padding: 10px 12px;
-		border: 0;
-		border-bottom: 1px solid var(--gacct-border);
-	}
-
-	.gacct-op .gacct-op-list-table tbody tr:last-child td {
-		border-bottom: 0;
-	}
-
-	.gacct-op .gacct-op-list-table td::before {
-		content: none;
-	}
-
-	.gacct-op .gacct-op-list-table th {
-		font-weight: 600;
-		white-space: nowrap;
-	}
-
-	.gacct-op .gacct-op-list-sort {
-		min-height: 0;
-		line-height: inherit;
-	}
-
-	.gacct-op .gacct-op-list-action {
-		min-height: 0;
-		padding: 2px 6px;
-	}
-
-	.gacct-op .gacct-op-list-cell-actions {
-		white-space: nowrap;
-	}
-}
-
-/* ---------- Pagination ---------- */
-.gacct-op .gacct-op-list-pagination {
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: 10px;
-	margin: 4px 0 16px;
-}
-
-.gacct-op .gacct-op-list-pagelinks .page-numbers {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	min-width: 34px;
-	min-height: 44px;
-	padding: 0 8px;
-	border: 1px solid var(--gacct-border);
-	border-radius: 6px;
-	text-decoration: none;
-	margin-right: 4px;
-}
-
-.gacct-op .gacct-op-list-pagelinks .page-numbers.current {
-	font-weight: 700;
-	background: rgba(0, 0, 0, 0.05);
-}
-
-@media (min-width: 782px) {
-	.gacct-op .gacct-op-list-pagelinks .page-numbers {
-		min-height: 34px;
-	}
-}
-
-/* Bouton « Acompte reçu » dans la colonne Actions */
-.gacct-op-list .gacct-op-list-deposit {
-	min-height: 34px;
-	padding: 4px 12px;
-	font-size: 12px;
-	margin-left: 6px;
+.gacct-op .tablenav-pages .page-numbers.dots {
+	border-color: transparent;
+	background: transparent;
 }
 
 /* ---------- Mini-frise 0–8 (colonne État) ---------- */
@@ -313,21 +79,31 @@
 	width: 9px;
 	height: 9px;
 	border-radius: 50%;
-	background: var(--gacct-border, #dcdcde);
+	background: var(--gacct-border-soft);
 	flex: 0 0 auto;
 }
 
 .gacct-op .gacct-op-list-step.is-done {
-	background: var(--gacct-accent, #20c4c3);
+	background: var(--gacct-accent);
 	opacity: 0.55;
 }
 
 .gacct-op .gacct-op-list-step.is-current {
-	background: var(--gacct-accent, #20c4c3);
-	box-shadow: 0 0 0 2px rgba(32, 196, 195, 0.25);
+	background: var(--gacct-accent);
+	box-shadow: 0 0 0 2px rgba(34, 113, 177, 0.25);
 }
 
 /* ---------- Colonne Documents (badge dépliable) ---------- */
+.gacct-op .gacct-op-ico {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+	line-height: 1;
+	vertical-align: text-bottom;
+	color: var(--gacct-text-muted);
+	flex: 0 0 auto;
+}
+
 .gacct-op .gacct-op-list-docs {
 	position: relative;
 	display: inline-block;
@@ -337,14 +113,19 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 5px;
-	padding: 4px 10px;
-	border: 1px solid var(--gacct-border, #dcdcde);
-	border-radius: 99px;
+	padding: 3px 10px;
+	border: 1px solid var(--gacct-border);
+	border-radius: 3px;
 	cursor: pointer;
 	list-style: none;
 	white-space: nowrap;
 	font-size: 12px;
-	background: #fff;
+	background: var(--gacct-surface-alt);
+}
+
+.gacct-op .gacct-op-list-docs > summary:hover {
+	background: #f0f0f1;
+	border-color: #8c8f94;
 }
 
 .gacct-op .gacct-op-list-docs > summary::-webkit-details-marker {
@@ -352,7 +133,7 @@
 }
 
 .gacct-op .gacct-op-list-docs[open] > summary {
-	border-color: var(--gacct-accent, #20c4c3);
+	border-color: var(--gacct-accent);
 }
 
 .gacct-op .gacct-op-list-docs-menu {
@@ -365,9 +146,9 @@
 	padding: 6px;
 	list-style: none;
 	background: #fff;
-	border: 1px solid var(--gacct-border, #dcdcde);
-	border-radius: 8px;
-	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+	border: 1px solid var(--gacct-border);
+	border-radius: 2px;
+	box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
 }
 
 .gacct-op .gacct-op-list-docs-menu li {
@@ -379,7 +160,6 @@
 	align-items: center;
 	gap: 7px;
 	padding: 7px 8px;
-	border-radius: 6px;
 	text-decoration: none;
 	color: inherit;
 	font-size: 12px;
@@ -387,19 +167,15 @@
 }
 
 .gacct-op .gacct-op-list-docs-menu a:hover {
-	background: #f0f6f6;
-	color: var(--gacct-accent, #0e7490);
-}
-
-.gacct-op .gacct-op-list-docs-menu .gacct-op-ico {
-	flex: 0 0 auto;
+	background: var(--gacct-accent-soft);
+	color: var(--gacct-accent-dark);
 }
 
 .gacct-op .gacct-op-list-docs-draft {
 	padding: 6px 8px;
 	font-size: 11px;
-	color: #757575;
-	border-top: 1px dashed var(--gacct-border, #dcdcde);
+	color: var(--gacct-text-muted);
+	border-top: 1px dashed var(--gacct-border-soft);
 	margin-top: 4px;
 }
 
@@ -408,13 +184,13 @@
 	align-items: center;
 	gap: 5px;
 	font-size: 12px;
-	color: #757575;
+	color: var(--gacct-text-muted);
 	white-space: nowrap;
 }
 
-/* En mode cartes (mobile), le menu se déplie dans le flux plutôt qu'en
-   surimpression au bord de l'écran. */
-@media ( max-width: 782px ) {
+/* En mode mobile natif (ligne dépliée), le menu se déplie dans le flux
+   plutôt qu'en surimpression au bord de l'écran. */
+@media (max-width: 782px) {
 	.gacct-op .gacct-op-list-docs-menu {
 		position: static;
 		box-shadow: none;

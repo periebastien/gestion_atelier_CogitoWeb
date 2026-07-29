@@ -120,7 +120,7 @@ function gacct_op_render_quote_card( $revision_id, array $revision, $order, $sta
 		}
 
 		if ( 4 === $state ) {
-			echo '<button type="button" class="gacct-op-btn secondary" data-op-action="toggle-quote-form" aria-expanded="false">' . esc_html__( 'Modifier le devis…', 'gestion-atelier-cct' ) . '</button>';
+			echo '<button type="button" class="button" data-op-action="toggle-quote-form" aria-expanded="false">' . esc_html__( 'Modifier le devis…', 'gestion-atelier-cct' ) . '</button>';
 		}
 
 		echo '<div class="gacct-op-quote-form"' . ( 4 === $state ? ' hidden' : '' ) . ' data-quote-prefill="' . esc_attr( wp_json_encode( $prefill ) ) . '">';
@@ -137,8 +137,8 @@ function gacct_op_render_quote_card( $revision_id, array $revision, $order, $sta
 			. '</tr></thead><tbody data-quote-rows></tbody></table>';
 
 		echo '<div class="gacct-op-quote-add">';
-		echo '<button type="button" class="gacct-op-btn secondary gacct-op-btn-small" data-op-action="quote-add-catalog">+ ' . esc_html__( 'Prestation du catalogue', 'gestion-atelier-cct' ) . '</button> ';
-		echo '<button type="button" class="gacct-op-btn secondary gacct-op-btn-small" data-op-action="quote-add-free">+ ' . esc_html__( 'Ligne libre', 'gestion-atelier-cct' ) . '</button>';
+		echo '<button type="button" class="button button-small" data-op-action="quote-add-catalog">+ ' . esc_html__( 'Prestation du catalogue', 'gestion-atelier-cct' ) . '</button> ';
+		echo '<button type="button" class="button button-small" data-op-action="quote-add-free">+ ' . esc_html__( 'Ligne libre', 'gestion-atelier-cct' ) . '</button>';
 		echo '</div>';
 
 		echo '<p class="gacct-op-quote-total">' . esc_html__( 'Total des travaux supplémentaires :', 'gestion-atelier-cct' ) . ' <strong data-quote-total>0,00 €</strong></p>';
@@ -146,7 +146,7 @@ function gacct_op_render_quote_card( $revision_id, array $revision, $order, $sta
 		echo '<label class="gacct-op-label">' . esc_html__( 'Mot pour le client (affiché dans l\'email et sur la page du devis)', 'gestion-atelier-cct' ) . '</label>';
 		echo '<textarea rows="3" data-op-field="quote-comment" placeholder="' . esc_attr__( 'Ex. : les suspentes basses présentent une usure avancée, nous recommandons leur remplacement…', 'gestion-atelier-cct' ) . '">' . esc_textarea( $comment ) . '</textarea>';
 
-		echo '<button type="button" class="gacct-op-btn" data-op-action="send-quote">'
+		echo '<button type="button" class="button button-primary" data-op-action="send-quote">'
 			. ( 4 === $state ? esc_html__( 'Remplacer et renvoyer le devis', 'gestion-atelier-cct' ) : esc_html__( 'Envoyer le devis au client', 'gestion-atelier-cct' ) )
 			. '</button>';
 		echo '<p class="gacct-op-muted">' . esc_html__( 'Le client reçoit un email avec un lien sécurisé pour accepter ou refuser en un clic.', 'gestion-atelier-cct' ) . '</p>';
@@ -298,7 +298,7 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 		echo '<option value="' . esc_attr( $uid ) . '"' . selected( $operator_id, $uid, false ) . '>' . esc_html( $name ) . '</option>';
 	}
 	echo '</select> ';
-	echo '<button type="button" class="gacct-op-btn secondary gacct-op-btn-small" data-op-action="set-operator">' . esc_html__( 'Enregistrer', 'gestion-atelier-cct' ) . '</button>';
+	echo '<button type="button" class="button button-small" data-op-action="set-operator">' . esc_html__( 'Enregistrer', 'gestion-atelier-cct' ) . '</button>';
 	echo '</span>';
 	echo '<span class="gacct-op-operator-feedback" aria-live="polite"></span>';
 	echo '</dd></div>';
@@ -350,17 +350,17 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 				// Dossier incomplet : le démarrage de l'intervention exige un motif de déblocage (CDC §4.4).
 				if ( 3 === $target && $is_incomplete ) {
 					echo '<div class="gacct-op-force">';
-					echo '<button type="button" class="gacct-op-btn" data-op-action="toggle-force" aria-expanded="false">' . esc_html( $action_label ) . '…</button>';
+					echo '<button type="button" class="button button-primary" data-op-action="toggle-force" aria-expanded="false">' . esc_html( $action_label ) . '…</button>';
 					echo '<div class="gacct-op-force-form" hidden>';
 					echo '<p class="gacct-op-muted">' . esc_html__( 'Dossier incomplet : des éléments attendus ne sont pas arrivés.', 'gestion-atelier-cct' ) . '</p>';
 					echo '<label class="gacct-op-label">' . esc_html__( 'Motif de déblocage (obligatoire, journalisé)', 'gestion-atelier-cct' ) . '</label>';
 					echo '<textarea rows="2" data-op-field="unlock-reason"></textarea>';
-					echo '<button type="button" class="gacct-op-btn" data-op-action="change-state" data-state="' . esc_attr( $target ) . '" data-unlock="1">' . esc_html__( 'Débloquer et lancer l\'intervention', 'gestion-atelier-cct' ) . '</button>';
+					echo '<button type="button" class="button button-primary" data-op-action="change-state" data-state="' . esc_attr( $target ) . '" data-unlock="1">' . esc_html__( 'Débloquer et lancer l\'intervention', 'gestion-atelier-cct' ) . '</button>';
 					echo '</div></div>';
 					continue;
 				}
 
-				echo '<button type="button" class="gacct-op-btn" data-op-action="change-state" data-state="' . esc_attr( $target ) . '">' . esc_html( $action_label ) . '</button>';
+				echo '<button type="button" class="button button-primary" data-op-action="change-state" data-state="' . esc_attr( $target ) . '">' . esc_html( $action_label ) . '</button>';
 			}
 		}
 
@@ -375,7 +375,7 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 			echo '<div class="gacct-op-ship-form">';
 			echo '<label class="gacct-op-label" for="gacct-op-tracking">' . esc_html__( 'Suivi transporteur (numéro ou lien, obligatoire)', 'gestion-atelier-cct' ) . '</label>';
 			echo '<input type="text" id="gacct-op-tracking" data-op-field="tracking" value="' . esc_attr( $suivi_pre ) . '" placeholder="' . esc_attr__( 'Ex. : 6A12345678901 ou https://…', 'gestion-atelier-cct' ) . '">';
-			echo '<button type="button" class="gacct-op-btn" data-op-action="change-state" data-state="8" data-tracking="1">' . esc_html__( 'Matériel réexpédié', 'gestion-atelier-cct' ) . '</button>';
+			echo '<button type="button" class="button button-primary" data-op-action="change-state" data-state="8" data-tracking="1">' . esc_html__( 'Matériel réexpédié', 'gestion-atelier-cct' ) . '</button>';
 			echo '<p class="gacct-op-muted">' . esc_html__( 'Le client reçoit un email avec le lien de suivi.', 'gestion-atelier-cct' ) . '</p>';
 			echo '</div>';
 		}
@@ -383,7 +383,7 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 		// Renvoi d'email (états 4 et 6).
 		if ( array_key_exists( $state, gacct_op_resendable_states() ) ) {
 			$has_action = true;
-			echo '<button type="button" class="gacct-op-btn secondary" data-op-action="resend-email">' . esc_html__( 'Renvoyer l\'email au client', 'gestion-atelier-cct' ) . '</button>';
+			echo '<button type="button" class="button" data-op-action="resend-email">' . esc_html__( 'Renvoyer l\'email au client', 'gestion-atelier-cct' ) . '</button>';
 		}
 
 		// Transitions forçables : bouton + formulaire inline motif.
@@ -391,7 +391,7 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 			foreach ( $forceable[ $state ] as $target => $force_label ) {
 				$has_action = true;
 				echo '<div class="gacct-op-force">';
-				echo '<button type="button" class="gacct-op-btn secondary" data-op-action="toggle-force" aria-expanded="false">' . esc_html( $force_label ) . '…</button>';
+				echo '<button type="button" class="button" data-op-action="toggle-force" aria-expanded="false">' . esc_html( $force_label ) . '…</button>';
 				echo '<div class="gacct-op-force-form" hidden>';
 				echo '<label class="gacct-op-label">' . esc_html__( 'Motif (obligatoire, journalisé)', 'gestion-atelier-cct' ) . '</label>';
 				echo '<textarea rows="2" data-op-field="force-reason"></textarea>';
@@ -403,7 +403,7 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 					echo '<textarea rows="2" data-op-field="unlock-reason"></textarea>';
 				}
 
-				echo '<button type="button" class="gacct-op-btn" data-op-action="change-state" data-state="' . esc_attr( $target ) . '" data-force="1" data-confirm="1"' . ( $needs_unlock ? ' data-unlock="1"' : '' ) . '>' . esc_html__( 'Confirmer le forçage', 'gestion-atelier-cct' ) . '</button>';
+				echo '<button type="button" class="button button-primary" data-op-action="change-state" data-state="' . esc_attr( $target ) . '" data-force="1" data-confirm="1"' . ( $needs_unlock ? ' data-unlock="1"' : '' ) . '>' . esc_html__( 'Confirmer le forçage', 'gestion-atelier-cct' ) . '</button>';
 				echo '</div></div>';
 			}
 		}
@@ -416,7 +416,7 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 					$libelle = $rapport_index > 0
 						? sprintf( __( 'Voir le rapport PDF %d', 'gestion-atelier-cct' ), $rapport_index + 1 )
 						: __( 'Voir le rapport PDF', 'gestion-atelier-cct' );
-					echo '<p><a class="gacct-op-btn secondary" href="' . esc_url( gacct_report_download_url( $revision_id, $rapport_id ) ) . '" target="_blank" rel="noopener">' . esc_html( $libelle ) . '</a></p>';
+					echo '<p><a class="button" href="' . esc_url( gacct_report_download_url( $revision_id, $rapport_id ) ) . '" target="_blank" rel="noopener">' . esc_html( $libelle ) . '</a></p>';
 				}
 			} else {
 				echo '<p class="gacct-op-muted">' . esc_html__( 'Rapport introuvable.', 'gestion-atelier-cct' ) . '</p>';
@@ -437,7 +437,7 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 		// Annulation du dossier (séparée), masquée si annulée ou dossier clos.
 		if ( ! $is_cancelled && $state < 7 ) {
 			echo '<div class="gacct-op-cancel-zone">';
-			echo '<button type="button" class="gacct-op-btn danger" data-op-action="cancel">' . esc_html__( 'Annuler le dossier', 'gestion-atelier-cct' ) . '</button>';
+			echo '<button type="button" class="button-link button-link-delete" data-op-action="cancel">' . esc_html__( 'Annuler le dossier', 'gestion-atelier-cct' ) . '</button>';
 			echo '</div>';
 		}
 	}
@@ -460,7 +460,7 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 	if ( $order ) {
 		echo '<div class="gacct-op-note-form">';
 		echo '<textarea rows="3" data-op-field="note" placeholder="' . esc_attr__( 'Votre note…', 'gestion-atelier-cct' ) . '"></textarea>';
-		echo '<button type="button" class="gacct-op-btn" data-op-action="add-note">' . esc_html__( 'Ajouter la note', 'gestion-atelier-cct' ) . '</button>';
+		echo '<button type="button" class="button button-primary" data-op-action="add-note">' . esc_html__( 'Ajouter la note', 'gestion-atelier-cct' ) . '</button>';
 		echo '</div>';
 
 		$notes = wc_get_order_notes( array( 'order_id' => $order->get_id() ) );
@@ -530,13 +530,13 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 		if ( $can_remind ) {
 			echo '<div class="gacct-op-feedback gacct-op-pay-feedback" aria-live="polite"></div>';
 			if ( 'bacs' === $order->get_payment_method() && in_array( $order->get_status(), array( 'on-hold', 'pending' ), true ) ) {
-				echo '<p><button type="button" class="gacct-op-btn" data-op-action="confirm-deposit">' . esc_html__( 'Acompte encaissé (virement reçu)', 'gestion-atelier-cct' ) . '</button></p>';
+				echo '<p><button type="button" class="button button-primary" data-op-action="confirm-deposit">' . esc_html__( 'Acompte encaissé (virement reçu)', 'gestion-atelier-cct' ) . '</button></p>';
 			}
-			echo '<p><button type="button" class="gacct-op-btn secondary" data-op-action="payment-reminder">' . esc_html__( 'Relancer le paiement maintenant', 'gestion-atelier-cct' ) . '</button></p>';
+			echo '<p><button type="button" class="button" data-op-action="payment-reminder">' . esc_html__( 'Relancer le paiement maintenant', 'gestion-atelier-cct' ) . '</button></p>';
 		}
 
 		if ( current_user_can( 'manage_woocommerce' ) ) {
-			echo '<p><a class="gacct-op-btn secondary" href="' . esc_url( $order->get_edit_order_url() ) . '" target="_blank" rel="noopener">' . esc_html__( 'Ouvrir la commande', 'gestion-atelier-cct' ) . '</a></p>';
+			echo '<p><a class="button" href="' . esc_url( $order->get_edit_order_url() ) . '" target="_blank" rel="noopener">' . esc_html__( 'Ouvrir la commande', 'gestion-atelier-cct' ) . '</a></p>';
 		}
 	} else {
 		echo '<p class="gacct-op-muted">' . esc_html__( 'Aucune commande liée.', 'gestion-atelier-cct' ) . '</p>';
@@ -548,7 +548,7 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 	echo '<h2>' . esc_html__( 'Expédition retour', 'gestion-atelier-cct' ) . '</h2>';
 	$suivi = trim( (string) ( $revision['suivi_transporteur'] ?? '' ) );
 	if ( $suivi && preg_match( '#^https?://#i', $suivi ) ) {
-		echo '<p><a class="gacct-op-btn secondary" href="' . esc_url( $suivi ) . '" target="_blank" rel="noopener">' . esc_html__( 'Suivre le colis', 'gestion-atelier-cct' ) . '</a></p>';
+		echo '<p><a class="button" href="' . esc_url( $suivi ) . '" target="_blank" rel="noopener">' . esc_html__( 'Suivre le colis', 'gestion-atelier-cct' ) . '</a></p>';
 	} elseif ( $suivi ) {
 		echo '<p>' . esc_html( $suivi ) . '</p>';
 	} else {

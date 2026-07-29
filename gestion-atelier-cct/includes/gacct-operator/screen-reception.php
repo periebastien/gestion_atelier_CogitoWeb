@@ -48,7 +48,7 @@ function gacct_op_reception_render_search( $ref ) {
 	echo '<input type="hidden" name="view" value="reception">';
 	echo '<label class="gacct-op-reception-search-label" for="gacct-op-reception-ref">' . esc_html__( 'Scan ou référence', 'gestion-atelier-cct' ) . '</label>';
 	echo '<input type="search" id="gacct-op-reception-ref" name="ref" value="' . esc_attr( $ref ) . '" autofocus placeholder="' . esc_attr__( 'AR-2026-1621, n° de série, marque, nom…', 'gestion-atelier-cct' ) . '">';
-	echo '<button type="submit" class="gacct-op-btn gacct-op-reception-search-btn">' . esc_html__( 'Ouvrir le dossier', 'gestion-atelier-cct' ) . '</button>';
+	echo '<button type="submit" class="button button-primary button-hero gacct-op-reception-search-btn">' . esc_html__( 'Ouvrir le dossier', 'gestion-atelier-cct' ) . '</button>';
 	echo '<p class="gacct-op-reception-hint">' . esc_html__( 'Saisissez la référence du colis (ou le nom du client) pour ouvrir le dossier et pointer son contenu.', 'gestion-atelier-cct' ) . '</p>';
 	echo '</form>';
 	echo '</div>';
@@ -304,7 +304,7 @@ function gacct_op_reception_render_checklist( array $items, array $args ) {
 		echo '<p class="gacct-op-reception-disabled-note">' . esc_html__( 'Bouton inactif : la réception ne sera possible qu\'une fois le paiement encaissé (le dossier passera alors en « En attente de réception »).', 'gestion-atelier-cct' ) . '</p>';
 	}
 
-	echo '<button type="button" class="gacct-op-btn gacct-op-reception-submit" data-op-action="receive"' . ( $disabled ? ' disabled' : '' ) . '>'
+	echo '<button type="button" class="button button-primary button-hero gacct-op-reception-submit" data-op-action="receive"' . ( $disabled ? ' disabled' : '' ) . '>'
 		. esc_html( $args['button_full'] ) . '</button>';
 	echo '</div>';
 

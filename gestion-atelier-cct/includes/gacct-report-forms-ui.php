@@ -104,9 +104,9 @@ function gacct_rf_pilot_fields( $order ) {
  */
 function gacct_rf_footer_buttons( $final = false ) {
 	echo '<div class="gacct-rf-actions">';
-	echo '<button type="button" class="gacct-op-btn secondary" data-rf-action="save-draft">' . esc_html__( 'Enregistrer le brouillon', 'gestion-atelier-cct' ) . '</button>';
-	echo '<button type="button" class="gacct-op-btn" data-rf-action="generate">' . esc_html__( 'Générer le PDF', 'gestion-atelier-cct' ) . '</button>';
-	echo '<button type="button" class="gacct-op-btn secondary" data-rf-action="close-form">' . esc_html__( 'Fermer', 'gestion-atelier-cct' ) . '</button>';
+	echo '<button type="button" class="button" data-rf-action="save-draft">' . esc_html__( 'Enregistrer le brouillon', 'gestion-atelier-cct' ) . '</button>';
+	echo '<button type="button" class="button button-primary" data-rf-action="generate">' . esc_html__( 'Générer le PDF', 'gestion-atelier-cct' ) . '</button>';
+	echo '<button type="button" class="button" data-rf-action="close-form">' . esc_html__( 'Fermer', 'gestion-atelier-cct' ) . '</button>';
 	echo '</div>';
 	echo '<p class="gacct-op-muted">' . esc_html__( 'Le PDF est écrit dans le coffre-fort et ajouté au dossier ; régénérer un rapport remplace son PDF sans toucher aux autres.', 'gestion-atelier-cct' ) . '</p>';
 }
@@ -204,7 +204,7 @@ function gacct_rf_render_voile_form( array $revision, $order ) {
 	echo '<p class="gacct-op-muted">' . esc_html__( 'Sur recommandation du constructeur (0 à 5 suspentes). Seuil de réforme = valeur nominale × coefficient matériau, ou VR du « Calcul réforme suspente » si renseigné.', 'gestion-atelier-cct' ) . '</p>';
 	echo '<p class="gacct-rf-vr-hint" data-rf-vr-hint hidden></p>';
 	echo '<div data-rf-rupture-lines></div>';
-	echo '<button type="button" class="gacct-op-btn secondary gacct-op-btn-small" data-rf-action="add-rupture">+ ' . esc_html__( 'Ajouter une suspente testée', 'gestion-atelier-cct' ) . '</button>';
+	echo '<button type="button" class="button button-small" data-rf-action="add-rupture">+ ' . esc_html__( 'Ajouter une suspente testée', 'gestion-atelier-cct' ) . '</button>';
 	echo '<p class="gacct-rf-computed" data-rf-computed="rupture">—</p>';
 
 	// Gabarit d'une ligne (cloné par le JS).
@@ -223,7 +223,7 @@ function gacct_rf_render_voile_form( array $revision, $order ) {
 	}
 	echo '</select></label>';
 	echo '<label class="gacct-rf-field"><span class="gacct-rf-label">' . esc_html__( 'Mesure de rupture (DaN)', 'gestion-atelier-cct' ) . '</span><input type="number" step="0.1" min="0" data-rl="measure"></label>';
-	echo '<label class="gacct-rf-field"><span class="gacct-rf-label">' . esc_html__( 'Seuil réforme (DaN, vide = auto)', 'gestion-atelier-cct' ) . '</span><span class="gacct-rf-seuil-wrap"><input type="number" step="0.01" min="0" data-rl="seuil"><button type="button" class="gacct-op-btn secondary gacct-op-btn-small" data-rf-action="apply-vr" hidden>VR</button></span></label>';
+	echo '<label class="gacct-rf-field"><span class="gacct-rf-label">' . esc_html__( 'Seuil réforme (DaN, vide = auto)', 'gestion-atelier-cct' ) . '</span><span class="gacct-rf-seuil-wrap"><input type="number" step="0.01" min="0" data-rl="seuil"><button type="button" class="button button-small" data-rf-action="apply-vr" hidden>VR</button></span></label>';
 	echo '</div>';
 	echo '<p class="gacct-rf-rupture-result"><span data-rl-result>—</span> <button type="button" class="gacct-rf-line-del" data-rf-action="del-rupture" aria-label="' . esc_attr__( 'Retirer cette suspente', 'gestion-atelier-cct' ) . '">×</button></p>';
 	echo '</div>';
@@ -402,9 +402,9 @@ function gacct_report_render_card( $revision_id, array $revision, $order, $state
 
 			echo '<span class="gacct-rf-item-actions">';
 			if ( $is_final ) {
-				echo '<a class="gacct-op-btn secondary gacct-op-btn-small" href="' . esc_url( gacct_report_download_url( $revision_id, absint( $entry['attachment_id'] ) ) ) . '" target="_blank" rel="noopener">PDF</a> ';
+				echo '<a class="button button-small" href="' . esc_url( gacct_report_download_url( $revision_id, absint( $entry['attachment_id'] ) ) ) . '" target="_blank" rel="noopener">PDF</a> ';
 			}
-			echo '<button type="button" class="gacct-op-btn secondary gacct-op-btn-small" data-rf-action="open" data-report-id="' . esc_attr( $entry['id'] ) . '" data-model="' . esc_attr( $entry['model'] ) . '">'
+			echo '<button type="button" class="button button-small" data-rf-action="open" data-report-id="' . esc_attr( $entry['id'] ) . '" data-model="' . esc_attr( $entry['model'] ) . '">'
 				. ( $is_final ? esc_html__( 'Modifier / régénérer', 'gestion-atelier-cct' ) : esc_html__( 'Reprendre', 'gestion-atelier-cct' ) ) . '</button> ';
 			echo '<button type="button" class="gacct-rf-line-del" data-rf-action="delete" data-report-id="' . esc_attr( $entry['id'] ) . '" aria-label="' . esc_attr__( 'Supprimer ce rapport', 'gestion-atelier-cct' ) . '">×</button>';
 			echo '</span>';
@@ -416,7 +416,7 @@ function gacct_report_render_card( $revision_id, array $revision, $order, $state
 			echo '<li class="gacct-rf-item is-manual">';
 			echo '<span class="gacct-rf-item-main"><strong>' . esc_html( $nom ? $nom : __( 'PDF déposé', 'gestion-atelier-cct' ) ) . '</strong> <span class="gacct-rf-item-status">' . esc_html__( 'upload manuel', 'gestion-atelier-cct' ) . '</span></span>';
 			echo '<span class="gacct-rf-item-actions">';
-			echo '<a class="gacct-op-btn secondary gacct-op-btn-small" href="' . esc_url( gacct_report_download_url( $revision_id, $manual_id ) ) . '" target="_blank" rel="noopener">PDF</a> ';
+			echo '<a class="button button-small" href="' . esc_url( gacct_report_download_url( $revision_id, $manual_id ) ) . '" target="_blank" rel="noopener">PDF</a> ';
 			echo '<button type="button" class="gacct-rf-line-del" data-op-action="delete-report" data-attachment="' . esc_attr( $manual_id ) . '" aria-label="' . esc_attr__( 'Supprimer ce rapport', 'gestion-atelier-cct' ) . '">×</button>';
 			echo '</span>';
 			echo '</li>';
@@ -429,10 +429,10 @@ function gacct_report_render_card( $revision_id, array $revision, $order, $state
 
 	// ---- Nouveau rapport : choix du modèle. ----
 	echo '<div class="gacct-rf-new">';
-	echo '<button type="button" class="gacct-op-btn" data-rf-action="toggle-new" aria-expanded="false">+ ' . esc_html__( 'Nouveau rapport', 'gestion-atelier-cct' ) . '</button>';
+	echo '<button type="button" class="button button-primary" data-rf-action="toggle-new" aria-expanded="false">+ ' . esc_html__( 'Nouveau rapport', 'gestion-atelier-cct' ) . '</button>';
 	echo '<div class="gacct-rf-model-choice" hidden>';
 	foreach ( $models as $model_key => $model_label ) {
-		echo '<button type="button" class="gacct-op-btn secondary" data-rf-action="open" data-report-id="" data-model="' . esc_attr( $model_key ) . '">' . esc_html( $model_label ) . '</button>';
+		echo '<button type="button" class="button" data-rf-action="open" data-report-id="" data-model="' . esc_attr( $model_key ) . '">' . esc_html( $model_label ) . '</button>';
 	}
 	echo '</div>';
 	echo '</div>';
@@ -452,7 +452,7 @@ function gacct_report_render_card( $revision_id, array $revision, $order, $state
 		echo '<label class="gacct-op-check"><input type="checkbox" data-op-field="replace-report"> ' . esc_html__( 'Remplacer les rapports existants (sinon le nouveau s\'ajoute)', 'gestion-atelier-cct' ) . '</label>';
 	}
 	echo '<input type="file" id="gacct-op-rapport" name="rapport" accept="application/pdf" required>';
-	echo '<button type="submit" class="gacct-op-btn secondary">' . esc_html__( 'Déposer le rapport', 'gestion-atelier-cct' ) . '</button>';
+	echo '<button type="submit" class="button">' . esc_html__( 'Déposer le rapport', 'gestion-atelier-cct' ) . '</button>';
 	echo '</form>';
 	echo '</div></details>';
 

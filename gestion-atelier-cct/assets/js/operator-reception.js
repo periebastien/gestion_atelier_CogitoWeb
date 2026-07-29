@@ -78,7 +78,7 @@
 				feedback.appendChild( document.createElement( 'br' ) );
 				var link = document.createElement( 'a' );
 				link.href        = ficheUrl;
-				link.className   = 'gacct-op-btn gacct-op-reception-fichebtn';
+				link.className   = 'button gacct-op-reception-fichebtn';
 				link.textContent = wrap.getAttribute( 'data-label-fiche' );
 				feedback.appendChild( link );
 			}

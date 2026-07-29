@@ -31,7 +31,7 @@ require_once __DIR__ . '/includes/gacct-operator/gacct-operator.php';
 
 final class GACCT_Plugin {
 
-	const VERSION          = '1.0.0';
+	const VERSION          = '1.1.0';
 	const MENU_SLUG        = 'gacct-dashboard';
 	const GENERATOR_SLUG   = 'gacct-generator';
 	const SETTINGS_SLUG    = 'gacct-settings';
@@ -337,7 +337,7 @@ final class GACCT_Plugin {
 
 		?>
 		<div class="wrap gacct-wrap">
-			<h1><?php esc_html_e( 'Generer des ouvertures', 'gestion-atelier-cct' ); ?></h1>
+			<h2 class="title"><?php esc_html_e( 'Generer des ouvertures', 'gestion-atelier-cct' ); ?></h2>
 
 			<?php $this->render_generator_notice( $result ); ?>
 
@@ -393,7 +393,7 @@ final class GACCT_Plugin {
 
 		?>
 		<div class="wrap gacct-wrap">
-			<h1><?php esc_html_e( 'Configuration atelier', 'gestion-atelier-cct' ); ?></h1>
+			<h2 class="title"><?php esc_html_e( 'Configuration atelier', 'gestion-atelier-cct' ); ?></h2>
 
 			<?php $this->render_settings_notice( $result ); ?>
 
@@ -527,7 +527,7 @@ final class GACCT_Plugin {
 		$definitions = $this->notification_definitions();
 		?>
 		<div class="wrap gacct-wrap">
-			<h1><?php esc_html_e( 'Notifications atelier', 'gestion-atelier-cct' ); ?></h1>
+			<h2 class="title"><?php esc_html_e( 'Notifications atelier', 'gestion-atelier-cct' ); ?></h2>
 
 			<?php $this->render_notifications_notice( $result ); ?>
 

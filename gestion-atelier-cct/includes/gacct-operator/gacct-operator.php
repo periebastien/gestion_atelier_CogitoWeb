@@ -114,9 +114,9 @@ function gacct_op_render_console_nav( $active ) {
 		'planning'  => array( gacct_op_console_url( 0, array( 'view' => 'planning' ) ), __( 'Planning', 'gestion-atelier-cct' ) ),
 	);
 
-	echo '<nav class="gacct-op-nav">';
+	echo '<nav class="nav-tab-wrapper gacct-op-nav">';
 	foreach ( $tabs as $key => $tab ) {
-		$class = 'gacct-op-nav-link' . ( $key === $active ? ' is-active' : '' );
+		$class = 'nav-tab' . ( $key === $active ? ' nav-tab-active' : '' );
 		echo '<a class="' . esc_attr( $class ) . '" href="' . esc_url( $tab[0] ) . '">' . esc_html( $tab[1] ) . '</a>';
 	}
 
@@ -124,7 +124,7 @@ function gacct_op_render_console_nav( $active ) {
 	echo '<input type="hidden" name="page" value="' . esc_attr( GACCT_OP_MENU_SLUG ) . '">';
 	echo '<input type="hidden" name="view" value="reception">';
 	echo '<input type="search" name="ref" placeholder="' . esc_attr__( 'Scan ou référence…', 'gestion-atelier-cct' ) . '" value="">';
-	echo '<button type="submit" class="gacct-op-btn secondary">' . esc_html__( 'Ouvrir', 'gestion-atelier-cct' ) . '</button>';
+	echo '<button type="submit" class="button">' . esc_html__( 'Ouvrir', 'gestion-atelier-cct' ) . '</button>';
 	echo '</form>';
 	echo '</nav>';
 }

@@ -28,7 +28,7 @@ function gacct_op_render_planning_screen() {
 		<div class="gacct-op-planning-head">
 			<h1><?php esc_html_e( 'Planning atelier', 'gestion-atelier-cct' ); ?></h1>
 			<?php if ( $next_ts ) : ?>
-				<button type="button" class="gacct-op-btn secondary" data-gacct-goto="<?php echo esc_attr( wp_date( 'Y-m-d', (int) $next_ts ) ); ?>">
+				<button type="button" class="button" data-gacct-goto="<?php echo esc_attr( wp_date( 'Y-m-d', (int) $next_ts ) ); ?>">
 					<?php
 					/* translators: %s: date de la prochaine occupation */
 					echo esc_html( sprintf( __( 'Prochaine occupation : %s', 'gestion-atelier-cct' ), wp_date( get_option( 'date_format' ), (int) $next_ts ) ) );
@@ -69,7 +69,7 @@ function gacct_op_render_planning_screen() {
 				</div>
 			</dl>
 
-			<a class="gacct-op-btn secondary gacct-op-panel-fiche" data-op-slot="fiche" href="#"><?php esc_html_e( 'Ouvrir la fiche', 'gestion-atelier-cct' ); ?></a>
+			<a class="button gacct-op-panel-fiche" data-op-slot="fiche" href="#"><?php esc_html_e( 'Ouvrir la fiche', 'gestion-atelier-cct' ); ?></a>
 
 			<div class="gacct-op-panel-resched">
 				<h3><?php esc_html_e( 'Replanifier', 'gestion-atelier-cct' ); ?></h3>
@@ -92,7 +92,7 @@ function gacct_op_render_planning_screen() {
 
 				<div class="gacct-op-feedback" data-op-slot="panel-feedback" role="status"></div>
 
-				<button type="button" class="gacct-op-btn" data-op-move><?php esc_html_e( 'Déplacer', 'gestion-atelier-cct' ); ?></button>
+				<button type="button" class="button button-primary" data-op-move><?php esc_html_e( 'Déplacer', 'gestion-atelier-cct' ); ?></button>
 			</div>
 		</div>
 	</div>

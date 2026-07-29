@@ -1254,7 +1254,7 @@ function gacct_pay_render_admin_page() {
 	$bank_rows = gacct_pay_bank_rows();
 	?>
 	<div class="wrap gacct-wrap">
-		<h1><?php esc_html_e( 'Paiements & relances', 'gestion-atelier-cct' ); ?></h1>
+		<h2 class="title"><?php esc_html_e( 'Paiements & relances', 'gestion-atelier-cct' ); ?></h2>
 
 		<?php if ( true === $result ) : ?>
 			<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Reglages enregistres.', 'gestion-atelier-cct' ); ?></p></div>

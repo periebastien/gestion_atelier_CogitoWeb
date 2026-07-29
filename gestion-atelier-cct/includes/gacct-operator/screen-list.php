@@ -140,9 +140,9 @@ function gacct_op_list_render_documents( array $item ) {
 		$count_label .= ' · ' . sprintf( _n( '%d brouillon', '%d brouillons', $drafts, 'gestion-atelier-cct' ), $drafts );
 	}
 
-	// Icône document (SVG inline, currentColor).
-	$icon_doc = '<svg class="gacct-op-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>';
-	$icon_dl  = '<svg class="gacct-op-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>';
+	// Icônes natives dashicons.
+	$icon_doc = '<span class="dashicons dashicons-media-document gacct-op-ico" aria-hidden="true"></span>';
+	$icon_dl  = '<span class="dashicons dashicons-download gacct-op-ico" aria-hidden="true"></span>';
 
 	if ( ! $ids ) {
 		// Que des brouillons : pas de menu, juste l'info.
@@ -213,11 +213,11 @@ function gacct_op_render_list_screen() {
 
 	echo '<div class="wrap gacct-op gacct-op-list">';
 
-	// 1. Titre + recherche.
-	echo '<div class="gacct-op-list-head">';
-	echo '<h1>' . esc_html__( 'Interventions', 'gestion-atelier-cct' ) . '</h1>';
+	// 1. Titre + recherche (composants natifs : wp-heading-inline + search-box).
+	echo '<h1 class="wp-heading-inline">' . esc_html__( 'Interventions', 'gestion-atelier-cct' ) . '</h1>';
+	echo '<hr class="wp-header-end">';
 
-	echo '<form method="get" action="' . esc_url( admin_url( 'admin.php' ) ) . '" class="gacct-op-list-search" role="search">';
+	echo '<form method="get" action="' . esc_url( admin_url( 'admin.php' ) ) . '" role="search">';
 	echo '<input type="hidden" name="page" value="' . esc_attr( GACCT_OP_MENU_SLUG ) . '">';
 	echo '<input type="hidden" name="view" value="list">';
 	if ( null !== $current['state'] ) {
@@ -228,41 +228,39 @@ function gacct_op_render_list_screen() {
 	}
 	echo '<input type="hidden" name="orderby" value="' . esc_attr( $current['orderby'] ) . '">';
 	echo '<input type="hidden" name="order" value="' . esc_attr( $current['order'] ) . '">';
-	echo '<input type="search" name="s" value="' . esc_attr( $current['search'] ) . '" placeholder="' . esc_attr__( 'Référence, client, marque, n° de série…', 'gestion-atelier-cct' ) . '">';
-	echo '<button type="submit" class="button gacct-op-btn">' . esc_html__( 'Rechercher', 'gestion-atelier-cct' ) . '</button>';
+	echo '<p class="search-box">';
+	echo '<label class="screen-reader-text" for="gacct-op-search">' . esc_html__( 'Rechercher une intervention', 'gestion-atelier-cct' ) . '</label>';
+	echo '<input type="search" id="gacct-op-search" name="s" value="' . esc_attr( $current['search'] ) . '" placeholder="' . esc_attr__( 'Référence, client, marque, n° de série…', 'gestion-atelier-cct' ) . '">';
+	echo '<input type="submit" class="button" value="' . esc_attr__( 'Rechercher', 'gestion-atelier-cct' ) . '">';
+	echo '</p>';
 	echo '</form>';
-	echo '</div>';
 
-	// 2. Onglets d'états.
+	// 2. Onglets d'états (liste native subsubsub).
 	$total_all = array_sum( $counts );
+	$last_state = max( array_keys( $labels ) );
 
-	echo '<nav class="gacct-op-list-tabs" aria-label="' . esc_attr__( 'Filtrer par état', 'gestion-atelier-cct' ) . '">';
-
-	$tab_class = ( null === $current['state'] ) ? 'gacct-op-list-tab is-active' : 'gacct-op-list-tab';
-	echo '<a class="' . esc_attr( $tab_class ) . '" href="' . esc_url( gacct_op_list_url( $current, array( 'etat' => null, 'paged' => null ) ) ) . '">'
-		. esc_html__( 'Tous', 'gestion-atelier-cct' ) . ' <span class="gacct-op-list-count">' . esc_html( $total_all ) . '</span></a>';
+	echo '<ul class="subsubsub">';
+	echo '<li class="all"><a href="' . esc_url( gacct_op_list_url( $current, array( 'etat' => null, 'paged' => null ) ) ) . '"'
+		. ( null === $current['state'] ? ' class="current" aria-current="page"' : '' ) . '>'
+		. esc_html__( 'Tous', 'gestion-atelier-cct' ) . ' <span class="count">(' . esc_html( $total_all ) . ')</span></a> |</li>';
 
 	foreach ( $labels as $state => $label ) {
-		$n     = isset( $counts[ $state ] ) ? (int) $counts[ $state ] : 0;
-		$class = 'gacct-op-list-tab';
-		if ( $current['state'] === $state ) {
-			$class .= ' is-active';
-		}
-		if ( 0 === $n ) {
-			$class .= ' is-empty';
-		}
-		echo '<a class="' . esc_attr( $class ) . '" href="' . esc_url( gacct_op_list_url( $current, array( 'etat' => $state, 'paged' => null ) ) ) . '">'
-			. esc_html( $state . ' · ' . $label ) . ' <span class="gacct-op-list-count">' . esc_html( $n ) . '</span></a>';
+		$n   = isset( $counts[ $state ] ) ? (int) $counts[ $state ] : 0;
+		$sep = ( $state === $last_state ) ? '' : ' |';
+		echo '<li><a href="' . esc_url( gacct_op_list_url( $current, array( 'etat' => $state, 'paged' => null ) ) ) . '"'
+			. ( $current['state'] === $state ? ' class="current" aria-current="page"' : '' ) . '>'
+			. esc_html( $state . ' · ' . $label ) . ' <span class="count">(' . esc_html( $n ) . ')</span></a>' . $sep . '</li>';
 	}
-	echo '</nav>';
+	echo '</ul>';
 
-	// 3. Filtre « Réalisé par ».
+	// 3. Barre d'outils native (filtre « Réalisé par »).
 	$operators = gacct_op_operator_choices();
 
+	echo '<div class="tablenav top">';
 	if ( $operators ) {
-		echo '<form method="get" action="' . esc_url( admin_url( 'admin.php' ) ) . '" class="gacct-op-list-operator">';
+		echo '<form method="get" action="' . esc_url( admin_url( 'admin.php' ) ) . '" class="alignleft actions">';
 		echo '<input type="hidden" name="page" value="' . esc_attr( GACCT_OP_MENU_SLUG ) . '">';
-	echo '<input type="hidden" name="view" value="list">';
+		echo '<input type="hidden" name="view" value="list">';
 		if ( null !== $current['state'] ) {
 			echo '<input type="hidden" name="etat" value="' . esc_attr( $current['state'] ) . '">';
 		}
@@ -271,47 +269,50 @@ function gacct_op_render_list_screen() {
 		}
 		echo '<input type="hidden" name="orderby" value="' . esc_attr( $current['orderby'] ) . '">';
 		echo '<input type="hidden" name="order" value="' . esc_attr( $current['order'] ) . '">';
-		echo '<label for="gacct-op-operator">' . esc_html__( 'Réalisé par', 'gestion-atelier-cct' ) . '</label> ';
+		echo '<label class="screen-reader-text" for="gacct-op-operator">' . esc_html__( 'Filtrer par opérateur', 'gestion-atelier-cct' ) . '</label>';
 		echo '<select name="operateur" id="gacct-op-operator">';
 		echo '<option value="">' . esc_html__( 'Tous les opérateurs', 'gestion-atelier-cct' ) . '</option>';
 		foreach ( $operators as $id => $name ) {
 			echo '<option value="' . esc_attr( $id ) . '"' . selected( $current['operator'], $id, false ) . '>' . esc_html( $name ) . '</option>';
 		}
 		echo '</select> ';
-		echo '<button type="submit" class="button gacct-op-btn">' . esc_html__( 'Filtrer', 'gestion-atelier-cct' ) . '</button>';
+		echo '<input type="submit" class="button" value="' . esc_attr__( 'Filtrer', 'gestion-atelier-cct' ) . '">';
 		echo '</form>';
 	}
+	echo '<br class="clear">';
+	echo '</div>';
 
 	// 4. Tableau.
 	if ( ! $items ) {
-		echo '<div class="gacct-op-card gacct-op-list-empty"><p>' . esc_html__( 'Aucune intervention ne correspond à ces critères.', 'gestion-atelier-cct' ) . '</p></div>';
+		echo '<p class="gacct-op-list-empty">' . esc_html__( 'Aucune intervention ne correspond à ces critères.', 'gestion-atelier-cct' ) . '</p>';
 		echo '</div>';
 		return;
 	}
 
-	$sortable = function ( $key, $label ) use ( $current ) {
+	// En-tête de colonne triable, markup natif des list tables.
+	$sortable_th = function ( $key, $label, $extra_class = '' ) use ( $current ) {
 		$is_current = ( $current['orderby'] === $key );
 		$next_order = ( $is_current && 'ASC' === $current['order'] ) ? 'DESC' : 'ASC';
-		$arrow      = '';
-		if ( $is_current ) {
-			$arrow = ' <span class="gacct-op-list-arrow" aria-hidden="true">' . ( 'ASC' === $current['order'] ? '&#9650;' : '&#9660;' ) . '</span>';
-		}
-		$url = gacct_op_list_url( $current, array( 'orderby' => $key, 'order' => $next_order, 'paged' => null ) );
+		$class      = 'manage-column column-' . $key . ' ' . $extra_class . ' '
+			. ( $is_current ? 'sorted ' . strtolower( $current['order'] ) : 'sortable ' . strtolower( $next_order ) );
+		$url        = gacct_op_list_url( $current, array( 'orderby' => $key, 'order' => $next_order, 'paged' => null ) );
 
-		return '<a href="' . esc_url( $url ) . '" class="gacct-op-list-sort' . ( $is_current ? ' is-sorted' : '' ) . '">' . esc_html( $label ) . $arrow . '</a>';
+		return '<th scope="col" class="' . esc_attr( trim( $class ) ) . '">'
+			. '<a href="' . esc_url( $url ) . '"><span>' . esc_html( $label ) . '</span>'
+			. '<span class="sorting-indicators"><span class="sorting-indicator asc" aria-hidden="true"></span><span class="sorting-indicator desc" aria-hidden="true"></span></span></a>'
+			. '</th>';
 	};
 
-	echo '<table class="gacct-op-list-table">';
+	echo '<table class="wp-list-table widefat fixed striped gacct-op-list-table">';
 	echo '<thead><tr>';
-	echo '<th scope="col">' . esc_html__( 'Référence', 'gestion-atelier-cct' ) . '</th>';
-	echo '<th scope="col">' . esc_html__( 'Client', 'gestion-atelier-cct' ) . '</th>';
-	echo '<th scope="col">' . esc_html__( 'Matériel', 'gestion-atelier-cct' ) . '</th>';
-	echo '<th scope="col">' . $sortable( 'slot', __( 'Créneau', 'gestion-atelier-cct' ) ) . '</th>';
-	echo '<th scope="col">' . esc_html__( 'État', 'gestion-atelier-cct' ) . '</th>';
-	echo '<th scope="col">' . esc_html__( 'Paiement', 'gestion-atelier-cct' ) . '</th>';
-	echo '<th scope="col">' . esc_html__( 'Documents', 'gestion-atelier-cct' ) . '</th>';
-	echo '<th scope="col">' . $sortable( 'modified', __( 'Dernière activité', 'gestion-atelier-cct' ) ) . '</th>';
-	echo '<th scope="col">' . esc_html__( 'Actions', 'gestion-atelier-cct' ) . '</th>';
+	echo '<th scope="col" class="manage-column column-ref column-primary">' . esc_html__( 'Référence', 'gestion-atelier-cct' ) . '</th>';
+	echo '<th scope="col" class="manage-column column-client">' . esc_html__( 'Client', 'gestion-atelier-cct' ) . '</th>';
+	echo '<th scope="col" class="manage-column column-materiel">' . esc_html__( 'Matériel', 'gestion-atelier-cct' ) . '</th>';
+	echo $sortable_th( 'slot', __( 'Créneau', 'gestion-atelier-cct' ) );
+	echo '<th scope="col" class="manage-column column-etat">' . esc_html__( 'État', 'gestion-atelier-cct' ) . '</th>';
+	echo '<th scope="col" class="manage-column column-paiement">' . esc_html__( 'Paiement', 'gestion-atelier-cct' ) . '</th>';
+	echo '<th scope="col" class="manage-column column-docs">' . esc_html__( 'Documents', 'gestion-atelier-cct' ) . '</th>';
+	echo $sortable_th( 'modified', __( 'Dernière activité', 'gestion-atelier-cct' ) );
 	echo '</tr></thead><tbody>';
 
 	$date_format = get_option( 'date_format' );
@@ -325,8 +326,8 @@ function gacct_op_render_list_screen() {
 
 		echo '<tr>';
 
-		// Référence.
-		echo '<td data-label="' . esc_attr__( 'Référence', 'gestion-atelier-cct' ) . '" class="gacct-op-list-cell-ref">';
+		// Référence (colonne primaire : actions de ligne + bascule mobile natives).
+		echo '<td class="column-ref column-primary" data-colname="' . esc_attr__( 'Référence', 'gestion-atelier-cct' ) . '">';
 		if ( $order ) {
 			echo '<a href="' . esc_url( $fiche ) . '"><strong>' . esc_html( $order->get_order_number() ) . '</strong></a>';
 		} elseif ( $order_id ) {
@@ -334,10 +335,22 @@ function gacct_op_render_list_screen() {
 		} else {
 			echo '<a href="' . esc_url( $fiche ) . '"><strong>' . esc_html( sprintf( __( 'Dossier #%d', 'gestion-atelier-cct' ), $rev_id ) ) . '</strong></a><br><span class="gacct-op-list-muted">' . esc_html__( '(aucune commande)', 'gestion-atelier-cct' ) . '</span>';
 		}
+
+		echo '<div class="row-actions">';
+		echo '<span class="view"><a href="' . esc_url( $fiche ) . '">' . esc_html__( 'Fiche', 'gestion-atelier-cct' ) . '</a></span>';
+		if ( $order && 'bacs' === $order->get_payment_method() && in_array( $order->get_status(), array( 'on-hold', 'pending' ), true ) ) {
+			echo ' | <span class="deposit"><button type="button" class="button-link" data-op-action="confirm-deposit" data-revision-id="' . esc_attr( $rev_id ) . '">' . esc_html__( 'Acompte reçu', 'gestion-atelier-cct' ) . '</button></span>';
+		}
+		if ( $order && current_user_can( 'manage_woocommerce' ) ) {
+			echo ' | <span class="edit"><a href="' . esc_url( $order->get_edit_order_url() ) . '" target="_blank" rel="noopener">' . esc_html__( 'Commande', 'gestion-atelier-cct' ) . '</a></span>';
+		}
+		echo '</div>';
+
+		echo '<button type="button" class="toggle-row"><span class="screen-reader-text">' . esc_html__( 'Afficher plus de détails', 'gestion-atelier-cct' ) . '</span></button>';
 		echo '</td>';
 
 		// Client.
-		echo '<td data-label="' . esc_attr__( 'Client', 'gestion-atelier-cct' ) . '">';
+		echo '<td class="column-client" data-colname="' . esc_attr__( 'Client', 'gestion-atelier-cct' ) . '">';
 		echo $order ? esc_html( $order->get_formatted_billing_full_name() ) : '<span class="gacct-op-list-muted">&mdash;</span>';
 		echo '</td>';
 
@@ -350,7 +363,7 @@ function gacct_op_render_list_screen() {
 		}
 		$serie = trim( (string) ( $item['numero_de_serie'] ?? '' ) );
 
-		echo '<td data-label="' . esc_attr__( 'Matériel', 'gestion-atelier-cct' ) . '">';
+		echo '<td class="column-materiel" data-colname="' . esc_attr__( 'Matériel', 'gestion-atelier-cct' ) . '">';
 		echo '' !== $materiel ? esc_html( $materiel ) : '<span class="gacct-op-list-muted">&mdash;</span>';
 		if ( '' !== $serie ) {
 			echo '<br><span class="gacct-op-list-muted gacct-op-list-serial">' . esc_html( sprintf( __( 'n° %s', 'gestion-atelier-cct' ), $serie ) ) . '</span>';
@@ -359,7 +372,7 @@ function gacct_op_render_list_screen() {
 
 		// Créneau.
 		$slot_ts = isset( $item['date_reservee'] ) && '' !== (string) $item['date_reservee'] ? (int) $item['date_reservee'] : 0;
-		echo '<td data-label="' . esc_attr__( 'Créneau', 'gestion-atelier-cct' ) . '">';
+		echo '<td class="column-slot" data-colname="' . esc_attr__( 'Créneau', 'gestion-atelier-cct' ) . '">';
 		if ( $slot_ts ) {
 			echo esc_html( date_i18n( $date_format, $slot_ts ) );
 			$duree = trim( (string) ( $item['duree_totale_commande'] ?? '' ) );
@@ -374,24 +387,24 @@ function gacct_op_render_list_screen() {
 		// État.
 		$state = absint( $item['etat_de_la_commande'] ?? 0 );
 		$label = isset( $labels[ $state ] ) ? $labels[ $state ] : (string) $state;
-		echo '<td data-label="' . esc_attr__( 'État', 'gestion-atelier-cct' ) . '">';
+		echo '<td class="column-etat" data-colname="' . esc_attr__( 'État', 'gestion-atelier-cct' ) . '">';
 		echo '<span class="gacct-op-badge etat-' . esc_attr( $state ) . '">' . esc_html( $label ) . '</span>';
 		gacct_op_list_render_steps( $state, $labels );
 		echo '</td>';
 
 		// Paiement.
-		echo '<td data-label="' . esc_attr__( 'Paiement', 'gestion-atelier-cct' ) . '">';
+		echo '<td class="column-paiement" data-colname="' . esc_attr__( 'Paiement', 'gestion-atelier-cct' ) . '">';
 		echo $order ? esc_html( gacct_op_list_payment_label( $order ) ) : '<span class="gacct-op-list-muted">&mdash;</span>';
 		echo '</td>';
 
 		// Documents (PDF générés + uploads manuels + brouillons).
-		echo '<td data-label="' . esc_attr__( 'Documents', 'gestion-atelier-cct' ) . '" class="gacct-op-list-cell-docs">';
+		echo '<td class="column-docs gacct-op-list-cell-docs" data-colname="' . esc_attr__( 'Documents', 'gestion-atelier-cct' ) . '">';
 		gacct_op_list_render_documents( $item );
 		echo '</td>';
 
 		// Dernière activité.
 		$modified_ts = ! empty( $item['cct_modified'] ) ? strtotime( $item['cct_modified'] ) : 0;
-		echo '<td data-label="' . esc_attr__( 'Dernière activité', 'gestion-atelier-cct' ) . '">';
+		echo '<td class="column-modified" data-colname="' . esc_attr__( 'Dernière activité', 'gestion-atelier-cct' ) . '">';
 		if ( $modified_ts ) {
 			echo '<span title="' . esc_attr( date_i18n( $date_format . ' H:i', $modified_ts ) ) . '">'
 				. esc_html( sprintf( __( 'il y a %s', 'gestion-atelier-cct' ), human_time_diff( min( $modified_ts, $now ), $now ) ) ) . '</span>';
@@ -400,26 +413,16 @@ function gacct_op_render_list_screen() {
 		}
 		echo '</td>';
 
-		// Actions.
-		echo '<td data-label="' . esc_attr__( 'Actions', 'gestion-atelier-cct' ) . '" class="gacct-op-list-cell-actions">';
-		echo '<a class="gacct-op-list-action" href="' . esc_url( $fiche ) . '">' . esc_html__( 'Fiche', 'gestion-atelier-cct' ) . '</a>';
-		if ( $order && 'bacs' === $order->get_payment_method() && in_array( $order->get_status(), array( 'on-hold', 'pending' ), true ) ) {
-			echo '<button type="button" class="gacct-op-btn gacct-op-list-deposit" data-op-action="confirm-deposit" data-revision-id="' . esc_attr( $rev_id ) . '">' . esc_html__( 'Acompte reçu', 'gestion-atelier-cct' ) . '</button>';
-		}
-		if ( $order && current_user_can( 'manage_woocommerce' ) ) {
-			echo '<a class="gacct-op-list-action" href="' . esc_url( $order->get_edit_order_url() ) . '" target="_blank" rel="noopener">' . esc_html__( 'Commande', 'gestion-atelier-cct' ) . '</a>';
-		}
-		echo '</td>';
-
 		echo '</tr>';
 	}
 
 	echo '</tbody></table>';
 
-	// 5. Pagination.
+	// 5. Pagination (barre native tablenav).
 	if ( $result['pages'] > 1 ) {
-		echo '<div class="gacct-op-list-pagination">';
-		echo '<span class="gacct-op-list-pageinfo">' . esc_html( sprintf(
+		echo '<div class="tablenav bottom">';
+		echo '<div class="tablenav-pages">';
+		echo '<span class="displaying-num">' . esc_html( sprintf(
 			/* translators: 1: current page, 2: total pages */
 			__( 'Page %1$d sur %2$d', 'gestion-atelier-cct' ),
 			$current['paged'],
@@ -431,14 +434,16 @@ function gacct_op_render_list_screen() {
 			'format'    => '&paged=%#%',
 			'current'   => $current['paged'],
 			'total'     => $result['pages'],
-			'prev_text' => __( '&lsaquo; Précédent', 'gestion-atelier-cct' ),
-			'next_text' => __( 'Suivant &rsaquo;', 'gestion-atelier-cct' ),
+			'prev_text' => __( '&lsaquo;', 'gestion-atelier-cct' ),
+			'next_text' => __( '&rsaquo;', 'gestion-atelier-cct' ),
 			'type'      => 'plain',
 		) );
 
 		if ( $links ) {
-			echo '<span class="gacct-op-list-pagelinks">' . wp_kses_post( $links ) . '</span>';
+			echo '<span class="pagination-links">' . wp_kses_post( $links ) . '</span>';
 		}
+		echo '</div>';
+		echo '<br class="clear">';
 		echo '</div>';
 	}
 
