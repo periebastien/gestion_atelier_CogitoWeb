@@ -1,7 +1,3 @@
-.gacct-wrap {
-	max-width: 1280px;
-}
-
 .gacct-toolbar {
 	align-items: center;
 	background: #fff;
@@ -36,10 +32,9 @@
 }
 
 /* Formulaires de réglages : mise en page native de l'admin (form-table sur
-   fond gris, pas d'encart) — largeur bornée pour la lisibilité. */
+   fond gris, pas d'encart), pleine largeur. */
 .gacct-form {
 	margin-top: 8px;
-	max-width: 900px;
 }
 
 .gacct-form input[type="date"],

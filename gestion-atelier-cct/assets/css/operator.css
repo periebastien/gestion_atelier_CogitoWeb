@@ -30,7 +30,6 @@
 	--gacct-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
 
 	color: var(--gacct-text);
-	max-width: 1200px;
 }
 
 /* Badges d'état 0–8 : familles de couleurs propres au workflow (seule entorse

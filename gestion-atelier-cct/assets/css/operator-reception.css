@@ -4,10 +4,6 @@
  * Boutons natifs (button-hero), palette admin WP via tokens operator.css.
  */
 
-.gacct-op-reception {
-	max-width: 720px;
-}
-
 .gacct-op-reception .gacct-op-reception-hint {
 	color: var(--gacct-text-muted);
 	margin: 8px 0 14px;
