@@ -77,6 +77,104 @@ function gacct_op_list_payment_label( $order ) {
 }
 
 /**
+ * Mini-frise 0–8 d'une ligne de la liste : 9 pastilles (faites / courante /
+ * à venir), libellé d'étape en infobulle. Même sémantique que la frise
+ * « Avancement » de la fiche, format cellule de tableau.
+ */
+function gacct_op_list_render_steps( $state, array $labels ) {
+	echo '<span class="gacct-op-list-steps" role="img" aria-label="' . esc_attr( sprintf( __( 'Étape %1$d sur %2$d', 'gestion-atelier-cct' ), $state, max( array_keys( $labels ) ) ) ) . '">';
+	foreach ( $labels as $i => $step_label ) {
+		$class = 'gacct-op-list-step';
+		if ( $i < $state ) {
+			$class .= ' is-done';
+		} elseif ( $i === $state ) {
+			$class .= ' is-current';
+		}
+		echo '<span class="' . esc_attr( $class ) . '" title="' . esc_attr( $i . ' · ' . $step_label ) . '"></span>';
+	}
+	echo '</span>';
+}
+
+/**
+ * Cellule « Documents » : badge-compteur dépliable (<details>, zéro JS) —
+ * PDF générés (n° + modèle), uploads manuels (titre de la pièce jointe) et
+ * brouillons non générés. Données déjà dans la ligne SQL (rapport_pdf +
+ * rapports_json) : aucune requête en plus, sauf le titre des uploads manuels.
+ */
+function gacct_op_list_render_documents( array $item ) {
+	$rev_id  = absint( $item['_ID'] ?? 0 );
+	$ids     = gacct_report_ids( $item['rapport_pdf'] ?? '' );
+	$models  = gacct_report_models();
+	$entries = json_decode( (string) ( $item['rapports_json'] ?? '' ), true );
+	$entries = is_array( $entries ) ? $entries : array();
+
+	// Libellés des PDF générés (par pièce jointe) + compte des brouillons.
+	$generated = array();
+	$drafts    = 0;
+
+	foreach ( $entries as $entry ) {
+		if ( ! is_array( $entry ) || empty( $entry['model'] ) ) {
+			continue;
+		}
+
+		$attachment_id = absint( $entry['attachment_id'] ?? 0 );
+
+		if ( $attachment_id && in_array( $attachment_id, $ids, true ) ) {
+			$generated[ $attachment_id ] = trim( sprintf(
+				'%s %s',
+				! empty( $entry['number'] ) ? $entry['number'] . ' —' : '',
+				isset( $models[ $entry['model'] ] ) ? $models[ $entry['model'] ] : $entry['model']
+			) );
+		} else {
+			$drafts++;
+		}
+	}
+
+	if ( ! $ids && ! $drafts ) {
+		echo '<span class="gacct-op-list-muted">&mdash;</span>';
+		return;
+	}
+
+	$count_label = sprintf( _n( '%d PDF', '%d PDF', count( $ids ), 'gestion-atelier-cct' ), count( $ids ) );
+	if ( $drafts ) {
+		$count_label .= ' · ' . sprintf( _n( '%d brouillon', '%d brouillons', $drafts, 'gestion-atelier-cct' ), $drafts );
+	}
+
+	// Icône document (SVG inline, currentColor).
+	$icon_doc = '<svg class="gacct-op-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>';
+	$icon_dl  = '<svg class="gacct-op-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>';
+
+	if ( ! $ids ) {
+		// Que des brouillons : pas de menu, juste l'info.
+		echo '<span class="gacct-op-list-docs-empty">' . $icon_doc . ' ' . esc_html( $count_label ) . '</span>';
+		return;
+	}
+
+	echo '<details class="gacct-op-list-docs">';
+	echo '<summary>' . $icon_doc . ' <span>' . esc_html( $count_label ) . '</span></summary>';
+	echo '<ul class="gacct-op-list-docs-menu">';
+
+	foreach ( $ids as $attachment_id ) {
+		if ( isset( $generated[ $attachment_id ] ) ) {
+			$doc_label = $generated[ $attachment_id ];
+		} else {
+			$title     = get_the_title( $attachment_id );
+			$doc_label = ( $title ? $title : sprintf( __( 'Document %d', 'gestion-atelier-cct' ), $attachment_id ) )
+				. ' (' . __( 'upload manuel', 'gestion-atelier-cct' ) . ')';
+		}
+
+		echo '<li><a href="' . esc_url( gacct_report_download_url( $rev_id, $attachment_id ) ) . '" target="_blank" rel="noopener">'
+			. $icon_dl . ' <span>' . esc_html( $doc_label ) . '</span></a></li>';
+	}
+
+	if ( $drafts ) {
+		echo '<li class="gacct-op-list-docs-draft">' . esc_html( sprintf( _n( '%d brouillon non généré', '%d brouillons non générés', $drafts, 'gestion-atelier-cct' ), $drafts ) ) . '</li>';
+	}
+
+	echo '</ul></details>';
+}
+
+/**
  * Écran liste : file des interventions.
  */
 function gacct_op_render_list_screen() {
@@ -211,6 +309,7 @@ function gacct_op_render_list_screen() {
 	echo '<th scope="col">' . $sortable( 'slot', __( 'Créneau', 'gestion-atelier-cct' ) ) . '</th>';
 	echo '<th scope="col">' . esc_html__( 'État', 'gestion-atelier-cct' ) . '</th>';
 	echo '<th scope="col">' . esc_html__( 'Paiement', 'gestion-atelier-cct' ) . '</th>';
+	echo '<th scope="col">' . esc_html__( 'Documents', 'gestion-atelier-cct' ) . '</th>';
 	echo '<th scope="col">' . $sortable( 'modified', __( 'Dernière activité', 'gestion-atelier-cct' ) ) . '</th>';
 	echo '<th scope="col">' . esc_html__( 'Actions', 'gestion-atelier-cct' ) . '</th>';
 	echo '</tr></thead><tbody>';
@@ -277,11 +376,17 @@ function gacct_op_render_list_screen() {
 		$label = isset( $labels[ $state ] ) ? $labels[ $state ] : (string) $state;
 		echo '<td data-label="' . esc_attr__( 'État', 'gestion-atelier-cct' ) . '">';
 		echo '<span class="gacct-op-badge etat-' . esc_attr( $state ) . '">' . esc_html( $label ) . '</span>';
+		gacct_op_list_render_steps( $state, $labels );
 		echo '</td>';
 
 		// Paiement.
 		echo '<td data-label="' . esc_attr__( 'Paiement', 'gestion-atelier-cct' ) . '">';
 		echo $order ? esc_html( gacct_op_list_payment_label( $order ) ) : '<span class="gacct-op-list-muted">&mdash;</span>';
+		echo '</td>';
+
+		// Documents (PDF générés + uploads manuels + brouillons).
+		echo '<td data-label="' . esc_attr__( 'Documents', 'gestion-atelier-cct' ) . '" class="gacct-op-list-cell-docs">';
+		gacct_op_list_render_documents( $item );
 		echo '</td>';
 
 		// Dernière activité.

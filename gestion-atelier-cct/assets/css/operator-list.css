@@ -301,3 +301,123 @@
 	font-size: 12px;
 	margin-left: 6px;
 }
+
+/* ---------- Mini-frise 0–8 (colonne État) ---------- */
+.gacct-op .gacct-op-list-steps {
+	display: flex;
+	gap: 3px;
+	margin-top: 6px;
+}
+
+.gacct-op .gacct-op-list-step {
+	width: 9px;
+	height: 9px;
+	border-radius: 50%;
+	background: var(--gacct-border, #dcdcde);
+	flex: 0 0 auto;
+}
+
+.gacct-op .gacct-op-list-step.is-done {
+	background: var(--gacct-accent, #20c4c3);
+	opacity: 0.55;
+}
+
+.gacct-op .gacct-op-list-step.is-current {
+	background: var(--gacct-accent, #20c4c3);
+	box-shadow: 0 0 0 2px rgba(32, 196, 195, 0.25);
+}
+
+/* ---------- Colonne Documents (badge dépliable) ---------- */
+.gacct-op .gacct-op-list-docs {
+	position: relative;
+	display: inline-block;
+}
+
+.gacct-op .gacct-op-list-docs > summary {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 4px 10px;
+	border: 1px solid var(--gacct-border, #dcdcde);
+	border-radius: 99px;
+	cursor: pointer;
+	list-style: none;
+	white-space: nowrap;
+	font-size: 12px;
+	background: #fff;
+}
+
+.gacct-op .gacct-op-list-docs > summary::-webkit-details-marker {
+	display: none;
+}
+
+.gacct-op .gacct-op-list-docs[open] > summary {
+	border-color: var(--gacct-accent, #20c4c3);
+}
+
+.gacct-op .gacct-op-list-docs-menu {
+	position: absolute;
+	z-index: 30;
+	top: calc(100% + 4px);
+	left: 0;
+	min-width: 240px;
+	margin: 0;
+	padding: 6px;
+	list-style: none;
+	background: #fff;
+	border: 1px solid var(--gacct-border, #dcdcde);
+	border-radius: 8px;
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+.gacct-op .gacct-op-list-docs-menu li {
+	margin: 0;
+}
+
+.gacct-op .gacct-op-list-docs-menu a {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	padding: 7px 8px;
+	border-radius: 6px;
+	text-decoration: none;
+	color: inherit;
+	font-size: 12px;
+	line-height: 1.3;
+}
+
+.gacct-op .gacct-op-list-docs-menu a:hover {
+	background: #f0f6f6;
+	color: var(--gacct-accent, #0e7490);
+}
+
+.gacct-op .gacct-op-list-docs-menu .gacct-op-ico {
+	flex: 0 0 auto;
+}
+
+.gacct-op .gacct-op-list-docs-draft {
+	padding: 6px 8px;
+	font-size: 11px;
+	color: #757575;
+	border-top: 1px dashed var(--gacct-border, #dcdcde);
+	margin-top: 4px;
+}
+
+.gacct-op .gacct-op-list-docs-empty {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 12px;
+	color: #757575;
+	white-space: nowrap;
+}
+
+/* En mode cartes (mobile), le menu se déplie dans le flux plutôt qu'en
+   surimpression au bord de l'écran. */
+@media ( max-width: 782px ) {
+	.gacct-op .gacct-op-list-docs-menu {
+		position: static;
+		box-shadow: none;
+		margin-top: 6px;
+	}
+}
