@@ -468,32 +468,6 @@ final class GACCT_Plugin {
 						</tr>
 						<tr>
 							<th scope="row">
-								<label for="gacct_report_counter"><?php esc_html_e( 'Prochain numero de rapport (compteur)', 'gestion-atelier-cct' ); ?></label>
-							</th>
-							<td>
-								<input
-									type="number"
-									id="gacct_report_counter"
-									name="report_counter"
-									min="1"
-									max="999999"
-									step="1"
-									value="<?php echo esc_attr( function_exists( 'gacct_report_counter' ) ? gacct_report_counter() : 1 ); ?>"
-									required
-								>
-								<p class="description">
-									<?php
-									echo esc_html( sprintf(
-										/* translators: %s: prochain numero complet */
-										__( 'Numerotation des rapports de controle : annee + compteur, sequence commune aux 3 modeles, figee a la premiere generation du PDF. Prochain numero : %s. Ajustez le compteur pour reprendre la sequence existante de l atelier.', 'gestion-atelier-cct' ),
-										function_exists( 'gacct_report_peek_number' ) ? gacct_report_peek_number() : ''
-									) );
-									?>
-								</p>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
 								<label for="gacct_table_revision"><?php esc_html_e( 'Table des revisions', 'gestion-atelier-cct' ); ?></label>
 							</th>
 							<td>
@@ -791,17 +765,9 @@ final class GACCT_Plugin {
 			return new WP_Error( 'gacct_bad_next_revision_days', __( 'Le delai d alerte de prochaine revision doit etre compris entre 1 et 730 jours.', 'gestion-atelier-cct' ) );
 		}
 
-		// Compteur de numerotation des rapports de controle (sequence commune).
-		$report_counter = isset( $_POST['report_counter'] ) ? absint( wp_unslash( $_POST['report_counter'] ) ) : 0;
-
-		if ( $report_counter < 1 || $report_counter > 999999 ) {
-			return new WP_Error( 'gacct_bad_report_counter', __( 'Le compteur de numerotation des rapports doit etre compris entre 1 et 999999.', 'gestion-atelier-cct' ) );
-		}
-
 		update_option( self::OPENING_TIME_OPT, $opening_time, false );
 		update_option( self::WORKING_DAYS_OPT, $working_days, false );
 		update_option( self::NEXT_REVISION_DAYS_OPT, $next_revision_days, false );
-		update_option( GACCT_REPORT_COUNTER_OPT, $report_counter, false );
 
 		$table_inputs = array(
 			'revision'           => 'table_revision',

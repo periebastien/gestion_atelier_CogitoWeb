@@ -233,13 +233,15 @@ function gacct_rf_render_voile_form( array $revision, $order ) {
 	// ------------------------------------------------ Calage & freins.
 	gacct_rf_section_open( __( 'Inspection géométrique (calage & freins)', 'gestion-atelier-cct' ), false, 'geometry' );
 	echo '<p class="gacct-op-muted">' . esc_html__( 'Calage contrôlé avec le système de mesure WOERNER. Le détail des mesures est disponible en annexe.', 'gestion-atelier-cct' ) . '</p>';
+	// Design validé 31/07/2026 : le détail des mesures (écarts) reste en annexe
+	// WOERNER — le rapport porte Interventions + Final (calage) et Interventions
+	// (freins), avec l'interprétation de chaque bloc.
 	echo '<div class="gacct-rf-grid">';
-	gacct_rf_input( 'geometry.calage_ecarts', __( 'Écarts calage', 'gestion-atelier-cct' ) );
+	gacct_rf_input( 'geometry.calage_interventions', __( 'Calage — interventions', 'gestion-atelier-cct' ) );
+	gacct_rf_input( 'geometry.calage_final', __( 'Calage — final', 'gestion-atelier-cct' ) );
 	gacct_rf_select( 'geometry.calage_interp', __( 'Interprétation calage', 'gestion-atelier-cct' ), $config['geometry_interps'], '' );
-	gacct_rf_input( 'geometry.calage_interventions', __( 'Interventions calage', 'gestion-atelier-cct' ) );
-	gacct_rf_input( 'geometry.freins_ecarts', __( 'Écarts freins', 'gestion-atelier-cct' ) );
+	gacct_rf_input( 'geometry.freins_interventions', __( 'Freins — interventions', 'gestion-atelier-cct' ) );
 	gacct_rf_select( 'geometry.freins_interp', __( 'Interprétation freins', 'gestion-atelier-cct' ), $config['geometry_interps'], '' );
-	gacct_rf_input( 'geometry.freins_interventions', __( 'Interventions freins', 'gestion-atelier-cct' ) );
 	gacct_rf_select( 'geometry.reglage_freins', __( 'Réglage des freins', 'gestion-atelier-cct' ), $config['brake_settings'], '' );
 	echo '</div>';
 	gacct_rf_section_close();

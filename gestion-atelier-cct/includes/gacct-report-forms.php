@@ -586,6 +586,269 @@ function gacct_report_calc_suspente( array $data ) {
 }
 
 /* =============================================================================
+ *  RÉGLAGES DES RAPPORTS (onglet Configuration > Rapports)
+ * ========================================================================== */
+
+if ( ! defined( 'GACCT_REPORT_SETTINGS_OPT' ) ) {
+	define( 'GACCT_REPORT_SETTINGS_OPT', 'gacct_report_settings' );
+}
+
+/**
+ * Code couleur CANONIQUE des états — le même dans tous les rapports, tous les
+ * modèles, tous les endroits (matrice, badges, légendes). Design validé le
+ * 31/07/2026. [pâle (fonds), texte, soutenu (case cochée / en-tête)].
+ */
+function gacct_report_state_colors() {
+	return apply_filters( 'gacct_report_state_colors', array(
+		'NEUF'          => array( '#d9f6fb', '#0e6b75', '#67d5e4' ),
+		'TRÈS BON ÉTAT' => array( '#d3f2e2', '#0d6b46', '#5fcda0' ),
+		'BON ÉTAT'      => array( '#e1f7d9', '#2d6b1c', '#94dd7c' ),
+		'CALAGE BON'    => array( '#e1f7d9', '#2d6b1c', '#94dd7c' ),
+		'ACCEPTABLE'    => array( '#fdf6cf', '#7d6410', '#f0d264' ),
+		'LIMITE'        => array( '#ffe8cf', '#8d4a12', '#f5b56b' ),
+		'RÉFORME'       => array( '#fddede', '#8f1d1d', '#f28b8b' ),
+	) );
+}
+
+/**
+ * Polices disponibles pour les PDF (TTF vendorés — dompdf ne sait pas charger
+ * autre chose). Pour ajouter une police client : déposer les TTF dans
+ * assets/vendor/<slug>/ et l'ajouter ici (ou via le filtre).
+ */
+function gacct_report_fonts() {
+	$base = dirname( __DIR__ ) . '/assets/vendor/nunito/';
+
+	return apply_filters( 'gacct_report_fonts', array(
+		'nunito' => array(
+			'label'  => 'Nunito (police du site)',
+			'family' => 'Nunito',
+			'files'  => array(
+				'normal'      => $base . 'Nunito-Regular.ttf',
+				'bold'        => $base . 'Nunito-Bold.ttf',
+				'italic'      => $base . 'Nunito-Italic.ttf',
+				'bold_italic' => $base . 'Nunito-BoldItalic.ttf',
+			),
+		),
+		'dejavu' => array(
+			'label'  => 'DejaVu Sans (intégrée dompdf)',
+			'family' => 'DejaVu Sans',
+			'files'  => array(),
+		),
+	) );
+}
+
+/**
+ * Réglages des rapports, fusionnés avec les défauts.
+ */
+function gacct_report_settings() {
+	$defaults = array(
+		'font'       => 'nunito',
+		'qr_enabled' => 0,
+		'qr_url'     => '',
+		'qr_title'   => 'Gagnez votre prochaine révision périodique ParachecK en répondant à l\'enquête qualité !',
+		'qr_subtext' => 'Tirage au sort lors de la prochaine coupe Icare.',
+	);
+
+	$saved = get_option( GACCT_REPORT_SETTINGS_OPT, array() );
+
+	return array_merge( $defaults, is_array( $saved ) ? $saved : array() );
+}
+
+/**
+ * CSS @font-face + famille de la police configurée (utilisé par les templates).
+ *
+ * @return array { css: string, family: string }
+ */
+function gacct_report_font_css() {
+	$settings = gacct_report_settings();
+	$fonts    = gacct_report_fonts();
+	$font     = isset( $fonts[ $settings['font'] ] ) ? $fonts[ $settings['font'] ] : $fonts['dejavu'];
+
+	$css = '';
+	$map = array(
+		'normal'      => array( 'normal', 'normal' ),
+		'bold'        => array( 'normal', 'bold' ),
+		'italic'      => array( 'italic', 'normal' ),
+		'bold_italic' => array( 'italic', 'bold' ),
+	);
+
+	foreach ( $font['files'] as $variant => $path ) {
+		if ( isset( $map[ $variant ] ) && file_exists( $path ) ) {
+			$css .= "@font-face { font-family: '" . $font['family'] . "'; font-style: " . $map[ $variant ][0]
+				. '; font-weight: ' . $map[ $variant ][1] . "; src: url('" . $path . "') format('truetype'); }\n";
+		}
+	}
+
+	// DejaVu reste en repli (accents + symboles ✔✘ absents de la plupart des polices).
+	return array(
+		'css'    => $css,
+		'family' => "'" . $font['family'] . "', \"DejaVu Sans\", sans-serif",
+	);
+}
+
+/**
+ * Répertoire de cache des rapports (polices dompdf + QR), dans uploads.
+ */
+function gacct_report_cache_dir() {
+	$uploads = wp_upload_dir( null, false );
+
+	if ( ! empty( $uploads['error'] ) || empty( $uploads['basedir'] ) ) {
+		return '';
+	}
+
+	$dir = trailingslashit( $uploads['basedir'] ) . 'gacct_report_cache';
+
+	if ( ! is_dir( $dir ) && ! wp_mkdir_p( $dir ) ) {
+		return '';
+	}
+
+	if ( ! file_exists( $dir . '/index.php' ) ) {
+		@file_put_contents( $dir . '/index.php', "<?php\n// Silence is golden.\n", LOCK_EX );
+	}
+
+	return $dir;
+}
+
+/**
+ * PNG du QR de l'enquête qualité (généré localement, chillerlan/php-qrcode
+ * vendored, mis en cache par URL). '' si le bloc est désactivé ou sans URL.
+ */
+function gacct_report_qr_png_path() {
+	$settings = gacct_report_settings();
+	$url      = trim( (string) $settings['qr_url'] );
+
+	if ( empty( $settings['qr_enabled'] ) || '' === $url ) {
+		return '';
+	}
+
+	$dir = gacct_report_cache_dir();
+
+	if ( ! $dir ) {
+		return '';
+	}
+
+	$path = $dir . '/qr-' . md5( $url ) . '.png';
+
+	if ( file_exists( $path ) ) {
+		return $path;
+	}
+
+	require_once dirname( __DIR__ ) . '/assets/vendor/php-qrcode/autoload.php';
+
+	try {
+		$options = new \chillerlan\QRCode\QROptions( array(
+			'outputType'   => \chillerlan\QRCode\Output\QROutputInterface::GDIMAGE_PNG,
+			'eccLevel'     => \chillerlan\QRCode\Common\EccLevel::M,
+			'scale'        => 8,
+			'outputBase64' => false,
+		) );
+
+		$png = ( new \chillerlan\QRCode\QRCode( $options ) )->render( $url );
+	} catch ( \Throwable $e ) {
+		return '';
+	}
+
+	if ( ! $png || false === @file_put_contents( $path, $png, LOCK_EX ) ) {
+		return '';
+	}
+
+	return $path;
+}
+
+/**
+ * Onglet « Rapports » de l'écran Configuration (compteur de numérotation,
+ * police des PDF, bloc QR enquête qualité).
+ */
+function gacct_report_render_config_tab() {
+	if ( ! current_user_can( 'manage_woocommerce' ) && ! current_user_can( 'manage_options' ) ) {
+		wp_die( esc_html__( 'Acces refuse.', 'gestion-atelier-cct' ) );
+	}
+
+	$notice = '';
+
+	if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['gacct_report_settings_submit'] ) ) {
+		if ( ! isset( $_POST['_gacct_report_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_gacct_report_nonce'] ) ), 'gacct_report_settings' ) ) {
+			$notice = '<div class="notice notice-error"><p>' . esc_html__( 'Vérification de sécurité échouée.', 'gestion-atelier-cct' ) . '</p></div>';
+		} else {
+			$fonts   = gacct_report_fonts();
+			$font    = isset( $_POST['report_font'] ) ? sanitize_key( wp_unslash( $_POST['report_font'] ) ) : 'nunito';
+			$counter = isset( $_POST['report_counter'] ) ? absint( wp_unslash( $_POST['report_counter'] ) ) : 0;
+
+			if ( $counter < 1 || $counter > 999999 ) {
+				$notice = '<div class="notice notice-error"><p>' . esc_html__( 'Le compteur doit être compris entre 1 et 999999.', 'gestion-atelier-cct' ) . '</p></div>';
+			} else {
+				update_option( GACCT_REPORT_COUNTER_OPT, $counter, false );
+				update_option( GACCT_REPORT_SETTINGS_OPT, array(
+					'font'       => isset( $fonts[ $font ] ) ? $font : 'nunito',
+					'qr_enabled' => empty( $_POST['qr_enabled'] ) ? 0 : 1,
+					'qr_url'     => isset( $_POST['qr_url'] ) ? esc_url_raw( wp_unslash( $_POST['qr_url'] ) ) : '',
+					'qr_title'   => isset( $_POST['qr_title'] ) ? sanitize_text_field( wp_unslash( $_POST['qr_title'] ) ) : '',
+					'qr_subtext' => isset( $_POST['qr_subtext'] ) ? sanitize_text_field( wp_unslash( $_POST['qr_subtext'] ) ) : '',
+				), false );
+				$notice = '<div class="notice notice-success"><p>' . esc_html__( 'Réglages des rapports enregistrés.', 'gestion-atelier-cct' ) . '</p></div>';
+			}
+		}
+	}
+
+	$settings = gacct_report_settings();
+	$fonts    = gacct_report_fonts();
+
+	echo '<div class="wrap gacct-wrap">';
+	echo '<h1>' . esc_html__( 'Rapports de contrôle', 'gestion-atelier-cct' ) . '</h1>';
+	echo wp_kses_post( $notice );
+
+	echo '<form class="gacct-form" method="post" action="' . esc_url( GACCT_Plugin::config_tab_url( 'rapports' ) ) . '">';
+	wp_nonce_field( 'gacct_report_settings', '_gacct_report_nonce' );
+
+	echo '<table class="form-table" role="presentation"><tbody>';
+
+	echo '<tr><th scope="row"><label for="gacct_report_counter_field">' . esc_html__( 'Prochain numéro (compteur)', 'gestion-atelier-cct' ) . '</label></th><td>';
+	echo '<input type="number" id="gacct_report_counter_field" name="report_counter" min="1" max="999999" step="1" value="' . esc_attr( gacct_report_counter() ) . '" required>';
+	echo '<p class="description">' . esc_html( sprintf(
+		__( 'Numérotation : année + compteur, séquence commune à tous les modèles, figée à la première génération du PDF. Prochain numéro : %s.', 'gestion-atelier-cct' ),
+		gacct_report_peek_number()
+	) ) . '</p></td></tr>';
+
+	echo '<tr><th scope="row"><label for="gacct_report_font">' . esc_html__( 'Police des PDF', 'gestion-atelier-cct' ) . '</label></th><td>';
+	echo '<select id="gacct_report_font" name="report_font">';
+	foreach ( $fonts as $key => $font ) {
+		echo '<option value="' . esc_attr( $key ) . '"' . selected( $settings['font'], $key, false ) . '>' . esc_html( $font['label'] ) . '</option>';
+	}
+	echo '</select>';
+	echo '<p class="description">' . esc_html__( 'Effective à la prochaine génération / régénération. Pour ajouter une police : déposer ses fichiers TTF dans le plugin (filtre gacct_report_fonts).', 'gestion-atelier-cct' ) . '</p></td></tr>';
+
+	echo '<tr><th scope="row">' . esc_html__( 'Bloc QR « enquête qualité »', 'gestion-atelier-cct' ) . '</th><td>';
+	echo '<label><input type="checkbox" name="qr_enabled" value="1"' . checked( $settings['qr_enabled'], 1, false ) . '> ' . esc_html__( 'Afficher le bloc QR en fin de rapport', 'gestion-atelier-cct' ) . '</label>';
+	echo '</td></tr>';
+
+	echo '<tr><th scope="row"><label for="gacct_report_qr_url">' . esc_html__( 'Lien du QR code', 'gestion-atelier-cct' ) . '</label></th><td>';
+	echo '<input type="url" id="gacct_report_qr_url" name="qr_url" class="regular-text" value="' . esc_attr( $settings['qr_url'] ) . '" placeholder="https://…">';
+	echo '<p class="description">' . esc_html__( 'Le QR est généré localement (aucun service externe). Bloc masqué si le lien est vide.', 'gestion-atelier-cct' ) . '</p></td></tr>';
+
+	echo '<tr><th scope="row"><label for="gacct_report_qr_title">' . esc_html__( 'Texte du bloc QR', 'gestion-atelier-cct' ) . '</label></th><td>';
+	echo '<input type="text" id="gacct_report_qr_title" name="qr_title" class="large-text" value="' . esc_attr( $settings['qr_title'] ) . '">';
+	echo '</td></tr>';
+
+	echo '<tr><th scope="row"><label for="gacct_report_qr_subtext">' . esc_html__( 'Sous-texte du bloc QR', 'gestion-atelier-cct' ) . '</label></th><td>';
+	echo '<input type="text" id="gacct_report_qr_subtext" name="qr_subtext" class="large-text" value="' . esc_attr( $settings['qr_subtext'] ) . '">';
+	echo '</td></tr>';
+
+	echo '</tbody></table>';
+	submit_button( __( 'Enregistrer les réglages', 'gestion-atelier-cct' ), 'primary', 'gacct_report_settings_submit' );
+	echo '</form></div>';
+}
+
+/**
+ * Enregistre l'onglet dans l'écran Configuration.
+ */
+function gacct_report_register_config_tab( $tabs ) {
+	$tabs['rapports'] = array( __( 'Rapports', 'gestion-atelier-cct' ), 'gacct_report_render_config_tab' );
+
+	return $tabs;
+}
+add_filter( 'gacct_config_tabs', 'gacct_report_register_config_tab' );
+
+/* =============================================================================
  *  NUMÉROTATION (séquence AAAA + compteur, commune aux 3 modèles)
  * ========================================================================== */
 
@@ -972,6 +1235,15 @@ function gacct_report_generate( $revision_id, $report_id ) {
 	$options->set( 'isRemoteEnabled', false );
 	$options->set( 'chroot', array( WP_CONTENT_DIR ) );
 	$options->set( 'defaultFont', 'DejaVu Sans' );
+
+	// Police configurée (Configuration > Rapports) : dompdf doit pouvoir écrire
+	// ses métriques — cache dans uploads/gacct_report_cache.
+	$cache_dir = gacct_report_cache_dir();
+	if ( $cache_dir ) {
+		$options->set( 'fontDir', $cache_dir );
+		$options->set( 'fontCache', $cache_dir );
+		$options->set( 'isFontSubsettingEnabled', true );
+	}
 
 	$dompdf = new \Dompdf\Dompdf( $options );
 	$dompdf->loadHtml( $html, 'UTF-8' );
