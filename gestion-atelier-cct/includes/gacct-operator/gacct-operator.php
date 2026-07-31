@@ -276,7 +276,7 @@ function gacct_op_enqueue_assets( $hook_suffix ) {
 		'gacct-operator',
 		$base . '/assets/css/operator.css',
 		array(),
-		GACCT_Plugin::VERSION
+		gacct_asset_version( 'assets/css/operator.css' )
 	);
 
 	$screen_css_map = array(
@@ -292,14 +292,14 @@ function gacct_op_enqueue_assets( $hook_suffix ) {
 		'gacct-operator-screen',
 		$base . '/assets/css/' . $screen_css,
 		array( 'gacct-operator' ),
-		GACCT_Plugin::VERSION
+		gacct_asset_version( 'assets/css/' . $screen_css )
 	);
 
 	wp_enqueue_script(
 		'gacct-operator',
 		$base . '/assets/js/operator.js',
 		array(),
-		GACCT_Plugin::VERSION,
+		gacct_asset_version( 'assets/js/operator.js' ),
 		true
 	);
 
@@ -309,13 +309,13 @@ function gacct_op_enqueue_assets( $hook_suffix ) {
 			'gacct-operator-report',
 			$base . '/assets/css/operator-report.css',
 			array( 'gacct-operator' ),
-			GACCT_Plugin::VERSION
+			gacct_asset_version( 'assets/css/operator-report.css' )
 		);
 		wp_enqueue_script(
 			'gacct-operator-report',
 			$base . '/assets/js/operator-report.js',
 			array( 'gacct-operator' ),
-			GACCT_Plugin::VERSION,
+			gacct_asset_version( 'assets/js/operator-report.js' ),
 			true
 		);
 		// Source unique PHP des seuils/coefs, mise en miroir côté JS.
@@ -327,7 +327,7 @@ function gacct_op_enqueue_assets( $hook_suffix ) {
 			'gacct-operator-reception',
 			$base . '/assets/js/operator-reception.js',
 			array( 'gacct-operator' ),
-			GACCT_Plugin::VERSION,
+			gacct_asset_version( 'assets/js/operator-reception.js' ),
 			true
 		);
 	}
@@ -351,7 +351,7 @@ function gacct_op_enqueue_assets( $hook_suffix ) {
 			'gacct-operator-planning',
 			$base . '/assets/js/operator-planning.js',
 			array( 'gacct-operator', 'fullcalendar-locale-fr' ),
-			GACCT_Plugin::VERSION,
+			gacct_asset_version( 'assets/js/operator-planning.js' ),
 			true
 		);
 	}

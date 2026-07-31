@@ -2,13 +2,29 @@
 /**
  * Plugin Name: Gestion Atelier CCT
  * Description: Tableau de bord atelier et génération d'ouvertures pour les CCT JetEngine.
- * Version: 1.0.0
+ * Version: 1.1.2
  * Author: Atelier
  * Text Domain: gestion-atelier-cct
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
+}
+
+define( 'GACCT_PLUGIN_FILE', __FILE__ );
+
+/**
+ * Version de cache-busting d'un asset du plugin : filemtime du fichier
+ * (toujours juste, même sans bump de version), repli sur la constante.
+ *
+ * @param string $relative Chemin relatif à la racine du plugin (ex. 'assets/css/operator.css').
+ * @return string
+ */
+function gacct_asset_version( $relative ) {
+	$path = plugin_dir_path( GACCT_PLUGIN_FILE ) . ltrim( $relative, '/' );
+	$time = file_exists( $path ) ? filemtime( $path ) : false;
+
+	return $time ? (string) $time : GACCT_Plugin::VERSION;
 }
 
 require_once __DIR__ . '/includes/gacct-checkout.php';
@@ -31,7 +47,7 @@ require_once __DIR__ . '/includes/gacct-operator/gacct-operator.php';
 
 final class GACCT_Plugin {
 
-	const VERSION          = '1.1.1';
+	const VERSION          = '1.1.2';
 	const MENU_SLUG        = 'gacct-dashboard';
 	const GENERATOR_SLUG   = 'gacct-generator';
 	const SETTINGS_SLUG    = 'gacct-settings';
@@ -275,7 +291,7 @@ final class GACCT_Plugin {
 			'gacct-admin',
 			plugins_url( 'assets/admin.css', __FILE__ ),
 			array(),
-			self::VERSION
+			gacct_asset_version( 'assets/admin.css' )
 		);
 
 		// L'ancien « Tableau de bord » (calendrier admin) n'a plus de page dédiée :

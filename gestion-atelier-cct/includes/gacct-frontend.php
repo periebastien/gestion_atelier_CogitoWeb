@@ -26,7 +26,7 @@ add_shortcode( 'wp_admin_email', function() {
     return get_option( 'admin_email' );
 } );
 
-add_shortcode( 'avatar_initiales', 'generer_avatar_initiales_utilisateur' );
+add_shortcode( 'avatar_initiales', 'gacct_avatar_initiales' );
 
 /**
  * Avatar du client : PHOTO du compte si elle existe, INITIALES sinon
@@ -51,7 +51,7 @@ add_shortcode( 'avatar_initiales', 'generer_avatar_initiales_utilisateur' );
  * @param array<string,string>|string $atts Attributs du shortcode.
  * @return string HTML.
  */
-function generer_avatar_initiales_utilisateur( $atts = array() ) {
+function gacct_avatar_initiales( $atts = array() ) {
     $atts = shortcode_atts(
         array(
             'size'    => 0,
@@ -119,9 +119,9 @@ function generer_avatar_initiales_utilisateur( $atts = array() ) {
     );
 }
 
-add_shortcode( 'nom_complet_facturation', 'afficher_nom_complet_facturation_utilisateur' );
+add_shortcode( 'nom_complet_facturation', 'gacct_nom_complet_facturation' );
 
-function afficher_nom_complet_facturation_utilisateur() {
+function gacct_nom_complet_facturation() {
     if ( ! is_user_logged_in() ) {
         return '';
     }
@@ -131,6 +131,23 @@ function afficher_nom_complet_facturation_utilisateur() {
     $nom = get_user_meta($user_id, 'billing_last_name', true);
 
     return esc_html(trim($prenom . ' ' . $nom));
+}
+
+/*
+ * Alias historiques non préfixés (rien ne les référence plus en base, mais un
+ * snippet ou un template tiers pourrait encore les appeler). Gardés par
+ * function_exists : si un autre plugin déclare le même nom, on s'efface.
+ */
+if ( ! function_exists( 'generer_avatar_initiales_utilisateur' ) ) {
+    function generer_avatar_initiales_utilisateur( $atts = array() ) {
+        return gacct_avatar_initiales( $atts );
+    }
+}
+
+if ( ! function_exists( 'afficher_nom_complet_facturation_utilisateur' ) ) {
+    function afficher_nom_complet_facturation_utilisateur() {
+        return gacct_nom_complet_facturation();
+    }
 }
 
 

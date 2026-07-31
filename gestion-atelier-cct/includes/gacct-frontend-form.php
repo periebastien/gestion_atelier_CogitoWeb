@@ -38,14 +38,14 @@ function gacct_demande_enqueue_assets() {
 		'gacct-flatpickr',
 		$base_url . '/assets/vendor/flatpickr/flatpickr.min.css',
 		array(),
-		GACCT_Plugin::VERSION
+		gacct_asset_version( 'assets/vendor/flatpickr/flatpickr.min.css' )
 	);
 
 	wp_enqueue_script(
 		'gacct-flatpickr',
 		$base_url . '/assets/vendor/flatpickr/flatpickr.min.js',
 		array(),
-		GACCT_Plugin::VERSION,
+		gacct_asset_version( 'assets/vendor/flatpickr/flatpickr.min.js' ),
 		true
 	);
 
@@ -53,7 +53,7 @@ function gacct_demande_enqueue_assets() {
 		'gacct-flatpickr-fr',
 		$base_url . '/assets/vendor/flatpickr/l10n/fr.js',
 		array( 'gacct-flatpickr' ),
-		GACCT_Plugin::VERSION,
+		gacct_asset_version( 'assets/vendor/flatpickr/l10n/fr.js' ),
 		true
 	);
 
