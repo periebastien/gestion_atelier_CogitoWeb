@@ -47,7 +47,7 @@ require_once __DIR__ . '/includes/gacct-operator/gacct-operator.php';
 
 final class GACCT_Plugin {
 
-	const VERSION          = '1.1.2';
+	const VERSION          = '1.1.3';
 	const MENU_SLUG        = 'gacct-dashboard';
 	const GENERATOR_SLUG   = 'gacct-generator';
 	const SETTINGS_SLUG    = 'gacct-settings';
