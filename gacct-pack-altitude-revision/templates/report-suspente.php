@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once __DIR__ . '/report-parts.php';
+require_once GACCT_REPORT_PARTS;
 
 ?><!DOCTYPE html>
 <html lang="fr">

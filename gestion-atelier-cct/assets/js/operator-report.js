@@ -1,40 +1,34 @@
 /**
- * Rapports de contrôle — carte de la fiche console.
+ * Rapports de contrôle — FRAMEWORK JS de la carte console (architecture packs).
  *
- * Calculs en temps réel : MIROIR des fonctions PHP de
- * includes/gacct-report-forms.php, à partir de la MÊME configuration
- * (seuils/coefs localisés dans window.gacctReportCfg — source unique PHP).
- * Le PDF recalcule toujours côté serveur.
+ * Ce fichier est agnostique du pack : ouverture/fermeture des formulaires,
+ * sérialisation générique par [data-rf], brouillons, génération, suppression,
+ * répéteur de lignes, textes-modèles de commentaire. Les CALCULS temps réel
+ * sont fournis par le pack actif, qui s'enregistre via :
+ *
+ *   window.gacctReportUI.registerCalc( 'voile', function ( form, U ) { … } );
+ *   window.gacctReportUI.registerAction( 'apply-vr', function ( button, ctx ) { … } );
+ *
+ * U = utilitaires exposés (serializeForm, setBadge, fmt, scaleResult, worst,
+ * cfg = window.gacctReportCfg (config localisée du pack), entries()…).
+ * Les formules PHP du pack restent la source de vérité : le PDF recalcule
+ * toujours côté serveur.
  */
 ( function () {
 	'use strict';
 
-	if ( typeof window.gacctOp === 'undefined' || typeof window.gacctReportCfg === 'undefined' ) {
+	if ( typeof window.gacctOp === 'undefined' ) {
 		return;
 	}
 
-	var cfg  = window.gacctReportCfg;
+	var cfg  = window.gacctReportCfg || {};
 	var card = document.querySelector( '[data-report-card]' );
 
-	if ( ! card ) {
-		return;
-	}
-
-	var fiche      = document.querySelector( '.gacct-op-fiche[data-revision-id]' );
-	var revisionId = fiche ? fiche.getAttribute( 'data-revision-id' ) : '';
-	var feedback   = card.querySelector( '.gacct-rf-feedback' );
-	var entries    = [];
-
-	try {
-		var entriesScript = card.querySelector( '[data-report-entries]' );
-		entries = entriesScript ? JSON.parse( entriesScript.textContent ) : [];
-	} catch ( e ) {
-		entries = [];
-	}
-
-	var current = { form: null, model: '', reportId: '' };
+	var calcRegistry   = {};
+	var actionRegistry = {};
 
 	function say( type, message ) {
+		var feedback = card ? card.querySelector( '.gacct-rf-feedback' ) : null;
 		if ( feedback ) {
 			feedback.className   = 'gacct-op-feedback gacct-rf-feedback ' + type;
 			feedback.textContent = message;
@@ -44,24 +38,10 @@
 		}
 	}
 
-	function post( action, data ) {
-		var body = new FormData();
-		Object.keys( data || {} ).forEach( function ( key ) {
-			body.append( key, data[ key ] );
-		} );
-		body.append( 'action', action );
-		body.append( 'nonce', window.gacctOp.nonce );
-
-		return fetch( window.gacctOp.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: body } )
-			.then( function ( r ) { return r.json(); } );
-	}
-
-	/* ──────────────────────────────────────────────────────────────────
-	 *  Calculs (miroir PHP)
-	 * ────────────────────────────────────────────────────────────────── */
+	/* ── Utilitaires génériques (exposés au pack) ────────────────────── */
 
 	function scaleResult( value, scale ) {
-		for ( var i = 0; i < scale.length; i++ ) {
+		for ( var i = 0; i < ( scale || [] ).length; i++ ) {
 			var band = scale[ i ];
 			if ( null === band.max ) {
 				return band.result;
@@ -74,99 +54,51 @@
 	}
 
 	function worst( results ) {
-		var actual = results.filter( function ( r ) {
+		var severity = cfg.severity || [];
+		var actual   = results.filter( function ( r ) {
 			return r && 'NON RÉALISÉ' !== r && 'NON RÉALISÉ*' !== r;
 		} );
 		if ( ! actual.length ) {
 			return results.length ? 'NON RÉALISÉ' : '';
 		}
-		for ( var i = 0; i < cfg.severity.length; i++ ) {
-			if ( actual.indexOf( cfg.severity[ i ] ) !== -1 ) {
-				return cfg.severity[ i ];
+		for ( var i = 0; i < severity.length; i++ ) {
+			if ( actual.indexOf( severity[ i ] ) !== -1 ) {
+				return severity[ i ];
 			}
 		}
 		return '';
 	}
 
-	function calcVisualGroup( values ) {
-		var filled = values.filter( function ( v ) { return '' !== v; } );
+	var BADGE_CLASS = {
+		'RÉFORME':       'is-reforme',
+		'LIMITE':        'is-limite',
+		'ACCEPTABLE':    'is-acceptable',
+		'BON ÉTAT':      'is-bon',
+		'TRÈS BON ÉTAT': 'is-tresbon',
+		'NEUF':          'is-neuf',
+		'CALAGE BON':    'is-bon',
+		'NON RÉALISÉ':   'is-na',
+		'NON RÉALISÉ*':  'is-na',
+		'NR*':           'is-na'
+	};
 
-		if ( ! filled.length ) {
-			return { average: null, result: 'NON RÉALISÉ' };
+	function setBadge( form, key, text ) {
+		var badge = form.querySelector( '[data-rf-badge="' + key + '"]' );
+		if ( ! badge ) {
+			return;
 		}
-		if ( filled.indexOf( 'REF' ) !== -1 ) {
-			return { average: 0, result: 'RÉFORME' };
+		badge.textContent = text || '—';
+		badge.className   = badge.className.replace( /\bis-[a-z]+\b/g, '' ).trim();
+		if ( BADGE_CLASS[ text ] ) {
+			badge.classList.add( BADGE_CLASS[ text ] );
 		}
-
-		var sum = 0;
-		filled.forEach( function ( v ) {
-			sum += cfg.visual_values[ v ] ? cfg.visual_values[ v ].weight : 0;
-		} );
-		var average = sum / filled.length;
-
-		return { average: average, result: scaleResult( average, cfg.visual_scale ) };
 	}
 
-	function calcPorosity( values ) {
-		var nums = values.filter( function ( v ) { return '' !== v && ! isNaN( parseFloat( v ) ); } )
-			.map( parseFloat );
-
-		if ( ! nums.length ) {
-			return { average: null, result: 'NON RÉALISÉ' };
-		}
-
-		var average = nums.reduce( function ( a, b ) { return a + b; }, 0 ) / nums.length;
-
-		return { average: average, result: scaleResult( average, cfg.porosity_scale ) };
+	function fmt( n, dec ) {
+		return ( Math.round( n * Math.pow( 10, dec ) ) / Math.pow( 10, dec ) ).toString().replace( '.', ',' );
 	}
 
-	function calcTear( values, porosityAverage ) {
-		var min = ( null !== porosityAverage && porosityAverage > cfg.tear_min.porosity_gt )
-			? cfg.tear_min.high : cfg.tear_min.low;
-		var zones = {};
-
-		Object.keys( cfg.tear_zones ).forEach( function ( key ) {
-			var v = values[ key ];
-			zones[ key ] = ( '' === v || undefined === v || isNaN( parseFloat( v ) ) )
-				? 'NON RÉALISÉ'
-				: scaleResult( parseFloat( v ), cfg.tear_scale );
-		} );
-
-		return { min: min, zones: zones, result: worst( Object.keys( zones ).map( function ( k ) { return zones[ k ]; } ) ) };
-	}
-
-	function calcRuptureLine( line ) {
-		var nominal = parseFloat( line.nominal ) || 0;
-		var measure = ( '' === line.measure || undefined === line.measure ) ? null : parseFloat( line.measure );
-		var coef    = cfg.rupture_materials[ line.material ] ? cfg.rupture_materials[ line.material ].coef : 0;
-		var custom  = parseFloat( line.seuil ) || 0;
-		var seuil   = custom > 0 ? custom : nominal * coef;
-
-		if ( null === measure || isNaN( measure ) || nominal <= 0 || nominal === seuil ) {
-			return { seuil: seuil, margin: null, result: 'NR*' };
-		}
-
-		var margin = Math.floor( ( measure - seuil ) / ( nominal - seuil ) * 100 );
-
-		return { seuil: seuil, margin: margin, result: scaleResult( margin, cfg.rupture_scale ) };
-	}
-
-	function calcGeometry( calage, freins ) {
-		if ( ( ! calage && ! freins ) || ( 'NON RÉALISÉ' === calage && 'NON RÉALISÉ' === freins ) ) {
-			return 'NON RÉALISÉ';
-		}
-		if ( 'RÉFORME' === calage || 'RÉFORME' === freins ) {
-			return 'RÉFORME';
-		}
-		if ( 'CALAGE BON' === calage || 'CALAGE BON' === freins ) {
-			return 'CALAGE BON';
-		}
-		return 'NON RÉALISÉ';
-	}
-
-	/* ──────────────────────────────────────────────────────────────────
-	 *  Formulaire : accès générique par data-rf (chemins pointés)
-	 * ────────────────────────────────────────────────────────────────── */
+	/* ── Accès générique par data-rf (chemins pointés) ───────────────── */
 
 	function setDeep( obj, path, value ) {
 		var keys = path.split( '.' );
@@ -203,7 +135,7 @@
 			setDeep( data, field.getAttribute( 'data-rf' ), value );
 		} );
 
-		// Lignes du test de rupture (voile).
+		// Lignes répétées (ex. test de rupture) : [data-rf-rupture-lines] > lignes [data-rl].
 		var linesWrap = form.querySelector( '[data-rf-rupture-lines]' );
 		if ( linesWrap ) {
 			data.rupture = [];
@@ -217,6 +149,35 @@
 		}
 
 		return data;
+	}
+
+	function addRuptureLine( form, prefill ) {
+		var template = form.querySelector( '[data-rf-rupture-template]' );
+		var wrap     = form.querySelector( '[data-rf-rupture-lines]' );
+
+		if ( ! template || ! wrap ) {
+			return;
+		}
+
+		var max = parseInt( wrap.getAttribute( 'data-rf-max' ), 10 ) || 99;
+
+		if ( wrap.querySelectorAll( '.gacct-rf-rupture-line' ).length >= max ) {
+			say( 'error', 'Maximum ' + max + ' lignes.' );
+			return;
+		}
+
+		var node = template.content.firstElementChild.cloneNode( true );
+
+		if ( prefill ) {
+			node.querySelectorAll( '[data-rl]' ).forEach( function ( field ) {
+				var key = field.getAttribute( 'data-rl' );
+				if ( undefined !== prefill[ key ] && null !== prefill[ key ] ) {
+					field.value = String( prefill[ key ] );
+				}
+			} );
+		}
+
+		wrap.appendChild( node );
 	}
 
 	function fillForm( form, data ) {
@@ -248,13 +209,10 @@
 				field.checked = false;
 			} else if ( field.hasAttribute( 'data-rf-default' ) ) {
 				field.value = field.getAttribute( 'data-rf-default' );
-			} else if ( ! field.hasAttribute( 'data-rf-keep' ) ) {
-				// Les champs d'identification gardent leur pré-remplissage serveur.
-				if ( ! /^ident\.|^author_id$|^type$/.test( field.getAttribute( 'data-rf' ) ) ) {
-					field.value = field.defaultValue !== undefined ? field.defaultValue : '';
-				} else {
-					field.value = field.defaultValue !== undefined ? field.defaultValue : field.value;
-				}
+			} else if ( ! /^ident\.|^author_id$|^type$/.test( field.getAttribute( 'data-rf' ) ) ) {
+				field.value = field.defaultValue !== undefined ? field.defaultValue : '';
+			} else {
+				field.value = field.defaultValue !== undefined ? field.defaultValue : field.value;
 			}
 		} );
 
@@ -264,13 +222,15 @@
 				select.value = '';
 			}
 		} );
+
 		var author = form.querySelector( '[data-rf="author_id"]' );
 		if ( author ) {
 			author.value = author.querySelector( 'option[selected]' ) ? author.querySelector( 'option[selected]' ).value : author.value;
 		}
+
 		var type = form.querySelector( '[data-rf="type"]' );
-		if ( type ) {
-			type.value = 'periodique';
+		if ( type && type.options.length ) {
+			type.value = type.options[ 0 ].value;
 		}
 
 		var linesWrap = form.querySelector( '[data-rf-rupture-lines]' );
@@ -278,269 +238,71 @@
 			linesWrap.innerHTML = '';
 		}
 
-		var equipDefault = form.querySelector( '[data-rf="sellette.verifications"]' );
-		if ( equipDefault && ! equipDefault.value ) {
-			equipDefault.value = equipDefault.getAttribute( 'data-rf-default' ) || '';
-		}
+		form.querySelectorAll( '[data-rf-default]' ).forEach( function ( field ) {
+			if ( ! field.value ) {
+				field.value = field.getAttribute( 'data-rf-default' );
+			}
+		} );
 	}
 
-	/* ──────────────────────────────────────────────────────────────────
-	 *  Badges + recalcul temps réel
-	 * ────────────────────────────────────────────────────────────────── */
+	/* ── Registre exposé au pack ─────────────────────────────────────── */
 
-	var BADGE_CLASS = {
-		'RÉFORME':       'is-reforme',
-		'LIMITE':        'is-limite',
-		'ACCEPTABLE':    'is-acceptable',
-		'BON ÉTAT':      'is-bon',
-		'TRÈS BON ÉTAT': 'is-tresbon',
-		'NEUF':          'is-neuf',
-		'CALAGE BON':    'is-bon',
-		'NON RÉALISÉ':   'is-na',
-		'NON RÉALISÉ*':  'is-na',
-		'NR*':           'is-na'
+	var utils = {
+		cfg: cfg,
+		say: say,
+		fmt: fmt,
+		worst: worst,
+		scaleResult: scaleResult,
+		setBadge: setBadge,
+		serializeForm: serializeForm,
+		addRuptureLine: addRuptureLine,
+		entries: function () { return entries; }
 	};
 
-	function setBadge( form, key, text ) {
-		var badge = form.querySelector( '[data-rf-badge="' + key + '"]' );
-		if ( ! badge ) {
-			return;
-		}
-		badge.textContent = text || '—';
-		badge.className   = badge.className.replace( /\bis-[a-z]+\b/g, '' ).trim();
-		if ( BADGE_CLASS[ text ] ) {
-			badge.classList.add( BADGE_CLASS[ text ] );
-		}
+	window.gacctReportUI = {
+		registerCalc: function ( model, fn ) { calcRegistry[ model ] = fn; },
+		registerAction: function ( name, fn ) { actionRegistry[ name ] = fn; },
+		utils: utils
+	};
+
+	if ( ! card ) {
+		return;
 	}
 
-	function fmt( n, dec ) {
-		return ( Math.round( n * Math.pow( 10, dec ) ) / Math.pow( 10, dec ) ).toString().replace( '.', ',' );
+	/* ── État de la carte ────────────────────────────────────────────── */
+
+	var fiche      = document.querySelector( '.gacct-op-fiche[data-revision-id]' );
+	var revisionId = fiche ? fiche.getAttribute( 'data-revision-id' ) : '';
+	var entries    = [];
+
+	try {
+		var entriesScript = card.querySelector( '[data-report-entries]' );
+		entries = entriesScript ? JSON.parse( entriesScript.textContent ) : [];
+	} catch ( e ) {
+		entries = [];
 	}
 
-	function latestVr() {
-		var vr = 0;
-		entries.forEach( function ( entry ) {
-			if ( 'suspente' !== entry.model || ! entry.data ) {
-				return;
-			}
-			var d    = entry.data;
-			var test = parseFloat( d.resistance_test ) || 0;
-			var ptv  = parseFloat( d.ptv_max ) || 0;
-			var coef = parseFloat( d.coef ) || 0;
-			var total = 0;
-			( d.ensembles || [] ).forEach( function ( e ) {
-				total += ( parseInt( e && e.nb, 10 ) || 0 ) * ( parseFloat( e && e.resistance ) || 0 );
-			} );
-			if ( coef > 0 && total > 0 ) {
-				vr = ( ( test * ptv ) / total ) * coef;
-			}
+	var current = { form: null, model: '', reportId: '' };
+
+	function post( action, data ) {
+		var body = new FormData();
+		Object.keys( data || {} ).forEach( function ( key ) {
+			body.append( key, data[ key ] );
 		} );
-		return vr;
-	}
+		body.append( 'action', action );
+		body.append( 'nonce', window.gacctOp.nonce );
 
-	function recomputeVoile( form ) {
-		var data = serializeForm( form );
-		var type = data.type || 'periodique';
-
-		// Inspection visuelle.
-		var groupResults = [];
-		Object.keys( cfg.visual_groups ).forEach( function ( group ) {
-			var values = [];
-			for ( var i = 0; i < 6; i++ ) {
-				values.push( ( data.visual && data.visual[ group ] && data.visual[ group ][ i ] ) || '' );
-			}
-			var res = calcVisualGroup( values );
-			groupResults.push( res.result );
-			setBadge( form, 'visual_' + group, res.result + ( null !== res.average ? ' (' + fmt( res.average, 1 ) + ')' : '' ) );
-		} );
-		var visualGlobal = worst( groupResults );
-		setBadge( form, 'visual_global', visualGlobal );
-
-		// Porosité.
-		var poroValues = [];
-		for ( var p = 0; p < 5; p++ ) {
-			poroValues.push( ( data.porosity && data.porosity[ p ] ) || '' );
-		}
-		var poro = calcPorosity( poroValues );
-		setBadge( form, 'porosity', poro.result );
-		var poroInfo = form.querySelector( '[data-rf-computed="porosity"]' );
-		if ( poroInfo ) {
-			poroInfo.textContent = null === poro.average
-				? '—'
-				: 'Moyenne : ' + fmt( poro.average, 1 ) + ' s — ' + ( poro.average > 0 ? fmt( cfg.porosity_factor / poro.average, 1 ) : '0' ) + ' l/m²/min → ' + poro.result;
-		}
-
-		// Déchirure.
-		var tear = calcTear( data.tear || {}, poro.average );
-		setBadge( form, 'tear', tear.result );
-		var tearInfo = form.querySelector( '[data-rf-computed="tear"]' );
-		if ( tearInfo ) {
-			tearInfo.textContent = 'Seuil minimal : ' + fmt( tear.min, 2 ) + ' DaN → ' + tear.result;
-		}
-
-		// Rupture.
-		var ruptureResults = [];
-		var linesWrap      = form.querySelector( '[data-rf-rupture-lines]' );
-		if ( linesWrap ) {
-			linesWrap.querySelectorAll( '.gacct-rf-rupture-line' ).forEach( function ( row ) {
-				var line = {};
-				row.querySelectorAll( '[data-rl]' ).forEach( function ( field ) {
-					line[ field.getAttribute( 'data-rl' ) ] = field.value;
-				} );
-				var res     = calcRuptureLine( line );
-				var display = row.querySelector( '[data-rl-result]' );
-				if ( display ) {
-					display.textContent = 'NR*' === res.result
-						? 'Seuil : ' + fmt( res.seuil, 2 ) + ' DaN — en attente de mesure'
-						: 'Seuil : ' + fmt( res.seuil, 2 ) + ' DaN · marge ' + res.margin + ' % → ' + res.result;
-				}
-				if ( 'NR*' !== res.result ) {
-					ruptureResults.push( res.result );
-				}
-			} );
-		}
-		var rupture = ruptureResults.length ? worst( ruptureResults ) : 'NON RÉALISÉ*';
-		setBadge( form, 'rupture', rupture );
-		var ruptureInfo = form.querySelector( '[data-rf-computed="rupture"]' );
-		if ( ruptureInfo ) {
-			ruptureInfo.textContent = 'NON RÉALISÉ*' === rupture
-				? '* Test réalisé sur recommandation du constructeur uniquement.'
-				: 'Résultat global : ' + rupture;
-		}
-
-		// Géométrie.
-		var geometry = calcGeometry(
-			data.geometry ? data.geometry.calage_interp : '',
-			data.geometry ? data.geometry.freins_interp : ''
-		);
-		setBadge( form, 'geometry', geometry );
-
-		// État général (périodique uniquement).
-		var generalBadge = form.querySelector( '[data-rf-badge="general"]' );
-		var generalNote  = form.querySelector( '[data-rf-general-note]' );
-		var generalLabel = form.querySelector( '[data-rf-general-label]' );
-
-		if ( 'partielle' === type ) {
-			if ( generalBadge ) {
-				generalBadge.hidden = true;
-			}
-			if ( generalNote ) {
-				generalNote.hidden = false;
-			}
-		} else {
-			var general;
-			if ( 'RÉFORME' === geometry ) {
-				general = 'RÉFORME';
-			} else {
-				general = worst( [ visualGlobal, poro.result, tear.result, rupture.replace( '*', '' ) ] );
-			}
-			if ( generalBadge ) {
-				generalBadge.hidden = false;
-			}
-			if ( generalNote ) {
-				generalNote.hidden = true;
-			}
-			setBadge( form, 'general', general || 'NON RÉALISÉ' );
-		}
-		if ( generalLabel ) {
-			generalLabel.hidden = 'partielle' === type && generalBadge && generalBadge.hidden;
-		}
-
-		// VR dispo pour le seuil de rupture.
-		var vr     = latestVr();
-		var vrHint = form.querySelector( '[data-rf-vr-hint]' );
-		if ( vrHint ) {
-			vrHint.hidden = ! ( vr > 0 );
-			if ( vr > 0 ) {
-				vrHint.textContent = 'VR du « Calcul réforme suspente » : ' + fmt( vr, 2 ) + ' DaN — bouton « VR » pour l\'appliquer à une ligne.';
-			}
-		}
-		form.querySelectorAll( '[data-rf-action="apply-vr"]' ).forEach( function ( btn ) {
-			btn.hidden = ! ( vr > 0 );
-		} );
-	}
-
-	function recomputeSuspente( form ) {
-		var data  = serializeForm( form );
-		var total = 0;
-		var nb    = 0;
-
-		for ( var i = 0; i < 4; i++ ) {
-			var e      = ( data.ensembles && data.ensembles[ i ] ) || {};
-			var n      = parseInt( e.nb, 10 ) || 0;
-			var r      = parseFloat( e.resistance ) || 0;
-			var resmax = n * r;
-			nb    += n;
-			total += resmax;
-			var cell = form.querySelector( '[data-rf-computed="resmax_' + i + '"]' );
-			if ( cell ) {
-				cell.textContent = fmt( resmax, 1 );
-			}
-		}
-
-		var nbCell = form.querySelector( '[data-rf-computed="nb_total"]' );
-		if ( nbCell ) {
-			nbCell.textContent = nb;
-		}
-		var totalCell = form.querySelector( '[data-rf-computed="resmax_total"]' );
-		if ( totalCell ) {
-			totalCell.textContent = fmt( total, 1 );
-		}
-
-		var test = parseFloat( data.resistance_test ) || 0;
-		var ptv  = parseFloat( data.ptv_max ) || 0;
-		var coef = parseFloat( data.coef ) || 0;
-		var vr   = ( coef > 0 && total > 0 ) ? ( ( test * ptv ) / total ) * coef : 0;
-
-		var vrCell = form.querySelector( '[data-rf-computed="vr"]' );
-		if ( vrCell ) {
-			vrCell.textContent = fmt( vr, 2 ) + ' DaN';
-		}
+		return fetch( window.gacctOp.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: body } )
+			.then( function ( r ) { return r.json(); } );
 	}
 
 	function recompute( form ) {
 		var model = form.getAttribute( 'data-report-form' );
 
-		if ( 'voile' === model ) {
-			recomputeVoile( form );
-		} else if ( 'suspente' === model ) {
-			recomputeSuspente( form );
+		if ( calcRegistry[ model ] ) {
+			calcRegistry[ model ]( form, utils );
 		}
 	}
-
-	/* ──────────────────────────────────────────────────────────────────
-	 *  Lignes du test de rupture
-	 * ────────────────────────────────────────────────────────────────── */
-
-	function addRuptureLine( form, prefill ) {
-		var template = form.querySelector( '[data-rf-rupture-template]' );
-		var wrap     = form.querySelector( '[data-rf-rupture-lines]' );
-
-		if ( ! template || ! wrap ) {
-			return;
-		}
-		if ( wrap.querySelectorAll( '.gacct-rf-rupture-line' ).length >= cfg.rupture_max_lines ) {
-			say( 'error', 'Maximum ' + cfg.rupture_max_lines + ' suspentes testées.' );
-			return;
-		}
-
-		var node = template.content.firstElementChild.cloneNode( true );
-
-		if ( prefill ) {
-			node.querySelectorAll( '[data-rl]' ).forEach( function ( field ) {
-				var key = field.getAttribute( 'data-rl' );
-				if ( undefined !== prefill[ key ] && null !== prefill[ key ] ) {
-					field.value = String( prefill[ key ] );
-				}
-			} );
-		}
-
-		wrap.appendChild( node );
-	}
-
-	/* ──────────────────────────────────────────────────────────────────
-	 *  Ouverture / fermeture / actions
-	 * ────────────────────────────────────────────────────────────────── */
 
 	function findEntry( reportId ) {
 		for ( var i = 0; i < entries.length; i++ ) {
@@ -549,6 +311,29 @@
 			}
 		}
 		return null;
+	}
+
+	function applyCommentTemplate( form, type, force ) {
+		var field = form.querySelector( '[data-rf="comment"]' );
+
+		if ( ! field || ! field.hasAttribute( 'data-rf-comment-templates' ) ) {
+			return;
+		}
+
+		var templates = {};
+		try {
+			templates = JSON.parse( field.getAttribute( 'data-rf-comment-templates' ) || '{}' );
+		} catch ( e ) {}
+
+		var current_val = field.value.trim();
+		var isTemplate  = '' === current_val || Object.keys( templates ).some( function ( key ) {
+			return current_val === String( templates[ key ] || '' ).trim();
+		} );
+
+		if ( ! force && ! isTemplate && ! window.confirm( 'Remplacer le commentaire actuel par le texte-modèle du type « ' + type + ' » ?' ) ) {
+			return;
+		}
+		field.value = templates[ type ] || '';
 	}
 
 	function openForm( model, reportId ) {
@@ -572,9 +357,11 @@
 			if ( numberField && entry.number && ! numberField.value ) {
 				numberField.value = entry.number;
 			}
-		} else if ( 'voile' === model ) {
-			// Texte-modèle des commentaires selon le type.
-			applyCommentTemplate( form, form.querySelector( '[data-rf="type"]' ).value, true );
+		} else {
+			var typeField = form.querySelector( '[data-rf="type"]' );
+			if ( typeField ) {
+				applyCommentTemplate( form, typeField.value, true );
+			}
 		}
 
 		current = { form: form, model: model, reportId: entry ? entry.id : '' };
@@ -588,31 +375,6 @@
 			current.form.hidden = true;
 		}
 		current = { form: null, model: '', reportId: '' };
-	}
-
-	function applyCommentTemplate( form, type, force ) {
-		var field = form.querySelector( '[data-rf="comment"]' );
-
-		if ( ! field ) {
-			return;
-		}
-
-		var templates = {};
-		try {
-			templates = JSON.parse( field.getAttribute( 'data-rf-comment-templates' ) || '{}' );
-		} catch ( e ) {}
-
-		var isTemplate = '' === field.value.trim()
-			|| field.value.trim() === ( templates.periodique || '' ).trim()
-			|| field.value.trim() === ( templates.partielle || '' ).trim();
-
-		if ( force || isTemplate ) {
-			field.value = templates[ type ] || '';
-		} else if ( ! window.confirm( 'Remplacer le commentaire actuel par le texte-modèle du type « ' + type + ' » ?' ) ) {
-			return;
-		} else {
-			field.value = templates[ type ] || '';
-		}
 	}
 
 	function saveDraft( button, thenGenerate ) {
@@ -679,6 +441,12 @@
 
 		var action = button.getAttribute( 'data-rf-action' );
 
+		// Actions du pack (ex. apply-vr).
+		if ( actionRegistry[ action ] ) {
+			actionRegistry[ action ]( button, { form: current.form, recompute: recompute, utils: utils } );
+			return;
+		}
+
 		if ( 'toggle-new' === action ) {
 			var choice = card.querySelector( '.gacct-rf-model-choice' );
 			if ( choice ) {
@@ -709,18 +477,6 @@
 			if ( line ) {
 				line.remove();
 				recompute( current.form );
-			}
-			return;
-		}
-
-		if ( 'apply-vr' === action ) {
-			var vr = latestVr();
-			if ( vr > 0 ) {
-				var input = button.closest( '.gacct-rf-seuil-wrap' ).querySelector( '[data-rl="seuil"]' );
-				if ( input ) {
-					input.value = ( Math.round( vr * 100 ) / 100 );
-					recompute( current.form );
-				}
 			}
 			return;
 		}

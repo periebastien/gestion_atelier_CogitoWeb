@@ -1,19 +1,17 @@
 <?php
 /**
- * Rapports de contrôle — formulaires console + génération PDF serveur (28/07/2026).
+ * Rapports de contrôle — FRAMEWORK (28/07/2026, architecture packs 31/07/2026).
  *
- * Trois MODÈLES de rapport, au choix de l'opérateur depuis la fiche console
- * (états 3 à 6), issus du classeur Excel « Rapport-paracheck-V8.xlsx »
- * (analyse : MAQUETTE-rapport-intervention.md à la racine du site) :
+ * Ce fichier est 100 % agnostique de l'atelier : les MODÈLES de rapport
+ * (formulaires, seuils, calculs, templates PDF, JS) vivent dans des PACKS —
+ * des plugins qui s'enregistrent via `gacct_report_register_packs` (voir le
+ * registre ci-dessous). Premier pack : gacct-pack-altitude-revision
+ * (ParachecK®, analyse MAQUETTE-rapport-intervention.md). Pack suivant prévu :
+ * aerotech (MAQUETTE-pack-aerotech.md).
  *
- *   1. voile      — rapport voile ParachecK, avec un TYPE : « Révision
- *                   périodique » (onglet RAPPORT PARACHECK) ou « Inspection
- *                   partielle » (onglet RAPPORT). Design unifié, textes,
- *                   sections et légendes de seuils propres à chaque type.
- *   2. equipement — contrôle équipement (sellette + parachute de secours).
- *   3. suspente   — calcul du seuil de réforme pour la résistance des
- *                   suspentes (document client ET outil : son VR pré-remplit
- *                   le seuil du test de rupture du rapport voile).
+ * Le framework fournit : carte « Rapports » de la fiche console (états 3–6),
+ * brouillons, numérotation (format par pack), coffre, endpoints AJAX, dompdf,
+ * polices, QR, couleurs d'états par défaut, primitives PDF (report-parts.php).
  *
  * Les brouillons vivent dans le champ CCT `revision.rapports_json` (liste
  * d'entrées {id, model, status, number, data…}) ; chaque génération écrit un
@@ -37,220 +35,97 @@ if ( ! defined( 'GACCT_REPORT_COUNTER_OPT' ) ) {
 	define( 'GACCT_REPORT_COUNTER_OPT', 'gacct_report_counter' );
 }
 
+// Primitives PDF partagées (report-parts.php), consommées par les packs.
+if ( ! defined( 'GACCT_REPORT_PARTS' ) ) {
+	define( 'GACCT_REPORT_PARTS', dirname( __DIR__ ) . '/templates/report-parts.php' );
+}
+
 /* =============================================================================
  *  MODÈLES + CONFIGURATION (source unique des seuils, miroir JS)
  * ========================================================================== */
 
 /**
- * Modèles de rapport disponibles.
+ * REGISTRE DES PACKS DE RAPPORTS (architecture du 31/07/2026).
  *
- * @return array<string,string> slug → libellé.
+ * Un pack = un plugin qui s'enregistre via le filtre
+ * `gacct_report_register_packs` :
+ *
+ *   $packs['mon-pack'] = array(
+ *     'label'         => 'Pack Mon Atelier',
+ *     'models'        => callable → array( slug => définition de modèle ),
+ *     'number_format' => '{year}{seq}',   // optionnel ({year} {yy} {seq} {seq4}…)
+ *   );
+ *
+ * Définition de modèle :
+ *   array(
+ *     'label'       => 'Rapport voile…',
+ *     'render_form' => callable( $revision, $order ),  // formulaire console
+ *     'calc'        => callable( $data ) | null,       // interprétations serveur
+ *     'template'    => '/chemin/absolu/template.php',  // PDF dompdf
+ *     'js'          => array( handle => url ),         // calculs temps réel
+ *   )
+ *
+ * Le framework (ce fichier) reste 100 % agnostique : coffre, brouillons,
+ * numérotation, endpoints, dompdf, police, QR, carte console.
+ */
+function gacct_report_packs() {
+	return (array) apply_filters( 'gacct_report_register_packs', array() );
+}
+
+/**
+ * Identifiant du pack actif : réglage `pack` (Configuration > Rapports),
+ * sinon le premier pack installé.
+ */
+function gacct_report_active_pack() {
+	$packs = gacct_report_packs();
+
+	if ( ! $packs ) {
+		return '';
+	}
+
+	$settings = gacct_report_settings();
+	$wanted   = isset( $settings['pack'] ) ? (string) $settings['pack'] : '';
+
+	return isset( $packs[ $wanted ] ) ? $wanted : (string) array_key_first( $packs );
+}
+
+/**
+ * Définitions complètes des modèles du pack actif (mémoïsé).
+ *
+ * @return array<string,array> slug → définition.
+ */
+function gacct_report_models_full() {
+	static $models = null;
+
+	if ( null !== $models ) {
+		return $models;
+	}
+
+	$models = array();
+	$packs  = gacct_report_packs();
+	$active = gacct_report_active_pack();
+
+	if ( $active && isset( $packs[ $active ]['models'] ) && is_callable( $packs[ $active ]['models'] ) ) {
+		$models = (array) call_user_func( $packs[ $active ]['models'] );
+	}
+
+	$models = apply_filters( 'gacct_report_models_full', $models, $active );
+
+	return $models;
+}
+
+/**
+ * Modèles de rapport disponibles (slug → libellé) — rétrocompatible avec tous
+ * les consommateurs historiques (carte console, colonne Documents, titres).
  */
 function gacct_report_models() {
-	return apply_filters( 'gacct_report_models', array(
-		'voile'      => __( 'Rapport voile ParachecK®', 'gestion-atelier-cct' ),
-		'equipement' => __( 'Contrôle équipement (sellette / secours)', 'gestion-atelier-cct' ),
-		'suspente'   => __( 'Calcul réforme suspente', 'gestion-atelier-cct' ),
-	) );
-}
+	$labels = array();
 
-/**
- * Types du rapport voile.
- */
-function gacct_report_voile_types() {
-	return array(
-		'periodique' => __( 'Révision périodique ParachecK®', 'gestion-atelier-cct' ),
-		'partielle'  => __( 'Inspection partielle ParachecK®', 'gestion-atelier-cct' ),
-	);
-}
+	foreach ( gacct_report_models_full() as $slug => $def ) {
+		$labels[ $slug ] = isset( $def['label'] ) ? $def['label'] : $slug;
+	}
 
-/**
- * Configuration métier complète (items, seuils, coefficients, textes) —
- * valeurs EXACTES du classeur Excel V8, avec les corrections recommandées
- * par la maquette (§7) : barème de calcul = feuille de saisie, rupture des
- * suspentes complétée du bucket NEUF (marge = 100 %), champs de mesure réels
- * pour le Bettsometer.
- *
- * @return array
- */
-function gacct_report_calc_config() {
-	$config = array(
-		// §1.4 — Inspection visuelle : 3 groupes × 6 items.
-		'visual_groups' => array(
-			'voile'      => array(
-				'label' => __( 'VOILE', 'gestion-atelier-cct' ),
-				'items' => array(
-					__( 'Bord d\'attaque', 'gestion-atelier-cct' ),
-					__( 'Extrados', 'gestion-atelier-cct' ),
-					__( 'Intrados', 'gestion-atelier-cct' ),
-					__( 'Structure interne', 'gestion-atelier-cct' ),
-					__( 'Pattes d\'attache', 'gestion-atelier-cct' ),
-					__( 'Propreté intérieure', 'gestion-atelier-cct' ),
-				),
-				'note'  => __( 'Structure interne = joncs, profils, diagonales et bandes', 'gestion-atelier-cct' ),
-			),
-			'suspentes'  => array(
-				'label' => __( 'SUSPENTES', 'gestion-atelier-cct' ),
-				'items' => array(
-					__( 'Étage 1 (basses)', 'gestion-atelier-cct' ),
-					__( 'Étage 2', 'gestion-atelier-cct' ),
-					__( 'Étage 3', 'gestion-atelier-cct' ),
-					__( 'Étage 4', 'gestion-atelier-cct' ),
-					__( 'Étage 5', 'gestion-atelier-cct' ),
-					__( 'Étage 6 (hautes)', 'gestion-atelier-cct' ),
-				),
-				'note'  => '',
-			),
-			'elevateurs' => array(
-				'label' => __( 'ÉLÉVATEURS', 'gestion-atelier-cct' ),
-				'items' => array(
-					__( 'Sangles', 'gestion-atelier-cct' ),
-					__( 'Connexions', 'gestion-atelier-cct' ),
-					__( 'Poulies', 'gestion-atelier-cct' ),
-					__( 'Drisses freins', 'gestion-atelier-cct' ),
-					__( 'Poignées freins', 'gestion-atelier-cct' ),
-					__( 'Connecteurs freins', 'gestion-atelier-cct' ),
-				),
-				'note'  => '',
-			),
-		),
-		// Valeurs saisissables par item + poids de la moyenne (Excel : ACC.=10, B.E.=44, NEUF=75).
-		'visual_values'  => array(
-			'REF'  => array( 'label' => 'RÉF.', 'weight' => 0 ),
-			'ACC'  => array( 'label' => 'ACC.', 'weight' => 10 ),
-			'BE'   => array( 'label' => 'B.E.', 'weight' => 44 ),
-			'NEUF' => array( 'label' => 'NEUF', 'weight' => 75 ),
-		),
-		// Interprétation d'un groupe selon sa moyenne (feuille de saisie B54).
-		'visual_scale'   => array(
-			array( 'max' => 0,   'eq' => true,  'result' => 'RÉFORME' ),
-			array( 'max' => 10,  'eq' => false, 'result' => 'LIMITE' ),
-			array( 'max' => 44,  'eq' => false, 'result' => 'ACCEPTABLE' ),
-			array( 'max' => 75,  'eq' => false, 'result' => 'BON ÉTAT' ),
-			array( 'max' => null, 'eq' => false, 'result' => 'TRÈS BON ÉTAT' ),
-		),
-		// §2.3 — Porosité (secondes, l/m²/min = 5400 / s), barème de la feuille de saisie.
-		'porosity_points' => array( 'P4', 'P2', 'P1', 'P3', 'P5' ),
-		'porosity_factor' => 5400,
-		'porosity_scale'  => array(
-			array( 'max' => 10,   'result' => 'RÉFORME' ),
-			array( 'max' => 11,   'result' => 'LIMITE' ),
-			array( 'max' => 20,   'result' => 'ACCEPTABLE' ),
-			array( 'max' => 200,  'result' => 'BON ÉTAT' ),
-			array( 'max' => null, 'result' => 'TRÈS BON ÉTAT' ),
-		),
-		// §2.4 — Déchirure (Bettsometer). Seuil minimal selon la moyenne de porosité.
-		'tear_zones'     => array(
-			'extrados' => __( 'Extrados', 'gestion-atelier-cct' ),
-			'intrados' => __( 'Intrados', 'gestion-atelier-cct' ),
-			'cloison'  => __( 'Cloison', 'gestion-atelier-cct' ),
-		),
-		'tear_min'       => array( 'porosity_gt' => 100, 'high' => 1.2, 'low' => 0.9 ),
-		'tear_scale'     => array(
-			array( 'max' => 0.6,  'result' => 'RÉFORME' ),
-			array( 'max' => 0.63, 'result' => 'LIMITE' ),
-			array( 'max' => 0.9,  'result' => 'ACCEPTABLE' ),
-			array( 'max' => 1.17, 'result' => 'BON ÉTAT' ),
-			array( 'max' => null, 'result' => 'TRÈS BON ÉTAT' ),
-		),
-		// §2.5 — Rupture des suspentes. Coefficients matériau (nominal × 0.9 × k)
-		// et barème COMPLET (bucket NEUF = marge 100 %, correction maquette §7.2).
-		'rupture_max_lines' => 5,
-		'rupture_materials' => array(
-			'dyneema' => array( 'label' => 'Dyneema', 'coef' => 0.585 ),
-			'aramide' => array( 'label' => 'Aramide', 'coef' => 0.405 ),
-			'vectran' => array( 'label' => 'Vectran', 'coef' => 0.405 ),
-		),
-		'rupture_scale'  => array(
-			array( 'max' => 0,   'eq' => true,  'result' => 'RÉFORME' ),
-			array( 'max' => 10,  'eq' => false, 'result' => 'LIMITE' ),
-			array( 'max' => 25,  'eq' => false, 'result' => 'ACCEPTABLE' ),
-			array( 'max' => 75,  'eq' => false, 'result' => 'BON ÉTAT' ),
-			array( 'max' => 100, 'eq' => false, 'result' => 'TRÈS BON ÉTAT' ),
-			array( 'max' => null, 'eq' => false, 'result' => 'NEUF' ),
-		),
-		// §1.8 — Calage / freins.
-		'geometry_interps' => array(
-			''            => __( '— à compléter —', 'gestion-atelier-cct' ),
-			'CALAGE BON'  => 'CALAGE BON',
-			'RÉFORME'     => 'RÉFORME',
-			'NON RÉALISÉ' => 'NON RÉALISÉ',
-		),
-		'brake_settings' => array(
-			''                   => __( '— à compléter —', 'gestion-atelier-cct' ),
-			'Cotes constructeur' => __( 'Cotes constructeur', 'gestion-atelier-cct' ),
-			'Réglage pilote'     => __( 'Réglage pilote', 'gestion-atelier-cct' ),
-			'Non réalisé'        => __( 'Non réalisé', 'gestion-atelier-cct' ),
-		),
-		// §1.2 — Marques (Feuil1!C9:C37) + modèles contraints par marque.
-		'brands'         => array(
-			'Advance', 'Adventure', 'AirDesign', 'Airwaves', 'Apco', 'Axis', 'BGD',
-			'Dudek', 'Flow', 'Gin', 'Gradient', 'Icaro', 'ITV', 'Jojowing',
-			'Little Cloud', 'MacPara', 'Nervures', 'Niviuk', 'Nova', 'Ozone',
-			'Paramania', 'Phi', 'Skyparagliders', 'Skywalk', 'Supair', 'Swing',
-			'Triple Seven', 'Up', 'Windtech',
-		),
-		// Ordre du pire au meilleur, pour les agrégats « worst-of ».
-		'severity'       => array( 'RÉFORME', 'LIMITE', 'ACCEPTABLE', 'BON ÉTAT', 'TRÈS BON ÉTAT', 'NEUF' ),
-	);
-
-	return apply_filters( 'gacct_report_calc_config', $config );
-}
-
-/**
- * Textes propres à chaque type de rapport voile — reproduits À L'IDENTIQUE
- * depuis leur onglet respectif (périodique = RAPPORT PARACHECK, partielle =
- * RAPPORT), légendes de seuils incluses.
- *
- * @return array
- */
-function gacct_report_voile_texts( $type ) {
-	$texts = array(
-		'periodique' => array(
-			'title'        => 'Révision périodique ParachecK®',
-			'intro'        => 'La révision périodique ParachecK® permet de répondre aux exigences de la norme EN 926-2 en terme d\'entretien, pour informer le propriétaire ou l\'acheteur de la capacité d\'une aile à voler en sécurité, à un instant donné. Les inspections ParachecK® ne vous renseignent que partiellement sur son état.',
-			'general_note' => 'Indice visuel à titre informatif établi selon l\'algorithme ParachecK®. Cet indice ne présage en rien d\'une durée de vie restante.',
-			'conclusion'   => array(
-				'La voile devrait conserver des caractéristiques conformes aux normes du constructeur pour une durée de plus de 100 heures dans le cadre d\'une utilisation normale. Cette durée tiens compte du fait que les constructeurs préconisent une révision toutes les 100 heures ou tous les ans. Il est possible que la voile présente encore des caractéristiques conformes à l\'issue de ce délai, mais nous ne pouvons engager notre responsabilité au-delà sans la réviser à nouveau.',
-				'Un gonflage, voire un vol en pente école s\'impose après toute intervention sur votre voile.' . "\n" . 'Afin de prolonger la vie de votre aéronef, ne l\'exposez par inutilement au soleil et aux intempéries. Évitez de plier votre voile humide et interdisez vous les chocs thermiques extrêmement mauvais pour les matériaux. Ne laissez ni cailloux, ni insectes qui peuvent grignoter, secréter des acides, ou simplement pourrir et endommager gravement les tissus.',
-			),
-			'porosity_note' => 'Mesures réalisées sur l\'extrados sur l\'alvéole centrale, les dernières alvéoles ouvertes de chaque côté, et les alvéoles médianes entre les précédentes.',
-			'rupture_intro' => 'Réalisé avec un dynamomètre DFW-03BT. Les valeurs sont exprimées en DaN. La première lettre indique la ligne d\'élévateur. Le chiffre indique le numéro de suspente en partant du centre de la voile. La troisième lettre indique l\'étage de suspente concerné. La dernière lettre indique le côté de la voile, dans le sens de vol.',
-			'comment_default' => '',
-			'legends'      => array(
-				'visual'   => array( 'RÉFORME' => 'moyenne = 0', 'LIMITE' => '0 – 10', 'ACCEPTABLE' => '10 – 44', 'BON ÉTAT' => '44 – 75', 'TRÈS BON ÉTAT' => '> 75', 'NEUF' => '100' ),
-				'porosity' => array( 'RÉFORME' => '< 10 s', 'LIMITE' => '10 – 11 s', 'ACCEPTABLE' => '11 – 20 s', 'BON ÉTAT' => '20 – 200 s', 'TRÈS BON ÉTAT' => '> 200 s' ),
-				'tear'     => array( 'RÉFORME' => '< 0,6', 'LIMITE' => '0,6 – 0,63', 'ACCEPTABLE' => '0,63 – 0,9', 'BON ÉTAT' => '0,9 – 1,17', 'TRÈS BON ÉTAT' => '≥ 1,17' ),
-				'rupture'  => array( 'RÉFORME' => '≤ 0 %', 'LIMITE' => '< 10 %', 'ACCEPTABLE' => '< 25 %', 'BON ÉTAT' => '< 75 %', 'TRÈS BON ÉTAT' => '≥ 75 %' ),
-			),
-			'show_general' => true,
-			'show_results_summary' => false,
-		),
-		'partielle' => array(
-			'title'        => 'Inspection partielle ParachecK®',
-			'intro'        => 'Seule la révision périodique conforme à la norme EN 926-2 informe le propriétaire ou l\'acheteur de la capacité d\'une aile à voler en sécurité, à un instant donné. Les inspections partielles ne vous renseignent que partiellement sur son état.',
-			'general_note' => 'Seule une révision périodique portant sur l\'ensemble de la voile permet de définir son état général.',
-			'conclusion'   => array(
-				'La voile devrait conserver des caractéristiques conformes aux normes du constructeur pour une durée de plus de 100 heures dans le cadre d\'une utilisation normale. Cette durée tiens compte du fait que les constructeurs préconisent une révision toutes les 100 heures ou tous les ans. Il est possible que la voile présente encore des caractéristiques conformes à l\'issue de ce délai, mais nous ne pouvons engager notre responsabilité au-delà sans la réviser à nouveau.',
-				'Un gonflage, voire un vol en pente école s\'impose après toute intervention sur votre voile.' . "\n" . 'Afin de prolonger la vie de votre aéronef, ne l\'exposez par inutilement au soleil et aux intempéries. Évitez de plier votre voile humide et interdisez vous les chocs thermiques extrêmement mauvais pour les matériaux. Ne laissez ni cailloux, ni insectes qui peuvent grignoter, secréter des acides, ou simplement pourrir et endommager gravement les tissus.',
-			),
-			'porosity_note' => 'Mesures réalisées sur l\'alvéole centrale, les dernières alvéoles ouvertes de chaque côté, et les alvéoles médianes entre les précédentes.',
-			'rupture_intro' => 'Mesure par étirement d\'une ligne complète de suspente jusqu\'à sa rupture avec enregistrement de la valeur max. Réalisé avec un dynamomètre DFW-03BT. Les valeurs sont exprimées en DaN. La première lettre indique la ligne d\'élévateur. Le chiffre indique le numéro de suspente en partant du centre de la voile. La troisième lettre indique l\'étage de suspente concerné. La dernière lettre indique le côté de la voile, dans le sens de vol.',
-			'comment_default' => 'Votre voile a fait l\'objet d\'une inspection partielle portant sur :' . "\n" . '- La porosité des tissus.' . "\n" . '- La résistance des suspentes.' . "\n" . '- Le contrôle du calage.' . "\n" . 'Nous ne pouvons donc pas vous donner un état général de la voile, conformément à la norme ParachecK®.',
-			'legends'      => array(
-				'visual'   => array( 'RÉFORME' => 'moyenne = 0', 'ACCEPTABLE' => '0 – 25', 'BON ÉTAT' => '25 – 75', 'TRÈS BON ÉTAT' => '75 – 100', 'NEUF' => '100' ),
-				'porosity' => array( 'RÉFORME' => '< 10 s', 'LIMITE' => '10 – 12 s', 'ACCEPTABLE' => '12 – 20 s', 'BON ÉTAT' => '20 – 95 s', 'TRÈS BON ÉTAT' => '95 – 300 s', 'NEUF' => '> 300 s' ),
-				'tear'     => array( 'RÉFORME' => '< 0,6', 'LIMITE' => '0,6 – 0,7', 'ACCEPTABLE' => '0,7 – 0,9', 'BON ÉTAT' => '0,9 – 1,2', 'TRÈS BON ÉTAT' => '1,2 – 1,5', 'NEUF' => '> 1,5' ),
-				'rupture'  => array( 'RÉFORME' => '≤ 0 %', 'LIMITE' => '< 10 %', 'ACCEPTABLE' => '< 25 %', 'BON ÉTAT' => '< 75 %', 'TRÈS BON ÉTAT' => '< 100 %', 'NEUF' => '100 %' ),
-			),
-			'show_general' => false,
-			'show_results_summary' => true,
-		),
-	);
-
-	$type = isset( $texts[ $type ] ) ? $type : 'periodique';
-
-	return apply_filters( 'gacct_report_voile_texts', $texts[ $type ], $type );
+	return apply_filters( 'gacct_report_models', $labels );
 }
 
 /* =============================================================================
@@ -261,9 +136,21 @@ function gacct_report_voile_texts( $type ) {
  * Pire résultat d'une liste (ordre de sévérité du référentiel).
  * Les valeurs vides / NON RÉALISÉ sont ignorées ; si tout est NON RÉALISÉ → NON RÉALISÉ.
  */
+function gacct_report_severity() {
+	$severity = array( 'RÉFORME', 'LIMITE', 'ACCEPTABLE', 'BON ÉTAT', 'TRÈS BON ÉTAT', 'NEUF' );
+
+	if ( function_exists( 'gacct_report_calc_config' ) ) {
+		$config = gacct_report_calc_config();
+		if ( ! empty( $config['severity'] ) ) {
+			$severity = (array) $config['severity'];
+		}
+	}
+
+	return apply_filters( 'gacct_report_severity', $severity );
+}
+
 function gacct_report_worst( array $results ) {
-	$config   = gacct_report_calc_config();
-	$actual   = array_filter( $results, static function ( $r ) {
+	$actual = array_filter( $results, static function ( $r ) {
 		return '' !== $r && null !== $r && 'NON RÉALISÉ' !== $r && 'NON RÉALISÉ*' !== $r;
 	} );
 
@@ -271,7 +158,7 @@ function gacct_report_worst( array $results ) {
 		return empty( $results ) ? '' : 'NON RÉALISÉ';
 	}
 
-	foreach ( $config['severity'] as $level ) {
+	foreach ( gacct_report_severity() as $level ) {
 		if ( in_array( $level, $actual, true ) ) {
 			return $level;
 		}
@@ -298,291 +185,6 @@ function gacct_report_scale_result( $value, array $scale ) {
 	}
 
 	return '';
-}
-
-/**
- * §2.2 — Un groupe d'inspection visuelle (6 valeurs '', REF, ACC, BE, NEUF).
- *
- * @return array { average: float|null, result: string }
- */
-function gacct_report_calc_visual_group( array $values ) {
-	$config = gacct_report_calc_config();
-	$values = array_map( 'strval', $values );
-	$filled = array_filter( $values, static function ( $v ) {
-		return '' !== $v;
-	} );
-
-	if ( empty( $filled ) ) {
-		return array( 'average' => null, 'result' => 'NON RÉALISÉ' );
-	}
-
-	if ( in_array( 'REF', $filled, true ) ) {
-		return array( 'average' => 0.0, 'result' => 'RÉFORME' );
-	}
-
-	$sum = 0;
-	foreach ( $filled as $v ) {
-		$sum += isset( $config['visual_values'][ $v ] ) ? $config['visual_values'][ $v ]['weight'] : 0;
-	}
-
-	// L'Excel divise par COUNTA (items renseignés).
-	$average = $sum / count( $filled );
-
-	return array(
-		'average' => $average,
-		'result'  => gacct_report_scale_result( $average, $config['visual_scale'] ),
-	);
-}
-
-/**
- * §2.3 — Test de porosité (5 mesures en secondes).
- *
- * @return array { rates: array<float|null>, average: float|null, result: string }
- */
-function gacct_report_calc_porosity( array $values ) {
-	$config = gacct_report_calc_config();
-	$rates  = array();
-	$nums   = array();
-
-	foreach ( $values as $v ) {
-		if ( '' === trim( (string) $v ) || ! is_numeric( $v ) ) {
-			$rates[] = null;
-			continue;
-		}
-		$v       = (float) $v;
-		$nums[]  = $v;
-		$rates[] = $v > 0 ? $config['porosity_factor'] / $v : 0.0;
-	}
-
-	if ( empty( $nums ) ) {
-		return array( 'rates' => $rates, 'average' => null, 'result' => 'NON RÉALISÉ' );
-	}
-
-	$average = array_sum( $nums ) / count( $nums );
-
-	return array(
-		'rates'   => $rates,
-		'average' => $average,
-		'result'  => gacct_report_scale_result( $average, $config['porosity_scale'] ),
-	);
-}
-
-/**
- * §2.4 — Test de déchirure (3 mesures DaN + seuil minimal issu de la porosité).
- *
- * @return array { min: float, zones: array<string,string>, result: string }
- */
-function gacct_report_calc_tear( array $values, $porosity_average ) {
-	$config = gacct_report_calc_config();
-	$min    = ( null !== $porosity_average && $porosity_average > $config['tear_min']['porosity_gt'] )
-		? $config['tear_min']['high']
-		: $config['tear_min']['low'];
-
-	$zones = array();
-	foreach ( $config['tear_zones'] as $key => $label ) {
-		$v = isset( $values[ $key ] ) ? trim( (string) $values[ $key ] ) : '';
-		if ( '' === $v || ! is_numeric( $v ) ) {
-			$zones[ $key ] = 'NON RÉALISÉ';
-			continue;
-		}
-		$zones[ $key ] = gacct_report_scale_result( (float) $v, $config['tear_scale'] );
-	}
-
-	return array(
-		'min'    => $min,
-		'zones'  => $zones,
-		'result' => gacct_report_worst( array_values( $zones ) ),
-	);
-}
-
-/**
- * §2.5 — Test de rupture des suspentes (0 à 5 lignes).
- * Chaque ligne : { ref, nominal, material, measure, seuil (optionnel, VR) }.
- *
- * @return array { lines: array[], result: string }
- */
-function gacct_report_calc_rupture( array $lines ) {
-	$config = gacct_report_calc_config();
-	$out    = array();
-	$results = array();
-
-	foreach ( array_slice( $lines, 0, $config['rupture_max_lines'] ) as $line ) {
-		$nominal  = isset( $line['nominal'] ) && is_numeric( $line['nominal'] ) ? (float) $line['nominal'] : 0.0;
-		$measure  = isset( $line['measure'] ) && '' !== trim( (string) $line['measure'] ) && is_numeric( $line['measure'] ) ? (float) $line['measure'] : null;
-		$material = isset( $line['material'] ) ? strtolower( (string) $line['material'] ) : '';
-		$coef     = isset( $config['rupture_materials'][ $material ] ) ? $config['rupture_materials'][ $material ]['coef'] : 0.0;
-
-		// Seuil : VR personnalisé (calcul réforme suspente) sinon nominal × coef matériau.
-		$custom = isset( $line['seuil'] ) && '' !== trim( (string) $line['seuil'] ) && is_numeric( $line['seuil'] ) ? (float) $line['seuil'] : 0.0;
-		$seuil  = $custom > 0 ? $custom : $nominal * $coef;
-
-		$margin = null;
-		$result = 'NR*';
-
-		if ( null !== $measure && $nominal > 0 && $nominal !== $seuil ) {
-			$margin = floor( ( $measure - $seuil ) / ( $nominal - $seuil ) * 100 );
-			$result = gacct_report_scale_result( $margin, $config['rupture_scale'] );
-			$results[] = $result;
-		}
-
-		$out[] = array(
-			'ref'      => isset( $line['ref'] ) ? sanitize_text_field( (string) $line['ref'] ) : '',
-			'nominal'  => $nominal,
-			'material' => $material,
-			'measure'  => $measure,
-			'seuil'    => $seuil,
-			'custom'   => $custom > 0,
-			'margin'   => $margin,
-			'result'   => $result,
-		);
-	}
-
-	if ( empty( $results ) ) {
-		return array( 'lines' => $out, 'result' => 'NON RÉALISÉ*' );
-	}
-
-	return array( 'lines' => $out, 'result' => gacct_report_worst( $results ) );
-}
-
-/**
- * §2.6 — Agrégat calage / freins (le « réglage des freins » reste une
- * métadonnée, non agrégée — recommandation maquette).
- */
-function gacct_report_calc_geometry( $calage, $freins ) {
-	$calage = (string) $calage;
-	$freins = (string) $freins;
-
-	if ( 'NON RÉALISÉ' === $calage && 'NON RÉALISÉ' === $freins ) {
-		return 'NON RÉALISÉ';
-	}
-	if ( '' === $calage && '' === $freins ) {
-		return 'NON RÉALISÉ';
-	}
-	if ( 'RÉFORME' === $calage || 'RÉFORME' === $freins ) {
-		return 'RÉFORME';
-	}
-	if ( 'CALAGE BON' === $calage || 'CALAGE BON' === $freins ) {
-		return 'CALAGE BON';
-	}
-
-	return 'NON RÉALISÉ';
-}
-
-/**
- * Calcul complet du rapport voile — renvoie toutes les interprétations.
- *
- * @param array $data Données saisies (payload du formulaire).
- * @return array
- */
-function gacct_report_calc_voile( array $data ) {
-	$config = gacct_report_calc_config();
-	$type   = ( isset( $data['type'] ) && 'partielle' === $data['type'] ) ? 'partielle' : 'periodique';
-
-	$visual  = array();
-	$vresults = array();
-	foreach ( array_keys( $config['visual_groups'] ) as $group ) {
-		$values = isset( $data['visual'][ $group ] ) && is_array( $data['visual'][ $group ] )
-			? array_pad( array_map( 'strval', $data['visual'][ $group ] ), 6, '' )
-			: array_fill( 0, 6, '' );
-		$visual[ $group ] = gacct_report_calc_visual_group( $values );
-		$visual[ $group ]['values'] = $values;
-		$vresults[] = $visual[ $group ]['result'];
-	}
-	$visual_global = gacct_report_worst( $vresults );
-
-	$porosity = gacct_report_calc_porosity(
-		isset( $data['porosity'] ) && is_array( $data['porosity'] ) ? array_pad( array_values( $data['porosity'] ), 5, '' ) : array_fill( 0, 5, '' )
-	);
-
-	$tear = gacct_report_calc_tear(
-		isset( $data['tear'] ) && is_array( $data['tear'] ) ? $data['tear'] : array(),
-		$porosity['average']
-	);
-
-	$rupture = gacct_report_calc_rupture(
-		isset( $data['rupture'] ) && is_array( $data['rupture'] ) ? $data['rupture'] : array()
-	);
-
-	// §2.7 — Inspection mécanique = pire de (porosité, déchirure, rupture).
-	$mechanical = gacct_report_worst( array( $porosity['result'], $tear['result'], str_replace( '*', '', $rupture['result'] ) ) );
-
-	$geometry = gacct_report_calc_geometry(
-		isset( $data['geometry']['calage_interp'] ) ? $data['geometry']['calage_interp'] : '',
-		isset( $data['geometry']['freins_interp'] ) ? $data['geometry']['freins_interp'] : ''
-	);
-
-	// §2.1 — État général (périodique uniquement) : pire des 4 + réforme calage.
-	$general = '';
-	if ( 'periodique' === $type ) {
-		if ( 'RÉFORME' === $geometry ) {
-			$general = 'RÉFORME';
-		} else {
-			$general = gacct_report_worst( array(
-				$visual_global,
-				$porosity['result'],
-				$tear['result'],
-				str_replace( '*', '', $rupture['result'] ),
-			) );
-			if ( '' === $general || 'NON RÉALISÉ' === $general ) {
-				$general = 'NON RÉALISÉ';
-			} elseif ( 'TRÈS BON ÉTAT' === $general ) {
-				// « NEUF » n'est atteignable que si les 4 résultats sont au max —
-				// dans le barème réel, TBE est le plafond des tests : on le garde.
-				$general = 'TRÈS BON ÉTAT';
-			}
-		}
-	}
-
-	return array(
-		'type'          => $type,
-		'visual'        => $visual,
-		'visual_global' => $visual_global,
-		'porosity'      => $porosity,
-		'tear'          => $tear,
-		'rupture'       => $rupture,
-		'mechanical'    => $mechanical,
-		'geometry'      => $geometry,
-		'general'       => $general,
-	);
-}
-
-/**
- * Calcul du modèle « Calcul réforme suspente » (onglet CALCUL REFORME SUSPENTE).
- *
- * VR = (résistance_test × PTV_max / RESmax_total) × coef  (0 si coef = 0).
- *
- * @return array { ensembles: array[], nb_total: int, resmax_total: float, vr: float }
- */
-function gacct_report_calc_suspente( array $data ) {
-	$ensembles = array();
-	$nb_total  = 0;
-	$res_total = 0.0;
-
-	for ( $i = 0; $i < 4; $i++ ) {
-		$nb  = isset( $data['ensembles'][ $i ]['nb'] ) && is_numeric( $data['ensembles'][ $i ]['nb'] ) ? (int) $data['ensembles'][ $i ]['nb'] : 0;
-		$res = isset( $data['ensembles'][ $i ]['resistance'] ) && is_numeric( $data['ensembles'][ $i ]['resistance'] ) ? (float) $data['ensembles'][ $i ]['resistance'] : 0.0;
-
-		$resmax      = $nb * $res;
-		$nb_total   += $nb;
-		$res_total  += $resmax;
-		$ensembles[] = array( 'nb' => $nb, 'resistance' => $res, 'resmax' => $resmax );
-	}
-
-	$test = isset( $data['resistance_test'] ) && is_numeric( $data['resistance_test'] ) ? (float) $data['resistance_test'] : 0.0;
-	$ptv  = isset( $data['ptv_max'] ) && is_numeric( $data['ptv_max'] ) ? (float) $data['ptv_max'] : 0.0;
-	$coef = isset( $data['coef'] ) && is_numeric( $data['coef'] ) ? (float) $data['coef'] : 0.0;
-
-	$vr = ( $coef > 0 && $res_total > 0 ) ? ( ( $test * $ptv ) / $res_total ) * $coef : 0.0;
-
-	return array(
-		'ensembles'    => $ensembles,
-		'nb_total'     => $nb_total,
-		'resmax_total' => $res_total,
-		'resistance_test' => $test,
-		'ptv_max'      => $ptv,
-		'coef'         => $coef,
-		'vr'           => $vr,
-	);
 }
 
 /* =============================================================================
@@ -642,6 +244,7 @@ function gacct_report_fonts() {
  */
 function gacct_report_settings() {
 	$defaults = array(
+		'pack'       => '',
 		'font'       => 'nunito',
 		'qr_enabled' => 0,
 		'qr_url'     => '',
@@ -778,7 +381,11 @@ function gacct_report_render_config_tab() {
 				$notice = '<div class="notice notice-error"><p>' . esc_html__( 'Le compteur doit être compris entre 1 et 999999.', 'gestion-atelier-cct' ) . '</p></div>';
 			} else {
 				update_option( GACCT_REPORT_COUNTER_OPT, $counter, false );
+				$packs = gacct_report_packs();
+				$pack  = isset( $_POST['report_pack'] ) ? sanitize_key( wp_unslash( $_POST['report_pack'] ) ) : '';
+
 				update_option( GACCT_REPORT_SETTINGS_OPT, array(
+					'pack'       => isset( $packs[ $pack ] ) ? $pack : '',
 					'font'       => isset( $fonts[ $font ] ) ? $font : 'nunito',
 					'qr_enabled' => empty( $_POST['qr_enabled'] ) ? 0 : 1,
 					'qr_url'     => isset( $_POST['qr_url'] ) ? esc_url_raw( wp_unslash( $_POST['qr_url'] ) ) : '',
@@ -801,6 +408,26 @@ function gacct_report_render_config_tab() {
 	wp_nonce_field( 'gacct_report_settings', '_gacct_report_nonce' );
 
 	echo '<table class="form-table" role="presentation"><tbody>';
+
+	$packs  = gacct_report_packs();
+	$active = gacct_report_active_pack();
+
+	echo '<tr><th scope="row">' . esc_html__( 'Pack de rapports actif', 'gestion-atelier-cct' ) . '</th><td>';
+	if ( ! $packs ) {
+		echo '<em>' . esc_html__( 'Aucun pack de rapports installé — activez un plugin de pack (ex. « Pack Altitude Révision »).', 'gestion-atelier-cct' ) . '</em>';
+	} elseif ( 1 === count( $packs ) ) {
+		echo '<strong>' . esc_html( $packs[ $active ]['label'] ) . '</strong>';
+		echo '<input type="hidden" name="report_pack" value="' . esc_attr( $active ) . '">';
+		echo '<p class="description">' . esc_html__( 'Un seul pack installé : il est sélectionné automatiquement. Les modèles de rapport, seuils, textes et design PDF viennent du pack.', 'gestion-atelier-cct' ) . '</p>';
+	} else {
+		echo '<select name="report_pack">';
+		foreach ( $packs as $pack_id => $pack_def ) {
+			echo '<option value="' . esc_attr( $pack_id ) . '"' . selected( $active, $pack_id, false ) . '>' . esc_html( $pack_def['label'] ) . '</option>';
+		}
+		echo '</select>';
+		echo '<p class="description">' . esc_html__( 'Les modèles de rapport, seuils, textes et design PDF viennent du pack sélectionné.', 'gestion-atelier-cct' ) . '</p>';
+	}
+	echo '</td></tr>';
 
 	echo '<tr><th scope="row"><label for="gacct_report_counter_field">' . esc_html__( 'Prochain numéro (compteur)', 'gestion-atelier-cct' ) . '</label></th><td>';
 	echo '<input type="number" id="gacct_report_counter_field" name="report_counter" min="1" max="999999" step="1" value="' . esc_attr( gacct_report_counter() ) . '" required>';
@@ -861,11 +488,33 @@ function gacct_report_counter() {
 }
 
 /**
- * Prochain numéro complet (aperçu, sans consommer) : AAAA + compteur sur 3
- * chiffres minimum (ex. 2026001).
+ * Formate un numéro selon le gabarit du pack actif (défaut '{year}{seq}' :
+ * AAAA + compteur sur 3 chiffres, ex. 2026001). Jetons : {year} {yy}
+ * {seq} (3 chiffres) {seq4} {seq5} {raw} (compteur brut).
+ */
+function gacct_report_format_number( $counter ) {
+	$packs  = gacct_report_packs();
+	$active = gacct_report_active_pack();
+	$format = ( $active && ! empty( $packs[ $active ]['number_format'] ) ) ? $packs[ $active ]['number_format'] : '{year}{seq}';
+	$format = apply_filters( 'gacct_report_number_format', $format, $active );
+
+	$now = current_time( 'timestamp' );
+
+	return strtr( $format, array(
+		'{year}' => gmdate( 'Y', $now ),
+		'{yy}'   => gmdate( 'y', $now ),
+		'{seq}'  => str_pad( (string) $counter, 3, '0', STR_PAD_LEFT ),
+		'{seq4}' => str_pad( (string) $counter, 4, '0', STR_PAD_LEFT ),
+		'{seq5}' => str_pad( (string) $counter, 5, '0', STR_PAD_LEFT ),
+		'{raw}'  => (string) $counter,
+	) );
+}
+
+/**
+ * Prochain numéro complet (aperçu, sans consommer).
  */
 function gacct_report_peek_number() {
-	return gmdate( 'Y', current_time( 'timestamp' ) ) . str_pad( (string) gacct_report_counter(), 3, '0', STR_PAD_LEFT );
+	return gacct_report_format_number( gacct_report_counter() );
 }
 
 /**
@@ -1155,32 +804,27 @@ function gacct_report_local_image_path( $url ) {
  * @return string|WP_Error
  */
 function gacct_report_render_html( array $row, array $entry ) {
-	$model     = (string) $entry['model'];
-	$templates = array(
-		'voile'      => 'report-voile.php',
-		'equipement' => 'report-equipement.php',
-		'suspente'   => 'report-suspente.php',
-	);
+	$model  = (string) $entry['model'];
+	$models = gacct_report_models_full();
 
-	if ( ! isset( $templates[ $model ] ) ) {
-		return new WP_Error( 'gacct_report_bad_model', __( 'Modèle de rapport inconnu.', 'gestion-atelier-cct' ) );
+	if ( ! isset( $models[ $model ] ) ) {
+		return new WP_Error( 'gacct_report_bad_model', __( 'Modèle de rapport inconnu (pack de rapports absent ?).', 'gestion-atelier-cct' ) );
 	}
 
-	$file = dirname( __DIR__ ) . '/templates/' . $templates[ $model ];
+	$def  = $models[ $model ];
+	$file = isset( $def['template'] ) ? (string) $def['template'] : '';
 
-	if ( ! file_exists( $file ) ) {
+	if ( '' === $file || ! file_exists( $file ) ) {
 		return new WP_Error( 'gacct_report_no_template', __( 'Template PDF introuvable.', 'gestion-atelier-cct' ) );
 	}
 
 	$context = gacct_report_pdf_context( $row, $entry );
 	$data    = isset( $entry['data'] ) && is_array( $entry['data'] ) ? $entry['data'] : array();
 
-	// Interprétations recalculées côté serveur.
+	// Interprétations recalculées côté serveur, par le calcul du pack.
 	$calc = null;
-	if ( 'voile' === $model ) {
-		$calc = gacct_report_calc_voile( $data );
-	} elseif ( 'suspente' === $model ) {
-		$calc = gacct_report_calc_suspente( $data );
+	if ( ! empty( $def['calc'] ) && is_callable( $def['calc'] ) ) {
+		$calc = call_user_func( $def['calc'], $data );
 	}
 
 	ob_start();

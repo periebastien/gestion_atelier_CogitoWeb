@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once __DIR__ . '/report-parts.php';
+require_once GACCT_REPORT_PARTS;
 
 $sellette = isset( $data['sellette'] ) && is_array( $data['sellette'] ) ? $data['sellette'] : array();
 $secours  = isset( $data['secours'] ) && is_array( $data['secours'] ) ? $data['secours'] : array();

@@ -318,8 +318,21 @@ function gacct_op_enqueue_assets( $hook_suffix ) {
 			gacct_asset_version( 'assets/js/operator-report.js' ),
 			true
 		);
-		// Source unique PHP des seuils/coefs, mise en miroir côté JS.
-		wp_localize_script( 'gacct-operator-report', 'gacctReportCfg', gacct_report_calc_config() );
+		// Source unique PHP des seuils/coefs du PACK, mise en miroir côté JS.
+		if ( function_exists( 'gacct_report_calc_config' ) ) {
+			wp_localize_script( 'gacct-operator-report', 'gacctReportCfg', gacct_report_calc_config() );
+		}
+
+		// JS des modèles du pack actif (calculs temps réel), après le framework.
+		$pack_handles = array();
+		foreach ( gacct_report_models_full() as $model_def ) {
+			foreach ( (array) ( $model_def['js'] ?? array() ) as $handle => $src ) {
+				if ( ! isset( $pack_handles[ $handle ] ) ) {
+					$pack_handles[ $handle ] = true;
+					wp_enqueue_script( $handle, $src, array( 'gacct-operator-report' ), GACCT_Plugin::VERSION, true );
+				}
+			}
+		}
 	}
 
 	if ( 'reception' === gacct_op_current_view() ) {

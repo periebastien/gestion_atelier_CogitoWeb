@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once __DIR__ . '/report-parts.php';
+require_once GACCT_REPORT_PARTS;
 
 $config = gacct_report_calc_config();
 $type   = $calc['type'];
