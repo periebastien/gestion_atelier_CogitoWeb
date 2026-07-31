@@ -32,4 +32,15 @@ function gacct_buttons_enqueue_assets() {
 		file_exists( $path ) ? filemtime( $path ) : GACCT_Plugin::VERSION,
 		true
 	);
+
+	// Le header (et son drawer JetMenu) est global : sa CSS doit l'être aussi.
+	$css_rel  = 'assets/css/menu-mobile.css';
+	$css_path = plugin_dir_path( dirname( __FILE__ ) ) . $css_rel;
+
+	wp_enqueue_style(
+		'gacct-menu-mobile',
+		plugins_url( '', dirname( __FILE__ ) ) . '/' . $css_rel,
+		array(),
+		file_exists( $css_path ) ? filemtime( $css_path ) : GACCT_Plugin::VERSION
+	);
 }
