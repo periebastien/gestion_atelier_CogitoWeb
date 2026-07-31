@@ -82,7 +82,18 @@ function gacct_op_list_payment_label( $order ) {
  * « Avancement » de la fiche, format cellule de tableau.
  */
 function gacct_op_list_render_steps( $state, array $labels ) {
-	echo '<span class="gacct-op-list-steps" role="img" aria-label="' . esc_attr( sprintf( __( 'Étape %1$d sur %2$d', 'gestion-atelier-cct' ), $state, max( array_keys( $labels ) ) ) ) . '">';
+	// Code couleur de l'espace client : teal = la balle est chez le client
+	// (paiement, expédition, devis, solde), orange = l'atelier doit agir,
+	// vert = dossier bouclé.
+	if ( $state >= 8 ) {
+		$family = 'is-complete';
+	} elseif ( in_array( $state, array( 0, 1, 4, 6 ), true ) ) {
+		$family = 'is-client';
+	} else {
+		$family = 'is-atelier';
+	}
+
+	echo '<span class="gacct-op-list-steps ' . esc_attr( $family ) . '" role="img" aria-label="' . esc_attr( sprintf( __( 'Étape %1$d sur %2$d', 'gestion-atelier-cct' ), $state, max( array_keys( $labels ) ) ) ) . '">';
 	foreach ( $labels as $i => $step_label ) {
 		$class = 'gacct-op-list-step';
 		if ( $i < $state ) {

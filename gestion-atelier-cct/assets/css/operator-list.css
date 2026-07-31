@@ -86,12 +86,25 @@
 	transition: background-color 0.12s ease;
 }
 
-.gacct-op .gacct-op-list-step.is-done {
-	background: var(--gacct-accent);
+/* Code couleur de l'espace client (charte Altitude Révision) :
+   teal = action attendue du client, orange = l'atelier doit agir,
+   vert = dossier bouclé (état 8). */
+.gacct-op .gacct-op-list-steps.is-client .gacct-op-list-step.is-done {
+	background: #20c4c3;
+}
+.gacct-op .gacct-op-list-steps.is-client .gacct-op-list-step.is-current {
+	background: #189998;
 }
 
-.gacct-op .gacct-op-list-step.is-current {
-	background: var(--gacct-accent-dark);
+.gacct-op .gacct-op-list-steps.is-atelier .gacct-op-list-step.is-done {
+	background: #ff8a3d;
+}
+.gacct-op .gacct-op-list-steps.is-atelier .gacct-op-list-step.is-current {
+	background: #ea7524;
+}
+
+.gacct-op .gacct-op-list-steps.is-complete .gacct-op-list-step {
+	background: #10b981;
 }
 
 /* ---------- Colonne Documents (badge dépliable) ---------- */
