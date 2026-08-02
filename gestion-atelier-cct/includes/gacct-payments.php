@@ -1168,11 +1168,25 @@ function gacct_pay_delete_cct_relations( $revision_id, $occupation_id, $order_id
 	$revision_id   = absint( $revision_id );
 	$occupation_id = absint( $occupation_id );
 
+	$rel_rev_occ = gacct_relation_id( 'revision_to_occupation', 11 );
+
 	if ( $revision_id ) {
 		// rel 11 (revision<->occupation), 12 (revision<->commande), 13 (client<->revision).
+		$rel_ids = implode(
+			', ',
+			array_map(
+				'absint',
+				array(
+					$rel_rev_occ,
+					gacct_relation_id( 'revision_to_order', 12 ),
+					gacct_relation_id( 'client_to_revision', 13 ),
+				)
+			)
+		);
+
 		$wpdb->query(
 			$wpdb->prepare(
-				"DELETE FROM {$table} WHERE rel_id IN (11, 12, 13) AND ( parent_object_id = %d OR child_object_id = %d )",
+				"DELETE FROM {$table} WHERE rel_id IN ({$rel_ids}) AND ( parent_object_id = %d OR child_object_id = %d )",
 				$revision_id,
 				$revision_id
 			)
@@ -1182,7 +1196,8 @@ function gacct_pay_delete_cct_relations( $revision_id, $occupation_id, $order_id
 	if ( $occupation_id ) {
 		$wpdb->query(
 			$wpdb->prepare(
-				"DELETE FROM {$table} WHERE rel_id = 11 AND ( parent_object_id = %d OR child_object_id = %d )",
+				"DELETE FROM {$table} WHERE rel_id = %d AND ( parent_object_id = %d OR child_object_id = %d )",
+				$rel_rev_occ,
 				$occupation_id,
 				$occupation_id
 			)

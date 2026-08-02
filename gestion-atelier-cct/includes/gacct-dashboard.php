@@ -516,7 +516,7 @@ function gacct_dash_revision_rows( $user_id ) {
 	}
 
 	$rel_table = $wpdb->prefix . 'jet_rel_default';
-	$rel_id    = class_exists( 'GACCT_Plugin' ) ? (int) GACCT_Plugin::REL_CLIENT_REV : 13;
+	$rel_id    = gacct_relation_id( 'client_to_revision', class_exists( 'GACCT_Plugin' ) ? (int) GACCT_Plugin::REL_CLIENT_REV : 13 );
 
 	$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$wpdb->prepare(

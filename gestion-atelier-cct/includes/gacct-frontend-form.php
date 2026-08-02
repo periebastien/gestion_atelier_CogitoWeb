@@ -254,13 +254,14 @@ function gacct_demande_materiels_client( $user_id = 0 ) {
 		SELECT SUBSTRING_INDEX( GROUP_CONCAT( r._ID ORDER BY r.cct_created DESC ), ',', 1 ) AS latest_id
 		FROM {$revision_table} r
 		INNER JOIN {$wpdb->prefix}jet_rel_default rel
-			ON rel.rel_id = '13' AND rel.parent_object_id = %d AND rel.child_object_id = r._ID
+			ON rel.rel_id = %s AND rel.parent_object_id = %d AND rel.child_object_id = r._ID
 		WHERE r.cct_status = %s
 			AND r.marque IS NOT NULL AND TRIM(r.marque) != ''
 			AND r.modele IS NOT NULL AND TRIM(r.modele) != ''
 		GROUP BY r.marque, UPPER(REPLACE(r.modele,' ','')), REGEXP_REPLACE(UPPER(r.taille),'[^A-Z0-9]',''), {$couleur_sig}
 		ORDER BY MAX( r.cct_created ) DESC
 		",
+		(string) gacct_relation_id( 'client_to_revision', 13 ),
 		$user_id,
 		'publish'
 	);
@@ -342,9 +343,10 @@ function gacct_demande_remat_id() {
 			SELECT r._ID
 			FROM {$revision_table} r
 			INNER JOIN {$wpdb->prefix}jet_rel_default rel
-				ON rel.rel_id = '13' AND rel.parent_object_id = %d AND rel.child_object_id = r._ID
+				ON rel.rel_id = %s AND rel.parent_object_id = %d AND rel.child_object_id = r._ID
 			WHERE r._ID = %d AND r.cct_status = %s
 			",
+			(string) gacct_relation_id( 'client_to_revision', 13 ),
 			$user_id,
 			$remat_id,
 			'publish'

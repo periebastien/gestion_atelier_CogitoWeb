@@ -32,11 +32,21 @@ define( 'JWCCT_SHOW_FRONTEND_DEBUG',    false );
 define( 'JWCCT_RELATION_REVISION_ORDER', 12 );
 
 /**
+ * ID d'une relation JetEngine, filtrable pour les sites ou les IDs different
+ * (meme filtre/signature que GACCT_Plugin::relation_id()).
+ * Cles : 'revision_to_occupation' (11), 'revision_to_order' (12),
+ * 'client_to_revision' (13).
+ */
+function gacct_relation_id( $relation_key, $default ) {
+    return (int) apply_filters( 'gacct_relation_id', $default, $relation_key );
+}
+
+/**
  * ID de la relation revision<->commande, filtrable pour les sites ou les IDs
  * JetEngine different (meme filtre/signature que GACCT_Plugin::relation_id()).
  */
 function jwcct_relation_revision_order_id() {
-    return (int) apply_filters( 'gacct_relation_id', JWCCT_RELATION_REVISION_ORDER, 'revision_to_order' );
+    return gacct_relation_id( 'revision_to_order', JWCCT_RELATION_REVISION_ORDER );
 }
 
 

@@ -83,7 +83,7 @@ function jwcct_debug_thankyou( $order_id ) {
     echo 'Liaison effectuée le : ' . esc_html( $ts ?: 'n/a' ) . '<br>';
     echo '<hr style="border:none;border-top:1px dashed #999;margin:6px 0;">';
 
-    echo '<strong>Relation JetEngine (ID 12)</strong> : ' . $relation_status . '<br>';
+    echo '<strong>Relation JetEngine (ID ' . (int) jwcct_relation_revision_order_id() . ')</strong> : ' . $relation_status . '<br>';
     echo '<hr style="border:none;border-top:1px dashed #999;margin:6px 0;">';
 
     echo 'Order meta revision_id : ' . (int) $rev . '<br>';

@@ -343,7 +343,8 @@ function gacct_report_user_owns_revision( array $row, $user_id ) {
 	$linked = (int) $wpdb->get_var(
 		$wpdb->prepare(
 			"SELECT COUNT(*) FROM {$wpdb->prefix}jet_rel_default
-			 WHERE rel_id = '13' AND parent_object_id = %d AND child_object_id = %d",
+			 WHERE rel_id = %s AND parent_object_id = %d AND child_object_id = %d",
+			(string) gacct_relation_id( 'client_to_revision', 13 ),
 			$user_id,
 			absint( $row['_ID'] )
 		)
