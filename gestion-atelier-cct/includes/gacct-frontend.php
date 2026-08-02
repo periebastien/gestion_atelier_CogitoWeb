@@ -1107,9 +1107,13 @@ function jwcct_render_marque_libelle( $slug ) {
 	static $libelles = null;
 
 	if ( null === $libelles ) {
-		$libelles = array();
-		$row      = $GLOBALS['wpdb']->get_var(
-			"SELECT meta_fields FROM {$GLOBALS['wpdb']->prefix}jet_post_types WHERE id = 2 AND status = 'glossary'"
+		$libelles    = array();
+		$glossary_id = (int) apply_filters( 'gacct_glossary_id', 2, 'marques' );
+		$row         = $GLOBALS['wpdb']->get_var(
+			$GLOBALS['wpdb']->prepare(
+				"SELECT meta_fields FROM {$GLOBALS['wpdb']->prefix}jet_post_types WHERE id = %d AND status = 'glossary'",
+				$glossary_id
+			)
 		);
 		foreach ( (array) maybe_unserialize( (string) $row ) as $entree ) {
 			if ( isset( $entree['value'], $entree['label'] ) ) {

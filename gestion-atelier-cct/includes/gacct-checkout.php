@@ -31,6 +31,14 @@ define( 'JWCCT_SHOW_FRONTEND_DEBUG',    false );
 // ID de la relation JetEngine "revision_to_order".
 define( 'JWCCT_RELATION_REVISION_ORDER', 12 );
 
+/**
+ * ID de la relation revision<->commande, filtrable pour les sites ou les IDs
+ * JetEngine different (meme filtre/signature que GACCT_Plugin::relation_id()).
+ */
+function jwcct_relation_revision_order_id() {
+    return (int) apply_filters( 'gacct_relation_id', JWCCT_RELATION_REVISION_ORDER, 'revision_to_order' );
+}
+
 
 /* =============================================================================
  *  HELPERS DEBUG / LOG
@@ -219,12 +227,12 @@ function jwcct_process_order_link( $order_id ) {
 
         // Mise à jour de la Relation JetEngine
         if ( function_exists( 'jet_engine' ) && isset( jet_engine()->relations ) ) {
-            $relation = jet_engine()->relations->get_active_relations( JWCCT_RELATION_REVISION_ORDER );
+            $relation = jet_engine()->relations->get_active_relations( jwcct_relation_revision_order_id() );
             if ( $relation ) {
                 $relation->update( $revision_id, $order_id );
                 $relation_ok = true;
             } else {
-                jwcct_log( "process_order_link : la relation " . JWCCT_RELATION_REVISION_ORDER . " est introuvable." );
+                jwcct_log( "process_order_link : la relation " . jwcct_relation_revision_order_id() . " est introuvable." );
             }
         }
     }

@@ -60,7 +60,7 @@ function jwcct_debug_thankyou( $order_id ) {
     // --- Vérification de la Relation JetEngine ---
     $relation_status = '<span style="color:#888;">Non vérifiée</span>';
     if ( function_exists( 'jet_engine' ) && isset( jet_engine()->relations ) ) {
-        $rel_obj = jet_engine()->relations->get_active_relations( JWCCT_RELATION_REVISION_ORDER );
+        $rel_obj = jet_engine()->relations->get_active_relations( jwcct_relation_revision_order_id() );
         if ( $rel_obj && $rev ) {
             $children = $rel_obj->get_children( $rev );
 

@@ -45,6 +45,14 @@ class Kojito_Acompte_Produit {
 
 		add_action( 'kojito_declencher_paiement_solde', [ $this, 'declencher_paiement_solde' ], 10, 1 );
 		add_filter( 'woocommerce_pay_order_button_text', [ $this, 'modifier_texte_bouton_paiement_solde' ] );
+
+		// Page de configuration (WooCommerce > Kojito Acompte : template de l'email de solde).
+		add_action( 'admin_menu', [ $this, 'ajouter_page_configuration' ] );
+		add_action( 'admin_init', [ $this, 'traiter_sauvegarde_configuration' ] );
+
+		// Action de commande admin "Kojito - Preparer le paiement du solde".
+		add_filter( 'woocommerce_order_actions', [ $this, 'ajouter_action_admin_paiement_solde' ] );
+		add_action( 'woocommerce_order_action_kojito_declencher_paiement_solde', [ $this, 'action_admin_declencher_paiement_solde' ] );
 	}
 
 	public function ajouter_champ_acompte() {
