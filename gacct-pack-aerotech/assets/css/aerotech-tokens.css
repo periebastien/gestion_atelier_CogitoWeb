@@ -1,0 +1,55 @@
+/*
+ * Charte AEROTECH — surcharge des tokens white-label --gacct-* du framework
+ * Gestion Atelier. Source : kit Elementor du site (id 6) + design system
+ * AEROTECH (accent orange unique, Rubik/Nunito Sans, cartes r=16px,
+ * transitions <= 300ms cubic-bezier(.2,.6,.2,1)).
+ *
+ * Chargée APRÈS les feuilles du framework (dépendance d'enqueue) : ne
+ * contient QUE des variables, aucun sélecteur de composant.
+ */
+:root {
+	/* Accent unique : orange AEROTECH (remplace le teal Altitude). */
+	--gacct-accent: #ec672c;
+	--gacct-accent-dark: #c4501d;
+	--gacct-accent-soft: #fdf0e9;
+	--gacct-accent-2: #ec672c;
+
+	/* CTA : même orange (AEROTECH n'a pas de 2e couleur d'action). */
+	--gacct-cta: #ec672c;
+	--gacct-cta-dark: #c4501d;
+
+	/* Encres — base #101820, déclinaisons chaudes assorties au taupe. */
+	--gacct-text: #101820;
+	--gacct-text-muted: #5c6066;
+	--gacct-text-faint: #8b8f94;
+	--gacct-text-dim: #a5a8ac;
+	--gacct-text-empty: #a5a8ac;
+
+	/* Surfaces et bordures (bordure charte #D8D4CD, fond alterné du site). */
+	--gacct-surface: #ffffff;
+	--gacct-surface-alt: #f5f7f8;
+	--gacct-border: #d8d4cd;
+	--gacct-border-soft: #eaedf0;
+	--gacct-border-light: #eaedf0;
+	--gacct-line: #eaedf0;
+
+	/* Rayons : cartes 16px (charte), contrôles 12px. */
+	--gacct-radius: 12px;
+	--gacct-radius-lg: 16px;
+	--gacct-vo-radius: 16px;
+
+	/* Ombre douce de la charte (cartes produits du site). */
+	--gacct-shadow: 0 16px 36px rgba(16, 24, 32, 0.14), 0 4px 10px rgba(16, 24, 32, 0.07);
+
+	/* Vue commande / confirmation : accent aligné. */
+	--gacct-vo-accent: #ec672c;
+	--gacct-vo-ink: #101820;
+	--gacct-vo-muted: #5c6066;
+	--gacct-vo-line: #eaedf0;
+
+	/* Alerte « action attendue » : ambre distinct de l'accent orange. */
+	--gacct-warn: #d99518;
+	--gacct-warn-soft: #fdf6e7;
+	--gacct-warn-ink: #9a6a0d;
+	--gacct-warn-text: #9a6a0d;
+}
