@@ -291,12 +291,19 @@
 /* ── ≤1024 : mode mobile et tablette ───────────────────────────────────── */
 
 @media (max-width: 1024px) {
-	/* Le filet du bas est porté par le <header> lui-même : il va d'un bord à
-	   l'autre de l'écran, alors qu'il s'arrêterait aux gouttières s'il était
-	   sur le conteneur intérieur. */
-	.ar-hdr.e-con {
+	/* Le sticky vit sur le wrapper du template (enfant direct du <body>),
+	   comme le .hdr de la maquette : posé sur .ar-hdr il serait inerte, car
+	   son parent header.elementor-location-header ne mesure que la hauteur de
+	   la barre et un sticky ne colle que dans les limites de son parent. */
+	header.elementor-location-header {
 		position: sticky;
 		top: 0;
+		z-index: 300;
+	}
+	/* Le filet du bas est porté par le conteneur racine .ar-hdr : il va d'un
+	   bord à l'autre de l'écran, alors qu'il s'arrêterait aux gouttières s'il
+	   était sur le conteneur intérieur. */
+	.ar-hdr.e-con {
 		background: #fff;
 		border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 	}
