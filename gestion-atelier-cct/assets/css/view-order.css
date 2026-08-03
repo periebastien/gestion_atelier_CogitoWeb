@@ -13,9 +13,11 @@
 	--gacct-vo-line: var(--gacct-line, #e4e9ec);
 	--gacct-vo-card: var(--gacct-card, #ffffff);
 	--gacct-vo-accent: var(--gacct-accent, #20c4c3);
-	--gacct-vo-warn: #b45309;
-	--gacct-vo-warn-bg: #fff7ed;
-	--gacct-vo-danger: #c0392b;
+	--gacct-vo-warn: var(--gacct-warn-ink, #b45309);
+	--gacct-vo-warn-bg: var(--gacct-warn-soft, #fff7ed);
+	--gacct-vo-danger: var(--gacct-danger, #c0392b);
+	/* Rayon figé : celui des cartes de cette page, volontairement plus doux que
+	   le --gacct-radius-lg du formulaire (03/08/2026). */
 	--gacct-vo-radius: 14px;
 
 	display: flex;

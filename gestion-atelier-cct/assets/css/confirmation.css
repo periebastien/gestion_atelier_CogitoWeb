@@ -17,7 +17,7 @@
 	--c-muted:        var(--gacct-text-muted, #777);
 	--c-faint:        var(--gacct-text-faint, #999);
 	--c-surface:      var(--gacct-surface, #fff);
-	--c-surface-alt:  var(--gacct-surface-alt, #fafcfc);
+	--c-surface-alt:  #fafcfc;   /* figé : nuance propre à cette page */
 	--c-page:         var(--gacct-page-bg, #f7f7f7);
 	--c-warn:         var(--gacct-warn, #d99a00);
 	--c-warn-ink:     var(--gacct-warn-ink, #8a6200);

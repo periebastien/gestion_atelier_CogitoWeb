@@ -6,19 +6,27 @@
  * une personnalisation par site.
  */
 
-/* Variables sur :root : le calendrier flatpickr est monté dans <body>, hors du
-   formulaire — un scope .jet-form-builder ne l'atteindrait pas (fond transparent). */
-:root {
-	/* Accent aligné sur le design system Altitude Révision (teal) : la maquette
-	   ne comporte aucun bleu. --gacct-accent pilote badges, sélection et focus. */
-	--gacct-accent: #20c4c3;
-	--gacct-accent-dark: #189998;
-	--gacct-accent-soft: #f0fafa;
-	--gacct-cta: #ffbd20;
-	--gacct-accent-2: #20c4c3;
-	--gacct-dispo-bg: #e6f7ec;
-	--gacct-dispo-txt: #137a3b;
-	--gacct-dispo-border: rgba(19, 122, 59, 0.3);
+/* Repli NEUTRE des variables --gacct-*.
+ *
+ * La palette du site vit dans le THÈME (hello-theme-child-master/assets/css/
+ * tokens.css, déménagée le 03/08/2026) : le plugin ne porte plus de couleur de
+ * marque, seulement de quoi rester lisible s'il tourne sans habillage.
+ *
+ * `:where(:root)` a une spécificité de ZÉRO : le `:root` du thème l'emporte
+ * quel que soit l'ordre de chargement des feuilles — les deux étant enqueuées
+ * sur `wp_enqueue_scripts`, cet ordre n'est pas garanti.
+ *
+ * Sur :root et non sur un scope .jet-form-builder : le calendrier flatpickr est
+ * monté dans <body>, hors du formulaire (il aurait un fond transparent). */
+:where(:root) {
+	--gacct-accent: #5b6b78;
+	--gacct-accent-dark: #44515b;
+	--gacct-accent-soft: #f2f4f6;
+	--gacct-cta: #5b6b78;
+	--gacct-accent-2: #5b6b78;
+	--gacct-dispo-bg: #eef1f3;
+	--gacct-dispo-txt: #44515b;
+	--gacct-dispo-border: rgba(68, 81, 91, 0.3);
 	--gacct-complete-txt: #cccccc;
 	--gacct-disabled-txt: #dddddd;
 	--gacct-text: #1a1a1a;
