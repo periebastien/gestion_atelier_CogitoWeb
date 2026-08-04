@@ -22,6 +22,16 @@ if ( ! defined( 'ABSPATH' ) ) {
  * être recréée avec un autre id, c'est ICI (et uniquement ici) qu'on le change.
  *
  * Seuls les ids WooCommerce (catégories, produits) diffèrent du site référence.
+ *
+ * RAPPORTS DE CONTRÔLE — CHOIX ASSUMÉ (04/08/2026) : ce pack n'enregistre
+ * AUCUN pack de rapports (pas de hook `gacct_report_register_packs`), et
+ * c'est voulu — AEROTECH produit ses rapports hors plateforme et les dépose
+ * en PDF depuis la fiche console (upload manuel, coffre sécurisé, envoi au
+ * client au solde réglé : circuit identique). Conséquences automatiques côté
+ * framework : carte console en mode « dépôt de PDF » (formulaire ouvert
+ * d'office), onglet Configuration > Rapports masqué, endpoints de génération
+ * inertes (« Modèle de rapport inconnu »), assets des formulaires non chargés.
+ * NE PAS « corriger » en recopiant le pack Altitude Révision.
  */
 
 /** Relations JetEngine (lDHOLS_jet_post_types, status=relation). */

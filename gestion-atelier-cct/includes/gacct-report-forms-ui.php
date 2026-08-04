@@ -184,9 +184,13 @@ function gacct_report_render_card( $revision_id, array $revision, $order, $state
 	}
 
 	// ---- Nouveau rapport : choix du modèle. ----
+	// Sans pack de rapports (choix assumé de certains ateliers, ex. AEROTECH :
+	// le rapport est produit hors plateforme), la carte devient « dépôt de PDF » :
+	// message neutre — on ne suggère PAS qu'il manque quelque chose — et
+	// formulaire d'upload ouvert d'office puisqu'il est la seule action.
 	echo '<div class="gacct-rf-new">';
 	if ( ! $models ) {
-		echo '<p class="gacct-op-muted">' . esc_html__( 'Aucun pack de rapports installé : seuls les uploads manuels sont possibles. Activez un plugin de pack (ex. « Pack Altitude Révision »).', 'gestion-atelier-cct' ) . '</p>';
+		echo '<p class="gacct-op-muted">' . esc_html__( 'Cet atelier n’utilise pas la génération de rapports intégrée : déposez vos rapports PDF via le formulaire ci-dessous. Ils suivent le même circuit (coffre sécurisé, envoi au client une fois le solde réglé).', 'gestion-atelier-cct' ) . '</p>';
 	}
 	echo '<button type="button" class="button button-primary" data-rf-action="toggle-new" aria-expanded="false"' . ( $models ? '' : ' hidden' ) . '>+ ' . esc_html__( 'Nouveau rapport', 'gestion-atelier-cct' ) . '</button>';
 	echo '<div class="gacct-rf-model-choice" hidden>';
@@ -203,8 +207,8 @@ function gacct_report_render_card( $revision_id, array $revision, $order, $state
 		}
 	}
 
-	// ---- Upload manuel conservé. ----
-	echo '<details class="gacct-rf-section gacct-rf-upload">';
+	// ---- Upload manuel conservé (ouvert d'office quand c'est la seule voie). ----
+	echo '<details class="gacct-rf-section gacct-rf-upload"' . ( $models ? '' : ' open' ) . '>';
 	echo '<summary><span>' . esc_html__( 'Déposer un PDF externe (upload manuel)', 'gestion-atelier-cct' ) . '</span></summary>';
 	echo '<div class="gacct-rf-section-body">';
 	echo '<form class="gacct-op-upload-form" data-op-form="upload-report">';

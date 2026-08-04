@@ -467,8 +467,16 @@ function gacct_report_render_config_tab() {
 
 /**
  * Enregistre l'onglet dans l'écran Configuration.
+ *
+ * Uniquement si un pack de rapports est installé : sans pack (atelier en
+ * upload manuel, ex. AEROTECH), la numérotation, la police PDF et le bloc QR
+ * n'ont aucun objet — l'onglet n'apparaît pas.
  */
 function gacct_report_register_config_tab( $tabs ) {
+	if ( ! gacct_report_packs() ) {
+		return $tabs;
+	}
+
 	$tabs['rapports'] = array( __( 'Rapports', 'gestion-atelier-cct' ), 'gacct_report_render_config_tab' );
 
 	return $tabs;
