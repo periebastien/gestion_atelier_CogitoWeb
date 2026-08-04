@@ -19,14 +19,17 @@
 /* Tokens : posés sur :root, mais la feuille n'est chargée QUE sur l'espace
    client (`gacct_dash_should_enqueue()`) — aucune fuite ailleurs sur le site.
    Couleurs de marque = variables --gacct-* du thème ; les gris, le pâle et les
-   rayons ci-dessous sont FIGÉS volontairement : le tableau de bord a son propre
-   registre, plus doux que celui du formulaire (03/08/2026 — avant le
-   déménagement des tokens dans le thème, ils valaient déjà ces valeurs-là,
-   la palette du formulaire n'étant pas chargée sur l'espace client). */
+   rayons du tableau de bord ont leur PROPRE registre, plus doux que celui du
+   formulaire (03/08/2026). Depuis le 04/08/2026 ce registre passe par des
+   tokens PAR PAGE `--gacct-dash-*` : le REPLI est la valeur figée du site de
+   référence (rendu inchangé ici, où personne ne les définit), et un pack
+   d'atelier peut les surcharger (AEROTECH : gris chauds, rayons 12/16).
+   ⚠ Ne PAS brancher ces replis sur les tokens globaux (--gacct-radius…) :
+   le thème les définit avec d'autres valeurs, le rendu changerait ici. */
 :root {
 	--dash-teal:        var(--gacct-accent, #20c4c3);
 	--dash-teal-dark:   var(--gacct-accent-dark, #189998);
-	--dash-teal-soft:   #e8f8f8;
+	--dash-teal-soft:   var(--gacct-dash-accent-soft, #e8f8f8);
 	--dash-yellow:      var(--gacct-cta, #ffbd20);
 	--dash-yellow-dark: var(--gacct-cta-dark, #e0a800);
 	--dash-orange:      var(--gacct-warn, #ff8a3d);
@@ -44,15 +47,15 @@
 	--dash-red-line:    var(--gacct-danger-line, #ffd7d7);
 	--dash-pdf:         var(--gacct-pdf, #e63946);
 	--dash-ink:         var(--gacct-text, #1a1a1a);
-	--dash-ink-2:       #4a4748;
-	--dash-ink-3:       #6b6b6b;
+	--dash-ink-2:       var(--gacct-dash-ink-2, #4a4748);
+	--dash-ink-3:       var(--gacct-dash-ink-3, #6b6b6b);
 	--dash-ink-4:       var(--gacct-text-dim, #9a9a9a);
 	--dash-surface:     var(--gacct-surface, #fff);
-	--dash-surface-alt: #fafafa;
+	--dash-surface-alt: var(--gacct-dash-surface-alt, #fafafa);
 	--dash-line:        var(--gacct-line, rgba(0, 0, 0, 0.07));
 	--dash-line-2:      var(--gacct-line-strong, rgba(0, 0, 0, 0.12));
-	--dash-radius:      9px;
-	--dash-radius-lg:   14px;
+	--dash-radius:      var(--gacct-dash-radius, 9px);
+	--dash-radius-lg:   var(--gacct-dash-radius-lg, 14px);
 }
 
 /* ── Carte d'action ────────────────────────────────────────────────────── */

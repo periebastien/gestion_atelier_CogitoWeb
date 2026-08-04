@@ -53,3 +53,31 @@
 	--gacct-warn-ink: #9a6a0d;
 	--gacct-warn-text: #9a6a0d;
 }
+
+/* ==== Compléments du 04/08/2026 — alignement sur le plugin unifié ==========
+ *
+ * Le plugin partagé est redevenu identique au site de référence : sa feuille
+ * du formulaire ne porte plus qu'un repli NEUTRE (`:where(:root)`, spécificité
+ * zéro) et le tableau de bord / la confirmation exposent des tokens PAR PAGE
+ * (--gacct-dash-*, --gacct-conf-*) dont le repli est le registre figé du site
+ * de référence. Tout ce qui suit reprend les valeurs QUE CE SITE AFFICHAIT
+ * DÉJÀ — aucun changement de rendu, seulement un changement de porteur. */
+:root {
+	/* Calendrier du formulaire : pastilles de disponibilité (vert conservé). */
+	--gacct-dispo-bg: #e6f7ec;
+	--gacct-dispo-txt: #137a3b;
+	--gacct-dispo-border: rgba(19, 122, 59, 0.3);
+
+	/* Tableau de bord client : registre AEROTECH (gris chauds, rayons 12/16,
+	   orange pâle) — sans ces tokens, le repli serait le registre du site de
+	   référence (gris froids, rayons 9/14, teal pâle). */
+	--gacct-dash-accent-soft: #fdf0e9;
+	--gacct-dash-ink-2: #5c6066;
+	--gacct-dash-ink-3: #8b8f94;
+	--gacct-dash-surface-alt: #f5f7f8;
+	--gacct-dash-radius: 12px;
+	--gacct-dash-radius-lg: 16px;
+
+	/* Page de confirmation : fond alterné de la charte. */
+	--gacct-conf-surface-alt: #f5f7f8;
+}
