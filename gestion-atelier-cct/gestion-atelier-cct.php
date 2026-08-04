@@ -36,6 +36,7 @@ require_once __DIR__ . '/includes/gacct-report-forms-ui.php';
 require_once __DIR__ . '/includes/gacct-frontend.php';
 require_once __DIR__ . '/includes/gacct-frontend-form.php';
 require_once __DIR__ . '/includes/gacct-dashboard.php';
+require_once __DIR__ . '/includes/gacct-profile.php';
 require_once __DIR__ . '/includes/gacct-debug.php';
 require_once __DIR__ . '/includes/gacct-login-gate.php';
 require_once __DIR__ . '/includes/gacct-workorder.php';

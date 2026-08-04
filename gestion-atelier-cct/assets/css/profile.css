@@ -1,0 +1,393 @@
+/* =============================================================================
+ * Page « Mon profil » de l'espace client (/mon-compte/mon-profil/)
+ * — gestion-atelier-cct / includes/gacct-profile.php + templates/profile.php
+ *
+ * White-label : aucune couleur codée en dur. Tout passe par les variables
+ * `--gacct-*` du thème, avec les mêmes replis que dashboard.css (le tableau de
+ * bord et le profil partagent volontairement leur registre de gris).
+ *
+ * Chargée UNIQUEMENT sur cette page (`gacct_profile_enqueue_assets()`).
+ *
+ * ⚠ Elementor : le contenu est enfermé dans `.e-con-inner`, et le reset du kit
+ * pose des bordures sur les tableaux — d'où l'absence totale de <table> ici.
+ * ============================================================================= */
+
+.gacct-profile {
+	--prof-ink:         var(--gacct-text, #1a1a1a);
+	--prof-ink-2:       #4a4748;
+	--prof-ink-3:       #6b6b6b;
+	--prof-teal:        var(--gacct-accent, #20c4c3);
+	--prof-teal-dark:   var(--gacct-accent-dark, #189998);
+	--prof-teal-soft:   #e8f8f8;
+	--prof-yellow:      var(--gacct-cta, #ffbd20);
+	--prof-yellow-dark: var(--gacct-cta-dark, #e0a800);
+	--prof-surface:     var(--gacct-surface, #fff);
+	--prof-surface-alt: #fafafa;
+	--prof-line:        var(--gacct-line, rgba(0, 0, 0, 0.07));
+	--prof-line-2:      var(--gacct-line-strong, rgba(0, 0, 0, 0.12));
+	--prof-green-soft:  var(--gacct-success-soft, #e6f7f1);
+	--prof-green-ink:   var(--gacct-success-ink, #047857);
+	--prof-red-soft:    var(--gacct-danger-soft, #fff5f5);
+	--prof-red-ink:     var(--gacct-danger, #c92a2a);
+	--prof-red-line:    var(--gacct-danger-line, #ffd7d7);
+	--prof-radius:      9px;
+	--prof-radius-lg:   14px;
+
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	color: var(--prof-ink);
+	max-width: 720px;
+}
+
+/* ── Notices ───────────────────────────────────────────────────────────── */
+
+.gacct-profile-notice {
+	padding: 12px 16px;
+	border-radius: var(--prof-radius);
+	border: 1px solid transparent;
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+.gacct-profile-notice--success {
+	background: var(--prof-green-soft);
+	border-color: rgba(4, 120, 87, 0.18);
+	color: var(--prof-green-ink);
+}
+
+.gacct-profile-notice--error {
+	background: var(--prof-red-soft);
+	border-color: var(--prof-red-line);
+	color: var(--prof-red-ink);
+}
+
+.gacct-profile-notice--info {
+	background: var(--prof-teal-soft);
+	border-color: rgba(32, 196, 195, 0.28);
+	color: var(--prof-teal-dark);
+}
+
+/* ── Cartes ────────────────────────────────────────────────────────────── */
+
+.gacct-profile-card {
+	background: var(--prof-surface);
+	border: 1px solid var(--prof-line-2);
+	border-radius: var(--prof-radius-lg);
+	padding: 22px 24px;
+}
+
+.gacct-profile-card__title {
+	margin: 0 0 4px;
+	font-size: 17px;
+	font-weight: 700;
+	line-height: 1.3;
+	color: var(--prof-ink);
+}
+
+.gacct-profile-card__intro {
+	margin: 0 0 18px;
+	font-size: 14px;
+	line-height: 1.55;
+	color: var(--prof-ink-3);
+}
+
+/* ── Photo de profil ───────────────────────────────────────────────────── */
+
+.gacct-profile-avatar {
+	display: flex;
+	align-items: flex-start;
+	gap: 18px;
+	padding-bottom: 20px;
+	margin-bottom: 20px;
+	border-bottom: 1px solid var(--prof-line);
+}
+
+.gacct-profile-avatar__preview {
+	flex: 0 0 auto;
+	width: 84px;
+	height: 84px;
+	border-radius: 50%;
+	overflow: hidden;
+	background: var(--prof-teal);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.gacct-profile-avatar__preview img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.gacct-profile-avatar__initials {
+	font-size: 28px;
+	font-weight: 700;
+	letter-spacing: 0.5px;
+	color: #fff;
+}
+
+.gacct-profile-avatar__actions {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 8px;
+	min-width: 0;
+}
+
+/* L'input file est piloté par le <label> : on le sort du flux sans le rendre
+   invisible aux lecteurs d'écran (`display:none` couperait le focus clavier). */
+.gacct-profile-file {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.gacct-profile-file:focus-visible + .gacct-profile-hint,
+.gacct-profile-file:focus-visible ~ .gacct-profile-hint {
+	outline: none;
+}
+
+/* ── Champs ────────────────────────────────────────────────────────────── */
+
+.gacct-profile-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 14px 16px;
+}
+
+.gacct-profile-field {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	margin: 0;
+}
+
+.gacct-profile-field--full {
+	grid-column: 1 / -1;
+}
+
+.gacct-profile-label {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--prof-ink-2);
+}
+
+.gacct-profile-hint {
+	margin: 0;
+	font-size: 12.5px;
+	line-height: 1.45;
+	color: var(--prof-ink-3);
+}
+
+.gacct-profile input[type="text"],
+.gacct-profile input[type="tel"],
+.gacct-profile input[type="email"],
+.gacct-profile input[type="password"] {
+	width: 100%;
+	padding: 10px 12px;
+	font-size: 15px;
+	color: var(--prof-ink);
+	background: var(--prof-surface);
+	border: 1px solid var(--prof-line-2);
+	border-radius: var(--prof-radius);
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gacct-profile input[type="text"]:focus,
+.gacct-profile input[type="tel"]:focus,
+.gacct-profile input[type="email"]:focus,
+.gacct-profile input[type="password"]:focus {
+	outline: none;
+	border-color: var(--prof-teal);
+	box-shadow: 0 0 0 3px rgba(32, 196, 195, 0.16);
+}
+
+.gacct-profile-check {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13.5px;
+	color: var(--prof-ink-2);
+	cursor: pointer;
+}
+
+.gacct-profile-readonly {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	margin: 0 0 14px;
+	font-size: 15px;
+}
+
+/* ── Boutons ───────────────────────────────────────────────────────────── */
+
+.gacct-profile-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin-top: 18px;
+}
+
+/* ⚠ Adversaire mesuré : le kit Elementor pose
+   `.elementor-kit-4 button, … input[type=submit], … .elementor-button`
+   — (0,2,0) — et post-4.css est chargé APRÈS profile.css. À spécificité égale
+   il gagnerait : les règles de bouton sont donc écrites à (0,2,1) en qualifiant
+   par le nom de balise (`button` / `label` / `a`). Même raison pour le reset
+   Elementor `[type=button], button` (bordure rose 1px).
+   Le kit pose en plus `border-style: none` au :hover — d'où le
+   `border-style: solid` explicite dans les règles de survol, sans quoi le
+   bouton fantôme perd sa bordure dès qu'on le survole. */
+.gacct-profile button.gacct-profile-btn,
+.gacct-profile label.gacct-profile-btn,
+.gacct-profile a.gacct-profile-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 10px 18px;
+	font-size: 14.5px;
+	font-weight: 600;
+	line-height: 1.2;
+	border: 1px solid transparent;
+	border-radius: var(--prof-radius);
+	cursor: pointer;
+	transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+	text-decoration: none;
+}
+
+.gacct-profile button.gacct-profile-btn.gacct-profile-btn--primary,
+.gacct-profile label.gacct-profile-btn.gacct-profile-btn--primary,
+.gacct-profile a.gacct-profile-btn.gacct-profile-btn--primary {
+	background: var(--prof-yellow);
+	border-color: var(--prof-yellow);
+	color: var(--prof-ink);
+}
+
+.gacct-profile button.gacct-profile-btn.gacct-profile-btn--primary:hover,
+.gacct-profile button.gacct-profile-btn.gacct-profile-btn--primary:focus-visible,
+.gacct-profile label.gacct-profile-btn.gacct-profile-btn--primary:hover,
+.gacct-profile a.gacct-profile-btn.gacct-profile-btn--primary:hover {
+	background: var(--prof-yellow-dark);
+	border-style: solid;
+	border-color: var(--prof-yellow-dark);
+	color: var(--prof-ink);
+}
+
+.gacct-profile button.gacct-profile-btn.gacct-profile-btn--ghost,
+.gacct-profile label.gacct-profile-btn.gacct-profile-btn--ghost,
+.gacct-profile a.gacct-profile-btn.gacct-profile-btn--ghost {
+	background: var(--prof-surface);
+	border-color: var(--prof-line-2);
+	color: var(--prof-ink-2);
+}
+
+.gacct-profile button.gacct-profile-btn.gacct-profile-btn--ghost:hover,
+.gacct-profile button.gacct-profile-btn.gacct-profile-btn--ghost:focus-visible,
+.gacct-profile label.gacct-profile-btn.gacct-profile-btn--ghost:hover,
+.gacct-profile a.gacct-profile-btn.gacct-profile-btn--ghost:hover {
+	background: var(--prof-surface);
+	border-style: solid;
+	border-color: var(--prof-teal);
+	color: var(--prof-teal-dark);
+}
+
+.gacct-profile button.gacct-profile-btn.gacct-profile-btn--link,
+.gacct-profile a.gacct-profile-btn.gacct-profile-btn--link {
+	background: none;
+	border-color: transparent;
+	padding: 10px 4px;
+	color: var(--prof-ink-3);
+	text-decoration: underline;
+}
+
+.gacct-profile button.gacct-profile-btn.gacct-profile-btn--link:hover,
+.gacct-profile button.gacct-profile-btn.gacct-profile-btn--link:focus-visible,
+.gacct-profile a.gacct-profile-btn.gacct-profile-btn--link:hover {
+	background: none;
+	color: var(--prof-red-ink);
+}
+
+.gacct-profile-link {
+	font-size: 13.5px;
+	color: var(--prof-ink-3);
+	text-decoration: underline;
+}
+
+.gacct-profile-link:hover {
+	color: var(--prof-teal-dark);
+}
+
+/* ── Changement d'e-mail en attente ────────────────────────────────────── */
+
+.gacct-profile-pending {
+	padding: 14px 16px;
+	margin-bottom: 16px;
+	background: var(--prof-surface-alt);
+	border: 1px dashed var(--prof-line-2);
+	border-radius: var(--prof-radius);
+}
+
+.gacct-profile-pending__title {
+	margin: 0 0 4px;
+	font-size: 14.5px;
+	font-weight: 600;
+}
+
+.gacct-profile-pending .gacct-profile-actions {
+	margin-top: 10px;
+	gap: 4px;
+}
+
+/* ── Formulaires dépliants ─────────────────────────────────────────────── */
+
+.gacct-profile-toggle > .gacct-profile-form {
+	margin-top: 18px;
+	padding-top: 18px;
+	border-top: 1px solid var(--prof-line);
+}
+
+/* Repli sans JS : l'attribut `hidden` est retiré par profile.js, mais le
+   formulaire reste accessible si le script ne se charge pas. */
+.gacct-profile-toggle > .gacct-profile-form[hidden] {
+	display: none;
+}
+
+/* ── Mobile (breakpoint kit : 767) ─────────────────────────────────────── */
+
+@media (max-width: 767px) {
+
+	.gacct-profile-card {
+		padding: 18px 16px;
+	}
+
+	.gacct-profile-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.gacct-profile-avatar {
+		gap: 14px;
+	}
+
+	.gacct-profile-avatar__preview {
+		width: 64px;
+		height: 64px;
+	}
+
+	.gacct-profile-avatar__initials {
+		font-size: 22px;
+	}
+
+	.gacct-profile-actions .gacct-profile-btn {
+		flex: 1 1 auto;
+	}
+}
