@@ -586,10 +586,16 @@ final class GACCT_Plugin {
 										<code>{customer_name}</code>
 										<code>{prestations}</code>
 										<code>{date_atelier}</code>
+										<code>{order_number}</code>
 										<code>{order_id}</code>
 										<code>{balance_amount}</code>
 										<code>{payment_url}</code>
 										<code>{validation_url}</code>
+										<code>{tracking_link}</code>
+										<code>{quote_lines}</code>
+										<code>{quote_comment}</code>
+										<code>{quote_total}</code>
+										<code>{quote_balance}</code>
 									</p>
 								</td>
 							</tr>
@@ -1642,51 +1648,51 @@ final class GACCT_Plugin {
 		return array(
 			2 => array(
 				'enabled'    => true,
-				'label'      => __( 'Voile receptionnee, programmee pour intervention', 'gestion-atelier-cct' ),
+				'label'      => __( 'Voile réceptionnée, programmée pour intervention', 'gestion-atelier-cct' ),
 				'recipients' => array( 'client', 'admin' ),
-				'subject'    => __( 'Votre materiel est bien arrive a l atelier - {order_id}', 'gestion-atelier-cct' ),
-				'body'       => '<p>Bonjour {customer_name},</p><p>Nous vous confirmons la reception de votre materiel. L intervention est programmee pour le {date_atelier}. Prestations prevues : {prestations}.</p><p>A tres vite,<br><br>Bastien.</p>',
+				'subject'    => __( 'Votre matériel est bien arrivé à l’atelier - commande {order_number}', 'gestion-atelier-cct' ),
+				'body'       => '<p>Bonjour {customer_name},</p><p>Nous vous confirmons la réception de votre matériel. L’intervention est programmée pour le <strong>{date_atelier}</strong>.</p><p>Prestations prévues : {prestations}.</p><p>À très vite,<br><br>Bastien.</p>',
 			),
 			3 => array(
 				'enabled'    => true,
-				'label'      => __( 'Intervention programmee', 'gestion-atelier-cct' ),
+				'label'      => __( 'Intervention démarrée (alerte interne)', 'gestion-atelier-cct' ),
 				'recipients' => array( 'admin' ),
-				'subject'    => __( '[Alerte] Intervention demarree - Commande {order_id}', 'gestion-atelier-cct' ),
-				'body'       => '<p>L intervention sur le materiel de {customer_name} vient de demarrer a l atelier. Prestations prevues : {prestations}.</p>',
+				'subject'    => __( '[Alerte] Intervention démarrée - commande {order_number}', 'gestion-atelier-cct' ),
+				'body'       => '<p>L’intervention sur le matériel de {customer_name} vient de démarrer à l’atelier. Prestations prévues : {prestations}.</p>',
 			),
 			4 => array(
 				'enabled'    => true,
-				'label'      => __( 'Nouveau devis a valider', 'gestion-atelier-cct' ),
+				'label'      => __( 'Nouveau devis à valider', 'gestion-atelier-cct' ),
 				'recipients' => array( 'client', 'admin' ),
-				'subject'    => __( 'Action requise : Mise a jour de votre devis - {order_id}', 'gestion-atelier-cct' ),
+				'subject'    => __( 'Action requise : votre devis est à valider - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'       => '<p>Bonjour {customer_name},</p>'
-					. '<p>Suite a l inspection de votre materiel, des travaux complementaires sont necessaires :</p>'
+					. '<p>Suite à l’inspection de votre matériel, des travaux complémentaires sont nécessaires :</p>'
 					. '{quote_lines}'
 					. '{quote_comment}'
-					. '<p>Nouveau total de votre commande : <strong>{quote_total}</strong>, soit un solde de <strong>{quote_balance}</strong> a regler a la fin de l intervention (votre acompte deja verse reste inchange).</p>'
-					. '<p><a href="{validation_url}">Consulter le devis et donner ma reponse</a> — vous pourrez l accepter ou le refuser en un clic.</p>'
-					. '<p>Merci de votre reactivite,<br><br>Bastien.</p>',
+					. '<p>Nouveau total de votre commande : <strong>{quote_total}</strong>, soit un solde de <strong>{quote_balance}</strong> à régler à la fin de l’intervention (votre acompte déjà versé reste inchangé).</p>'
+					. '<p><a href="{validation_url}">Consulter le devis et donner ma réponse</a> — vous pourrez l’accepter ou le refuser en un clic.</p>'
+					. '<p>Merci de votre réactivité,<br><br>Bastien.</p>',
 			),
 			6 => array(
 				'enabled'    => true,
-				'label'      => __( 'Intervention finie en attente de paiement', 'gestion-atelier-cct' ),
+				'label'      => __( 'Intervention finie, en attente de paiement', 'gestion-atelier-cct' ),
 				'recipients' => array( 'client', 'admin' ),
-				'subject'    => __( 'C est pret ! Solde a regler pour votre commande {order_id}', 'gestion-atelier-cct' ),
-				'body'       => '<p>Bonjour {customer_name},</p><p>L entretien de votre materiel est termine ! Il ne vous reste plus qu a regler le solde de {balance_amount} pour finaliser la commande. <a href="{payment_url}">Regler ma commande</a>.</p><p>A bientot,<br><br>Bastien.</p>',
+				'subject'    => __( 'C’est prêt ! Le solde de votre commande {order_number} est à régler', 'gestion-atelier-cct' ),
+				'body'       => '<p>Bonjour {customer_name},</p><p>L’entretien de votre matériel est terminé ! Il ne vous reste plus qu’à régler le solde de <strong>{balance_amount}</strong> pour finaliser la commande.</p><p><a href="{payment_url}">Régler ma commande</a></p><p>À bientôt,<br><br>Bastien.</p>',
 			),
 			7 => array(
 				'enabled'    => true,
-				'label'      => __( 'Revision finie', 'gestion-atelier-cct' ),
+				'label'      => __( 'Révision finie, rapport disponible', 'gestion-atelier-cct' ),
 				'recipients' => array( 'client', 'admin' ),
-				'subject'    => __( 'Votre revision est terminee ! Retrouvez votre rapport - {order_id}', 'gestion-atelier-cct' ),
-				'body'       => '<p>Bonjour {customer_name},</p><p>La revision est officiellement terminee. Vous trouverez votre rapport technique complet en piece jointe de cet e-mail.</p><p>Merci de votre confiance,<br><br>Bastien.</p>',
+				'subject'    => __( 'Votre révision est terminée ! Votre rapport est disponible - commande {order_number}', 'gestion-atelier-cct' ),
+				'body'       => '<p>Bonjour {customer_name},</p><p>La révision est officiellement terminée. Vous trouverez votre rapport technique complet en pièce jointe de cet e-mail, et à tout moment dans votre espace client.</p><p>Merci de votre confiance,<br><br>Bastien.</p>',
 			),
 			8 => array(
 				'enabled'    => true,
-				'label'      => __( 'Materiel reexpedie', 'gestion-atelier-cct' ),
+				'label'      => __( 'Matériel réexpédié', 'gestion-atelier-cct' ),
 				'recipients' => array( 'client', 'admin' ),
-				'subject'    => __( 'Votre materiel est reparti ! - {order_id}', 'gestion-atelier-cct' ),
-				'body'       => '<p>Bonjour {customer_name},</p><p>Votre materiel a quitte l atelier et voyage vers vous.</p><p>Suivi de votre colis : {tracking_link}</p><p>Bons vols,<br><br>Bastien.</p>',
+				'subject'    => __( 'Votre matériel est reparti ! - commande {order_number}', 'gestion-atelier-cct' ),
+				'body'       => '<p>Bonjour {customer_name},</p><p>Votre matériel a quitté l’atelier et voyage vers vous.</p><p>Suivi de votre colis : {tracking_link}</p><p>Bons vols,<br><br>Bastien.</p>',
 			),
 		);
 	}
@@ -1765,6 +1771,7 @@ final class GACCT_Plugin {
 			'{prestations}'    => $this->revision_prestations_label( $revision ),
 			'{date_atelier}'   => $this->revision_workshop_date_label( $revision_id ),
 			'{order_id}'       => (string) $order_id,
+			'{order_number}'   => $order instanceof WC_Order ? $order->get_order_number() : (string) $order_id,
 			'{balance_amount}' => function_exists( 'wc_price' ) ? wc_price( $balance_amount ) : (string) $balance_amount,
 			'{payment_url}'    => esc_url( $payment_url ),
 			'{validation_url}' => esc_url( $validation_url ),

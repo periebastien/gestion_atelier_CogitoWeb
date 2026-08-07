@@ -486,8 +486,8 @@ class Kojito_Acompte_Produit {
 
 		return '<p>Bonjour {customer_first_name},</p>
 <p>Le solde de votre commande {order_number} est maintenant disponible au paiement.</p>
-<p><strong>Montant de l acompte deja regle :</strong> {deposit_amount}<br>
-<strong>Solde restant a payer :</strong> {balance_amount}<br>
+<p><strong>Montant de l’acompte déjà réglé :</strong> {deposit_amount}<br>
+<strong>Solde restant à payer :</strong> {balance_amount}<br>
 <strong>Total de la commande :</strong> {order_total}</p>
 <p><a href="{payment_url}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:4px;">Payer le solde</a></p>
 <p>Merci,<br>{site_name}</p>';
