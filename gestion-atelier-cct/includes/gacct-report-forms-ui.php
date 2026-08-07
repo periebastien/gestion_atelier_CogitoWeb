@@ -63,7 +63,11 @@ function gacct_rf_common_header( array $revision, $order, $with_type = false ) {
 	echo '<div class="gacct-rf-grid">';
 
 	if ( $with_type ) {
-		gacct_rf_select( 'type', __( 'Type de rapport', 'gestion-atelier-cct' ), gacct_report_voile_types(), 'periodique' );
+		// Présélection selon la commande (réunion du 06/08/2026) : le pack peut
+		// déduire le type du contenu de la commande (IP → partielle…).
+		$default_type = apply_filters( 'gacct_report_voile_default_type', 'periodique', $order );
+
+		gacct_rf_select( 'type', __( 'Type de rapport', 'gestion-atelier-cct' ), gacct_report_voile_types(), $default_type );
 	}
 
 	gacct_rf_input(
@@ -194,8 +198,22 @@ function gacct_report_render_card( $revision_id, array $revision, $order, $state
 	}
 	echo '<button type="button" class="button button-primary" data-rf-action="toggle-new" aria-expanded="false"' . ( $models ? '' : ' hidden' ) . '>+ ' . esc_html__( 'Nouveau rapport', 'gestion-atelier-cct' ) . '</button>';
 	echo '<div class="gacct-rf-model-choice" hidden>';
+
+	// Modèles suggérés d'après le contenu de la commande (réunion du 06/08/2026) :
+	// le pack renvoie les clés pertinentes, affichées en premier et en primaire.
+	$suggested = (array) apply_filters( 'gacct_report_suggested_models', array(), $order, $revision );
+	$suggested = array_values( array_intersect( $suggested, array_keys( $models ) ) );
+
+	if ( $suggested ) {
+		$models = array_replace( array_fill_keys( $suggested, '' ), $models );
+	}
+
 	foreach ( $models as $model_key => $model_label ) {
-		echo '<button type="button" class="button" data-rf-action="open" data-report-id="" data-model="' . esc_attr( $model_key ) . '">' . esc_html( $model_label ) . '</button>';
+		$is_suggested = in_array( $model_key, $suggested, true );
+		echo '<button type="button" class="button' . ( $is_suggested ? ' button-primary' : '' ) . '" data-rf-action="open" data-report-id="" data-model="' . esc_attr( $model_key ) . '">'
+			. esc_html( $model_label )
+			. ( $is_suggested ? ' <span class="gacct-rf-suggested">' . esc_html__( '(suggéré)', 'gestion-atelier-cct' ) . '</span>' : '' )
+			. '</button>';
 	}
 	echo '</div>';
 	echo '</div>';

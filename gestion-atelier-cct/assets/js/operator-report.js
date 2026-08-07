@@ -228,9 +228,12 @@
 			author.value = author.querySelector( 'option[selected]' ) ? author.querySelector( 'option[selected]' ).value : author.value;
 		}
 
+		// Le type revient à la valeur présélectionnée côté serveur (déduite de la
+		// commande via gacct_report_voile_default_type), pas à la première option.
 		var type = form.querySelector( '[data-rf="type"]' );
 		if ( type && type.options.length ) {
-			type.value = type.options[ 0 ].value;
+			var typeDefault = type.querySelector( 'option[selected]' );
+			type.value = typeDefault ? typeDefault.value : type.options[ 0 ].value;
 		}
 
 		var linesWrap = form.querySelector( '[data-rf-rupture-lines]' );

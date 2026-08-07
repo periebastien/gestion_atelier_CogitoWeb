@@ -83,6 +83,16 @@ function gacct_report_calc_config() {
 			array( 'max' => 75,  'eq' => false, 'result' => 'BON ÉTAT' ),
 			array( 'max' => null, 'eq' => false, 'result' => 'TRÈS BON ÉTAT' ),
 		),
+		// Présélection du rapport d'après la commande (réunion du 06/08/2026) :
+		// produit commandé → modèle(s) suggéré(s) et type du rapport voile.
+		// IDs produits de CE site (le pack est propre à l'atelier), filtre
+		// gacct_paracheck_report_hints pour ajuster sans toucher au code.
+		'report_hints' => array(
+			'voile_periodique' => array( 18 ),                      // Révision périodique paracheck
+			'voile_partielle'  => array( 17, 690, 691, 694, 695 ),  // IP, calage, porosité, lignes incident, branchage
+			'suspente'         => array( 362, 686, 692, 1237, 1242 ), // suspentes simples/complexes, résistance, lignes de frein
+			'equipement'       => array( 19, 361, 687, 688, 1238, 1239, 1240 ), // équipement, pliages secours, montages sellette
+		),
 		// §2.3 — Porosité (secondes, l/m²/min = 5400 / s), barème de la feuille de saisie.
 		// 4 zones depuis la réunion du 06/08/2026 (le P5 du classeur était une erreur).
 		'porosity_points' => array( 'P4', 'P2', 'P1', 'P3' ),

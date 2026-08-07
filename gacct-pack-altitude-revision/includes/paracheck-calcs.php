@@ -43,6 +43,72 @@ function gacct_report_calc_visual_group( array $values ) {
 }
 
 /**
+ * Ce que la commande implique comme rapports : produits → modèles suggérés
+ * + type du rapport voile (réunion du 06/08/2026). Basé sur la table
+ * `report_hints` de la config, filtrable `gacct_paracheck_report_hints`.
+ *
+ * @param WC_Order|false $order Commande liée au dossier.
+ * @return array { models: string[], voile_type: string|null }
+ */
+function gacct_paracheck_order_hints( $order ) {
+	$result = array( 'models' => array(), 'voile_type' => null );
+
+	if ( ! $order || ! is_a( $order, 'WC_Order' ) ) {
+		return $result;
+	}
+
+	$hints = apply_filters(
+		'gacct_paracheck_report_hints',
+		gacct_report_calc_config()['report_hints'] ?? array(),
+		$order
+	);
+
+	$ordered = array();
+	foreach ( $order->get_items() as $item ) {
+		$ordered[] = (int) $item->get_product_id();
+		$ordered[] = (int) $item->get_variation_id();
+	}
+
+	$has = static function ( $key ) use ( $hints, $ordered ) {
+		return (bool) array_intersect( (array) ( $hints[ $key ] ?? array() ), $ordered );
+	};
+
+	if ( $has( 'voile_periodique' ) || $has( 'voile_partielle' ) ) {
+		$result['models'][] = 'voile';
+		// La révision périodique l'emporte sur les inspections partielles.
+		$result['voile_type'] = $has( 'voile_periodique' ) ? 'periodique' : 'partielle';
+	}
+
+	foreach ( array( 'suspente', 'equipement' ) as $model ) {
+		if ( $has( $model ) ) {
+			$result['models'][] = $model;
+		}
+	}
+
+	return $result;
+}
+
+/**
+ * Filtre framework : modèles à mettre en avant dans « Nouveau rapport ».
+ */
+function gacct_paracheck_suggested_models( $models, $order ) {
+	$hints = gacct_paracheck_order_hints( $order );
+
+	return $hints['models'] ? $hints['models'] : $models;
+}
+add_filter( 'gacct_report_suggested_models', 'gacct_paracheck_suggested_models', 10, 2 );
+
+/**
+ * Filtre framework : type présélectionné du formulaire voile.
+ */
+function gacct_paracheck_default_voile_type( $type, $order ) {
+	$hints = gacct_paracheck_order_hints( $order );
+
+	return $hints['voile_type'] ? $hints['voile_type'] : $type;
+}
+add_filter( 'gacct_report_voile_default_type', 'gacct_paracheck_default_voile_type', 10, 2 );
+
+/**
  * Les 3 points de la vérification de sécurité du rapport voile — source
  * unique (formulaire, PDF, validation de clôture).
  *
