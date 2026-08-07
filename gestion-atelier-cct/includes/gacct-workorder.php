@@ -9,9 +9,11 @@
  *   (HMAC order_id + order_key + wp_salt, tronqué 32 hex) : rien à stocker,
  *   aucune donnée personnelle encodée, invalidable en régénérant la clé de
  *   commande. Généré/affiché localement (lib qrcodejs vendored).
- * - Scan : opérateur (gacct_operate) → console, vue réception du dossier
- *   (check-list §4.4) ; client connecté → espace client (page neutre, aucune
- *   transition) ; non connecté → login puis retour. Chaque scan est journalisé.
+ * - Scan : opérateur (gacct_operate) → vue réception tant que le colis est
+ *   attendu (état ≤ 1 ou dossier incomplet), FICHE du dossier ensuite — le QR
+ *   reste scotché sur la voile et sert de raccourci toute la vie du dossier
+ *   (réunion du 06/08/2026) ; client connecté → espace client (page neutre,
+ *   aucune transition) ; non connecté → login puis retour. Scans journalisés.
  * - Expiration : créneau + 3 mois (à défaut : commande + 6 mois).
  */
 
@@ -204,11 +206,18 @@ function gacct_wo_maybe_handle_scan() {
 	$order->save();
 
 	if ( $is_operator && $context['revision'] ) {
-		// Flux réception §4.4 : check-list puis confirmation (gardes d'état incluses).
-		wp_safe_redirect( gacct_op_console_url( 0, array(
-			'view' => 'reception',
-			'rev'  => absint( $context['revision']['_ID'] ),
-		) ) );
+		$rev_id = absint( $context['revision']['_ID'] );
+		$etat   = absint( $context['revision']['etat_de_la_commande'] ?? 0 );
+
+		// Le QR reste scotché sur la voile pendant toute sa vie à l'atelier
+		// (réunion du 06/08/2026) : tant que la réception est en jeu (état ≤ 1,
+		// ou dossier incomplet à compléter), le scan ouvre la vue réception ;
+		// ensuite, il ouvre directement la fiche du dossier.
+		$needs_reception = ( $etat <= 1 ) || ! empty( $context['revision']['dossier_incomplet'] );
+
+		wp_safe_redirect( $needs_reception
+			? gacct_op_console_url( 0, array( 'view' => 'reception', 'rev' => $rev_id ) )
+			: gacct_op_console_url( $rev_id ) );
 		exit;
 	}
 
