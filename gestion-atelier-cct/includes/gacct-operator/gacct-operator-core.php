@@ -346,6 +346,7 @@ function gacct_op_query_interventions( array $args = array() ) {
 		'per_page' => 20,
 		'operator' => 0,
 		'hold'     => false, // true = seulement les dossiers mis en attente
+		'transit'  => false, // true = colis annoncés par le client (état ≤ 1 + suivi déclaré)
 	);
 	$args = array_merge( $defaults, $args );
 
@@ -362,6 +363,10 @@ function gacct_op_query_interventions( array $args = array() ) {
 
 	if ( ! empty( $args['hold'] ) ) {
 		$where[] = "r.en_attente = '1'";
+	}
+
+	if ( ! empty( $args['transit'] ) ) {
+		$where[] = "CAST(r.etat_de_la_commande AS UNSIGNED) <= 1 AND r.envoi_suivi <> ''";
 	}
 
 	if ( $args['operator'] ) {
@@ -446,6 +451,18 @@ function gacct_op_query_interventions( array $args = array() ) {
 
 	$hold_sql   = "SELECT COUNT(*) FROM {$rev_table} r WHERE " . implode( ' AND ', $hold_where );
 	$hold_count = (int) $wpdb->get_var( $hold_params ? $wpdb->prepare( $hold_sql, $hold_params ) : $hold_sql );
+
+	// Compteur des colis annoncés (même périmètre) — onglet « En acheminement ».
+	$transit_where = array( "r.cct_status = 'publish'", "CAST(r.etat_de_la_commande AS UNSIGNED) <= 1", "r.envoi_suivi <> ''" );
+	$transit_params = array();
+
+	if ( $args['operator'] ) {
+		$transit_where[]  = 'r.operateur_id = %d';
+		$transit_params[] = absint( $args['operator'] );
+	}
+
+	$transit_sql   = "SELECT COUNT(*) FROM {$rev_table} r WHERE " . implode( ' AND ', $transit_where );
+	$transit_count = (int) $wpdb->get_var( $transit_params ? $wpdb->prepare( $transit_sql, $transit_params ) : $transit_sql );
 	$counts_sql = $counts_params ? $wpdb->prepare( $counts_sql, $counts_params ) : $counts_sql;
 
 	$counts = array();
@@ -454,11 +471,12 @@ function gacct_op_query_interventions( array $args = array() ) {
 	}
 
 	return array(
-		'items'      => (array) $items,
-		'total'      => $total,
-		'pages'      => (int) ceil( $total / $per_page ),
-		'counts'     => $counts,
-		'hold_count' => $hold_count,
+		'items'         => (array) $items,
+		'total'         => $total,
+		'pages'         => (int) ceil( $total / $per_page ),
+		'counts'        => $counts,
+		'hold_count'    => $hold_count,
+		'transit_count' => $transit_count,
 	);
 }
 

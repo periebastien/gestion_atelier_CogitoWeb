@@ -36,6 +36,7 @@ function gacct_op_list_current_args() {
 		'paged'    => isset( $_GET['paged'] ) ? max( 1, absint( wp_unslash( $_GET['paged'] ) ) ) : 1,
 		'operator' => isset( $_GET['operateur'] ) ? absint( wp_unslash( $_GET['operateur'] ) ) : 0,
 		'hold'     => ! empty( $_GET['attente'] ),
+		'transit'  => ! empty( $_GET['acheminement'] ),
 	);
 }
 
@@ -53,6 +54,7 @@ function gacct_op_list_url( array $current, array $overrides = array() ) {
 		'paged'     => ( $current['paged'] > 1 ) ? $current['paged'] : null,
 		'operateur' => $current['operator'] ? $current['operator'] : null,
 		'attente'   => ! empty( $current['hold'] ) ? 1 : null,
+		'acheminement' => ! empty( $current['transit'] ) ? 1 : null,
 	);
 
 	$args = array();
@@ -202,6 +204,7 @@ function gacct_op_render_list_screen() {
 		'paged'    => $current['paged'],
 		'operator' => $current['operator'],
 		'hold'     => $current['hold'],
+		'transit'  => $current['transit'],
 	) );
 
 	$items  = $result['items'];
@@ -254,21 +257,24 @@ function gacct_op_render_list_screen() {
 	$last_state = max( array_keys( $labels ) );
 
 	echo '<ul class="subsubsub">';
-	echo '<li class="all"><a href="' . esc_url( gacct_op_list_url( $current, array( 'etat' => null, 'attente' => null, 'paged' => null ) ) ) . '"'
-		. ( null === $current['state'] && ! $current['hold'] ? ' class="current" aria-current="page"' : '' ) . '>'
+	echo '<li class="all"><a href="' . esc_url( gacct_op_list_url( $current, array( 'etat' => null, 'attente' => null, 'acheminement' => null, 'paged' => null ) ) ) . '"'
+		. ( null === $current['state'] && ! $current['hold'] && ! $current['transit'] ? ' class="current" aria-current="page"' : '' ) . '>'
 		. esc_html__( 'Tous', 'gestion-atelier-cct' ) . ' <span class="count">(' . esc_html( $total_all ) . ')</span></a> |</li>';
 
 	foreach ( $labels as $state => $label ) {
 		$n = isset( $counts[ $state ] ) ? (int) $counts[ $state ] : 0;
-		echo '<li><a href="' . esc_url( gacct_op_list_url( $current, array( 'etat' => $state, 'attente' => null, 'paged' => null ) ) ) . '"'
-			. ( $current['state'] === $state && ! $current['hold'] ? ' class="current" aria-current="page"' : '' ) . '>'
+		echo '<li><a href="' . esc_url( gacct_op_list_url( $current, array( 'etat' => $state, 'attente' => null, 'acheminement' => null, 'paged' => null ) ) ) . '"'
+			. ( $current['state'] === $state && ! $current['hold'] && ! $current['transit'] ? ' class="current" aria-current="page"' : '' ) . '>'
 			. esc_html( $state . ' · ' . $label ) . ' <span class="count">(' . esc_html( $n ) . ')</span></a> |</li>';
 	}
 
-	// Vue transversale : les dossiers mis en pause, quel que soit leur état.
-	echo '<li><a href="' . esc_url( gacct_op_list_url( $current, array( 'etat' => null, 'attente' => 1, 'paged' => null ) ) ) . '"'
+	// Vues transversales : dossiers mis en pause / colis annoncés par le client.
+	echo '<li><a href="' . esc_url( gacct_op_list_url( $current, array( 'etat' => null, 'attente' => 1, 'acheminement' => null, 'paged' => null ) ) ) . '"'
 		. ( $current['hold'] ? ' class="current" aria-current="page"' : '' ) . '>'
-		. esc_html__( 'En attente', 'gestion-atelier-cct' ) . ' <span class="count">(' . esc_html( (int) $result['hold_count'] ) . ')</span></a></li>';
+		. esc_html__( 'En attente', 'gestion-atelier-cct' ) . ' <span class="count">(' . esc_html( (int) $result['hold_count'] ) . ')</span></a> |</li>';
+	echo '<li><a href="' . esc_url( gacct_op_list_url( $current, array( 'etat' => null, 'attente' => null, 'acheminement' => 1, 'paged' => null ) ) ) . '"'
+		. ( $current['transit'] ? ' class="current" aria-current="page"' : '' ) . '>'
+		. esc_html__( 'En acheminement', 'gestion-atelier-cct' ) . ' <span class="count">(' . esc_html( (int) $result['transit_count'] ) . ')</span></a></li>';
 	echo '</ul>';
 
 	// 3. Barre d'outils native (filtre « Réalisé par »).
