@@ -151,6 +151,37 @@
 				: 'Moyenne : ' + poroAvgTxt + ' s — ' + ( poro.average > 0 ? U.fmt( cfg.porosity_factor / poro.average, 1 ) : '0' ) + ' l/m²/min → ' + poro.result;
 		}
 
+		// Auto-remplissage déchirure (réunion du 06/08/2026) : la valeur attendue
+		// découle de la moyenne de porosité (1,2 DaN si > 100 s, sinon 0,9).
+		// Seuls les champs jamais touchés par l'opérateur sont remplis ; un champ
+		// auto suit la bascule 0,9/1,2 tant qu'il n'a pas été modifié à la main,
+		// et un champ vidé à la main reste vide (test non réalisé).
+		if ( ! form.dataset.gacctTearWatch ) {
+			form.dataset.gacctTearWatch = '1';
+			form.addEventListener( 'input', function ( e ) {
+				if ( e.isTrusted && e.target && e.target.matches && e.target.matches( '[data-rf^="tear."]' ) ) {
+					e.target.dataset.gacctManual = '1';
+					delete e.target.dataset.gacctAuto;
+				}
+			} );
+		}
+		if ( null !== poro.average ) {
+			var tearExpected = String( poro.average > cfg.tear_min.porosity_gt ? cfg.tear_min.high : cfg.tear_min.low );
+			form.querySelectorAll( '[data-rf^="tear."]' ).forEach( function ( field ) {
+				var zone = field.getAttribute( 'data-rf' ).split( '.' )[ 1 ];
+				var fillable = ( '' === field.value && ! field.dataset.gacctManual )
+					|| ( field.dataset.gacctAuto && field.value !== tearExpected );
+				if ( fillable ) {
+					field.value = tearExpected;
+					field.dataset.gacctAuto = '1';
+				}
+				if ( field.dataset.gacctAuto ) {
+					data.tear = data.tear || {};
+					data.tear[ zone ] = field.value;
+				}
+			} );
+		}
+
 		// Déchirure.
 		var tear = calcTear( data.tear || {}, poro.average, U );
 		U.setBadge( form, 'tear', tear.result );
