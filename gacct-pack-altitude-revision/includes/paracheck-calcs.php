@@ -43,6 +43,19 @@ function gacct_report_calc_visual_group( array $values ) {
 }
 
 /**
+ * Identité Altitude Révision des réglages de rapports : textes par défaut du
+ * bloc QR (enquête qualité ParachecK / coupe Icare). Le framework, lui, reste
+ * neutre — chaque pack apporte les siens.
+ */
+function gacct_paracheck_default_report_settings( $defaults ) {
+	$defaults['qr_title']   = 'Gagnez votre prochaine révision périodique ParachecK en répondant à l\'enquête qualité !';
+	$defaults['qr_subtext'] = 'Tirage au sort lors de la prochaine coupe Icare.';
+
+	return $defaults;
+}
+add_filter( 'gacct_report_default_settings', 'gacct_paracheck_default_report_settings' );
+
+/**
  * Ce que la commande implique comme rapports : produits → modèles suggérés
  * + type du rapport voile (réunion du 06/08/2026). Basé sur la table
  * `report_hints` de la config, filtrable `gacct_paracheck_report_hints`.

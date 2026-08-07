@@ -243,14 +243,16 @@ function gacct_report_fonts() {
  * Réglages des rapports, fusionnés avec les défauts.
  */
 function gacct_report_settings() {
-	$defaults = array(
+	// Le framework reste neutre (white-label) : les textes par défaut qui
+	// portent l'identité de l'atelier viennent du PACK via ce filtre.
+	$defaults = apply_filters( 'gacct_report_default_settings', array(
 		'pack'       => '',
 		'font'       => 'nunito',
 		'qr_enabled' => 0,
 		'qr_url'     => '',
-		'qr_title'   => 'Gagnez votre prochaine révision périodique ParachecK en répondant à l\'enquête qualité !',
-		'qr_subtext' => 'Tirage au sort lors de la prochaine coupe Icare.',
-	);
+		'qr_title'   => __( 'Donnez votre avis sur votre révision en scannant ce QR code.', 'gestion-atelier-cct' ),
+		'qr_subtext' => '',
+	) );
 
 	$saved = get_option( GACCT_REPORT_SETTINGS_OPT, array() );
 
