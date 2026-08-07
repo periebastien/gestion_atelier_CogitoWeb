@@ -351,7 +351,8 @@ function gacct_op_ajax_receive() {
 
 	$result = gacct_op_receive(
 		isset( $_POST['revision_id'] ) ? absint( $_POST['revision_id'] ) : 0,
-		$missing
+		$missing,
+		isset( $_POST['comment'] ) ? sanitize_textarea_field( wp_unslash( $_POST['comment'] ) ) : ''
 	);
 
 	if ( is_wp_error( $result ) ) {

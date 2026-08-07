@@ -467,6 +467,11 @@ function gacct_op_install_operator_field() {
 			'type'  => 'textarea',
 			'title' => 'Éléments manquants (JSON)',
 		),
+		'commentaire_reception' => array(
+			'sql'   => 'LONGTEXT NULL',
+			'type'  => 'textarea',
+			'title' => 'Commentaires de réception',
+		),
 	);
 
 	$rev_table = $wpdb->prefix . 'jet_cct_' . JWCCT_CCT_REVISION;
@@ -599,13 +604,16 @@ function gacct_op_missing_items( array $revision ) {
  *
  * @param int      $revision_id ID du CCT revision.
  * @param string[] $missing     Libellés manquants (vide = tout est arrivé).
+ * @param string   $comment     Commentaire de réception facultatif (contenu du
+ *                              colis, ex. sellette en plus de la voile).
  * @return array|WP_Error { complete: bool, missing: string[], first: bool }
  */
-function gacct_op_receive( $revision_id, array $missing = array() ) {
+function gacct_op_receive( $revision_id, array $missing = array(), $comment = '' ) {
 	$revision_id = absint( $revision_id );
 	$missing     = array_values( array_filter( array_map( static function ( $label ) {
 		return trim( sanitize_text_field( (string) $label ) );
 	}, $missing ) ) );
+	$comment     = trim( sanitize_textarea_field( (string) $comment ) );
 
 	$revision = jwcct_get_cct_item( JWCCT_CCT_REVISION, $revision_id );
 
@@ -642,6 +650,12 @@ function gacct_op_receive( $revision_id, array $missing = array() ) {
 		'dossier_incomplet'  => $missing ? '1' : '',
 		'elements_manquants' => $missing ? wp_json_encode( $missing ) : '',
 	);
+
+	if ( '' !== $comment ) {
+		// Un complément de réception s'ajoute au commentaire existant.
+		$existing = trim( (string) ( $revision['commentaire_reception'] ?? '' ) );
+		$flag_fields['commentaire_reception'] = ( '' !== $existing ) ? $existing . "\n" . $comment : $comment;
+	}
 
 	$first = ( $state < 2 );
 
@@ -682,6 +696,13 @@ function gacct_op_receive( $revision_id, array $missing = array() ) {
 		gacct_op_add_signed_note( $order, $first
 			? __( 'Réception complète du colis', 'gestion-atelier-cct' )
 			: __( 'Dossier complété : tous les éléments attendus sont arrivés', 'gestion-atelier-cct' ) );
+	}
+
+	if ( '' !== $comment ) {
+		gacct_op_add_signed_note( $order, sprintf(
+			__( 'Commentaire de réception : %s', 'gestion-atelier-cct' ),
+			$comment
+		) );
 	}
 
 	return array(

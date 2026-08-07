@@ -28,6 +28,7 @@
 		var button     = wrap.querySelector( '.gacct-op-reception-submit' );
 		var feedback   = wrap.querySelector( '.gacct-op-feedback' );
 		var warning    = wrap.querySelector( '[data-op-partial-warning]' );
+		var comment    = wrap.querySelector( '[data-op-comment]' );
 		var boxes      = Array.prototype.slice.call( wrap.querySelectorAll( '.gacct-op-reception-checklist input[type="checkbox"]' ) );
 
 		function missingValues() {
@@ -90,6 +91,9 @@
 			boxes.forEach( function ( box ) {
 				box.disabled = true;
 			} );
+			if ( comment ) {
+				comment.disabled = true;
+			}
 			if ( button ) {
 				button.dataset.locked = '1';
 				button.disabled       = true;
@@ -108,6 +112,10 @@
 			missing.forEach( function ( label ) {
 				body.append( 'missing[]', label );
 			} );
+
+			if ( comment && comment.value.trim() ) {
+				body.append( 'comment', comment.value.trim() );
+			}
 
 			button.disabled = true;
 

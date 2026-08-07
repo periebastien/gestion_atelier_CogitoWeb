@@ -18,7 +18,7 @@ define( 'GACCT_OP_MENU_SLUG', 'gacct-console' );
 define( 'GACCT_OP_NONCE', 'gacct_op_nonce' );
 define( 'GACCT_OP_ROLE', 'atelier' );
 define( 'GACCT_OP_SETUP_OPT', 'gacct_op_setup_version' );
-define( 'GACCT_OP_SETUP_VERSION', '2' );
+define( 'GACCT_OP_SETUP_VERSION', '3' );
 
 require_once __DIR__ . '/gacct-operator-core.php';
 require_once __DIR__ . '/gacct-operator-api.php';

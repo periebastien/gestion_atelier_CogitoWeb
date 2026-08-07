@@ -171,6 +171,19 @@
 	color: var(--gacct-text-muted);
 }
 
+/* Commentaire de réception facultatif (remplace la check-list, 06/08/2026) */
+.gacct-op-reception .gacct-op-reception-comment {
+	display: block;
+	width: 100%;
+	margin: 0 0 14px;
+	padding: 10px 14px;
+	border: 1px solid var(--gacct-border);
+	border-radius: var(--gacct-radius);
+	background: var(--gacct-surface);
+	font: inherit;
+	resize: vertical;
+}
+
 .gacct-op-reception .gacct-op-reception-checklist {
 	list-style: none;
 	margin: 0 0 14px;

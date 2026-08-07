@@ -574,6 +574,9 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 	if ( ! empty( $revision['commentaire_commande'] ) ) {
 		echo '<p class="gacct-op-muted"><strong>' . esc_html__( 'Commentaire client :', 'gestion-atelier-cct' ) . '</strong> ' . esc_html( $revision['commentaire_commande'] ) . '</p>';
 	}
+	if ( ! empty( $revision['commentaire_reception'] ) ) {
+		echo '<p class="gacct-op-muted gacct-op-reception-note"><strong>' . esc_html__( 'Commentaire de réception :', 'gestion-atelier-cct' ) . '</strong> ' . nl2br( esc_html( $revision['commentaire_reception'] ) ) . '</p>';
+	}
 	echo '</div>';
 
 	echo '</div>'; // side

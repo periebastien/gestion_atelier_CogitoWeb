@@ -5,7 +5,9 @@
  * URL : admin.php?page=gacct-console&view=reception[&ref=…][&rev=…]
  * - sans ref : champ de recherche centré (le scan QR arrivera en V3) ;
  * - avec ref : résolution via gacct_op_query_interventions (0, 1 ou N résultats) ;
- * - avec rev : dossier + check-list du contenu attendu → endpoint gacct_op_receive.
+ * - avec rev : dossier + commentaire de réception facultatif → endpoint
+ *   gacct_op_receive (la check-list ne subsiste que pour compléter un dossier
+ *   marqué incomplet avant la réunion du 06/08/2026).
  *
  * La barre de navigation console (champ « Scan ou référence ») est rendue
  * par le routeur, pas ici.
@@ -231,9 +233,7 @@ function gacct_op_reception_render_dossier( $rev_id ) {
 		return;
 	}
 
-	// --- États 0 et 1 : check-list du contenu attendu de la commande.
-	$expected = gacct_op_expected_items( $order );
-
+	// --- États 0 et 1 : confirmation de réception + commentaire facultatif.
 	if ( 0 === $state ) {
 		echo '<div class="gacct-op-reception-banner warn">';
 		echo '<strong>' . esc_html__( 'Paiement non encaissé', 'gestion-atelier-cct' ) . '</strong> ';
@@ -241,18 +241,50 @@ function gacct_op_reception_render_dossier( $rev_id ) {
 		echo '</div>';
 	}
 
-	if ( ! $expected ) {
-		echo '<div class="gacct-op-feedback error">' . esc_html__( 'La commande liée ne contient aucun élément attendu (hors frais de port).', 'gestion-atelier-cct' ) . '</div>';
-		echo '</div>';
-		return;
-	}
-
-	gacct_op_reception_render_checklist( $expected, array(
-		'mode'         => 'receive',
+	gacct_op_reception_render_confirm( array(
 		'disabled'     => ( 1 !== $state ),
 		'button_full'  => __( 'Confirmer la réception', 'gestion-atelier-cct' ),
 		'msg_complete' => __( 'Réception confirmée : le dossier est passé en « Voile réceptionnée » et le client a été prévenu.', 'gestion-atelier-cct' ),
 	) );
+
+	echo '</div>';
+}
+
+/**
+ * Zone de confirmation de réception : commentaire facultatif + bouton d'envoi.
+ * A remplacé la check-list du contenu attendu (réunion du 06/08/2026) —
+ * l'opérateur note librement le contenu du colis (ex. sellette en plus).
+ *
+ * @param array $args { disabled:bool, button_full:string, msg_complete:string }
+ */
+function gacct_op_reception_render_confirm( array $args ) {
+	$disabled = ! empty( $args['disabled'] );
+
+	echo '<div class="gacct-op-reception-checkwrap"'
+		. ' data-op-checklist="receive"'
+		. ' data-label-full="' . esc_attr( $args['button_full'] ) . '"'
+		. ' data-msg-complete="' . esc_attr( $args['msg_complete'] ) . '"'
+		. ' data-label-fiche="' . esc_attr( __( 'Voir la fiche', 'gestion-atelier-cct' ) ) . '"'
+		. '>';
+
+	echo '<p class="gacct-op-reception-checkintro"><label for="gacct-op-reception-comment">'
+		. esc_html__( 'Commentaires de réception (facultatif) :', 'gestion-atelier-cct' )
+		. '</label></p>';
+
+	echo '<textarea id="gacct-op-reception-comment" class="gacct-op-reception-comment" data-op-comment rows="3"'
+		. ' placeholder="' . esc_attr__( 'Contenu du colis, remarques… (ex. sellette envoyée avec la voile)', 'gestion-atelier-cct' ) . '"'
+		. ( $disabled ? ' disabled' : '' ) . '></textarea>';
+
+	echo '<div class="gacct-op-feedback" aria-live="polite"></div>';
+
+	echo '<div class="gacct-op-reception-submitzone">';
+	if ( $disabled ) {
+		echo '<p class="gacct-op-reception-disabled-note">' . esc_html__( 'Bouton inactif : la réception ne sera possible qu\'une fois le paiement encaissé (le dossier passera alors en « En attente de réception »).', 'gestion-atelier-cct' ) . '</p>';
+	}
+
+	echo '<button type="button" class="button button-primary button-hero gacct-op-reception-submit" data-op-action="receive"' . ( $disabled ? ' disabled' : '' ) . '>'
+		. esc_html( $args['button_full'] ) . '</button>';
+	echo '</div>';
 
 	echo '</div>';
 }
