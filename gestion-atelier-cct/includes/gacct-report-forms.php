@@ -866,6 +866,15 @@ function gacct_report_generate( $revision_id, $report_id ) {
 		return new WP_Error( 'gacct_report_no_dompdf', __( 'La librairie PDF (dompdf) est introuvable.', 'gestion-atelier-cct' ) );
 	}
 
+	// Les packs peuvent bloquer la clôture (WP_Error) : cases de sécurité
+	// obligatoires, champs indispensables… La sauvegarde du brouillon, elle,
+	// reste toujours libre.
+	$valid = apply_filters( 'gacct_report_validate_generate', true, $entry, $row );
+
+	if ( is_wp_error( $valid ) ) {
+		return $valid;
+	}
+
 	// Numéro : saisi manuellement dans le formulaire, sinon séquence auto —
 	// figé une fois posé.
 	$manual = isset( $entry['data']['number'] ) ? trim( (string) $entry['data']['number'] ) : '';

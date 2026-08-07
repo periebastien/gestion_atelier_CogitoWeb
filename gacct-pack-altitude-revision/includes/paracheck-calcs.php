@@ -43,6 +43,57 @@ function gacct_report_calc_visual_group( array $values ) {
 }
 
 /**
+ * Les 3 points de la vérification de sécurité du rapport voile — source
+ * unique (formulaire, PDF, validation de clôture).
+ *
+ * @return array<string,string> clé => libellé.
+ */
+function gacct_paracheck_security_labels() {
+	return array(
+		'fluidite' => __( 'Fluidité suspentage', 'gestion-atelier-cct' ),
+		'maillons' => __( 'Maillons / connecteurs', 'gestion-atelier-cct' ),
+		'drisses'  => __( 'Drisses de frein, nœuds, poulies', 'gestion-atelier-cct' ),
+	);
+}
+
+/**
+ * Clôture d'un rapport voile : les 3 cases de sécurité sont OBLIGATOIRES
+ * (réunion du 06/08/2026) — la génération du PDF est bloquée tant que tout
+ * n'est pas coché. La sauvegarde du brouillon reste libre.
+ *
+ * @param true|WP_Error $valid Résultat courant de la validation.
+ * @param array         $entry Entrée de rapport ({ model, data… }).
+ * @return true|WP_Error
+ */
+function gacct_paracheck_validate_generate( $valid, $entry ) {
+	if ( is_wp_error( $valid ) || 'voile' !== ( $entry['model'] ?? '' ) ) {
+		return $valid;
+	}
+
+	$checked = isset( $entry['data']['securite'] ) && is_array( $entry['data']['securite'] )
+		? $entry['data']['securite']
+		: array();
+
+	$missing = array();
+	foreach ( gacct_paracheck_security_labels() as $key => $label ) {
+		if ( empty( $checked[ $key ] ) ) {
+			$missing[] = $label;
+		}
+	}
+
+	if ( $missing ) {
+		return new WP_Error( 'gacct_report_security_required', sprintf(
+			/* translators: %s: liste des points non cochés */
+			__( 'Impossible de clôturer le rapport : la vérification de sécurité doit être complète. Points non cochés : %s. Cochez les 3 cases (et enregistrez) avant de générer le PDF.', 'gestion-atelier-cct' ),
+			implode( ', ', $missing )
+		) );
+	}
+
+	return $valid;
+}
+add_filter( 'gacct_report_validate_generate', 'gacct_paracheck_validate_generate', 10, 2 );
+
+/**
  * Liste des mesures de porosité d'un brouillon, calée sur les points du
  * barème courant : les brouillons enregistrés avant la suppression du P5
  * portent 5 valeurs, la 5ᵉ est ignorée (tronquée, jamais moyennée).

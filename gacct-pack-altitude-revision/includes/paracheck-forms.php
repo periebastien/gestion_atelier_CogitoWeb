@@ -40,13 +40,9 @@ function gacct_rf_render_voile_form( array $revision, $order ) {
 	gacct_rf_section_close();
 
 	// ------------------------------------------------ Vérification de sécurité.
-	gacct_rf_section_open( __( 'Vérification de sécurité', 'gestion-atelier-cct' ) );
-	$security = array(
-		'fluidite' => __( 'Fluidité suspentage', 'gestion-atelier-cct' ),
-		'maillons' => __( 'Maillons / connecteurs', 'gestion-atelier-cct' ),
-		'drisses'  => __( 'Drisses de frein, nœuds, poulies', 'gestion-atelier-cct' ),
-	);
-	foreach ( $security as $key => $label ) {
+	// Les 3 cases sont obligatoires pour clôturer (gacct_paracheck_validate_generate).
+	gacct_rf_section_open( __( 'Vérification de sécurité — obligatoire pour clôturer', 'gestion-atelier-cct' ) );
+	foreach ( gacct_paracheck_security_labels() as $key => $label ) {
 		echo '<label class="gacct-op-check"><input type="checkbox" data-rf="securite.' . esc_attr( $key ) . '" value="1"> ' . esc_html( $label ) . '</label>';
 	}
 	gacct_rf_section_close();

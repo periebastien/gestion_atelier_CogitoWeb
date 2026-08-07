@@ -33,11 +33,7 @@ $img_dir  = dirname( __DIR__ ) . '/assets/img/paracheck';
 $ffvl_img = $img_dir . '/ffvl-paracheck.png';
 $wing_img = $img_dir . '/voile-points-porosite.png';
 
-$security_labels = array(
-	'fluidite' => __( 'Fluidité suspentage', 'gestion-atelier-cct' ),
-	'maillons' => __( 'Maillons / connecteurs', 'gestion-atelier-cct' ),
-	'drisses'  => __( 'Drisses de frein, nœuds, poulies', 'gestion-atelier-cct' ),
-);
+$security_labels = gacct_paracheck_security_labels();
 
 $security = isset( $data['securite'] ) && is_array( $data['securite'] ) ? $data['securite'] : array();
 $geometry = isset( $data['geometry'] ) && is_array( $data['geometry'] ) ? $data['geometry'] : array();
