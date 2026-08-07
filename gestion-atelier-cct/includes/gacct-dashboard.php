@@ -1646,6 +1646,11 @@ function gacct_dash_render_tracker_compact( $revision_id ) {
 		$tracker['label'] .= gacct_state5_suffix( absint( $row['order_id'] ?? 0 ) );
 	}
 
+	// Suivi colis déclaré, voile pas encore reçue : état d'affichage dérivé.
+	if ( 1 === $etat && function_exists( 'gacct_ship_in_transit' ) && gacct_ship_in_transit( $row ) ) {
+		$tracker['label'] = gacct_ship_texts()['in_transit'];
+	}
+
 	// Dossier mis en pause par l'atelier : badge + motif en infobulle.
 	$hold       = function_exists( 'gacct_hold_info' ) ? gacct_hold_info( $row ) : array( 'active' => false, 'motif' => '' );
 	$hold_badge = ! empty( $hold['active'] )

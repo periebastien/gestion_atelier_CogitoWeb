@@ -44,6 +44,11 @@ if ( null === $etat ) {
 }
 $pct       = null === $etat ? 0 : (int) round( $step_pos / $step_total * 100 );
 $state_txt = null === $etat ? '' : ( isset( $labels[ $etat ] ) ? $labels[ $etat ] : '' );
+
+// Suivi colis déclaré, voile pas encore reçue : état d'affichage dérivé.
+if ( ! empty( $d['in_transit'] ) && function_exists( 'gacct_ship_texts' ) ) {
+	$state_txt = gacct_ship_texts()['in_transit'];
+}
 $needs_you = in_array( $etat, array( 0, 4, 6 ), true );
 
 // État 5 : le libellé précise la décision rendue sur le devis.

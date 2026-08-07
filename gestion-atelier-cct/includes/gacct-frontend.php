@@ -666,6 +666,23 @@ function jwcct_render_order_status_tracker( $value, $order_id = 0 ) {
 
     $order = ( $order_id && function_exists( 'wc_get_order' ) ) ? wc_get_order( $order_id ) : false;
 
+    // État d'affichage dérivé (pas un état de la machine) : suivi colis déclaré
+    // et voile pas encore reçue → « En cours d'acheminement vers l'atelier ».
+    if ( 1 === $state && $order_id && function_exists( 'gacct_ship_in_transit' ) ) {
+        global $wpdb;
+        $transit_rev = absint( $wpdb->get_var( $wpdb->prepare(
+            "SELECT _ID FROM {$wpdb->prefix}jet_cct_revision WHERE order_id = %d AND cct_status = 'publish' LIMIT 1",
+            $order_id
+        ) ) );
+        $transit = $transit_rev ? gacct_ship_in_transit( $transit_rev ) : null;
+
+        if ( $transit ) {
+            $ship_texts = gacct_ship_texts();
+            $s['label'] = $ship_texts['in_transit'];
+            $s['tip']   = sprintf( $ship_texts['in_transit_tip'], $transit['carrier_label'], $transit['number'] );
+        }
+    }
+
     // Dossier sans devis complementaire : les etapes 4 et 5 ne sont jamais
     // traversees, elles disparaissent de la frise (7 etapes au lieu de 9).
     $with_quote = function_exists( 'gacct_quote_has_quote_context' )

@@ -86,6 +86,9 @@ function gacct_ship_texts() {
 		'update'         => __( 'Mettre à jour', 'gestion-atelier-cct' ),
 		'edit'           => __( 'Modifier', 'gestion-atelier-cct' ),
 		'follow'         => __( 'Suivre mon colis', 'gestion-atelier-cct' ),
+		'in_transit'     => __( 'En cours d’acheminement vers l’atelier', 'gestion-atelier-cct' ),
+		/* translators: 1: transporteur, 2: numéro de suivi */
+		'in_transit_tip' => __( '<strong>Info :</strong> votre colis %1$s n° %2$s est en route vers l’atelier. Nous vous confirmerons sa réception.', 'gestion-atelier-cct' ),
 		/* translators: 1: transporteur, 2: numéro de suivi */
 		'current'        => __( 'Colis %1$s n° %2$s', 'gestion-atelier-cct' ),
 		'ok_saved'       => __( 'Merci, votre numéro de suivi est enregistré.', 'gestion-atelier-cct' ),
@@ -187,6 +190,37 @@ function gacct_ship_info( $revision ) {
 		'number'        => $number,
 		'url'           => gacct_ship_tracking_url( $carrier, $number ),
 	);
+}
+
+/**
+ * Le colis est-il « en cours d'acheminement vers l'atelier » ? (réunion du
+ * 06/08/2026, précision Bastien du 07/08) : PAS un état de la machine 0–8,
+ * un état d'AFFICHAGE dérivé — suivi déclaré tant que la voile n'est pas
+ * réceptionnée. Dès l'état 2, l'affichage normal reprend.
+ *
+ * @param array|int $revision Ligne CCT (avec etat + envoi_*) ou ID.
+ * @return array|null Les infos gacct_ship_info() si en transit, null sinon.
+ */
+function gacct_ship_in_transit( $revision ) {
+	if ( is_numeric( $revision ) && $revision ) {
+		global $wpdb;
+		$revision = $wpdb->get_row( $wpdb->prepare(
+			"SELECT _ID, etat_de_la_commande, envoi_transporteur, envoi_suivi FROM {$wpdb->prefix}jet_cct_revision WHERE _ID = %d LIMIT 1",
+			absint( $revision )
+		), ARRAY_A );
+	}
+
+	if ( ! is_array( $revision ) ) {
+		return null;
+	}
+
+	$etat = ( '' === (string) ( $revision['etat_de_la_commande'] ?? '' ) ) ? 0 : (int) $revision['etat_de_la_commande'];
+
+	if ( $etat > 1 ) {
+		return null;
+	}
+
+	return gacct_ship_info( $revision );
 }
 
 /**

@@ -135,6 +135,9 @@ function gacct_vo_data( $order ) {
 		'hold'          => ( is_array( $revision ) && function_exists( 'gacct_hold_info' ) )
 			? gacct_hold_info( $revision )
 			: array( 'active' => false, 'motif' => '' ),
+		'in_transit'    => ( is_array( $revision ) && function_exists( 'gacct_ship_in_transit' ) )
+			? gacct_ship_in_transit( $revision )
+			: null,
 		'pay_url'       => $order->get_checkout_payment_url(),
 		'solde_du'      => (float) $order->get_meta( '_kojito_solde_restant' ),
 	) ), $order );
