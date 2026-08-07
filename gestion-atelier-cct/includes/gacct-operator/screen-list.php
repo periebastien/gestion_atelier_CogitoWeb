@@ -266,15 +266,20 @@ function gacct_op_render_list_screen() {
 		echo '<li><a href="' . esc_url( gacct_op_list_url( $current, array( 'etat' => $state, 'attente' => null, 'acheminement' => null, 'paged' => null ) ) ) . '"'
 			. ( $current['state'] === $state && ! $current['hold'] && ! $current['transit'] ? ' class="current" aria-current="page"' : '' ) . '>'
 			. esc_html( $state . ' · ' . $label ) . ' <span class="count">(' . esc_html( $n ) . ')</span></a> |</li>';
+
+		// L'acheminement est une sous-phase de l'attente de réception : son
+		// onglet suit l'état 1 dans l'ordre des stades (demande Bastien).
+		if ( 1 === $state ) {
+			echo '<li><a href="' . esc_url( gacct_op_list_url( $current, array( 'etat' => null, 'attente' => null, 'acheminement' => 1, 'paged' => null ) ) ) . '"'
+				. ( $current['transit'] ? ' class="current" aria-current="page"' : '' ) . '>'
+				. esc_html__( 'En acheminement', 'gestion-atelier-cct' ) . ' <span class="count">(' . esc_html( (int) $result['transit_count'] ) . ')</span></a> |</li>';
+		}
 	}
 
-	// Vues transversales : dossiers mis en pause / colis annoncés par le client.
+	// Vue transversale : les dossiers mis en pause, quel que soit leur état.
 	echo '<li><a href="' . esc_url( gacct_op_list_url( $current, array( 'etat' => null, 'attente' => 1, 'acheminement' => null, 'paged' => null ) ) ) . '"'
 		. ( $current['hold'] ? ' class="current" aria-current="page"' : '' ) . '>'
-		. esc_html__( 'En attente', 'gestion-atelier-cct' ) . ' <span class="count">(' . esc_html( (int) $result['hold_count'] ) . ')</span></a> |</li>';
-	echo '<li><a href="' . esc_url( gacct_op_list_url( $current, array( 'etat' => null, 'attente' => null, 'acheminement' => 1, 'paged' => null ) ) ) . '"'
-		. ( $current['transit'] ? ' class="current" aria-current="page"' : '' ) . '>'
-		. esc_html__( 'En acheminement', 'gestion-atelier-cct' ) . ' <span class="count">(' . esc_html( (int) $result['transit_count'] ) . ')</span></a></li>';
+		. esc_html__( 'En attente', 'gestion-atelier-cct' ) . ' <span class="count">(' . esc_html( (int) $result['hold_count'] ) . ')</span></a></li>';
 	echo '</ul>';
 
 	// 3. Barre d'outils native (filtre « Réalisé par »).
