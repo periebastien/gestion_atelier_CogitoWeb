@@ -345,6 +345,7 @@ function gacct_op_query_interventions( array $args = array() ) {
 		'paged'    => 1,
 		'per_page' => 20,
 		'operator' => 0,
+		'hold'     => false, // true = seulement les dossiers mis en attente
 	);
 	$args = array_merge( $defaults, $args );
 
@@ -357,6 +358,10 @@ function gacct_op_query_interventions( array $args = array() ) {
 	if ( null !== $args['state'] && '' !== $args['state'] ) {
 		$where[]  = 'CAST(r.etat_de_la_commande AS UNSIGNED) = %d';
 		$params[] = absint( $args['state'] );
+	}
+
+	if ( ! empty( $args['hold'] ) ) {
+		$where[] = "r.en_attente = '1'";
 	}
 
 	if ( $args['operator'] ) {
@@ -428,6 +433,19 @@ function gacct_op_query_interventions( array $args = array() ) {
 
 	$counts_sql = "SELECT CAST(r.etat_de_la_commande AS UNSIGNED) AS etat, COUNT(*) AS n
 		FROM {$rev_table} r WHERE " . implode( ' AND ', $counts_where ) . ' GROUP BY etat';
+
+	// Compteur global des dossiers en attente (même périmètre hors hold/état) —
+	// alimente l'onglet « En attente » de la liste.
+	$hold_where = array( "r.cct_status = 'publish'", "r.en_attente = '1'" );
+	$hold_params = array();
+
+	if ( $args['operator'] ) {
+		$hold_where[]  = 'r.operateur_id = %d';
+		$hold_params[] = absint( $args['operator'] );
+	}
+
+	$hold_sql   = "SELECT COUNT(*) FROM {$rev_table} r WHERE " . implode( ' AND ', $hold_where );
+	$hold_count = (int) $wpdb->get_var( $hold_params ? $wpdb->prepare( $hold_sql, $hold_params ) : $hold_sql );
 	$counts_sql = $counts_params ? $wpdb->prepare( $counts_sql, $counts_params ) : $counts_sql;
 
 	$counts = array();
@@ -436,10 +454,11 @@ function gacct_op_query_interventions( array $args = array() ) {
 	}
 
 	return array(
-		'items'  => (array) $items,
-		'total'  => $total,
-		'pages'  => (int) ceil( $total / $per_page ),
-		'counts' => $counts,
+		'items'      => (array) $items,
+		'total'      => $total,
+		'pages'      => (int) ceil( $total / $per_page ),
+		'counts'     => $counts,
+		'hold_count' => $hold_count,
 	);
 }
 

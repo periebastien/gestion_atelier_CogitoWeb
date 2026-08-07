@@ -318,6 +318,42 @@ function gacct_op_render_today_screen() {
 	if ( ! $has_workshop ) {
 		gacct_op_today_empty();
 	}
+
+	// Dossiers mis en PAUSE par l'atelier (drapeau en_attente) : gardés sous
+	// les yeux pour qu'aucun ne soit oublié, avec leur motif.
+	$held = gacct_op_query_interventions( array(
+		'hold'     => true,
+		'orderby'  => 'modified',
+		'order'    => 'ASC',
+		'per_page' => 10,
+	) );
+
+	if ( $held['items'] ) {
+		$held_orders = gacct_op_today_orders( wp_list_pluck( $held['items'], 'order_id' ) );
+
+		echo '<h3 class="gacct-op-subtitle">' . esc_html__( 'Dossiers en attente (mis en pause)', 'gestion-atelier-cct' ) . '</h3>';
+		echo '<div class="gacct-op-rows">';
+		foreach ( $held['items'] as $item ) {
+			$order_id = absint( $item['order_id'] ?? 0 );
+			$order    = $held_orders[ $order_id ] ?? null;
+			$motif    = trim( (string) ( $item['attente_motif'] ?? '' ) );
+
+			gacct_op_today_row_open( gacct_op_console_url( absint( $item['_ID'] ) ) );
+			echo '<span class="gacct-op-row-ref">' . esc_html( gacct_op_today_reference( $order, $order_id ) ) . '</span>';
+			echo '<span class="gacct-op-row-main">';
+			echo '<strong>' . esc_html( gacct_op_today_client( $order ) ) . '</strong> ';
+			echo '<span class="gacct-op-row-muted">' . esc_html( $motif ? $motif : gacct_op_today_material( $item ) ) . '</span>';
+			echo '</span>';
+			echo '<span class="gacct-op-row-meta">';
+			echo '<span class="gacct-op-badge etat-' . esc_attr( (string) absint( $item['etat_de_la_commande'] ?? 0 ) ) . '">' . esc_html( $labels[ absint( $item['etat_de_la_commande'] ?? 0 ) ] ?? '' ) . '</span>';
+			echo ' <span class="gacct-op-badge gacct-op-badge-hold">' . esc_html__( 'En attente', 'gestion-atelier-cct' ) . '</span>';
+			echo '</span>';
+			gacct_op_today_row_close( true );
+		}
+		echo '</div>';
+		echo '<p class="gacct-op-see-all"><a href="' . esc_url( gacct_op_console_url( 0, array( 'view' => 'list', 'attente' => 1 ) ) ) . '">'
+			. esc_html__( 'Tout voir (dossiers en attente)', 'gestion-atelier-cct' ) . '</a></p>';
+	}
 	echo '</section>';
 
 	/* ---- Bloc 3 : en attente du client ------------------------------- */
