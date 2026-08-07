@@ -161,7 +161,7 @@ $poro = $calc['porosity'];
 echo gacct_rp2_subsection( esc_html__( 'TEST DE POROSITÉ DES TISSUS', 'gestion-atelier-cct' ), $context['author'], gacct_rp2_badge( $poro['result'] ) );
 echo '<p class="muted">' . esc_html__( 'État de vieillissement des tissus mesuré à l\'aide d\'un porosimètre de la marque JDC qui mesure le temps écoulé pour le passage au travers du tissu d\'un certain volume d\'air. Les valeurs sont exprimées en secondes et en l/m2/min.', 'gestion-atelier-cct' ) . '</p>';
 
-$porosity_values = isset( $data['porosity'] ) && is_array( $data['porosity'] ) ? array_pad( array_values( $data['porosity'] ), 5, '' ) : array_fill( 0, 5, '' );
+$porosity_values = gacct_paracheck_porosity_values( $data );
 $avg_rate        = ( null !== $poro['average'] && $poro['average'] > 0 ) ? $config['porosity_factor'] / $poro['average'] : null;
 
 echo '<table style="width:100%; border-collapse:collapse; margin-top:3px;"><tr>';
@@ -174,9 +174,9 @@ foreach ( $config['porosity_points'] as $point ) {
 echo '<th style="text-align:center;">' . esc_html__( 'Moy.', 'gestion-atelier-cct' ) . '</th></tr>';
 echo '<tr><th>s</th>';
 foreach ( $porosity_values as $v ) {
-	echo '<td style="text-align:center;">' . esc_html( '' !== $v ? gacct_rp2_num( $v, 1 ) : '—' ) . '</td>';
+	echo '<td style="text-align:center;">' . esc_html( gacct_paracheck_porosity_display( $v ) ) . '</td>';
 }
-echo '<td style="text-align:center; font-weight:bold;">' . esc_html( gacct_rp2_num( $poro['average'], 1 ) ) . '</td></tr>';
+echo '<td style="text-align:center; font-weight:bold;">' . esc_html( gacct_paracheck_porosity_display( $poro['average'] ) ) . '</td></tr>';
 echo '<tr><th>l/m2/min.</th>';
 foreach ( $poro['rates'] as $rate ) {
 	echo '<td style="text-align:center;">' . esc_html( null !== $rate ? gacct_rp2_num( $rate, 1 ) : '—' ) . '</td>';

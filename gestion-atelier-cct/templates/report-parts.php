@@ -293,7 +293,15 @@ function gacct_rp2_num( $value, $decimals = 1 ) {
 		return '—';
 	}
 
-	return rtrim( rtrim( number_format( (float) $value, $decimals, ',', ' ' ), '0' ), ',' );
+	$formatted = number_format( (float) $value, $decimals, ',', ' ' );
+
+	// Ne dépouiller que la partie décimale : sans ce garde-fou, « 600 »
+	// (0 décimale) perdait ses zéros entiers et devenait « 6 ».
+	if ( false !== strpos( $formatted, ',' ) ) {
+		$formatted = rtrim( rtrim( $formatted, '0' ), ',' );
+	}
+
+	return $formatted;
 }
 
 /* =============================================================================

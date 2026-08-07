@@ -132,18 +132,23 @@
 		var visualGlobal = U.worst( groupResults );
 		U.setBadge( form, 'visual_global', visualGlobal );
 
-		// Porosité.
+		// Porosité (nombre de points = schéma, plafond appareil = « 600+ »).
+		var poroCount  = ( cfg.porosity_points && cfg.porosity_points.length ) ? cfg.porosity_points.length : 4;
 		var poroValues = [];
-		for ( var p = 0; p < 5; p++ ) {
+		for ( var p = 0; p < poroCount; p++ ) {
 			poroValues.push( ( data.porosity && data.porosity[ p ] ) || '' );
 		}
 		var poro = calcPorosity( poroValues, U );
 		U.setBadge( form, 'porosity', poro.result );
 		var poroInfo = form.querySelector( '[data-rf-computed="porosity"]' );
 		if ( poroInfo ) {
+			var poroCeiling = cfg.porosity_ceiling || 600;
+			var poroAvgTxt  = null !== poro.average && poro.average >= poroCeiling
+				? poroCeiling + '+'
+				: U.fmt( poro.average, 1 );
 			poroInfo.textContent = null === poro.average
 				? '—'
-				: 'Moyenne : ' + U.fmt( poro.average, 1 ) + ' s — ' + ( poro.average > 0 ? U.fmt( cfg.porosity_factor / poro.average, 1 ) : '0' ) + ' l/m²/min → ' + poro.result;
+				: 'Moyenne : ' + poroAvgTxt + ' s — ' + ( poro.average > 0 ? U.fmt( cfg.porosity_factor / poro.average, 1 ) : '0' ) + ' l/m²/min → ' + poro.result;
 		}
 
 		// Déchirure.

@@ -84,8 +84,12 @@ function gacct_report_calc_config() {
 			array( 'max' => null, 'eq' => false, 'result' => 'TRÈS BON ÉTAT' ),
 		),
 		// §2.3 — Porosité (secondes, l/m²/min = 5400 / s), barème de la feuille de saisie.
-		'porosity_points' => array( 'P4', 'P2', 'P1', 'P3', 'P5' ),
+		// 4 zones depuis la réunion du 06/08/2026 (le P5 du classeur était une erreur).
+		'porosity_points' => array( 'P4', 'P2', 'P1', 'P3' ),
 		'porosity_factor' => 5400,
+		// Plafond du porosimètre : au-delà, la mesure est affichée « 600+ »
+		// (la valeur saisie reste utilisée telle quelle dans les calculs).
+		'porosity_ceiling' => 600,
 		'porosity_scale'  => array(
 			array( 'max' => 10,   'result' => 'RÉFORME' ),
 			array( 'max' => 11,   'result' => 'LIMITE' ),

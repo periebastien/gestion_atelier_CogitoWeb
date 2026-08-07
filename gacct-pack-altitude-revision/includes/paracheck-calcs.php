@@ -43,7 +43,45 @@ function gacct_report_calc_visual_group( array $values ) {
 }
 
 /**
- * §2.3 — Test de porosité (5 mesures en secondes).
+ * Liste des mesures de porosité d'un brouillon, calée sur les points du
+ * barème courant : les brouillons enregistrés avant la suppression du P5
+ * portent 5 valeurs, la 5ᵉ est ignorée (tronquée, jamais moyennée).
+ *
+ * @return string[] Autant d'entrées que de points configurés.
+ */
+function gacct_paracheck_porosity_values( array $data ) {
+	$count  = count( gacct_report_calc_config()['porosity_points'] );
+	$values = isset( $data['porosity'] ) && is_array( $data['porosity'] ) ? array_values( $data['porosity'] ) : array();
+
+	return array_slice( array_pad( $values, $count, '' ), 0, $count );
+}
+
+/**
+ * Affichage d'une mesure de porosité : le porosimètre plafonne à 600 s,
+ * au-delà on écrit « 600+ » (le tissu est au plafond de l'appareil).
+ * La valeur numérique reste utilisée telle quelle dans les calculs.
+ *
+ * @param float|string|null $value    Mesure (ou moyenne) en secondes.
+ * @param int               $decimals Décimales du format normal.
+ * @return string Valeur formatée, « 600+ », ou « — » si vide.
+ */
+function gacct_paracheck_porosity_display( $value, $decimals = 1 ) {
+	if ( null === $value || '' === trim( (string) $value ) || ! is_numeric( $value ) ) {
+		return '—';
+	}
+
+	$ceiling = (float) ( gacct_report_calc_config()['porosity_ceiling'] ?? 600 );
+	$format  = function_exists( 'gacct_rp2_num' ) ? 'gacct_rp2_num' : 'number_format_i18n';
+
+	if ( (float) $value >= $ceiling ) {
+		return $format( $ceiling, 0 ) . '+';
+	}
+
+	return $format( $value, $decimals );
+}
+
+/**
+ * §2.3 — Test de porosité (mesures en secondes, une par point du schéma).
  *
  * @return array { rates: array<float|null>, average: float|null, result: string }
  */
@@ -198,9 +236,7 @@ function gacct_report_calc_voile( array $data ) {
 	}
 	$visual_global = gacct_report_worst( $vresults );
 
-	$porosity = gacct_report_calc_porosity(
-		isset( $data['porosity'] ) && is_array( $data['porosity'] ) ? array_pad( array_values( $data['porosity'] ), 5, '' ) : array_fill( 0, 5, '' )
-	);
+	$porosity = gacct_report_calc_porosity( gacct_paracheck_porosity_values( $data ) );
 
 	$tear = gacct_report_calc_tear(
 		isset( $data['tear'] ) && is_array( $data['tear'] ) ? $data['tear'] : array(),
