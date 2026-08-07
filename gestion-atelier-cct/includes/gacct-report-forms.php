@@ -780,6 +780,7 @@ function gacct_report_pdf_context( array $row, array $entry ) {
 		'number'      => (string) ( $entry['number'] ?? '' ),
 		'date'        => date_i18n( get_option( 'date_format' ), current_time( 'timestamp' ) ),
 		'author'      => $author && function_exists( 'gacct_op_operator_name' ) ? gacct_op_operator_name( $author ) : '',
+		'signature_path' => $author && function_exists( 'gacct_report_signature_path' ) ? gacct_report_signature_path( $author ) : '',
 		'ident'       => $ident,
 		'order'       => $order,
 		'reference'   => $order ? $order->get_order_number() : sprintf( 'dossier-%d', absint( $row['_ID'] ) ),

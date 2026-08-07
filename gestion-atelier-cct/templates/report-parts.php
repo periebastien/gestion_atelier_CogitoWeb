@@ -279,6 +279,10 @@ function gacct_rp2_signature_qr( array $context ) {
 
 	echo '<td style="width:44%; text-align:center; vertical-align:middle;">';
 	echo '<span class="muted">' . esc_html__( 'Signature', 'gestion-atelier-cct' ) . '</span><br>';
+	// Signature scannée du « Réalisé par » (profil WordPress, gacct-signature.php).
+	if ( ! empty( $context['signature_path'] ) ) {
+		echo '<img src="' . esc_attr( $context['signature_path'] ) . '" style="height:36px; margin:2px 0;"><br>';
+	}
 	echo '<span style="font-weight:bold; font-size:11px;">' . esc_html( $context['author'] ) . '</span>';
 	echo '</td>';
 

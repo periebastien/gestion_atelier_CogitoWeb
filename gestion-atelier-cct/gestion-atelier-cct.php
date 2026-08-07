@@ -42,6 +42,7 @@ require_once __DIR__ . '/includes/gacct-login-gate.php';
 require_once __DIR__ . '/includes/gacct-workorder.php';
 require_once __DIR__ . '/includes/gacct-quote.php';
 require_once __DIR__ . '/includes/gacct-billing.php';
+require_once __DIR__ . '/includes/gacct-signature.php';
 require_once __DIR__ . '/includes/gacct-vieworder.php';
 require_once __DIR__ . '/includes/gacct-shipping.php';
 require_once __DIR__ . '/includes/gacct-client-tables.php';
