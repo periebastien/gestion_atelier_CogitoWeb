@@ -211,3 +211,9 @@
 		margin-top: 6px;
 	}
 }
+
+/* Badge « En attente » (drapeau de mise en attente, 07/08/2026). */
+.gacct-op .gacct-op-badge-hold {
+	background: #fae1c8;
+	color: #9a4d00;
+}

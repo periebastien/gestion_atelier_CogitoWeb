@@ -82,6 +82,12 @@ function gacct_dash_texts() {
 		'expedition_text_plain' => __( 'Votre matériel est attendu à l’atelier.', 'gestion-atelier-cct' ),
 		'expedition_note'       => __( 'Si le colis n’arrive pas à temps, le créneau est libéré et l’acompte reste acquis à l’atelier. Au moindre imprévu, prévenez-nous : nous trouverons une solution ensemble.', 'gestion-atelier-cct' ),
 		'expedition_cta'        => __( 'Voir les instructions d’envoi', 'gestion-atelier-cct' ),
+		/* translators: %s: lien vers le détail de la commande */
+		'expedition_track_ask'  => __( 'Dès l’envoi, renseignez votre numéro de suivi depuis %s.', 'gestion-atelier-cct' ),
+		'expedition_track_ask_link' => __( 'le détail de votre commande', 'gestion-atelier-cct' ),
+		/* translators: 1: transporteur, 2: numéro de suivi */
+		'expedition_track_done' => __( 'Colis %1$s n° %2$s annoncé.', 'gestion-atelier-cct' ),
+		'expedition_track_follow' => __( 'Suivre', 'gestion-atelier-cct' ),
 
 		// --- Carte « créneau libéré » (no-show, CDC §2.4) -------------------
 		'noshow_title' => __( 'Créneau libéré', 'gestion-atelier-cct' ),
@@ -852,7 +858,7 @@ function gacct_dash_build_action( $etat, array $row, $order, array $conf, $mater
 
 	// --- Matériel à expédier (état <= 1, colis pas encore réceptionné) -----
 	if ( $etat <= 1 && '' === (string) $order->get_meta( '_gacct_reception_date' ) ) {
-		return gacct_dash_action_expedition( $order, $conf );
+		return gacct_dash_action_expedition( $order, $conf, $row );
 	}
 
 	return null;
@@ -905,9 +911,10 @@ function gacct_dash_action_virement( $order, array $conf ) {
  *
  * @param WC_Order            $order Commande.
  * @param array<string,mixed> $conf  Sortie de `gacct_conf_data()`.
+ * @param array<string,mixed> $row   Ligne CCT revision (colonnes envoi_* incluses).
  * @return array<string,mixed>
  */
-function gacct_dash_action_expedition( $order, array $conf ) {
+function gacct_dash_action_expedition( $order, array $conf, array $row = array() ) {
 	$links = isset( $conf['links'] ) && is_array( $conf['links'] ) ? $conf['links'] : array();
 
 	// --- Variante no-show : le créneau a été libéré, le colis n'est jamais arrivé.
@@ -949,6 +956,29 @@ function gacct_dash_action_expedition( $order, array $conf ) {
 		);
 	} else {
 		$text = gacct_dash_text( 'expedition_text_plain' );
+	}
+
+	// --- Suivi colis aller (gacct-shipping.php) : déjà déclaré → le refléter,
+	//     sinon inviter à le renseigner depuis le détail de la commande.
+	$ship = ( $row && function_exists( 'gacct_ship_info' ) ) ? gacct_ship_info( $row ) : null;
+
+	if ( $ship ) {
+		$text .= ' ' . sprintf(
+			gacct_dash_text( 'expedition_track_done' ),
+			'<span class="hl">' . esc_html( $ship['carrier_label'] ) . '</span>',
+			'<span class="hl">' . esc_html( $ship['number'] ) . '</span>'
+		);
+
+		if ( '' !== $ship['url'] ) {
+			$text .= ' <a class="gacct-dash-ship-link" href="' . esc_url( $ship['url'] ) . '" target="_blank" rel="noopener">'
+				. esc_html( gacct_dash_text( 'expedition_track_follow' ) ) . '</a>';
+		}
+	} else {
+		$text .= ' ' . sprintf(
+			gacct_dash_text( 'expedition_track_ask' ),
+			'<a class="gacct-dash-ship-link" href="' . esc_url( $order->get_view_order_url() ) . '">'
+				. esc_html( gacct_dash_text( 'expedition_track_ask_link' ) ) . '</a>'
+		);
 	}
 
 	return array(
@@ -1616,18 +1646,29 @@ function gacct_dash_render_tracker_compact( $revision_id ) {
 		$tracker['label'] .= gacct_state5_suffix( absint( $row['order_id'] ?? 0 ) );
 	}
 
+	// Dossier mis en pause par l'atelier : badge + motif en infobulle.
+	$hold       = function_exists( 'gacct_hold_info' ) ? gacct_hold_info( $row ) : array( 'active' => false, 'motif' => '' );
+	$hold_badge = ! empty( $hold['active'] )
+		? sprintf(
+			'<span class="tracker-hold" title="%s">%s</span>',
+			esc_attr( $hold['motif'] ),
+			esc_html__( 'En attente', 'gestion-atelier-cct' )
+		)
+		: '';
+
 	return sprintf(
 		'<div class="tracker">'
 			. '<div class="tracker-bar"><div class="tracker-fill%1$s" style="width:%2$d%%"></div></div>'
 			. '<div class="tracker-label">'
-				. '<span class="tracker-state%1$s">%3$s</span>'
+				. '<span class="tracker-state%1$s">%3$s</span>%5$s'
 				. '<span class="tracker-step">%4$s</span>'
 			. '</div>'
 		. '</div>',
 		$action,
 		(int) $tracker['pct'],
 		esc_html( $tracker['label'] ),
-		esc_html( $tracker['step'] )
+		esc_html( $tracker['step'] ),
+		$hold_badge
 	);
 }
 

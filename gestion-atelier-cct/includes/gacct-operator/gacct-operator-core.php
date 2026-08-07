@@ -472,6 +472,26 @@ function gacct_op_install_operator_field() {
 			'type'  => 'textarea',
 			'title' => 'Commentaires de réception',
 		),
+		'envoi_transporteur' => array(
+			'sql'   => "VARCHAR(32) NOT NULL DEFAULT ''",
+			'type'  => 'text',
+			'title' => 'Envoi client — transporteur',
+		),
+		'envoi_suivi' => array(
+			'sql'   => "VARCHAR(64) NOT NULL DEFAULT ''",
+			'type'  => 'text',
+			'title' => 'Envoi client — n° de suivi',
+		),
+		'en_attente' => array(
+			'sql'   => "VARCHAR(1) NOT NULL DEFAULT ''",
+			'type'  => 'text',
+			'title' => 'Dossier en attente (1 = en pause)',
+		),
+		'attente_motif' => array(
+			'sql'   => 'LONGTEXT NULL',
+			'type'  => 'textarea',
+			'title' => 'Motif de mise en attente',
+		),
 	);
 
 	$rev_table = $wpdb->prefix . 'jet_cct_' . JWCCT_CCT_REVISION;
@@ -788,6 +808,206 @@ function gacct_op_manual_payment_reminder( $order ) {
 	return array(
 		'template' => $template,
 		'to'       => $order->get_billing_email(),
+	);
+}
+
+/* =============================================================================
+ *  Mise en attente d'un dossier (drapeau opérateur, réunion du 06/08/2026)
+ *
+ *  Ce n'est PAS un état de la machine 0–8 : un drapeau posé/levé par
+ *  l'opérateur (champs CCT en_attente / attente_motif, setup v4) pour signaler
+ *  au client qu'une voile est en pause (ex. attente d'une pièce constructeur).
+ *  La mise en attente n'empêche AUCUNE transition d'état et n'est jamais levée
+ *  automatiquement : c'est l'opérateur qui la lève.
+ * ============================================================================= */
+
+/**
+ * Drapeau « en attente » d'une révision (helper aussi utilisé côté client).
+ *
+ * @param array $revision Ligne du CCT revision.
+ * @return array { active: bool, motif: string }
+ */
+function gacct_hold_info( array $revision ) {
+	return array(
+		'active' => ( '1' === (string) ( $revision['en_attente'] ?? '' ) ),
+		'motif'  => trim( (string) ( $revision['attente_motif'] ?? '' ) ),
+	);
+}
+
+/**
+ * Drapeau + état d'une révision lus en SQL direct (jamais via le cache
+ * d'objet JetEngine, qui peut resservir une valeur périmée — piège documenté).
+ *
+ * @return array|null { etat: int, active: bool, motif: string }
+ */
+function gacct_hold_read_fresh( $revision_id ) {
+	global $wpdb;
+
+	$table = $wpdb->prefix . 'jet_cct_' . JWCCT_CCT_REVISION;
+	$row   = $wpdb->get_row( $wpdb->prepare(
+		"SELECT etat_de_la_commande, en_attente, attente_motif FROM {$table} WHERE _ID = %d LIMIT 1",
+		absint( $revision_id )
+	), ARRAY_A );
+
+	if ( ! $row ) {
+		return null;
+	}
+
+	$info = gacct_hold_info( $row );
+
+	return array(
+		'etat'   => absint( $row['etat_de_la_commande'] ),
+		'active' => $info['active'],
+		'motif'  => $info['motif'],
+	);
+}
+
+/**
+ * Message personnalisé de l'opérateur, mis en forme pour l'email (bloc mis en
+ * évidence). Chaîne vide si pas de message : les corps par défaut des templates
+ * hold_notice / hold_release restent cohérents sans lui.
+ */
+function gacct_hold_message_html( $message ) {
+	$message = trim( (string) $message );
+
+	if ( '' === $message ) {
+		return '';
+	}
+
+	return '<blockquote style="margin:16px 0;padding:12px 16px;border-left:4px solid #cccccc;background:#f7f7f7;">'
+		. nl2br( esc_html( $message ) )
+		. '</blockquote>';
+}
+
+/**
+ * Pose le drapeau « en attente » sur un dossier (états 2 à 6 inclus).
+ *
+ * Motif OBLIGATOIRE (rédigé par l'opérateur, envoyé au client). Note de
+ * commande signée + email client template `hold_notice` (+ copie admin).
+ *
+ * @return array|WP_Error { active: true, motif: string, email_sent: bool }
+ */
+function gacct_op_hold( $revision_id, $motif ) {
+	$revision_id = absint( $revision_id );
+	$motif       = trim( sanitize_textarea_field( (string) $motif ) );
+
+	if ( '' === $motif ) {
+		return new WP_Error( 'gacct_op_reason_required', __( 'Un motif est obligatoire pour mettre un dossier en attente : il est envoyé au client.', 'gestion-atelier-cct' ) );
+	}
+
+	$fresh = gacct_hold_read_fresh( $revision_id );
+
+	if ( null === $fresh ) {
+		return new WP_Error( 'gacct_op_not_found', __( 'Dossier introuvable.', 'gestion-atelier-cct' ) );
+	}
+
+	if ( $fresh['active'] ) {
+		return new WP_Error( 'gacct_op_already_on_hold', __( 'Ce dossier est déjà en attente.', 'gestion-atelier-cct' ) );
+	}
+
+	if ( $fresh['etat'] < 2 || $fresh['etat'] > 6 ) {
+		return new WP_Error( 'gacct_op_bad_state', __( 'La mise en attente n\'est possible qu\'entre la réception du matériel (état 2) et la demande de solde (état 6).', 'gestion-atelier-cct' ) );
+	}
+
+	$revision = jwcct_get_cct_item( JWCCT_CCT_REVISION, $revision_id );
+	$order    = $revision ? gacct_op_get_order_for_revision( $revision ) : false;
+
+	if ( ! $order ) {
+		return new WP_Error( 'gacct_op_no_order', __( 'Commande liée introuvable.', 'gestion-atelier-cct' ) );
+	}
+
+	if ( ! jwcct_update_cct_item( JWCCT_CCT_REVISION, $revision_id, array(
+		'en_attente'    => '1',
+		'attente_motif' => $motif,
+	) ) ) {
+		return new WP_Error( 'gacct_op_update_failed', __( 'La mise à jour du dossier a échoué.', 'gestion-atelier-cct' ) );
+	}
+
+	gacct_op_add_signed_note( $order, sprintf(
+		__( 'Dossier mis en attente — motif : %s', 'gestion-atelier-cct' ),
+		$motif
+	) );
+
+	$sent = gacct_pay_send_email(
+		$order->get_billing_email(),
+		'hold_notice',
+		gacct_pay_email_variables( $order, array(
+			'{hold_message}' => gacct_hold_message_html( $motif ),
+		) ),
+		true
+	);
+
+	$order->add_order_note( $sent
+		? sprintf( __( 'Email « dossier mis en attente » envoyé au client (%s).', 'gestion-atelier-cct' ), $order->get_billing_email() )
+		: __( 'ERREUR : échec de l\'envoi de l\'email « dossier mis en attente ».', 'gestion-atelier-cct' ) );
+	$order->save();
+
+	return array(
+		'active'     => true,
+		'motif'      => $motif,
+		'email_sent' => (bool) $sent,
+	);
+}
+
+/**
+ * Lève le drapeau « en attente » (message FACULTATIF pour le client).
+ *
+ * Vide en_attente + attente_motif, note de commande signée, email client
+ * template `hold_release` (+ copie admin).
+ *
+ * @return array|WP_Error { active: false, email_sent: bool }
+ */
+function gacct_op_resume( $revision_id, $message = '' ) {
+	$revision_id = absint( $revision_id );
+	$message     = trim( sanitize_textarea_field( (string) $message ) );
+
+	$fresh = gacct_hold_read_fresh( $revision_id );
+
+	if ( null === $fresh ) {
+		return new WP_Error( 'gacct_op_not_found', __( 'Dossier introuvable.', 'gestion-atelier-cct' ) );
+	}
+
+	if ( ! $fresh['active'] ) {
+		return new WP_Error( 'gacct_op_not_on_hold', __( 'Ce dossier n\'est pas en attente.', 'gestion-atelier-cct' ) );
+	}
+
+	$revision = jwcct_get_cct_item( JWCCT_CCT_REVISION, $revision_id );
+	$order    = $revision ? gacct_op_get_order_for_revision( $revision ) : false;
+
+	if ( ! $order ) {
+		return new WP_Error( 'gacct_op_no_order', __( 'Commande liée introuvable.', 'gestion-atelier-cct' ) );
+	}
+
+	if ( ! jwcct_update_cct_item( JWCCT_CCT_REVISION, $revision_id, array(
+		'en_attente'    => '',
+		'attente_motif' => '',
+	) ) ) {
+		return new WP_Error( 'gacct_op_update_failed', __( 'La mise à jour du dossier a échoué.', 'gestion-atelier-cct' ) );
+	}
+
+	$note = __( 'Dossier repris : mise en attente levée', 'gestion-atelier-cct' );
+	if ( '' !== $message ) {
+		$note .= sprintf( __( ' — message au client : %s', 'gestion-atelier-cct' ), $message );
+	}
+	gacct_op_add_signed_note( $order, $note );
+
+	$sent = gacct_pay_send_email(
+		$order->get_billing_email(),
+		'hold_release',
+		gacct_pay_email_variables( $order, array(
+			'{hold_message}' => gacct_hold_message_html( $message ),
+		) ),
+		true
+	);
+
+	$order->add_order_note( $sent
+		? sprintf( __( 'Email « dossier repris » envoyé au client (%s).', 'gestion-atelier-cct' ), $order->get_billing_email() )
+		: __( 'ERREUR : échec de l\'envoi de l\'email « dossier repris ».', 'gestion-atelier-cct' ) );
+	$order->save();
+
+	return array(
+		'active'     => false,
+		'email_sent' => (bool) $sent,
 	);
 }
 

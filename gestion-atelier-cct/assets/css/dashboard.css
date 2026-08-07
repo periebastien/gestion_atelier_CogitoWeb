@@ -957,3 +957,21 @@
 		gap: 12px 20px;
 	}
 }
+
+/* ── Suivi colis aller : lien dans la carte « matériel à expédier » ─────── */
+.action-text .gacct-dash-ship-link { color: var(--dash-teal-dark); font-weight: 700; text-decoration: underline; }
+
+/* Badge « En attente » du mini-tracker (drapeau en_attente, 07/08/2026) */
+.tracker-label .tracker-hold {
+	display: inline-block;
+	margin-left: 8px;
+	padding: 2px 10px;
+	border-radius: 999px;
+	background: var(--dash-orange-soft, #fdf1e3);
+	color: var(--dash-orange, #b45309);
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	cursor: help;
+}

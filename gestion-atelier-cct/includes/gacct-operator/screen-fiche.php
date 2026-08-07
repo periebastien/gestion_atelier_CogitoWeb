@@ -202,6 +202,9 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 	$is_incomplete = ( '1' === (string) ( $revision['dossier_incomplet'] ?? '' ) );
 	$reception_url = gacct_op_console_url( 0, array( 'view' => 'reception', 'rev' => $revision_id ) );
 
+	// Mise en attente (drapeau opérateur, pas un état) : badge + bandeau + actions.
+	$hold = gacct_hold_info( $revision );
+
 	echo '<div class="wrap gacct-op gacct-op-fiche" data-revision-id="' . esc_attr( $revision_id ) . '">';
 
 	// 1. Lien retour.
@@ -217,6 +220,9 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 	echo '<div class="gacct-op-head-top">';
 	echo '<span class="gacct-op-ref">' . esc_html( $reference ) . '</span> ';
 	echo '<span class="gacct-op-badge etat-' . esc_attr( $state ) . '">' . esc_html( $state_label ) . '</span>';
+	if ( $hold['active'] ) {
+		echo ' <span class="gacct-op-badge gacct-op-badge-hold">' . esc_html__( 'En attente', 'gestion-atelier-cct' ) . '</span>';
+	}
 	if ( $is_cancelled ) {
 		echo ' <span class="gacct-op-badge gacct-op-badge-cancelled">' . esc_html__( 'Commande annulée', 'gestion-atelier-cct' ) . '</span>';
 	}
@@ -234,6 +240,14 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 		echo '<strong>' . esc_html__( 'Dossier incomplet', 'gestion-atelier-cct' ) . '</strong> — ' . esc_html__( 'éléments manquants :', 'gestion-atelier-cct' ) . ' ';
 		echo esc_html( $missing_items ? implode( ', ', $missing_items ) : __( '(liste non renseignée)', 'gestion-atelier-cct' ) );
 		echo ' <a class="gacct-op-incomplete-link" href="' . esc_url( $reception_url ) . '">' . esc_html__( 'Compléter la réception', 'gestion-atelier-cct' ) . '</a>';
+		echo '</div>';
+	}
+
+	// Bandeau « dossier en attente » (drapeau opérateur).
+	if ( $hold['active'] ) {
+		echo '<div class="gacct-op-warning gacct-op-hold-banner">';
+		echo '<strong>' . esc_html__( 'Dossier en attente', 'gestion-atelier-cct' ) . '</strong> — ' . esc_html__( 'motif :', 'gestion-atelier-cct' ) . ' ';
+		echo esc_html( '' !== $hold['motif'] ? $hold['motif'] : __( '(non renseigné)', 'gestion-atelier-cct' ) );
 		echo '</div>';
 	}
 
@@ -273,6 +287,17 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 
 	$ptv = trim( (string) ( $revision['p_t_v'] ?? '' ) );
 	echo '<div><dt>' . esc_html__( 'PTV', 'gestion-atelier-cct' ) . '</dt><dd>' . esc_html( $ptv ? $ptv : '—' ) . '</dd></div>';
+
+	// Envoi déclaré par le client (transporteur + n° de suivi, gacct-shipping.php).
+	$ship = function_exists( 'gacct_ship_info' ) ? gacct_ship_info( $revision ) : null;
+	if ( $ship ) {
+		echo '<div><dt>' . esc_html__( 'Envoi client', 'gestion-atelier-cct' ) . '</dt><dd>';
+		$ship_text = trim( $ship['carrier_label'] . ' ' . sprintf( __( 'n° %s', 'gestion-atelier-cct' ), $ship['number'] ) );
+		echo $ship['url']
+			? '<a href="' . esc_url( $ship['url'] ) . '" target="_blank" rel="noopener">' . esc_html( $ship_text ) . '</a>'
+			: esc_html( $ship_text );
+		echo '</dd></div>';
+	}
 
 	echo '<div><dt>' . esc_html__( 'Créneau', 'gestion-atelier-cct' ) . '</dt><dd>';
 	if ( $slot && ! empty( $slot['date_reservee'] ) ) {
@@ -432,6 +457,29 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 			);
 			$msg = isset( $waiting[ $state ] ) ? $waiting[ $state ] : __( 'Aucune action disponible pour cet état.', 'gestion-atelier-cct' );
 			echo '<p class="gacct-op-muted">' . esc_html( $msg ) . '</p>';
+		}
+
+		// Mise en attente / reprise (drapeau, pas un état) — réunion du 06/08/2026.
+		if ( ! $is_cancelled ) {
+			if ( $hold['active'] ) {
+				echo '<div class="gacct-op-force gacct-op-hold-zone">';
+				echo '<button type="button" class="button" data-op-action="toggle-force" aria-expanded="false">' . esc_html__( 'Reprendre le dossier', 'gestion-atelier-cct' ) . '…</button>';
+				echo '<div class="gacct-op-force-form" hidden>';
+				echo '<p class="gacct-op-muted">' . esc_html__( 'Le client reçoit un email l\'informant que son dossier reprend son cours.', 'gestion-atelier-cct' ) . '</p>';
+				echo '<label class="gacct-op-label">' . esc_html__( 'Message pour le client (facultatif, envoyé dans l\'email)', 'gestion-atelier-cct' ) . '</label>';
+				echo '<textarea rows="3" data-op-field="resume-message" placeholder="' . esc_attr__( 'Ex. : la pièce constructeur est arrivée, votre voile repasse en atelier cette semaine…', 'gestion-atelier-cct' ) . '"></textarea>';
+				echo '<button type="button" class="button button-primary" data-op-action="resume">' . esc_html__( 'Reprendre le dossier et prévenir le client', 'gestion-atelier-cct' ) . '</button>';
+				echo '</div></div>';
+			} elseif ( $state >= 2 && $state <= 6 ) {
+				echo '<div class="gacct-op-force gacct-op-hold-zone">';
+				echo '<button type="button" class="button" data-op-action="toggle-force" aria-expanded="false">' . esc_html__( 'Mettre en attente', 'gestion-atelier-cct' ) . '…</button>';
+				echo '<div class="gacct-op-force-form" hidden>';
+				echo '<p class="gacct-op-muted">' . esc_html__( 'Signale au client que son dossier est en pause (ex. attente d\'une pièce constructeur). Le dossier reste dans son état actuel ; vous lèverez l\'attente vous-même.', 'gestion-atelier-cct' ) . '</p>';
+				echo '<label class="gacct-op-label">' . esc_html__( 'Motif (obligatoire, envoyé au client dans l\'email)', 'gestion-atelier-cct' ) . '</label>';
+				echo '<textarea rows="3" data-op-field="hold-motif" placeholder="' . esc_attr__( 'Ex. : nous attendons une pièce du constructeur, votre voile est en pause quelques jours…', 'gestion-atelier-cct' ) . '"></textarea>';
+				echo '<button type="button" class="button button-primary" data-op-action="hold">' . esc_html__( 'Mettre en attente et prévenir le client', 'gestion-atelier-cct' ) . '</button>';
+				echo '</div></div>';
+			}
 		}
 
 		// Annulation du dossier (séparée), masquée si annulée ou dossier clos.

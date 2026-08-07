@@ -384,6 +384,46 @@ function gacct_op_ajax_payment_reminder() {
 add_action( 'wp_ajax_gacct_op_payment_reminder', 'gacct_op_ajax_payment_reminder' );
 
 /**
+ * Mise en attente du dossier (drapeau, pas un état) : motif obligatoire,
+ * email client `hold_notice` + copie admin.
+ */
+function gacct_op_ajax_hold() {
+	gacct_op_api_guard();
+
+	$result = gacct_op_hold(
+		isset( $_POST['revision_id'] ) ? absint( $_POST['revision_id'] ) : 0,
+		isset( $_POST['motif'] ) ? wp_unslash( $_POST['motif'] ) : ''
+	);
+
+	if ( is_wp_error( $result ) ) {
+		wp_send_json_error( array( 'message' => $result->get_error_message(), 'code' => $result->get_error_code() ) );
+	}
+
+	wp_send_json_success( $result );
+}
+add_action( 'wp_ajax_gacct_op_hold', 'gacct_op_ajax_hold' );
+
+/**
+ * Reprise du dossier (levée de la mise en attente) : message facultatif,
+ * email client `hold_release` + copie admin.
+ */
+function gacct_op_ajax_resume() {
+	gacct_op_api_guard();
+
+	$result = gacct_op_resume(
+		isset( $_POST['revision_id'] ) ? absint( $_POST['revision_id'] ) : 0,
+		isset( $_POST['message'] ) ? wp_unslash( $_POST['message'] ) : ''
+	);
+
+	if ( is_wp_error( $result ) ) {
+		wp_send_json_error( array( 'message' => $result->get_error_message(), 'code' => $result->get_error_code() ) );
+	}
+
+	wp_send_json_success( $result );
+}
+add_action( 'wp_ajax_gacct_op_resume', 'gacct_op_ajax_resume' );
+
+/**
  * Événements du planning console (FullCalendar) : fonds de disponibilité
  * par jour + occupations. GET start/end au format Y-m-d (FullCalendar).
  */

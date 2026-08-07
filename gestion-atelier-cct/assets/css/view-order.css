@@ -286,3 +286,44 @@
 	border-color: var(--gacct-vo-accent, #20c4c3);
 	box-shadow: 0 0 0 1px var(--gacct-vo-accent, #20c4c3) inset;
 }
+
+/* ── Suivi colis aller (gacct-shipping.php) ──────────────────────────────── */
+.gacct-vo .gacct-ship { margin-top: 14px; padding: 14px 16px; background: color-mix(in srgb, var(--gacct-vo-line) 30%, #ffffff); border: 1px solid var(--gacct-vo-line); border-radius: 10px; }
+.gacct-vo .gacct-ship-intro { font-size: 14px; color: var(--gacct-vo-muted); margin: 0 0 10px; }
+.gacct-vo .gacct-ship-notice { font-size: 14px; font-weight: 600; margin: 0 0 10px; }
+.gacct-vo .gacct-ship-notice.is-success { color: var(--gacct-vo-accent); }
+.gacct-vo .gacct-ship-notice.is-error { color: var(--gacct-vo-danger); }
+.gacct-vo .gacct-ship-current { font-size: 14px; color: var(--gacct-vo-ink); margin: 0; }
+.gacct-vo .gacct-ship-follow { color: var(--gacct-vo-accent); font-weight: 700; text-decoration: underline; margin-left: 6px; }
+.gacct-vo .gacct-ship-edit { margin-top: 8px; }
+.gacct-vo .gacct-ship-edit summary { font-size: 13px; font-weight: 600; color: var(--gacct-vo-muted); cursor: pointer; }
+.gacct-vo .gacct-ship-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px; margin-top: 10px; }
+.gacct-vo .gacct-ship-field { display: flex; flex-direction: column; gap: 4px; margin: 0; }
+.gacct-vo .gacct-ship-field label { font-size: 12px; font-weight: 700; color: var(--gacct-vo-muted); }
+.gacct-vo .gacct-ship-field select,
+.gacct-vo .gacct-ship-field input { font-family: inherit; font-size: 14px; color: var(--gacct-vo-ink); padding: 10px 12px; border: 1.5px solid var(--gacct-vo-line); border-radius: 8px; background: var(--gacct-vo-card); }
+.gacct-vo .gacct-ship-field select:focus,
+.gacct-vo .gacct-ship-field input:focus { outline: none; border-color: var(--gacct-vo-accent); }
+.gacct-vo .gacct-ship-actions { margin: 0; }
+.gacct-vo .gacct-ship-btn { display: inline-flex; align-items: center; gap: 8px; font-family: inherit; font-size: 13px; font-weight: 700; color: var(--gacct-vo-ink); padding: 11px 16px; border: 1.5px solid var(--gacct-vo-accent); border-radius: 8px; background: transparent; cursor: pointer; transition: background 150ms; }
+.gacct-vo .gacct-ship-btn:hover { background: color-mix(in srgb, var(--gacct-vo-accent) 12%, #ffffff); }
+
+@media (max-width: 640px) {
+	.gacct-vo .gacct-ship-form { flex-direction: column; align-items: stretch; }
+	.gacct-vo .gacct-ship-btn { width: 100%; justify-content: center; }
+}
+
+/* Dossier mis en attente par l'atelier (drapeau en_attente, 07/08/2026) */
+.gacct-vo-hold {
+	margin-top: 14px;
+	padding: 12px 16px;
+	border-left: 4px solid var(--gacct-vo-warn);
+	border-radius: var(--gacct-vo-radius-s, 8px);
+	background: var(--gacct-vo-warn-bg);
+	color: var(--gacct-vo-ink);
+	font-size: 14px;
+}
+
+.gacct-vo-hold p { margin: 6px 0 0; }
+
+.gacct-vo-hold-note { color: var(--gacct-vo-muted); font-size: 13px; }

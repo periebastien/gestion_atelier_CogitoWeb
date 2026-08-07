@@ -400,6 +400,9 @@ function gacct_op_render_list_screen() {
 		$label = isset( $labels[ $state ] ) ? $labels[ $state ] : (string) $state;
 		echo '<td class="column-etat" data-colname="' . esc_attr__( 'État', 'gestion-atelier-cct' ) . '">';
 		echo '<span class="gacct-op-badge etat-' . esc_attr( $state ) . '">' . esc_html( $label ) . '</span>';
+		if ( function_exists( 'gacct_hold_info' ) && gacct_hold_info( $item )['active'] ) {
+			echo ' <span class="gacct-op-badge gacct-op-badge-hold" title="' . esc_attr( gacct_hold_info( $item )['motif'] ) . '">' . esc_html__( 'En attente', 'gestion-atelier-cct' ) . '</span>';
+		}
 		gacct_op_list_render_steps( $state, $labels );
 		echo '</td>';
 

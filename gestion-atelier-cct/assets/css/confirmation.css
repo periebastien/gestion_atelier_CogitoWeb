@@ -307,3 +307,33 @@
 	.gacct-conf .step-dot { width: 30px; height: 30px; }
 	.gacct-conf .step-action .btn-primary, .gacct-conf .step-action .btn-secondary { width: 100%; }
 }
+
+/* ── Suivi colis aller (gacct-shipping.php) ──────────────────────────────── */
+.gacct-conf .gacct-ship-steps { padding-left: 20px; margin-bottom: 10px; }
+.gacct-conf .gacct-ship-steps li { margin: 0 0 6px; }
+.gacct-conf .gacct-ship-steps li::marker { color: var(--c-accent-dark); font-weight: 700; }
+
+.gacct-conf .gacct-ship { margin-top: 14px; padding: 14px 16px; background: var(--c-surface-alt); border: 1px solid rgba(0,0,0,0.08); border-radius: var(--r); }
+.gacct-conf .gacct-ship-intro { font-size: 13.5px; color: var(--c-muted); margin: 0 0 10px; }
+.gacct-conf .gacct-ship-notice { font-size: 13.5px; font-weight: 600; margin: 0 0 10px; }
+.gacct-conf .gacct-ship-notice.is-success { color: var(--c-accent-dark); }
+.gacct-conf .gacct-ship-notice.is-error { color: var(--c-danger); }
+.gacct-conf .gacct-ship-current { font-size: 14px; color: var(--c-ink); margin: 0; }
+.gacct-conf .gacct-ship-follow { color: var(--c-accent-dark); font-weight: 700; text-decoration: underline; margin-left: 6px; }
+.gacct-conf .gacct-ship-edit { margin-top: 8px; }
+.gacct-conf .gacct-ship-edit summary { font-size: 13px; font-weight: 600; color: var(--c-muted); cursor: pointer; }
+.gacct-conf .gacct-ship-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px; margin-top: 10px; }
+.gacct-conf .gacct-ship-field { display: flex; flex-direction: column; gap: 4px; margin: 0; }
+.gacct-conf .gacct-ship-field label { font-size: 12px; font-weight: 700; color: var(--c-muted); }
+.gacct-conf .gacct-ship-field select,
+.gacct-conf .gacct-ship-field input { font-family: inherit; font-size: 14px; color: var(--c-ink); padding: 10px 12px; border: 1.5px solid rgba(0,0,0,0.16); border-radius: var(--r); background: var(--c-surface); }
+.gacct-conf .gacct-ship-field select:focus,
+.gacct-conf .gacct-ship-field input:focus { outline: none; border-color: var(--c-accent); }
+.gacct-conf .gacct-ship-actions { margin: 0; }
+.gacct-conf .gacct-ship-btn { display: inline-flex; align-items: center; gap: 8px; font-family: inherit; font-size: 13px; font-weight: 700; color: var(--c-ink); padding: 11px 16px; border: 1.5px solid var(--c-accent); border-radius: var(--r); background: transparent; cursor: pointer; transition: background 150ms, color 150ms; }
+.gacct-conf .gacct-ship-btn:hover { background: var(--c-accent-soft); color: var(--c-accent-dark); }
+
+@media (max-width: 640px) {
+	.gacct-conf .gacct-ship-form { flex-direction: column; align-items: stretch; }
+	.gacct-conf .gacct-ship-btn { width: 100%; justify-content: center; }
+}

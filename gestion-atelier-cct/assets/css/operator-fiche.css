@@ -292,3 +292,12 @@
 }
 .gacct-op-fiche .gacct-op-items li:last-child { border-bottom: 0; }
 .gacct-op-fiche .gacct-op-item-total { white-space: nowrap; font-weight: 600; }
+
+/* Badge + bandeau « Dossier en attente » (drapeau opérateur, 07/08/2026).
+   Une seule couleur orangée, distincte des familles d'états 0–8. */
+.gacct-op .gacct-op-badge-hold {
+	background: #fae1c8;
+	color: #9a4d00;
+}
+.gacct-op-fiche .gacct-op-hold-banner { font-weight: 400; }
+.gacct-op-fiche .gacct-op-hold-banner strong { font-weight: 700; }

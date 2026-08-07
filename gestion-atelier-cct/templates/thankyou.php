@@ -363,28 +363,26 @@ $is_bacs = ( 'bacs' === $d['variant'] );
 									<div class="step-dot"><?php echo gacct_conf_icon( 'clipboard' ); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
 									<div class="step-body">
 										<div class="step-title"><?php esc_html_e( 'Expédiez votre matériel', 'gestion-atelier-cct' ); ?> <span class="step-flag wait"><?php esc_html_e( 'À faire', 'gestion-atelier-cct' ); ?></span></div>
-										<p class="step-txt">
-											<?php if ( gacct_conf_feature( 'work_order' ) ) : ?>
-												<?php esc_html_e( 'Glissez le', 'gestion-atelier-cct' ); ?> <strong><?php esc_html_e( 'bon d’intervention', 'gestion-atelier-cct' ); ?></strong> <?php esc_html_e( 'dans le colis', 'gestion-atelier-cct' ); ?><?php if ( $d['parcel_label'] ) : ?><?php printf( /* translators: date */ esc_html__( ' et envoyez-le pour qu’il arrive avant le %s', 'gestion-atelier-cct' ), '<strong>' . esc_html( $d['parcel_label'] ) . '</strong>' ); ?><?php endif; ?>. <?php esc_html_e( 'Sans lui, l’identification prend plusieurs jours de plus.', 'gestion-atelier-cct' ); ?>
-											<?php else : ?>
-												<?php
-												printf(
-													/* translators: 1: reference de commande */
-													esc_html__( 'Glissez dans le colis un papier portant votre référence %s : c’est ce qui nous permet d’identifier votre matériel à l’arrivée.', 'gestion-atelier-cct' ),
-													'<strong>' . esc_html( $d['reference'] ) . '</strong>'
-												);
-												?>
-												<?php if ( $d['parcel_label'] ) : ?>
+										<ol class="step-txt gacct-ship-steps">
+											<li>
+												<?php if ( gacct_conf_feature( 'work_order' ) ) : ?>
+													<?php esc_html_e( 'Imprimez le', 'gestion-atelier-cct' ); ?> <strong><?php esc_html_e( 'bon d’intervention', 'gestion-atelier-cct' ); ?></strong> <?php esc_html_e( '(avec son QR code) et glissez-le dans le colis. Sans lui, l’identification prend plusieurs jours de plus.', 'gestion-atelier-cct' ); ?>
+												<?php else : ?>
 													<?php
 													printf(
-														/* translators: 1: date */
-														esc_html__( ' Il doit nous parvenir avant le %s, la veille de votre créneau.', 'gestion-atelier-cct' ),
-														'<strong>' . esc_html( $d['parcel_label'] ) . '</strong>'
+														/* translators: 1: reference de commande */
+														esc_html__( 'Glissez dans le colis un papier portant votre référence %s : c’est ce qui nous permet d’identifier votre matériel à l’arrivée.', 'gestion-atelier-cct' ),
+														'<strong>' . esc_html( $d['reference'] ) . '</strong>'
 													);
 													?>
 												<?php endif; ?>
-											<?php endif; ?>
-										</p>
+											</li>
+											<li><?php esc_html_e( 'Emballez votre matériel en suivant les consignes d’emballage.', 'gestion-atelier-cct' ); ?></li>
+											<li>
+												<?php esc_html_e( 'Expédiez le colis à l’adresse de l’atelier', 'gestion-atelier-cct' ); ?><?php if ( ! empty( $d['store_address'] ) ) : ?> (<strong><?php echo esc_html( implode( ', ', $d['store_address'] ) ); ?></strong>)<?php endif; ?><?php if ( $d['parcel_label'] ) : ?><?php printf( /* translators: date */ esc_html__( ', pour qu’il nous parvienne avant le %s, la veille de votre créneau', 'gestion-atelier-cct' ), '<strong>' . esc_html( $d['parcel_label'] ) . '</strong>' ); ?><?php endif; ?>.
+											</li>
+											<li><?php esc_html_e( 'Dès l’envoi, renseignez votre numéro de suivi ci-dessous : nous saurons que votre colis est en route.', 'gestion-atelier-cct' ); ?></li>
+										</ol>
 										<p class="step-txt">
 											<?php esc_html_e( 'L’acompte réserve ce créneau pour vous : si le matériel ne nous est pas parvenu la veille au soir, le créneau est libéré et l’acompte reste acquis à l’atelier, car cette place ne peut plus être proposée à un autre client. Un imprévu d’expédition ? Prévenez-nous avant la date, nous en tiendrons compte.', 'gestion-atelier-cct' ); ?>
 										</p>
@@ -394,6 +392,9 @@ $is_bacs = ( 'bacs' === $d['variant'] );
 											<?php endif; ?>
 											<a href="<?php echo esc_url( $d['links']['packing_guide'] ); ?>" class="<?php echo gacct_conf_feature( 'work_order' ) ? 'btn-secondary' : 'btn-primary'; ?>"><?php echo gacct_conf_icon( 'package' ); // phpcs:ignore WordPress.Security.EscapeOutput ?><?php esc_html_e( 'Consignes d’emballage', 'gestion-atelier-cct' ); ?></a>
 										</div>
+										<?php if ( function_exists( 'gacct_ship_render_form' ) ) : ?>
+											<?php echo gacct_ship_render_form( $order, array( 'intro' => false ) ); // phpcs:ignore WordPress.Security.EscapeOutput -- HTML construit et échappé par le module shipping. ?>
+										<?php endif; ?>
 									</div>
 								</div>
 

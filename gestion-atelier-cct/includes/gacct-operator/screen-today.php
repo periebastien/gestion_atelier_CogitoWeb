@@ -261,6 +261,12 @@ function gacct_op_render_today_screen() {
 			if ( ! empty( $item['dossier_incomplet'] ) ) {
 				echo ' <span class="gacct-op-pill danger">' . esc_html__( 'incomplet', 'gestion-atelier-cct' ) . '</span>';
 			}
+			// Expédition déclarée par le client (le lien de suivi est dans la fiche).
+			$ship = function_exists( 'gacct_ship_info' ) ? gacct_ship_info( $item ) : null;
+			if ( $ship ) {
+				echo ' <span class="gacct-op-pill ok" title="' . esc_attr( trim( $ship['carrier_label'] . ' n° ' . $ship['number'] ) ) . '">'
+					. esc_html__( 'colis annoncé', 'gestion-atelier-cct' ) . '</span>';
+			}
 			echo '</span>';
 			gacct_op_today_row_close( true );
 		}
@@ -300,6 +306,9 @@ function gacct_op_render_today_screen() {
 				echo esc_html( wp_date( $date_format, $slot ) ) . ' ';
 			}
 			echo '<span class="gacct-op-badge etat-' . esc_attr( (string) $state ) . '">' . esc_html( $labels[ $state ] ?? (string) $state ) . '</span>';
+			if ( gacct_hold_info( $item )['active'] ) {
+				echo ' <span class="gacct-op-badge gacct-op-badge-hold" title="' . esc_attr( gacct_hold_info( $item )['motif'] ) . '">' . esc_html__( 'En attente', 'gestion-atelier-cct' ) . '</span>';
+			}
 			echo '</span>';
 			gacct_op_today_row_close( true );
 		}
@@ -332,6 +341,9 @@ function gacct_op_render_today_screen() {
 			echo '<span class="gacct-op-row-main"><strong>' . esc_html( gacct_op_today_client( $order ) ) . '</strong></span>';
 			echo '<span class="gacct-op-row-meta">';
 			echo '<span class="gacct-op-badge etat-' . esc_attr( (string) $state ) . '">' . esc_html( $labels[ $state ] ?? (string) $state ) . '</span> ';
+			if ( gacct_hold_info( $item )['active'] ) {
+				echo '<span class="gacct-op-badge gacct-op-badge-hold" title="' . esc_attr( gacct_hold_info( $item )['motif'] ) . '">' . esc_html__( 'En attente', 'gestion-atelier-cct' ) . '</span> ';
+			}
 			if ( $modified ) {
 				echo esc_html( sprintf(
 					/* translators: %s: durée (ex. « 3 jours ») */

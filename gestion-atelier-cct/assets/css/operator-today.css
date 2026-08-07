@@ -139,6 +139,13 @@
 	color: var(--gacct-danger);
 }
 
+.gacct-op .gacct-op-pill.ok {
+	border-color: var(--gacct-success, #00a32a);
+	background: var(--gacct-success-soft, #edfaef);
+	color: var(--gacct-success, #00a32a);
+	cursor: help;
+}
+
 /* --- Divers ------------------------------------------------------------- */
 
 .gacct-op-today .gacct-op-empty {
@@ -171,4 +178,10 @@
 		gap: 20px;
 		align-items: start;
 	}
+}
+
+/* Badge « En attente » (drapeau de mise en attente, 07/08/2026). */
+.gacct-op .gacct-op-badge-hold {
+	background: #fae1c8;
+	color: #9a4d00;
 }

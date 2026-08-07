@@ -349,6 +349,7 @@ function jwcct_add_revision_date_to_email( $order, $sent_to_admin, $plain_text, 
     // Le matériel est-il déjà arrivé ? Au-delà de l'état 1, la date limite du colis
     // n'a plus lieu d'être rappelée.
     $etat        = null;
+    $revision    = null;
     $revision_id = absint( $order->get_meta( JWCCT_ORDER_REVISION_ID ) );
 
     if ( $revision_id ) {
@@ -360,6 +361,9 @@ function jwcct_add_revision_date_to_email( $order, $sent_to_admin, $plain_text, 
     }
 
     $materiel_attendu = ( null === $etat || $etat <= 1 );
+
+    // Suivi colis aller déclaré par le client (gacct-shipping.php).
+    $ship = ( is_array( $revision ) && function_exists( 'gacct_ship_info' ) ) ? gacct_ship_info( $revision ) : null;
 
     // Dates et échéances : mêmes calculs que la page de confirmation.
     $data          = function_exists( 'gacct_conf_data' ) ? gacct_conf_data( $order ) : [];
@@ -382,6 +386,16 @@ function jwcct_add_revision_date_to_email( $order, $sent_to_admin, $plain_text, 
             echo "Passé ce délai, la commande est annulée et le créneau remis en ligne.\n";
         }
 
+        if ( $materiel_attendu ) {
+            if ( $ship ) {
+                echo 'Colis ' . esc_html( $ship['carrier_label'] ) . ' n° ' . esc_html( $ship['number'] )
+                    . ( $ship['url'] ? ' — suivi : ' . esc_url( $ship['url'] ) : '' ) . "\n";
+            } else {
+                echo "Dès l'envoi de votre matériel, renseignez votre numéro de suivi depuis votre espace client : "
+                    . esc_url( $order->get_view_order_url() ) . "\n";
+            }
+        }
+
         if ( $date_colis && $materiel_attendu ) {
             echo "L'acompte réserve votre créneau : sans réception du matériel la veille au soir, le créneau est libéré et l'acompte reste acquis. Un imprévu ? Prévenez-nous avant la date.\n";
         }
@@ -402,6 +416,32 @@ function jwcct_add_revision_date_to_email( $order, $sent_to_admin, $plain_text, 
             __( 'Votre colis doit arriver avant le', 'gestion-atelier-cct' ),
             esc_html( $date_colis ),
         ];
+    }
+
+    if ( $materiel_attendu ) {
+        if ( $ship ) {
+            $suivi_html = sprintf(
+                /* translators: 1: transporteur, 2: numéro de suivi */
+                esc_html__( 'Colis %1$s n° %2$s', 'gestion-atelier-cct' ),
+                '<strong>' . esc_html( $ship['carrier_label'] ) . '</strong>',
+                '<strong>' . esc_html( $ship['number'] ) . '</strong>'
+            );
+
+            if ( $ship['url'] ) {
+                $suivi_html .= ' — <a href="' . esc_url( $ship['url'] ) . '">' . esc_html__( 'suivre le colis', 'gestion-atelier-cct' ) . '</a>';
+            }
+
+            $lignes[] = [ __( 'Votre envoi', 'gestion-atelier-cct' ), $suivi_html ];
+        } else {
+            $lignes[] = [
+                __( 'Numéro de suivi', 'gestion-atelier-cct' ),
+                sprintf(
+                    /* translators: %s: lien vers l'espace client */
+                    esc_html__( 'Dès l’envoi de votre matériel, renseignez votre numéro de suivi depuis %s.', 'gestion-atelier-cct' ),
+                    '<a href="' . esc_url( $order->get_view_order_url() ) . '">' . esc_html__( 'votre espace client', 'gestion-atelier-cct' ) . '</a>'
+                ),
+            ];
+        }
     }
 
     if ( $attend_vir ) {

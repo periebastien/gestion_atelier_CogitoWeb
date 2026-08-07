@@ -53,6 +53,7 @@ function gacct_pay_default_settings() {
 					. '{bank_details}'
 					. '<p>Vous pouvez retrouver ces coordonnées à tout moment sur <a href="{order_url}">votre page de commande</a>.</p>'
 					. '<p>Si votre virement est déjà parti, vous n’avez rien à faire : un délai bancaire de 1 à 3 jours ouvrés est normal.</p>'
+					. '<p>Bon à savoir : vous pouvez expédier votre matériel sans attendre que le virement arrive. Dès l’envoi, pensez à renseigner votre numéro de suivi depuis <a href="{order_url}">votre page de commande</a>.</p>'
 					. '<p>À très vite,<br><br>Bastien.</p>',
 			),
 			'bacs_cancel' => array(
@@ -152,6 +153,28 @@ function gacct_pay_default_settings() {
 					. '<p>Nous avons bien enregistré votre refus du devis établi pour la commande <strong>{order_number}</strong>.</p>'
 					. '<p>Comme convenu, aucune réparation ne sera engagée : nous préparons le retour de votre matériel à l’adresse indiquée lors de votre commande.</p>'
 					. '<p>Si vous changez d’avis avant l’expédition, appelez-nous vite au <strong>{contact_phone}</strong> ({contact_hours}) : tant que le colis n’est pas parti, tout reste possible.</p>'
+					. '<p>À bientôt,<br><br>Bastien.</p>',
+			),
+			'hold_notice' => array(
+				'enabled' => true,
+				'label'   => __( 'Dossier mis en attente (message personnalisé de l\'atelier)', 'gestion-atelier-cct' ),
+				'subject' => __( 'Votre dossier est momentanément en pause - commande {order_number}', 'gestion-atelier-cct' ),
+				'body'    => '<p>Bonjour {customer_name},</p>'
+					. '<p>Un petit mot pour vous tenir informé : l’intervention sur votre matériel (commande <strong>{order_number}</strong>) est momentanément mise en pause.</p>'
+					. '{hold_message}'
+					. '<p>Rien à faire de votre côté : votre dossier n’est pas oublié, et <strong>nous vous préviendrons dès que l’intervention reprendra son cours</strong>.</p>'
+					. '<p>Une question entre-temps ? Répondez à cet e-mail ou appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}).</p>'
+					. '<p>À bientôt,<br><br>Bastien.</p>',
+			),
+			'hold_release' => array(
+				'enabled' => true,
+				'label'   => __( 'Dossier repris (fin de la mise en attente)', 'gestion-atelier-cct' ),
+				'subject' => __( 'Bonne nouvelle : votre dossier reprend son cours - commande {order_number}', 'gestion-atelier-cct' ),
+				'body'    => '<p>Bonjour {customer_name},</p>'
+					. '<p>Bonne nouvelle : l’intervention sur votre matériel (commande <strong>{order_number}</strong>) reprend son cours à l’atelier.</p>'
+					. '{hold_message}'
+					. '<p>Nous continuons à vous tenir informé de chaque étape, comme d’habitude.</p>'
+					. '<p>Une question ? Répondez à cet e-mail ou appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}).</p>'
 					. '<p>À bientôt,<br><br>Bastien.</p>',
 			),
 			'unfinished_cancel' => array(
@@ -1449,6 +1472,9 @@ function gacct_pay_render_admin_page() {
 									<code>{days_remaining}</code> <?php esc_html_e( '(« 2 jours »)', 'gestion-atelier-cct' ); ?>
 									<code>{delete_deadline}</code> <?php esc_html_e( '(date + heure de suppression)', 'gestion-atelier-cct' ); ?>
 									<code>{time_remaining}</code> <?php esc_html_e( '(« environ 11 heures »)', 'gestion-atelier-cct' ); ?>
+									<br>
+									<?php esc_html_e( 'Mise en attente / reprise du dossier :', 'gestion-atelier-cct' ); ?>
+									<code>{hold_message}</code> <?php esc_html_e( '(message personnalisé de l’opérateur, déjà mis en forme ; vide si aucun message)', 'gestion-atelier-cct' ); ?>
 								</p>
 							</td>
 						</tr>

@@ -220,6 +220,51 @@
 				return;
 			}
 
+			// Mise en attente du dossier (drapeau, pas un état) : motif obligatoire.
+			if ( 'hold' === opAction ) {
+				var holdWrap  = button.closest( '.gacct-op-force-form' );
+				var holdField = holdWrap ? holdWrap.querySelector( '[data-op-field="hold-motif"]' ) : null;
+				var holdMotif = holdField ? holdField.value.trim() : '';
+
+				if ( '' === holdMotif ) {
+					showFeedback( 'error', window.gacctOp.i18n.reasonRequired );
+					if ( holdField ) {
+						holdField.focus();
+					}
+					return;
+				}
+
+				if ( ! window.confirm( 'Mettre ce dossier en attente ? Le client reçoit immédiatement un email avec votre motif.' ) ) {
+					return;
+				}
+
+				run( button, 'gacct_op_hold', {
+					revision_id: revisionId,
+					motif: holdMotif
+				}, function () {
+					window.location.reload();
+				} );
+				return;
+			}
+
+			// Reprise du dossier (levée de la mise en attente) : message facultatif.
+			if ( 'resume' === opAction ) {
+				var resumeWrap  = button.closest( '.gacct-op-force-form' );
+				var resumeField = resumeWrap ? resumeWrap.querySelector( '[data-op-field="resume-message"]' ) : null;
+
+				if ( ! window.confirm( 'Reprendre ce dossier ? Le client reçoit immédiatement un email l’informant de la reprise.' ) ) {
+					return;
+				}
+
+				run( button, 'gacct_op_resume', {
+					revision_id: revisionId,
+					message: resumeField ? resumeField.value.trim() : ''
+				}, function () {
+					window.location.reload();
+				} );
+				return;
+			}
+
 			if ( 'delete-report' === opAction ) {
 				if ( ! window.confirm( 'Supprimer définitivement ce rapport PDF ?' ) ) {
 					return;

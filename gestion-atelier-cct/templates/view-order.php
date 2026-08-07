@@ -87,6 +87,16 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 				<span><?php echo esc_html( sprintf( __( 'étape %1$d sur %2$d', 'gestion-atelier-cct' ), $step_pos, $step_total ) ); ?></span>
 			</p>
 		<?php endif; ?>
+
+		<?php if ( ! empty( $d['hold']['active'] ) && ! $is_dead ) : ?>
+			<div class="gacct-vo-hold">
+				<strong><?php esc_html_e( 'Dossier momentanément en attente', 'gestion-atelier-cct' ); ?></strong>
+				<?php if ( '' !== $d['hold']['motif'] ) : ?>
+					<p><?php echo nl2br( esc_html( $d['hold']['motif'] ) ); ?></p>
+				<?php endif; ?>
+				<p class="gacct-vo-hold-note"><?php esc_html_e( 'Nous vous préviendrons par email dès que votre dossier reprendra son cours.', 'gestion-atelier-cct' ); ?></p>
+			</div>
+		<?php endif; ?>
 	</div>
 
 	<?php if ( 4 === $etat ) : ?>
@@ -229,6 +239,15 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 			<?php if ( function_exists( 'gacct_conf_feature' ) && gacct_conf_feature( 'work_order' ) && ! empty( $d['links']['work_order'] ) ) : ?>
 				<a class="gacct-vo-btn is-secondary" href="<?php echo esc_url( $d['links']['work_order'] ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Imprimer le bon d\'intervention', 'gestion-atelier-cct' ); ?></a>
 			<?php endif; ?>
+			<?php if ( function_exists( 'gacct_ship_render_form' ) ) : ?>
+				<?php echo gacct_ship_render_form( $order ); // phpcs:ignore WordPress.Security.EscapeOutput -- HTML construit et échappé par le module shipping. ?>
+			<?php endif; ?>
+		</div>
+	<?php elseif ( null !== $etat && ! $is_dead && function_exists( 'gacct_ship_info' ) && gacct_ship_info( $d['revision_id'] ) ) : ?>
+		<!-- ── Suivi du colis aller (lecture seule, matériel déjà réceptionné) ── -->
+		<div class="gacct-vo-card">
+			<h3><?php esc_html_e( 'Votre envoi vers l\'atelier', 'gestion-atelier-cct' ); ?></h3>
+			<?php echo gacct_ship_render_form( $order ); // phpcs:ignore WordPress.Security.EscapeOutput -- HTML construit et échappé par le module shipping. ?>
 		</div>
 	<?php endif; ?>
 
