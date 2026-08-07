@@ -582,6 +582,212 @@
 			} );
 		}
 
+		// ─────────────────────────────────────────────────────────────────
+		// Facturation & suppléments (carte .gacct-op-billing-card).
+		// Motif recopié du devis complémentaire ; le total accepte les
+		// montants négatifs (remises) et s'affiche en rouge s'il l'est.
+		// ─────────────────────────────────────────────────────────────────
+		var billCard = fiche.querySelector( '.gacct-op-billing-card' );
+
+		if ( billCard && billCard.querySelector( '[data-bill-rows]' ) ) {
+			var billRows     = billCard.querySelector( '[data-bill-rows]' );
+			var billTotalEl  = billCard.querySelector( '[data-bill-total]' );
+			var billFeedback = billCard.querySelector( '.gacct-op-billing-feedback' );
+			var billProducts = [];
+
+			try {
+				var billProductsScript = billCard.querySelector( '[data-bill-products]' );
+				billProducts = billProductsScript ? JSON.parse( billProductsScript.textContent ) : [];
+			} catch ( e ) {
+				billProducts = [];
+			}
+
+			function billShowFeedback( type, message ) {
+				if ( billFeedback ) {
+					billFeedback.className   = 'gacct-op-feedback gacct-op-billing-feedback ' + type;
+					billFeedback.textContent = message;
+					billFeedback.scrollIntoView( { block: 'nearest' } );
+				} else {
+					showFeedback( type, message );
+				}
+			}
+
+			function billFormatAmount( n ) {
+				return n.toFixed( 2 ).replace( '.', ',' ) + ' €';
+			}
+
+			function billProductById( id ) {
+				for ( var i = 0; i < billProducts.length; i++ ) {
+					if ( Number( billProducts[ i ].id ) === Number( id ) ) {
+						return billProducts[ i ];
+					}
+				}
+				return null;
+			}
+
+			function billRecompute() {
+				var total = 0;
+
+				billRows.querySelectorAll( 'tr' ).forEach( function ( row ) {
+					var qty  = Math.max( 1, parseInt( row.querySelector( '[data-b-qty]' ).value, 10 ) || 1 );
+					var unit = 0;
+
+					if ( 'catalog' === row.getAttribute( 'data-b-type' ) ) {
+						var product = billProductById( row.querySelector( '[data-b-product]' ).value );
+						unit = product ? Number( product.price_ttc ) : 0;
+						row.querySelector( '[data-b-unit-label]' ).textContent = billFormatAmount( unit );
+					} else {
+						unit = parseFloat( String( row.querySelector( '[data-b-price]' ).value ).replace( ',', '.' ) ) || 0;
+					}
+
+					var line = unit * qty;
+					var lineEl = row.querySelector( '[data-b-line-total]' );
+					lineEl.textContent = billFormatAmount( line );
+					lineEl.classList.toggle( 'is-negative', line < 0 );
+					total += line;
+				} );
+
+				if ( billTotalEl ) {
+					billTotalEl.textContent = billFormatAmount( total );
+					billTotalEl.classList.toggle( 'is-negative', total < 0 );
+				}
+			}
+
+			function billAddRow( type ) {
+				var row = document.createElement( 'tr' );
+				row.setAttribute( 'data-b-type', type );
+
+				var cellMain = '';
+
+				if ( 'catalog' === type ) {
+					var options = billProducts.map( function ( p ) {
+						return '<option value="' + p.id + '">' + p.name + '</option>';
+					} ).join( '' );
+					cellMain = '<select data-b-product>' + options + '</select>';
+				} else {
+					cellMain = '<input type="text" data-b-label placeholder="Libellé (ex. : Remise commerciale)">';
+				}
+
+				row.innerHTML =
+					'<td>' + cellMain + '</td>' +
+					'<td class="col-qty"><input type="number" data-b-qty min="1" max="99" value="1"></td>' +
+					'<td class="col-price">' + ( 'catalog' === type
+						? '<span data-b-unit-label>—</span>'
+						: '<input type="number" data-b-price step="0.01" placeholder="0,00 (négatif = remise)">' ) + '</td>' +
+					'<td class="col-total"><span data-b-line-total>—</span></td>' +
+					'<td class="col-del"><button type="button" class="gacct-op-quote-del" data-op-action="bill-del-row" aria-label="Retirer la ligne">×</button></td>';
+
+				billRows.appendChild( row );
+				billRecompute();
+			}
+
+			billCard.addEventListener( 'input', billRecompute );
+			billCard.addEventListener( 'change', billRecompute );
+
+			billCard.addEventListener( 'click', function ( event ) {
+				var button = event.target.closest( '[data-op-action]' );
+
+				if ( ! button || button.disabled ) {
+					return;
+				}
+
+				var action = button.getAttribute( 'data-op-action' );
+
+				if ( 'bill-add-catalog' === action ) {
+					if ( ! billProducts.length ) {
+						billShowFeedback( 'error', 'Aucun produit du catalogue disponible (hors frais de port).' );
+						return;
+					}
+					billAddRow( 'catalog' );
+					return;
+				}
+
+				if ( 'bill-add-free' === action ) {
+					billAddRow( 'free' );
+					return;
+				}
+
+				if ( 'bill-del-row' === action ) {
+					var tr = button.closest( 'tr' );
+					if ( tr ) {
+						tr.remove();
+						billRecompute();
+					}
+					return;
+				}
+
+				// Retrait d'une ligne DÉJÀ facturée (liste au-dessus de l'éditeur).
+				if ( 'billing-remove' === action ) {
+					if ( ! window.confirm( 'Retirer cette ligne de la facture ? Le retrait est journalisé en note de commande.' ) ) {
+						return;
+					}
+
+					button.disabled = true;
+					post( 'gacct_op_billing_remove', {
+						revision_id: revisionId,
+						item_id: button.getAttribute( 'data-item-id' )
+					} )
+						.then( function ( json ) {
+							if ( json && json.success ) {
+								window.location.reload();
+							} else {
+								billShowFeedback( 'error', ( json && json.data && json.data.message ) || window.gacctOp.i18n.genericError );
+								button.disabled = false;
+							}
+						} )
+						.catch( function () {
+							billShowFeedback( 'error', window.gacctOp.i18n.genericError );
+							button.disabled = false;
+						} );
+					return;
+				}
+
+				if ( 'billing-add' === action ) {
+					var billLines = [];
+					var billError = '';
+
+					billRows.querySelectorAll( 'tr' ).forEach( function ( row ) {
+						var qty = Math.max( 1, parseInt( row.querySelector( '[data-b-qty]' ).value, 10 ) || 1 );
+
+						if ( 'catalog' === row.getAttribute( 'data-b-type' ) ) {
+							billLines.push( { product_id: row.querySelector( '[data-b-product]' ).value, qty: qty } );
+						} else {
+							var label = row.querySelector( '[data-b-label]' ).value.trim();
+							var price = parseFloat( String( row.querySelector( '[data-b-price]' ).value ).replace( ',', '.' ) ) || 0;
+
+							if ( '' === label ) {
+								billError = 'Chaque ligne libre doit avoir un libellé.';
+							} else if ( 0 === price ) {
+								billError = 'Chaque ligne libre doit avoir un prix non nul (négatif = remise).';
+							}
+							billLines.push( { label: label, price: price, qty: qty } );
+						}
+					} );
+
+					if ( billError ) {
+						billShowFeedback( 'error', billError );
+						return;
+					}
+
+					if ( ! billLines.length ) {
+						billShowFeedback( 'error', 'Ajoutez au moins une ligne.' );
+						return;
+					}
+
+					if ( ! window.confirm( 'Ajouter ces lignes à la facture ? Aucun email ne sera envoyé au client.' ) ) {
+						return;
+					}
+
+					run( button, 'gacct_op_billing_add', {
+						revision_id: revisionId,
+						lines: JSON.stringify( billLines )
+					}, function () {
+						window.location.reload();
+					} );
+				}
+			} );
+		}
+
 		// Dépôt du rapport d'intervention (états 3 à 6, sans changement d'état).
 		var uploadForm = fiche.querySelector( '[data-op-form="upload-report"]' );
 

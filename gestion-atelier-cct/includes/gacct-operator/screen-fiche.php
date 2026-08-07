@@ -169,6 +169,85 @@ function gacct_op_render_quote_card( $revision_id, array $revision, $order, $sta
 }
 
 /**
+ * Carte « Facturation & suppléments » (états 2 à 6, commande non annulée) :
+ * l'opérateur ajuste la facture sans passer par le devis — produits du
+ * catalogue (toutes catégories hors frais de port), lignes libres et REMISES
+ * (montants négatifs). Aucun email client, notes de commande signées ; tout
+ * s'ajoute (ou se retranche) au solde de fin d'intervention (API Kojito).
+ */
+function gacct_op_render_billing_card( $revision_id, array $revision, $order, $state ) {
+	if ( ! $order || ! function_exists( 'gacct_billing_add_lines' ) ) {
+		return;
+	}
+
+	if ( $state < 2 || $state > 6 || $order->has_status( array( 'cancelled', 'refunded', 'trash' ) ) ) {
+		return;
+	}
+
+	$currency = array( 'currency' => $order->get_currency() );
+
+	// Montants : API Kojito uniquement, aucun recalcul (mêmes sources que view-order).
+	$total_due = gacct_kojito_total_initial( $order );
+	$deposit   = gacct_quote_deposit_paid( $order );
+	$balance   = round( max( 0, $total_due - $deposit ), wc_get_price_decimals() );
+
+	$items = gacct_billing_items( $order );
+
+	echo '<div class="gacct-op-card gacct-op-billing-card">';
+	echo '<h2>' . esc_html__( 'Facturation & suppléments', 'gestion-atelier-cct' ) . '</h2>';
+	echo '<div class="gacct-op-feedback gacct-op-billing-feedback" aria-live="polite"></div>';
+
+	// ---- Rappel des montants (TTC). ----
+	echo '<dl class="gacct-op-facts">';
+	echo '<div><dt>' . esc_html__( 'Total dû (TTC)', 'gestion-atelier-cct' ) . '</dt><dd>' . wp_kses_post( wc_price( $total_due, $currency ) ) . '</dd></div>';
+	echo '<div><dt>' . esc_html__( 'Acompte réglé', 'gestion-atelier-cct' ) . '</dt><dd>' . wp_kses_post( wc_price( $deposit, $currency ) ) . '</dd></div>';
+	echo '<div><dt>' . esc_html__( 'Solde estimé', 'gestion-atelier-cct' ) . '</dt><dd>' . wp_kses_post( wc_price( $balance, $currency ) ) . '</dd></div>';
+	echo '</dl>';
+
+	// ---- Lignes de facturation déjà ajoutées. ----
+	if ( $items ) {
+		echo '<ul class="gacct-op-items gacct-op-billing-lines">';
+		foreach ( $items as $item_id => $item ) {
+			$line = gacct_kojito_montant_ligne( $item );
+			echo '<li' . ( $line < 0 ? ' class="is-discount"' : '' ) . '>';
+			echo '<span class="gacct-op-item-name">' . esc_html( $item->get_name() )
+				. ( $item->get_quantity() > 1 ? ' × ' . (int) $item->get_quantity() : '' ) . '</span>';
+			echo '<span class="gacct-op-item-total">' . wp_kses_post( wc_price( $line, $currency ) )
+				. ' <button type="button" class="gacct-op-quote-del" data-op-action="billing-remove" data-item-id="' . esc_attr( $item_id ) . '" aria-label="' . esc_attr__( 'Retirer cette ligne de la facture', 'gestion-atelier-cct' ) . '">×</button></span>';
+			echo '</li>';
+		}
+		echo '</ul>';
+	}
+
+	// ---- Éditeur (motif de la carte devis). ----
+	$products = gacct_billing_products();
+
+	echo '<div class="gacct-op-billing-form">';
+	echo '<script type="application/json" data-bill-products>' . wp_json_encode( $products ) . '</script>';
+
+	echo '<table class="gacct-op-quote-table gacct-op-billing-table"><thead><tr>'
+		. '<th>' . esc_html__( 'Prestation', 'gestion-atelier-cct' ) . '</th>'
+		. '<th class="col-qty">' . esc_html__( 'Qté', 'gestion-atelier-cct' ) . '</th>'
+		. '<th class="col-price">' . esc_html__( 'PU TTC', 'gestion-atelier-cct' ) . '</th>'
+		. '<th class="col-total">' . esc_html__( 'Total', 'gestion-atelier-cct' ) . '</th>'
+		. '<th class="col-del"></th>'
+		. '</tr></thead><tbody data-bill-rows></tbody></table>';
+
+	echo '<div class="gacct-op-quote-add">';
+	echo '<button type="button" class="button button-small" data-op-action="bill-add-catalog">+ ' . esc_html__( 'Prestation du catalogue', 'gestion-atelier-cct' ) . '</button> ';
+	echo '<button type="button" class="button button-small" data-op-action="bill-add-free">+ ' . esc_html__( 'Ligne libre (ou remise)', 'gestion-atelier-cct' ) . '</button>';
+	echo '</div>';
+
+	echo '<p class="gacct-op-quote-total">' . esc_html__( 'Total des lignes à ajouter :', 'gestion-atelier-cct' ) . ' <strong data-bill-total>0,00 €</strong></p>';
+
+	echo '<button type="button" class="button button-primary" data-op-action="billing-add">' . esc_html__( 'Ajouter à la facture', 'gestion-atelier-cct' ) . '</button>';
+	echo '<p class="gacct-op-muted">' . esc_html__( 'Remise : ligne libre avec un montant négatif. Aucun email n\'est envoyé au client — chaque mouvement est journalisé en note de commande. Le montant s\'ajoute (ou se retranche) au solde de fin d\'intervention.', 'gestion-atelier-cct' ) . '</p>';
+
+	echo '</div>'; // .gacct-op-billing-form
+	echo '</div>'; // .gacct-op-billing-card
+}
+
+/**
  * Écran fiche : une colonne mobile, 2 colonnes >= 1024 px.
  *
  * @param int $revision_id ID du CCT revision.
@@ -494,6 +573,9 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 
 	// ---------------------------------------------------------------- Devis complémentaire.
 	gacct_op_render_quote_card( $revision_id, $revision, $order, $state );
+
+	// ---------------------------------------------------------------- Facturation & suppléments.
+	gacct_op_render_billing_card( $revision_id, $revision, $order, $state );
 
 	// ---------------------------------------------------------------- Rapports de contrôle.
 	if ( function_exists( 'gacct_report_render_card' ) ) {

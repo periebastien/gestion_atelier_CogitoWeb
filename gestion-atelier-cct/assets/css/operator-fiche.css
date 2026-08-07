@@ -301,3 +301,11 @@
 }
 .gacct-op-fiche .gacct-op-hold-banner { font-weight: 400; }
 .gacct-op-fiche .gacct-op-hold-banner strong { font-weight: 700; }
+
+/* Facturation & suppléments (07/08/2026) — la table réutilise les classes
+   de la table du devis (gacct-op-quote-table, operator.css). Ici : seulement
+   les remises (montants négatifs) en rouge. */
+.gacct-op-fiche .gacct-op-billing-card [data-bill-total].is-negative,
+.gacct-op-fiche .gacct-op-billing-card [data-b-line-total].is-negative,
+.gacct-op-fiche .gacct-op-billing-lines li.is-discount .gacct-op-item-total { color: var(--gacct-danger); }
+.gacct-op-fiche .gacct-op-billing-lines .gacct-op-quote-del { vertical-align: middle; margin-left: 6px; }

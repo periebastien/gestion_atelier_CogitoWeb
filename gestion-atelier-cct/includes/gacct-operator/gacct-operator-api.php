@@ -74,6 +74,52 @@ function gacct_op_ajax_send_quote() {
 add_action( 'wp_ajax_gacct_op_send_quote', 'gacct_op_ajax_send_quote' );
 
 /**
+ * Facturation atelier : ajout de lignes (catalogue, libres, remises).
+ * Lignes JSON [{product_id, qty} | {label, price, qty}] — aucun email client.
+ */
+function gacct_op_ajax_billing_add() {
+	gacct_op_api_guard();
+
+	$raw   = isset( $_POST['lines'] ) ? wp_unslash( $_POST['lines'] ) : '';
+	$lines = json_decode( (string) $raw, true );
+
+	if ( ! is_array( $lines ) || empty( $lines ) ) {
+		wp_send_json_error( array( 'message' => __( 'Ajoutez au moins une ligne.', 'gestion-atelier-cct' ) ) );
+	}
+
+	$result = gacct_billing_add_lines(
+		isset( $_POST['revision_id'] ) ? absint( $_POST['revision_id'] ) : 0,
+		$lines
+	);
+
+	if ( is_wp_error( $result ) ) {
+		wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+	}
+
+	wp_send_json_success( $result );
+}
+add_action( 'wp_ajax_gacct_op_billing_add', 'gacct_op_ajax_billing_add' );
+
+/**
+ * Facturation atelier : retrait d'une ligne (anti-IDOR côté métier).
+ */
+function gacct_op_ajax_billing_remove() {
+	gacct_op_api_guard();
+
+	$result = gacct_billing_remove_line(
+		isset( $_POST['revision_id'] ) ? absint( $_POST['revision_id'] ) : 0,
+		isset( $_POST['item_id'] ) ? absint( $_POST['item_id'] ) : 0
+	);
+
+	if ( is_wp_error( $result ) ) {
+		wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+	}
+
+	wp_send_json_success( $result );
+}
+add_action( 'wp_ajax_gacct_op_billing_remove', 'gacct_op_ajax_billing_remove' );
+
+/**
  * Renvoi de l'email d'état (4 : devis, 6 : solde).
  */
 function gacct_op_ajax_resend_email() {
