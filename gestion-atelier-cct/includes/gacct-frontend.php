@@ -860,6 +860,11 @@ function gacct_couleurs_voile() {
         'blanc'      => array( 'base' => '#f5f5f5', 'light' => '#ffffff' ),
         'gris'       => array( 'base' => '#9ca3af', 'light' => '#d1d5db' ),
         'noir'       => array( 'base' => '#1f2937', 'light' => '#4b5563' ),
+        // Voiles multicolores (BGD…) : pastille en dégradé conique là où c'est
+        // possible ('gradient'), base/light = repli hexa pour les combinaisons.
+        // ⚠ Toute couleur ajoutée ici doit être répercutée dans la signature
+        // couleurs de la query JetEngine 22 (GROUP BY de « Mon Matériel »).
+        'multicolore' => array( 'base' => '#d33333', 'light' => '#eab308', 'gradient' => 'conic-gradient(#d33333,#eab308,#22c55e,#06b6d4,#a855f7,#d33333)' ),
     ) );
 }
 
@@ -906,7 +911,7 @@ function gacct_extraire_couleurs( $saisie ) {
 
     ksort( $trouve );
 
-    return array_slice( array_values( $trouve ), 0, 3 );
+    return array_slice( array_values( $trouve ), 0, 4 );
 }
 
 /**
@@ -925,6 +930,10 @@ function gacct_degrade_couleurs( array $couleurs ) {
     $clip = ' background-clip: padding-box;';
     switch ( count( $couleurs ) ) {
         case 1:
+            // « multicolore » seule : son dégradé conique plutôt que base→light.
+            if ( ! empty( $couleurs[0]['gradient'] ) ) {
+                return sprintf( 'background-image: %s;', $couleurs[0]['gradient'] ) . $clip;
+            }
             return sprintf( 'background-image: linear-gradient(135deg, %s 0%%, %s 100%%);', $couleurs[0]['base'], $couleurs[0]['light'] ) . $clip;
         case 2:
             return sprintf( 'background-image: linear-gradient(135deg, %s 50%%, %s 50%%);', $couleurs[0]['base'], $couleurs[1]['base'] ) . $clip;
@@ -932,6 +941,11 @@ function gacct_degrade_couleurs( array $couleurs ) {
             return sprintf(
                 'background-image: linear-gradient(135deg, %s 33.33%%, %s 33.33%% 66.66%%, %s 66.66%%);',
                 $couleurs[0]['base'], $couleurs[1]['base'], $couleurs[2]['base']
+            ) . $clip;
+        case 4:
+            return sprintf(
+                'background-image: linear-gradient(135deg, %s 25%%, %s 25%% 50%%, %s 50%% 75%%, %s 75%%);',
+                $couleurs[0]['base'], $couleurs[1]['base'], $couleurs[2]['base'], $couleurs[3]['base']
             ) . $clip;
         default:
             return 'background-color: #e5e7eb;' . $clip;

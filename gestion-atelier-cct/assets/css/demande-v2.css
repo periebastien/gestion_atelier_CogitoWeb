@@ -1,0 +1,704 @@
+/**
+ * Parcours multi-étapes « Demande d'intervention » (v2) — design de la maquette 1918.
+ *
+ * Chargée PAR-DESSUS demande-intervention.css (socle : flatpickr thémé, accordéons,
+ * cartes d'options par data-field-name, palette couleurs, sélecteur matériel).
+ * Tout est scopé .gacct-v2 : la classe est posée sur un wrapper autour du formulaire
+ * (page de test) ou sur le conteneur Elementor (page finale).
+ *
+ * Correspondance maquette → prod : .mq-card → .gacct-v2-step, .mq-nav → wrap des
+ * boutons de page JFB, .mq-btn-next → .jet-form-builder__next-page, etc.
+ */
+
+.gacct-v2 {
+	--v2-teal: var(--gacct-accent, #20c4c3);
+	--v2-teal-dark: var(--gacct-accent-dark, #17a3a2);
+	--v2-teal-soft: #e6f8f8;
+	--v2-yellow: var(--gacct-cta, #ffbd20);
+	--v2-ink: #1f2d3d;
+	--v2-ink2: #51606f;
+	--v2-line: #e3e8ee;
+	--v2-bg: #f6f8fa;
+	--v2-red: #c0392b;
+	--v2-red-soft: #fdeeec;
+	--v2-r: 14px;
+}
+
+.gacct-v2 .jet-form-builder {
+	max-width: 720px;
+	margin: 0 auto;
+	padding: 8px 0 64px;
+	font-size: 17px;
+	line-height: 1.55;
+	color: var(--v2-ink);
+	scroll-margin-top: 96px;
+}
+
+.gacct-v2 .jet-form-builder *,
+.gacct-v2 .jet-form-builder *::before,
+.gacct-v2 .jet-form-builder *::after {
+	box-sizing: border-box;
+}
+
+/* ==========================================================================
+   Barre de progression : « Étape X sur 4 — nom » + 4 segments
+   ========================================================================== */
+
+.gacct-v2-progress-label {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--v2-ink2);
+	margin: 0 0 10px;
+}
+
+.gacct-v2-progress-label strong {
+	color: var(--v2-ink);
+}
+
+.gacct-v2 .jet-form-builder-progress-pages {
+	display: flex;
+	gap: 6px;
+	margin: 0 0 26px;
+}
+
+.gacct-v2 .jet-form-builder-progress-pages > div {
+	flex: 1;
+	height: 8px;
+	border-radius: 99px;
+	background: var(--v2-line);
+	transition: background 0.25s;
+	overflow: hidden;
+}
+
+/* Segments faits (pages passées + page courante). */
+.gacct-v2 .jet-form-builder-progress-pages > div.passed-page,
+.gacct-v2 .jet-form-builder-progress-pages > div.active-page {
+	background: var(--v2-teal);
+}
+
+/* Le contenu natif (rond numéroté, libellé, séparateur) est masqué :
+   le libellé vit dans .gacct-v2-progress-label. */
+.gacct-v2 .jet-form-builder-progress-pages__item,
+.gacct-v2 .jet-form-builder-progress-pages__separator {
+	display: none;
+}
+
+/* ==========================================================================
+   Étapes : cartes
+   ========================================================================== */
+
+.gacct-v2 .gacct-v2-step {
+	background: #fff;
+	border: 1px solid var(--v2-line);
+	border-radius: var(--v2-r);
+	padding: 26px 24px;
+	box-shadow: 0 2px 10px rgba(31, 45, 61, 0.05);
+}
+
+.gacct-v2 .gacct-v2-titre {
+	font-size: 26px;
+	font-weight: 800;
+	line-height: 1.25;
+	margin: 0 0 6px;
+	color: var(--v2-ink);
+}
+
+.gacct-v2 .gacct-v2-sous-titre {
+	margin: 0 0 22px;
+	color: var(--v2-ink2);
+}
+
+/* Grille 2 colonnes (taille / PTV). */
+.gacct-v2 .gacct-v2-grille-2 {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0 16px;
+}
+
+/* ==========================================================================
+   Champs
+   ========================================================================== */
+
+.gacct-v2 .jet-form-builder-row {
+	margin: 0 0 18px;
+}
+
+.gacct-v2 .jet-form-builder__label {
+	font-weight: 700;
+	font-size: 15.5px;
+	margin-bottom: 7px;
+	color: var(--v2-ink);
+}
+
+.gacct-v2 .jet-form-builder__desc,
+.gacct-v2 .gacct-v2-aide {
+	font-size: 14px;
+	color: var(--v2-ink2);
+	margin-top: 6px;
+}
+
+.gacct-v2 input.jet-form-builder__field[type="text"],
+.gacct-v2 input.jet-form-builder__field[type="number"],
+.gacct-v2 input.jet-form-builder__field[type="email"],
+.gacct-v2 input.jet-form-builder__field[type="tel"],
+.gacct-v2 select.jet-form-builder__field,
+.gacct-v2 textarea.jet-form-builder__field,
+.gacct-v2 .jet-form-builder input.flatpickr-input ~ input.form-control {
+	width: 100%;
+	border: 2px solid var(--v2-line);
+	border-radius: 12px;
+	padding: 14px 16px;
+	font-size: 17px;
+	color: var(--v2-ink);
+	background: #fff;
+	transition: border-color 0.15s;
+}
+
+.gacct-v2 input.jet-form-builder__field:focus,
+.gacct-v2 select.jet-form-builder__field:focus,
+.gacct-v2 textarea.jet-form-builder__field:focus,
+.gacct-v2 .jet-form-builder input.form-control:focus {
+	border-color: var(--v2-teal);
+	outline: none;
+}
+
+/* Messages de validation JFB : composant erreur de la maquette. */
+.gacct-v2 .jet-form-builder-row .error-message,
+.gacct-v2 .gacct-v2-err {
+	background: var(--v2-red-soft);
+	border-left: 4px solid var(--v2-red);
+	color: var(--v2-red);
+	font-weight: 600;
+	font-size: 15px;
+	border-radius: 8px;
+	padding: 10px 14px;
+	margin-top: 10px;
+}
+
+.gacct-v2 .gacct-v2-err {
+	display: none;
+	margin: 14px 0 0;
+}
+
+.gacct-v2 .gacct-v2-err.is-on {
+	display: block;
+}
+
+/* ==========================================================================
+   Recherche de voile (étape 1)
+   ========================================================================== */
+
+/* Champs de stockage marque/modèle : cachés, l'UI de recherche les alimente.
+   (class_name JFB atterrit sur l'input, pas sur la row.) */
+.gacct-v2 .jet-form-builder-row:has( input.gacct-v2-cache ) {
+	display: none;
+}
+
+.gacct-v2-voile {
+	margin: 0 0 18px;
+}
+
+.gacct-v2-combo {
+	position: relative;
+	margin: 0 0 14px;
+}
+
+.gacct-v2-combo-label,
+.gacct-v2-champ label {
+	display: block;
+	font-weight: 700;
+	font-size: 15.5px;
+	margin-bottom: 7px;
+	color: var(--v2-ink);
+}
+
+.gacct-v2 .gacct-v2-combo input,
+.gacct-v2 .gacct-v2-manual input,
+.gacct-v2 .gacct-v2-manual select {
+	width: 100%;
+	border: 2px solid var(--v2-line);
+	border-radius: 12px;
+	padding: 14px 16px;
+	font-size: 17px;
+	color: var(--v2-ink);
+	background: #fff;
+	transition: border-color 0.15s;
+}
+
+.gacct-v2 .gacct-v2-combo input:focus,
+.gacct-v2 .gacct-v2-manual input:focus,
+.gacct-v2 .gacct-v2-manual select:focus {
+	border-color: var(--v2-teal);
+	outline: none;
+}
+
+/* Panneau de suggestions. */
+.gacct-v2-sugg {
+	display: none;
+	position: absolute;
+	top: calc(100% + 6px);
+	left: 0;
+	right: 0;
+	z-index: 40;
+	background: #fff;
+	border: 1px solid var(--v2-line);
+	border-radius: 12px;
+	box-shadow: 0 12px 34px rgba(31, 45, 61, 0.18);
+	overflow: hidden;
+}
+
+.gacct-v2-sugg.is-open {
+	display: block;
+}
+
+.gacct-v2 button.gacct-v2-s-item,
+.gacct-v2 button.gacct-v2-s-other {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	text-align: left;
+	background: #fff;
+	border: 0;
+	padding: 12px 16px;
+	font-size: 16px;
+	cursor: pointer;
+	color: var(--v2-ink);
+}
+
+.gacct-v2 button.gacct-v2-s-item:hover,
+.gacct-v2 button.gacct-v2-s-item:focus,
+.gacct-v2 button.gacct-v2-s-other:hover {
+	background: var(--v2-teal-soft);
+}
+
+.gacct-v2-s-txt {
+	flex: 1;
+	min-width: 0;
+}
+
+.gacct-v2-s-txt strong {
+	display: block;
+}
+
+.gacct-v2-s-brand {
+	display: block;
+	font-size: 14px;
+	color: var(--v2-ink2);
+}
+
+.gacct-v2-s-year {
+	background: var(--v2-bg);
+	border-radius: 99px;
+	padding: 3px 10px;
+	font-size: 13.5px;
+	color: var(--v2-ink2);
+	flex-shrink: 0;
+}
+
+.gacct-v2-s-empty {
+	padding: 12px 16px;
+	color: var(--v2-ink2);
+	font-size: 15px;
+}
+
+.gacct-v2 button.gacct-v2-s-other {
+	border-top: 1px solid var(--v2-line);
+	font-weight: 700;
+	color: var(--v2-teal-dark);
+}
+
+/* Bouton « Ma voile n'est pas dans la liste » (hors panneau). */
+.gacct-v2 button.gacct-v2-notfound {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	width: 100%;
+	background: #fff;
+	border: 2px dashed var(--v2-teal);
+	border-radius: 12px;
+	padding: 13px 16px;
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--v2-teal-dark);
+	cursor: pointer;
+	transition: background 0.15s;
+}
+
+.gacct-v2 button.gacct-v2-notfound:hover {
+	background: var(--v2-teal-soft);
+	border-style: dashed;
+}
+
+/* Carte de confirmation. */
+.gacct-v2-chosen {
+	display: none;
+	align-items: center;
+	gap: 12px;
+	background: var(--v2-teal-soft);
+	border: 2px solid var(--v2-teal);
+	border-radius: 12px;
+	padding: 14px 16px;
+	margin: 0 0 14px;
+}
+
+.gacct-v2-chosen.is-on {
+	display: flex;
+}
+
+.gacct-v2-c-check {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	border-radius: 50%;
+	background: var(--v2-teal);
+	color: #fff;
+	font-weight: 800;
+	flex-shrink: 0;
+}
+
+.gacct-v2-c-infos {
+	flex: 1;
+	min-width: 0;
+}
+
+.gacct-v2-c-infos strong {
+	display: block;
+}
+
+.gacct-v2-c-infos small {
+	display: block;
+	color: var(--v2-ink2);
+	font-size: 14px;
+}
+
+.gacct-v2 button.gacct-v2-c-edit,
+.gacct-v2 button.gacct-v2-c-edit:hover {
+	background: none;
+	border: 0 solid transparent;
+	padding: 0;
+	color: var(--v2-teal-dark);
+	text-decoration: underline;
+	font-size: 15px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+/* Mode manuel. */
+.gacct-v2-manual {
+	display: none;
+	border-top: 1px dashed var(--v2-line);
+	margin-top: 18px;
+	padding-top: 18px;
+}
+
+.gacct-v2-manual.is-on {
+	display: block;
+}
+
+.gacct-v2-manual-intro {
+	margin: 0 0 14px;
+	color: var(--v2-ink2);
+}
+
+.gacct-v2-manual-intro strong {
+	color: var(--v2-ink);
+}
+
+.gacct-v2-champ {
+	margin: 0 0 14px;
+}
+
+/* ==========================================================================
+   Navigation Retour / Continuer / Envoyer
+   ========================================================================== */
+
+.gacct-v2 .jet-form-builder__next-page-wrap {
+	display: flex;
+	gap: 14px;
+	margin-top: 26px;
+}
+
+/* (0,2,1) : bat le `.elementor-kit-4 button` (0,2,0) du kit quel que soit l'ordre. */
+.gacct-v2 button.jet-form-builder__next-page,
+.gacct-v2 button.jet-form-builder__prev-page,
+.gacct-v2 button.jet-form-builder__submit {
+	font-size: 18px;
+	font-weight: 800;
+	border-radius: 12px;
+	padding: 16px 26px;
+	min-height: 56px;
+	border: 0;
+	cursor: pointer;
+	transition: background 0.15s, border-color 0.15s;
+}
+
+.gacct-v2 button.jet-form-builder__next-page {
+	flex: 1;
+	order: 2;
+	background: var(--v2-teal);
+	color: #fff;
+}
+
+.gacct-v2 button.jet-form-builder__next-page:hover {
+	background: var(--v2-teal-dark);
+}
+
+.gacct-v2 button.jet-form-builder__prev-page {
+	order: 1;
+	background: #fff;
+	border: 2px solid var(--v2-line);
+	color: var(--v2-ink2);
+}
+
+.gacct-v2 button.jet-form-builder__prev-page:hover {
+	border-color: var(--v2-ink2);
+}
+
+/* Dernière page : « Envoyer la demande » en jaune + Retour à sa gauche. */
+.gacct-v2 .jet-form-builder__submit-wrap {
+	display: flex;
+	gap: 14px;
+	margin-top: 26px;
+}
+
+.gacct-v2 button.jet-form-builder__submit {
+	flex: 1;
+	order: 2;
+	background: var(--v2-yellow);
+	color: var(--v2-ink);
+}
+
+.gacct-v2 button.jet-form-builder__submit:hover {
+	filter: brightness(0.96);
+}
+
+/* ==========================================================================
+   Étape 2 : bascule Solo/Biplace, quantités, carte devis
+   ========================================================================== */
+
+.gacct-v2-seg {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+	padding: 12px 14px 4px;
+}
+
+.gacct-v2-seg-label {
+	font-weight: 700;
+	font-size: 15px;
+}
+
+.gacct-v2-seg-btns {
+	display: inline-flex;
+	border: 2px solid var(--v2-line);
+	border-radius: 99px;
+	overflow: hidden;
+}
+
+.gacct-v2 button.gacct-v2-seg-btn,
+.gacct-v2 button.gacct-v2-seg-btn:hover {
+	background: #fff;
+	border: 0 solid transparent;
+	padding: 8px 16px;
+	font-size: 14.5px;
+	font-weight: 700;
+	color: var(--v2-ink2);
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+.gacct-v2 button.gacct-v2-seg-btn.is-sel,
+.gacct-v2 button.gacct-v2-seg-btn.is-sel:hover {
+	background: var(--v2-teal);
+	color: #fff;
+}
+
+/* Stepper de quantité (suspentes cochées). */
+.gacct-v2-qty {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-top: 8px;
+}
+
+.gacct-v2 button.gacct-v2-qty-btn,
+.gacct-v2 button.gacct-v2-qty-btn:hover {
+	width: 38px;
+	height: 38px;
+	border: 2px solid var(--v2-line);
+	border-radius: 10px;
+	background: #fff;
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--v2-ink);
+	cursor: pointer;
+	line-height: 1;
+}
+
+.gacct-v2 button.gacct-v2-qty-btn:hover {
+	border-color: var(--v2-teal);
+}
+
+.gacct-v2-qty b {
+	min-width: 18px;
+	text-align: center;
+	font-size: 17px;
+}
+
+/* Carte « Votre voile a besoin d'une réparation ? ». */
+.gacct-v2-repair {
+	border: 2px solid var(--v2-teal);
+	border-radius: 12px;
+	padding: 18px 18px 8px;
+	margin-top: 18px;
+	background: #fff;
+}
+
+.gacct-v2-repair-titre {
+	font-weight: 800;
+	font-size: 18px;
+	margin: 0 0 6px;
+}
+
+.gacct-v2-repair-desc {
+	margin: 0 0 10px;
+	font-size: 14.5px;
+	color: var(--v2-ink2);
+}
+
+.gacct-v2-repair.is-dim {
+	opacity: 0.45;
+	pointer-events: none;
+}
+
+/* Accordéon suspentes verrouillé par le devis. */
+.gacct-v2 .gacct-accordion__body.is-locked .jet-form-builder__field-wrap {
+	opacity: 0.45;
+	pointer-events: none;
+}
+
+.gacct-v2-repair-note {
+	margin: 0 0 10px;
+	padding: 10px 14px;
+	background: var(--v2-teal-soft);
+	border-radius: 8px;
+	font-size: 14.5px;
+	color: var(--v2-ink);
+}
+
+/* ==========================================================================
+   Récapitulatif (étape 4, construit en JS)
+   ========================================================================== */
+
+.gacct-v2-recap {
+	margin: 0 0 20px;
+}
+
+.gacct-v2-recap-row {
+	display: flex;
+	gap: 12px;
+	align-items: flex-start;
+	padding: 14px 0;
+	border-bottom: 1px solid var(--v2-line);
+}
+
+.gacct-v2-recap-row:first-child {
+	padding-top: 0;
+}
+
+.gacct-v2-r-label {
+	flex: 0 0 110px;
+	color: var(--v2-ink2);
+	font-size: 15px;
+}
+
+.gacct-v2-r-body {
+	flex: 1;
+	min-width: 0;
+}
+
+.gacct-v2-r-body small {
+	display: block;
+	color: var(--v2-ink2);
+	font-size: 14px;
+}
+
+/* (0,2,1) + border-style explicite : le kit Elementor pose `.elementor-kit-4 button`
+   (0,2,0, fond jaune) et `button:hover { border-style: none }` — chargé après nous. */
+.gacct-v2 button.gacct-v2-r-edit,
+.gacct-v2 button.gacct-v2-r-edit:hover {
+	background: none;
+	border: 0 solid transparent;
+	padding: 0;
+	color: var(--v2-teal-dark);
+	text-decoration: underline;
+	font-size: 15px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.gacct-v2-total {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	background: var(--v2-teal-soft);
+	border-radius: 12px;
+	padding: 14px 18px;
+	font-weight: 800;
+	margin-top: 18px;
+}
+
+.gacct-v2-total--acompte {
+	background: #fff8e6;
+	margin-top: 10px;
+}
+
+.gacct-v2-total-note {
+	font-size: 14px;
+	color: var(--v2-ink2);
+	margin-top: 8px;
+}
+
+/* Total courant de l'étape 2 (sous les prestations). */
+.gacct-v2-total--etape2 {
+	margin-top: 18px;
+}
+
+/* ==========================================================================
+   Neutralisation d'héritages du socle v1 (demande-intervention.css)
+   ========================================================================== */
+
+/* La v1 masque la row submit en mobile au profit de sa barre fixe ; la v2 n'a
+   pas de barre fixe, son bouton « Envoyer la demande » doit rester visible. */
+@media ( max-width: 781px ) {
+	.gacct-v2 .jet-form-builder .jet-form-builder-row.field-type-submit-field {
+		display: block;
+	}
+}
+
+/* ==========================================================================
+   Responsive (breakpoint unique de la maquette)
+   ========================================================================== */
+
+@media (max-width: 520px) {
+	.gacct-v2 .jet-form-builder {
+		font-size: 16px;
+	}
+
+	.gacct-v2 .gacct-v2-step {
+		padding: 20px 16px;
+	}
+
+	.gacct-v2 .gacct-v2-titre {
+		font-size: 22px;
+	}
+
+	.gacct-v2 .gacct-v2-grille-2 {
+		grid-template-columns: 1fr;
+	}
+}

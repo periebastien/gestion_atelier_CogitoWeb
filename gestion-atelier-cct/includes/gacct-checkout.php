@@ -75,6 +75,20 @@ function jwcct_push_debug( $event, $data ) {
  * ============================================================================= */
 
 add_action( 'jet-form-builder/custom-action/ajouter_configurateur_panier', function( $request, $action_handler ) {
+    /* ⚠ Charger la session panier AVANT tout ajout. Dans une soumission JFB, le
+       panier est instancié paresseusement et sa session n'est PAS encore chargée :
+       le premier add_to_cart() écrit dans un panier vide en mémoire, puis le
+       premier get_cart() interne (calculate_totals → is_empty) recharge la
+       session et ÉCRASE ce premier article — perdu en silence (vécu le
+       09/08/2026 : la Révision périodique disparaissait du panier). */
+    if ( function_exists( 'WC' ) && WC()->cart ) {
+        WC()->cart->get_cart();
+        /* Une soumission = une configuration complète : on repart d'un panier
+           vide. Sans ça, une re-soumission (retour arrière, double clic sur
+           « Envoyer ») EMPILAIT les produits de la demande précédente. */
+        WC()->cart->empty_cart();
+    }
+
     $champs_produits = ['revisions_controle', 'pliages_secours', 'suspentes_travaux', 'frais_de_ports'];
     $ids_a_ajouter = [];
 
@@ -89,10 +103,51 @@ add_action( 'jet-form-builder/custom-action/ajouter_configurateur_panier', funct
         }
     }
 
+    /* Quantités (formulaire v2) : champ caché `suspentes_quantites` au format
+       "id:qty,id:qty", ne s'applique qu'aux produits effectivement cochés.
+       Absent (formulaire historique) : tout part en quantité 1. */
+    $quantites = [];
+    if ( ! empty( $request['suspentes_quantites'] ) && is_string( $request['suspentes_quantites'] ) ) {
+        foreach ( explode( ',', $request['suspentes_quantites'] ) as $paire ) {
+            $morceaux = explode( ':', trim( $paire ) );
+            $pid      = absint( $morceaux[0] ?? 0 );
+            $qty      = max( 1, min( 9, absint( $morceaux[1] ?? 1 ) ) );
+            if ( $pid ) {
+                $quantites[ $pid ] = $qty;
+            }
+        }
+    }
+
     foreach ( array_unique( $ids_a_ajouter ) as $product_id ) {
         $clean_id = absint( trim( $product_id ) );
         if ( $clean_id > 0 ) {
-            WC()->cart->add_to_cart( $clean_id );
+            WC()->cart->add_to_cart( $clean_id, $quantites[ $clean_id ] ?? 1 );
+        }
+    }
+
+    /* Suppléments biplace (formulaire v2) : champs cachés `biplace_voile` /
+       `biplace_secours` ('1' si la bascule du groupe est en Biplace). Le produit
+       supplément est ajouté en quantité = nombre de prestations concernées
+       cochées (un supplément PAR prestation, cf. maquette 1918). L'acompte du
+       supplément suit sa propre meta Kojito, comme tout produit du panier. */
+    if ( function_exists( 'gacct_biplace_supplement_product_ids' ) && function_exists( 'gacct_product_biplace_supplement' ) ) {
+        $supplements = (array) gacct_biplace_supplement_product_ids();
+
+        foreach ( [ 'voile' => 'biplace_voile', 'secours' => 'biplace_secours' ] as $type => $champ ) {
+            if ( empty( $request[ $champ ] ) || empty( $supplements[ $type ] ) ) {
+                continue;
+            }
+
+            $nb = 0;
+            foreach ( array_unique( $ids_a_ajouter ) as $product_id ) {
+                if ( $type === gacct_product_biplace_supplement( absint( $product_id ) ) ) {
+                    $nb++;
+                }
+            }
+
+            if ( $nb > 0 ) {
+                WC()->cart->add_to_cart( absint( $supplements[ $type ] ), $nb );
+            }
         }
     }
 }, 10, 2 );
