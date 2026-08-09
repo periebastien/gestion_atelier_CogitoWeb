@@ -28,6 +28,7 @@ function gacct_asset_version( $relative ) {
 }
 
 require_once __DIR__ . '/includes/gacct-checkout.php';
+require_once __DIR__ . '/includes/gacct-products.php';
 require_once __DIR__ . '/includes/gacct-payments.php';
 require_once __DIR__ . '/includes/gacct-thankyou.php';
 require_once __DIR__ . '/includes/gacct-reports.php';
