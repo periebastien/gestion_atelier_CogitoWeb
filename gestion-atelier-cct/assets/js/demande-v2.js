@@ -1280,10 +1280,16 @@
 				qty.className = 'gacct-v2-qty';
 				// Stepper TOUJOURS visible (retour de recette du 09/08) : sur une
 				// ligne non cochée, un clic +/− coche d'abord la prestation.
+				// Icônes SVG (jamais un caractère typographique : centrage optique
+				// impossible à garantir selon la police) — mêmes tracés que la maquette.
 				qty.innerHTML =
-					'<button type="button" class="gacct-v2-qty-btn" data-delta="-1" aria-label="' + escapeHtml( v2i18n.qtyMoins || 'Retirer' ) + '">−</button>' +
+					'<button type="button" class="gacct-v2-qty-btn" data-delta="-1" aria-label="' + escapeHtml( v2i18n.qtyMoins || 'Retirer' ) + '">' +
+					'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>' +
+					'</button>' +
 					'<b>1</b>' +
-					'<button type="button" class="gacct-v2-qty-btn" data-delta="1" aria-label="' + escapeHtml( v2i18n.qtyPlus || 'Ajouter' ) + '">+</button>';
+					'<button type="button" class="gacct-v2-qty-btn" data-delta="1" aria-label="' + escapeHtml( v2i18n.qtyPlus || 'Ajouter' ) + '">' +
+					'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>' +
+					'</button>';
 				qty.addEventListener( 'click', function ( e ) {
 					var btn = e.target.closest( '.gacct-v2-qty-btn' );
 					if ( ! btn ) {

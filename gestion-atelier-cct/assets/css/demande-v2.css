@@ -668,18 +668,28 @@
 	margin-top: 8px;
 }
 
+/* Centrage en flex + icône SVG : un « − » texte n'est jamais centré
+   optiquement (baseline dépendante de la police, retour de recette). */
 .gacct-v2 button.gacct-v2-qty-btn,
-.gacct-v2 button.gacct-v2-qty-btn:hover {
+.gacct-v2 button.gacct-v2-qty-btn:hover,
+.gacct-v2 button.gacct-v2-qty-btn:focus {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	width: 38px;
 	height: 38px;
+	padding: 0;
 	border: 2px solid var(--v2-line);
 	border-radius: 10px;
 	background: #fff;
-	font-size: 18px;
-	font-weight: 700;
 	color: var(--v2-ink);
 	cursor: pointer;
 	line-height: 1;
+}
+
+.gacct-v2 button.gacct-v2-qty-btn svg {
+	display: block;
+	flex-shrink: 0;
 }
 
 .gacct-v2 button.gacct-v2-qty-btn:hover {
