@@ -154,15 +154,27 @@
 		}
 
 		var progressLabel = null;
+		var progressBar = null;
 
 		function buildProgressLabel() {
-			var bar = form.querySelector( '.jet-form-builder-progress-pages' );
-			if ( ! bar ) {
+			progressBar = form.querySelector( '.jet-form-builder-progress-pages' );
+			if ( ! progressBar ) {
 				return;
 			}
+
+			/* Le bloc progress-bar est rendu DANS la page 1 (tout ce qui précède
+			   le premier form-break appartient à la page 1) : il disparaissait
+			   donc aux étapes 2–4. On le remonte en enfant direct du formulaire ;
+			   comme le module multistep de JFB ne le voit alors plus, c'est
+			   updateProgressLabel() qui entretient les classes des segments. */
+			var premierePage = form.querySelector( '.jet-form-builder-page' );
+			if ( premierePage && progressBar.closest( '.jet-form-builder-page' ) ) {
+				form.insertBefore( progressBar, premierePage );
+			}
+
 			progressLabel = document.createElement( 'p' );
 			progressLabel.className = 'gacct-v2-progress-label';
-			bar.parentNode.insertBefore( progressLabel, bar );
+			progressBar.parentNode.insertBefore( progressLabel, progressBar );
 			updateProgressLabel();
 		}
 
@@ -179,6 +191,15 @@
 			progressLabel.innerHTML =
 				etape.replace( String( n ), '<strong>' + n + '</strong>' ) +
 				( nom ? ' — <strong>' + escapeHtml( nom ) + '</strong>' : '' );
+
+			// Segments : page courante + pages passées en accent.
+			if ( progressBar ) {
+				progressBar.querySelectorAll( '[data-page]' ).forEach( function ( seg ) {
+					var num = parseInt( seg.dataset.page, 10 );
+					seg.classList.toggle( 'active-page', num === n );
+					seg.classList.toggle( 'passed-page', num < n );
+				} );
+			}
 		}
 
 		/* ---------------------------------------------------------------

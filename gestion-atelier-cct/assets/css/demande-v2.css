@@ -572,6 +572,14 @@
 	margin-top: 0;
 }
 
+/* Le prix du gabarit est calé en haut de sa colonne : tout le contenu du
+   template s'aligne verticalement au centre, comme le stepper. */
+.gacct-v2 [data-gacct-accordion="suspentes_travaux"] .jet-form-builder__field-template .e-con.e-parent,
+.gacct-v2 [data-gacct-accordion="suspentes_travaux"] .jet-form-builder__field-template .e-con.e-parent > .e-con {
+	align-items: center !important;
+	align-content: center !important;
+}
+
 /* Cases : le visuel du widget check-mark est le ::before de son span (l'input
    est un calque invisible en opacity 0) — c'est LUI qu'on redessine. */
 /* !important : la CSS générée du listing 196 (post-196.css, sélecteurs par
