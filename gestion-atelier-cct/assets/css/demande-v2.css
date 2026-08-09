@@ -63,7 +63,11 @@
 
 .gacct-v2 .jet-form-builder-progress-pages > div {
 	flex: 1;
-	height: 8px;
+	height: 8px !important;
+	min-height: 0 !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	border: 0 !important;
 	border-radius: 99px;
 	background: var(--v2-line);
 	transition: background 0.25s;
@@ -77,10 +81,12 @@
 }
 
 /* Le contenu natif (rond numéroté, libellé, séparateur) est masqué :
-   le libellé vit dans .gacct-v2-progress-label. */
+   le libellé vit dans .gacct-v2-progress-label. !important : la CSS de
+   JetFormBuilder, chargée après sur la page Elementor, re-force leur
+   display:flex (les chiffres transparaissaient dans les segments). */
 .gacct-v2 .jet-form-builder-progress-pages__item,
 .gacct-v2 .jet-form-builder-progress-pages__separator {
-	display: none;
+	display: none !important;
 }
 
 /* ==========================================================================
@@ -189,9 +195,25 @@
    ========================================================================== */
 
 /* Champs de stockage marque/modèle : cachés, l'UI de recherche les alimente.
-   (class_name JFB atterrit sur l'input, pas sur la row.) */
+   (class_name JFB atterrit sur l'input, pas sur la row.) !important : la CSS
+   de JetFormBuilder (chargée après sur la page Elementor) re-force
+   display:flex sur les rows. */
 .gacct-v2 .jet-form-builder-row:has( input.gacct-v2-cache ) {
-	display: none;
+	display: none !important;
+}
+
+/* Détails de la voile (taille, P.T.V., n° de série, couleurs) : masqués tant
+   qu'aucune voile n'est choisie (comportement de la maquette 1918, §2.5) —
+   classes posées et basculées par demande-v2.js. */
+.gacct-v2 .gacct-v2-detail.is-off {
+	display: none !important;
+}
+
+/* Filet pointillé au-dessus du bloc détails, comme sur la maquette. */
+.gacct-v2 .gacct-v2-detail--premier {
+	border-top: 1px dashed var(--v2-line);
+	margin-top: 22px;
+	padding-top: 22px;
 }
 
 .gacct-v2-voile {
@@ -474,6 +496,87 @@
 
 .gacct-v2 button.jet-form-builder__submit:hover {
 	filter: brightness(0.96);
+}
+
+/* ==========================================================================
+   Étape 2 : lignes de prestation (template 196 dans les accordéons)
+   ========================================================================== */
+
+/* Ligne cochable : carte discrète, survol teal-soft, sélection marquée. */
+.gacct-v2 .gacct-accordion__body .jet-form-builder__field-wrap {
+	border-radius: 10px;
+	padding: 12px 14px;
+	transition: background 0.15s;
+	cursor: pointer;
+}
+
+.gacct-v2 .gacct-accordion__body .jet-form-builder__field-wrap:hover,
+.gacct-v2 .gacct-accordion__body .jet-form-builder__field-wrap:has( input.checkradio-field:checked ),
+.gacct-v2 .gacct-v2-repair .jet-form-builder__field-wrap:has( input.checkradio-field:checked ) {
+	background: var(--v2-teal-soft);
+}
+
+/* Nom, description, prix : typo de la maquette. */
+.gacct-v2 .service-item-name .elementor-heading-title {
+	font-weight: 700;
+	font-size: 16.5px;
+	color: var(--v2-ink);
+}
+
+.gacct-v2 .service-item-detail .elementor-heading-title {
+	font-size: 14.5px;
+	color: var(--v2-ink2);
+	font-weight: 400;
+}
+
+/* Le prix ne se coupe JAMAIS (« 110 € » passait à la ligne : sa colonne
+   Elementor est étroite) ; ancré à droite, graisse maquette. */
+.gacct-v2 .service-item-price,
+.gacct-v2 .service-item-price .elementor-heading-title {
+	white-space: nowrap;
+	font-weight: 800;
+	color: var(--v2-teal-dark);
+	font-size: 16.5px;
+	flex-shrink: 0;
+	width: auto;
+}
+
+/* Cases : le visuel du widget check-mark est le ::before de son span (l'input
+   est un calque invisible en opacity 0) — c'est LUI qu'on redessine. */
+/* !important : la CSS générée du listing 196 (post-196.css, sélecteurs par
+   widget à (0,4,1), chargée après nous) impose sa propre case 18px/radius 4. */
+.gacct-v2 .jet-fb-check-mark span::before {
+	content: "";
+	display: block;
+	width: 24px !important;
+	height: 24px !important;
+	box-sizing: border-box;
+	border: 2px solid #cfd8e0 !important;
+	border-radius: 6px !important;
+	background: #fff center / 15px no-repeat !important;
+	transition: border-color 0.15s, background-color 0.15s;
+}
+
+.gacct-v2 .jet-fb-check-mark input:checked + span::before,
+.gacct-v2 .jet-fb-check-mark input:checked ~ span::before {
+	border-color: var(--v2-teal) !important;
+	background-color: var(--v2-teal) !important;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") !important;
+}
+
+/* Révision et pliage = choix unique : la case prend la forme d'un bouton
+   radio (rond, point central), en cohérence avec son comportement. */
+.gacct-v2 [data-gacct-accordion="revisions_controle"] .jet-fb-check-mark span::before,
+.gacct-v2 [data-gacct-accordion="pliages_secours"] .jet-fb-check-mark span::before {
+	border-radius: 50% !important;
+}
+
+.gacct-v2 [data-gacct-accordion="revisions_controle"] .jet-fb-check-mark input:checked + span::before,
+.gacct-v2 [data-gacct-accordion="pliages_secours"] .jet-fb-check-mark input:checked + span::before,
+.gacct-v2 [data-gacct-accordion="revisions_controle"] .jet-fb-check-mark input:checked ~ span::before,
+.gacct-v2 [data-gacct-accordion="pliages_secours"] .jet-fb-check-mark input:checked ~ span::before {
+	background-color: #fff !important;
+	background-image: radial-gradient(circle, var(--v2-teal) 0 5px, transparent 6px) !important;
 }
 
 /* ==========================================================================

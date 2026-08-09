@@ -467,6 +467,41 @@
 			} );
 		}
 
+		/* Détails de la voile (taille, P.T.V., n° de série, couleurs) : masqués
+		   tant qu'aucune voile n'est choisie ni le mode manuel activé (maquette
+		   1918, §2.5). */
+		var detailEls = [];
+
+		function initDetailsVoile() {
+			// ⚠ Le mode manuel utilise AUSSI la classe gacct-v2-grille-2 : viser
+			// la grille qui contient le champ taille, pas la première venue.
+			var taille = form.querySelector( 'input[name="taille"]' );
+			var grille = taille ? taille.closest( '.gacct-v2-grille-2' ) : null;
+			var serie = form.querySelector( 'input[name="numero_serie"]' );
+			var couleur = form.querySelector( '[name="' + ( champs.couleur || 'couleur_copy' ) + '"]' );
+
+			detailEls = [
+				grille,
+				serie ? serie.closest( '.jet-form-builder-row' ) : null,
+				couleur ? couleur.closest( '.jet-form-builder-row' ) : null,
+			].filter( Boolean );
+
+			detailEls.forEach( function ( el, i ) {
+				el.classList.add( 'gacct-v2-detail' );
+				if ( 0 === i ) {
+					el.classList.add( 'gacct-v2-detail--premier' );
+				}
+			} );
+			majDetailsVoile();
+		}
+
+		function majDetailsVoile() {
+			var visibles = !! ( voile.choisie || voile.manuel );
+			detailEls.forEach( function ( el ) {
+				el.classList.toggle( 'is-off', ! visibles );
+			} );
+		}
+
 		function initRechercheVoile() {
 			var marqueRow = champMarqueCache() ? champMarqueCache().closest( '.jet-form-builder-row' ) : null;
 			if ( ! marqueRow ) {
@@ -588,6 +623,7 @@
 				ui.chosen.classList.add( 'is-on' );
 				fermerSugg();
 				effaceErreur( 'voile' );
+				majDetailsVoile();
 			}
 			voile.choisirExterne = choisir;
 
@@ -601,6 +637,7 @@
 				ui.manual.classList.add( 'is-on' );
 				fermerSugg();
 				effaceErreur( 'voile' );
+				majDetailsVoile();
 			}
 			voile.basculeManuel = basculeManuel;
 
@@ -614,6 +651,7 @@
 				ui.notwrap.style.display = '';
 				ui.input.value = '';
 				ui.input.focus();
+				majDetailsVoile();
 			}
 			voile.reafficher = reafficherRecherche;
 
@@ -673,6 +711,7 @@
 		}
 
 		initRechercheVoile();
+		initDetailsVoile();
 
 		/* ---------------------------------------------------------------
 		 * Sélecteur de couleurs (repris du formulaire historique)
