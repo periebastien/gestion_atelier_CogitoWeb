@@ -237,7 +237,11 @@
 					if ( inputDate && inputDate.value.trim() === '' ) {
 						e.preventDefault();
 						e.stopImmediatePropagation();
-						erreurEtape( 'date', next.closest( '.jet-form-builder__next-page-wrap' ), v2i18n.erreurDate || 'Choisissez un jour disponible dans le calendrier.' );
+						// L'erreur date s'affiche SOUS le calendrier (maquette),
+						// pas en bas de page : ancre = le groupe caché qui suit.
+						var ancreDate = form.querySelector( '.jet-form-builder-page[data-page="3"] .champ-date-cache' )
+							|| next.closest( '.jet-form-builder__next-page-wrap' );
+						erreurEtape( 'date', ancreDate, v2i18n.erreurDate || 'Choisissez un jour disponible dans le calendrier.' );
 						return;
 					}
 					effaceErreur( 'date' );
@@ -272,6 +276,9 @@
 				disableMobile: true,
 				monthSelectorType: 'static',
 				minDate: demain,
+				// Calendrier affiché en permanence dans la carte (maquette 1918),
+				// pas un popup sur un champ ; les inputs sont masqués en CSS.
+				inline: true,
 
 				onReady: function ( selectedDates, dateStr, instance ) {
 					var legend = document.createElement( 'div' );
@@ -1250,7 +1257,8 @@
 				}
 				var qty = document.createElement( 'div' );
 				qty.className = 'gacct-v2-qty';
-				qty.hidden = true;
+				// Stepper TOUJOURS visible (retour de recette du 09/08) : sur une
+				// ligne non cochée, un clic +/− coche d'abord la prestation.
 				qty.innerHTML =
 					'<button type="button" class="gacct-v2-qty-btn" data-delta="-1" aria-label="' + escapeHtml( v2i18n.qtyMoins || 'Retirer' ) + '">−</button>' +
 					'<b>1</b>' +
@@ -1263,7 +1271,12 @@
 					e.preventDefault();
 					e.stopPropagation();
 					var id = String( input.value );
-					qtys[ id ] = Math.max( 1, Math.min( 9, ( qtys[ id ] || 1 ) + parseInt( btn.dataset.delta, 10 ) ) );
+					if ( ! input.checked ) {
+						input.click();
+						qtys[ id ] = 1;
+					} else {
+						qtys[ id ] = Math.max( 1, Math.min( 9, ( qtys[ id ] || 1 ) + parseInt( btn.dataset.delta, 10 ) ) );
+					}
 					qty.querySelector( 'b' ).textContent = qtys[ id ];
 					syncQuantites();
 					toutRecalculer();
@@ -1283,11 +1296,11 @@
 				if ( ! qty ) {
 					return;
 				}
+				// Le stepper reste visible ; seule la surbrillance et la
+				// quantité suivent l'état de la case.
 				if ( input.checked ) {
-					qty.hidden = false;
 					wrap.classList.add( 'has-qty' );
 				} else {
-					qty.hidden = true;
 					wrap.classList.remove( 'has-qty' );
 					delete qtys[ String( input.value ) ];
 					qty.querySelector( 'b' ).textContent = '1';
@@ -1345,6 +1358,17 @@
 			noteDevis.textContent = v2i18n.repairNote || '';
 			noteDevis.hidden = true;
 			accSuspentes.body.insertBefore( noteDevis, accSuspentes.body.firstChild );
+
+			// Sorti de l'accordéon, le wrap perd le comportement de clic du
+			// template : la carte entière (re)devient cliquable ici.
+			carteDevis.addEventListener( 'click', function ( e ) {
+				if ( e.target.closest( 'a' ) || e.target.closest( 'input' ) ) {
+					return;
+				}
+				if ( ! inputDevis.disabled ) {
+					inputDevis.click();
+				}
+			} );
 		}
 
 		function majExclusiviteDevis() {
@@ -1393,6 +1417,14 @@
 			inputDevis.disabled = ! devisCoche && autreCochee;
 			if ( carteDevis ) {
 				carteDevis.classList.toggle( 'is-dim', inputDevis.disabled );
+
+				// Sorti de l'accordéon, le décorateur du template n'est plus
+				// synchronisé par le JS du listing : on aligne sa case visuelle
+				// sur l'état réel du champ.
+				var deco = carteDevis.querySelector( '.jet-fb-check-mark input' );
+				if ( deco && deco.checked !== devisCoche ) {
+					deco.checked = devisCoche;
+				}
 			}
 		}
 

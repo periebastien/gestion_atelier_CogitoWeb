@@ -458,7 +458,8 @@
 	transition: background 0.15s, border-color 0.15s;
 }
 
-.gacct-v2 button.jet-form-builder__next-page {
+.gacct-v2 button.jet-form-builder__next-page,
+.gacct-v2 button.jet-form-builder__next-page:focus {
 	flex: 1;
 	order: 2;
 	background: var(--v2-teal);
@@ -469,7 +470,8 @@
 	background: var(--v2-teal-dark);
 }
 
-.gacct-v2 button.jet-form-builder__prev-page {
+.gacct-v2 button.jet-form-builder__prev-page,
+.gacct-v2 button.jet-form-builder__prev-page:focus {
 	order: 1;
 	background: #fff;
 	border: 2px solid var(--v2-line);
@@ -487,7 +489,8 @@
 	margin-top: 26px;
 }
 
-.gacct-v2 button.jet-form-builder__submit {
+.gacct-v2 button.jet-form-builder__submit,
+.gacct-v2 button.jet-form-builder__submit:focus {
 	flex: 1;
 	order: 2;
 	background: var(--v2-yellow);
@@ -692,6 +695,63 @@
 	border-radius: 8px;
 	font-size: 14.5px;
 	color: var(--v2-ink);
+}
+
+/* ==========================================================================
+   Étape 3 : calendrier affiché en permanence (flatpickr inline) + retour
+   ========================================================================== */
+
+/* Les inputs du champ date sont masqués : le calendrier EST le contrôle. */
+.gacct-v2 .jet-form-builder-row:has( input[name="date_intervention"] ) input.jet-form-builder__field,
+.gacct-v2 .jet-form-builder-row:has( input[name="date_intervention"] ) input.form-control {
+	display: none !important;
+}
+
+/* Calendrier étiré sur toute la carte, façon maquette. */
+.gacct-v2 .flatpickr-calendar.inline {
+	width: 100% !important;
+	max-width: none;
+	box-shadow: none;
+	border: 1px solid var(--v2-line);
+	border-radius: 12px;
+	padding: 10px 12px 14px;
+	margin-top: 6px;
+}
+
+.gacct-v2 .flatpickr-calendar.inline .flatpickr-months,
+.gacct-v2 .flatpickr-calendar.inline .flatpickr-rContainer,
+.gacct-v2 .flatpickr-calendar.inline .flatpickr-weekdays,
+.gacct-v2 .flatpickr-calendar.inline .flatpickr-days {
+	width: 100% !important;
+	max-width: none !important;
+}
+
+.gacct-v2 .flatpickr-calendar.inline .dayContainer {
+	width: 100% !important;
+	max-width: none !important;
+	min-width: 0 !important;
+	justify-content: flex-start;
+}
+
+.gacct-v2 .flatpickr-calendar.inline .flatpickr-day {
+	flex-basis: calc(14.2857% - 6px);
+	width: calc(14.2857% - 6px);
+	max-width: none;
+	height: 48px;
+	line-height: 46px;
+	margin: 3px;
+	border-radius: 10px;
+}
+
+/* Options de retour : ce sont des radios — pastilles RONDES avec point. */
+.gacct-v2 .jet-form-builder-row:has( input[data-field-name="frais_de_ports"] ) .jet-fb-check-mark span::before {
+	border-radius: 50% !important;
+}
+
+.gacct-v2 .jet-form-builder-row:has( input[data-field-name="frais_de_ports"] ) .jet-fb-check-mark input:checked + span::before,
+.gacct-v2 .jet-form-builder-row:has( input[data-field-name="frais_de_ports"] ) .jet-fb-check-mark input:checked ~ span::before {
+	background-color: #fff !important;
+	background-image: radial-gradient(circle, var(--v2-teal) 0 5px, transparent 6px) !important;
 }
 
 /* ==========================================================================
