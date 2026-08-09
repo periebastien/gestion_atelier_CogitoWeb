@@ -29,7 +29,24 @@
 		);
 	}
 
+	/* L'autoscroll natif de JFB (réglage scroll_on_next, lu par multi.step.js au
+	   moment où l'action jet.fb.multistep.init est déclenchée) cale le HAUT de la
+	   page d'étape sous les barres flottantes du header : le libellé « Étape X
+	   sur 4 » et la barre de progression, remontés AU-DESSUS des pages par
+	   buildProgressLabel(), sortent du champ. On le coupe (portée : cette page
+	   uniquement) et scrollVersEtape() le remplace avec un décalage mesuré sur
+	   le header. Appelé à l'exécution du script ET dans init() : le flag doit
+	   être retombé avant que JFB n'initialise le formulaire, quel que soit
+	   l'ordre d'impression des scripts. */
+	function couperAutoscrollJfb() {
+		if ( window.JetFormBuilderSettings ) {
+			window.JetFormBuilderSettings.scroll_on_next = false;
+		}
+	}
+	couperAutoscrollJfb();
+
 	function init() {
+		couperAutoscrollJfb();
 		var cfg = window.gacctDemande;
 		if ( ! cfg || typeof window.flatpickr !== 'function' ) {
 			return;
@@ -200,6 +217,32 @@
 					seg.classList.toggle( 'passed-page', num < n );
 				} );
 			}
+		}
+
+		/* Hauteur de la barre de header susceptible de recouvrir le haut de
+		   l'étape après le scroll : barre fixe desktop (.ar-fp) ou barre mobile
+		   sticky/pilule (.ar-hdr-in) — on prend la plus haute des deux visibles,
+		   plus une marge de respiration. */
+		function decalageHeaderFlottant() {
+			var h = 0;
+			[ '.ar-fp-wrap .ar-fp', '.ar-hdr .ar-hdr-in' ].forEach( function ( sel ) {
+				var el = document.querySelector( sel );
+				if ( el && el.offsetHeight > h ) {
+					h = el.offsetHeight;
+				}
+			} );
+			return h + 16;
+		}
+
+		/* Remplace l'autoscroll JFB (coupé en tête de script) : amène le libellé
+		   « Étape X sur 4 » juste sous la barre flottante, au lieu du haut de la
+		   page d'étape qui, lui, laissait le libellé hors champ. */
+		function scrollVersEtape() {
+			var cible = progressLabel || form;
+			window.requestAnimationFrame( function () {
+				var y = cible.getBoundingClientRect().top + window.pageYOffset - decalageHeaderFlottant();
+				window.scrollTo( { top: Math.max( 0, y ), behavior: 'smooth' } );
+			} );
 		}
 
 		/* ---------------------------------------------------------------
@@ -1803,6 +1846,7 @@
 		if ( window.jQuery ) {
 			window.jQuery( document ).on( 'jet-form-builder/switch-page', function () {
 				updateProgressLabel();
+				scrollVersEtape();
 				if ( pageCourante() === 4 ) {
 					buildRecap();
 				}

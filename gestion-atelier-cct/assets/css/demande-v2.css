@@ -908,6 +908,14 @@
    Responsive (breakpoint unique de la maquette)
    ========================================================================== */
 
+/* Gouttières mobiles : la colonne Elementor de la page 467 est à 0 de padding
+   en mobile, les cartes du formulaire touchaient les bords de l'écran. */
+@media (max-width: 767px) {
+	.elementor-widget.gacct-v2 {
+		padding-inline: 10px;
+	}
+}
+
 @media (max-width: 520px) {
 	.gacct-v2 .jet-form-builder {
 		font-size: 16px;
