@@ -46,6 +46,10 @@ class Kojito_Acompte_Produit {
 		add_action( 'kojito_declencher_paiement_solde', [ $this, 'declencher_paiement_solde' ], 10, 1 );
 		add_filter( 'woocommerce_pay_order_button_text', [ $this, 'modifier_texte_bouton_paiement_solde' ] );
 
+		// Colonne "Acompte" dans la liste des produits de l'admin.
+		add_filter( 'manage_edit-product_columns', [ $this, 'ajouter_colonne_acompte' ], 20 );
+		add_action( 'manage_product_posts_custom_column', [ $this, 'afficher_colonne_acompte' ], 10, 2 );
+
 		// Page de configuration (WooCommerce > Kojito Acompte : template de l'email de solde).
 		add_action( 'admin_menu', [ $this, 'ajouter_page_configuration' ] );
 		add_action( 'admin_init', [ $this, 'traiter_sauvegarde_configuration' ] );
@@ -123,6 +127,50 @@ class Kojito_Acompte_Produit {
 		}
 
 		return (float) $acompte;
+	}
+
+	/**
+	 * Insere la colonne "Acompte" apres la colonne "Tarif" de la liste des produits.
+	 */
+	public function ajouter_colonne_acompte( $columns ) {
+		$nouvelles = [];
+
+		foreach ( $columns as $cle => $libelle ) {
+			$nouvelles[ $cle ] = $libelle;
+			if ( 'price' === $cle ) {
+				$nouvelles['kojito_acompte'] = __( 'Acompte', 'kojito-acompte' );
+			}
+		}
+
+		if ( ! isset( $nouvelles['kojito_acompte'] ) ) {
+			$nouvelles['kojito_acompte'] = __( 'Acompte', 'kojito-acompte' );
+		}
+
+		return $nouvelles;
+	}
+
+	/**
+	 * Affiche le montant d'acompte du produit, avec la meme semantique que le panier :
+	 * vide = pas d'acompte (prix plein a la commande), 0 = tout dans le solde.
+	 */
+	public function afficher_colonne_acompte( $column, $post_id ) {
+		if ( 'kojito_acompte' !== $column ) {
+			return;
+		}
+
+		$acompte = $this->recuperer_acompte_produit( $post_id );
+
+		if ( null === $acompte ) {
+			echo '<span aria-hidden="true">&mdash;</span>';
+			return;
+		}
+
+		if ( 0.0 === $acompte ) {
+			echo wp_kses_post( wc_price( 0 ) ) . '<br><small>' . esc_html__( '100 % au solde', 'kojito-acompte' ) . '</small>';
+			return;
+		}
+
+		echo wp_kses_post( wc_price( $acompte ) );
 	}
 
 	public function stocker_prix_initial_commande( $item, $cart_item_key, $values, $order ) {
