@@ -1499,7 +1499,14 @@
 					return;
 				}
 				var prix = parseFloat( info.prix ) || 0;
-				prixEl.textContent = formatMoney( biplaceEtat[ type ] ? prix + supp.prix : prix );
+				// Écrire dans le span Woo intérieur (13px) et PAS dans le heading
+				// (24px) : remplacer le textContent du heading supprimait le span
+				// et le prix changeait de taille. La couleur « prix majoré »
+				// passe par une classe, pas par le contenu.
+				var cible = prixEl.querySelector( '.woocommerce-Price-amount' ) || prixEl;
+				cible.textContent = formatMoney( biplaceEtat[ type ] ? prix + supp.prix : prix );
+				var conteneur = prixEl.closest( '.service-item-price' ) || prixEl;
+				conteneur.classList.toggle( 'gacct-v2-prix-biplace', !! biplaceEtat[ type ] );
 			} );
 		}
 

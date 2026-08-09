@@ -533,15 +533,43 @@
 }
 
 /* Le prix ne se coupe JAMAIS (« 110 € » passait à la ligne : sa colonne
-   Elementor est étroite) ; ancré à droite, graisse maquette. */
+   Elementor est étroite). Taille/graisse : celles du listing — le JS écrit
+   dans le span Woo intérieur pour ne pas les perdre. */
 .gacct-v2 .service-item-price,
 .gacct-v2 .service-item-price .elementor-heading-title {
 	white-space: nowrap;
-	font-weight: 800;
-	color: var(--v2-teal-dark);
-	font-size: 16.5px;
 	flex-shrink: 0;
 	width: auto;
+}
+
+/* Prix majoré par la bascule Biplace : couleur accent, MÊME taille. */
+.gacct-v2 .service-item-price.gacct-v2-prix-biplace .elementor-heading-title,
+.gacct-v2 .service-item-price.gacct-v2-prix-biplace .woocommerce-Price-amount {
+	color: var(--v2-teal-dark) !important;
+}
+
+/* La description s'aligne sur le titre (elle partait 6 px trop à gauche
+   dans le gabarit du listing 196). */
+.gacct-v2 .gacct-accordion__body .service-item-detail .elementor-heading-title,
+.gacct-v2 .gacct-v2-repair .service-item-detail .elementor-heading-title {
+	display: block;
+	margin-left: 6px;
+}
+
+/* Suspentes : nom/description, prix et stepper sur LA MÊME ligne. */
+.gacct-v2 [data-gacct-accordion="suspentes_travaux"] .jet-form-builder__field-wrap {
+	display: flex !important;
+	align-items: center;
+	gap: 14px;
+}
+
+.gacct-v2 [data-gacct-accordion="suspentes_travaux"] .jet-form-builder__field-wrap > .jet-form-builder__field-template {
+	flex: 1;
+	min-width: 0;
+}
+
+.gacct-v2 [data-gacct-accordion="suspentes_travaux"] .gacct-v2-qty {
+	margin-top: 0;
 }
 
 /* Cases : le visuel du widget check-mark est le ::before de son span (l'input
@@ -733,14 +761,28 @@
 	justify-content: flex-start;
 }
 
+/* !important : le socle v1 fige les jours à 40px (max-width/height
+   !important, pensé pour le popup) — l'inline pleine largeur doit gagner. */
 .gacct-v2 .flatpickr-calendar.inline .flatpickr-day {
-	flex-basis: calc(14.2857% - 6px);
-	width: calc(14.2857% - 6px);
-	max-width: none;
-	height: 48px;
-	line-height: 46px;
-	margin: 3px;
-	border-radius: 10px;
+	flex: 0 0 13.5% !important;
+	width: auto !important;
+	max-width: none !important;
+	height: 52px !important;
+	line-height: 50px !important;
+	margin: 3px 0 !important;
+	border-radius: 10px !important;
+	font-size: 15px !important;
+}
+
+/* Libellé du champ date : le calendrier se suffit (maquette). */
+.gacct-v2 .jet-form-builder-row:has( input[name="date_intervention"] ) .jet-form-builder__label {
+	display: none;
+}
+
+/* Légende : regroupée à gauche, comme la maquette. */
+.gacct-v2 .flatpickr-calendar.inline .dp-legend {
+	justify-content: flex-start !important;
+	gap: 18px !important;
 }
 
 /* Options de retour : ce sont des radios — pastilles RONDES avec point. */
