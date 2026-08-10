@@ -367,6 +367,9 @@ $is_bacs = ( 'bacs' === $d['variant'] );
 											<li>
 												<?php if ( gacct_conf_feature( 'work_order' ) ) : ?>
 													<?php esc_html_e( 'Imprimez le', 'gestion-atelier-cct' ); ?> <strong><?php esc_html_e( 'bon d’intervention', 'gestion-atelier-cct' ); ?></strong> <?php esc_html_e( '(avec son QR code) et glissez-le dans le colis. Sans lui, l’identification prend plusieurs jours de plus.', 'gestion-atelier-cct' ); ?>
+													<?php if ( ! empty( $d['work_order_locked'] ) ) : ?>
+														<em><?php esc_html_e( 'Il sera disponible dès la réception de votre paiement.', 'gestion-atelier-cct' ); ?></em>
+													<?php endif; ?>
 												<?php else : ?>
 													<?php
 													printf(
@@ -388,7 +391,11 @@ $is_bacs = ( 'bacs' === $d['variant'] );
 										</p>
 										<div class="step-action">
 											<?php if ( gacct_conf_feature( 'work_order' ) ) : ?>
-												<a href="<?php echo esc_url( $d['links']['work_order'] ); ?>" class="btn-primary"><?php esc_html_e( 'Imprimer le bon', 'gestion-atelier-cct' ); ?> <?php echo gacct_conf_icon( 'printer' ); // phpcs:ignore WordPress.Security.EscapeOutput ?></a>
+												<?php if ( ! empty( $d['work_order_locked'] ) ) : ?>
+													<span class="btn-primary is-disabled" aria-disabled="true" title="<?php esc_attr_e( 'Disponible dès la réception de votre paiement', 'gestion-atelier-cct' ); ?>"><?php esc_html_e( 'Imprimer le bon', 'gestion-atelier-cct' ); ?> <?php echo gacct_conf_icon( 'printer' ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+												<?php else : ?>
+													<a href="<?php echo esc_url( $d['links']['work_order'] ); ?>" class="btn-primary"><?php esc_html_e( 'Imprimer le bon', 'gestion-atelier-cct' ); ?> <?php echo gacct_conf_icon( 'printer' ); // phpcs:ignore WordPress.Security.EscapeOutput ?></a>
+												<?php endif; ?>
 											<?php endif; ?>
 											<a href="<?php echo esc_url( $d['links']['packing_guide'] ); ?>" class="<?php echo gacct_conf_feature( 'work_order' ) ? 'btn-secondary' : 'btn-primary'; ?>"><?php echo gacct_conf_icon( 'package' ); // phpcs:ignore WordPress.Security.EscapeOutput ?><?php esc_html_e( 'Consignes d’emballage', 'gestion-atelier-cct' ); ?></a>
 										</div>

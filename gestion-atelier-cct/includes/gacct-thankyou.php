@@ -196,6 +196,13 @@ function gacct_conf_data( $order ) {
 
 	$data = array(
 		'variant'          => $variant,
+		// Bon d'intervention : verrouillé tant que le paiement n'est pas
+		// encaissé (le bon vaut prise en charge du matériel — cf. la garde
+		// serveur de gacct_wo_maybe_render_print_page(), qui refuse la page
+		// au client dans le même cas ; l'atelier, lui, y a toujours accès).
+		'work_order_locked' => function_exists( 'gacct_order_payment_received' )
+			? ! gacct_order_payment_received( $order )
+			: false,
 		'order'            => $order,
 		'reference'        => $order->get_order_number(),
 		'first_name'       => $order->get_billing_first_name(),

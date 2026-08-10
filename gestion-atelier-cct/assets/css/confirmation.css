@@ -67,6 +67,17 @@
 .gacct-conf .btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: var(--c-ink); font-weight: 700; font-size: 14px; padding: 13px 18px; border: 1.5px solid rgba(0,0,0,0.16); border-radius: var(--r); background: transparent; font-family: inherit; cursor: pointer; transition: border-color 150ms, background 150ms; }
 .gacct-conf .btn-secondary:hover { border-color: var(--c-accent); background: var(--c-accent-soft); color: var(--c-accent-dark); }
 .gacct-conf .btn-secondary svg { width: 16px; height: 16px; stroke: var(--c-accent); }
+/* Action verrouillée (bon d'intervention tant que le paiement n'est pas reçu) :
+   rendue en <span>, jamais en lien — rien à cliquer, rien à deviner. */
+.gacct-conf .btn-primary.is-disabled,
+.gacct-conf .btn-secondary.is-disabled {
+	background: rgba(0, 0, 0, 0.06);
+	color: rgba(0, 0, 0, 0.42);
+	border-color: rgba(0, 0, 0, 0.10);
+	cursor: not-allowed;
+}
+.gacct-conf .btn-primary.is-disabled svg,
+.gacct-conf .btn-secondary.is-disabled svg { stroke: rgba(0, 0, 0, 0.42); }
 
 /* ── En-tête de confirmation ── */
 /* Pas de border-bottom ici : une bordure suit la boîte (1140 px) et laisserait

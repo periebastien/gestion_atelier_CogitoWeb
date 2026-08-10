@@ -242,7 +242,12 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 				<p class="gacct-vo-address"><?php echo esc_html( implode( ' · ', $d['store_address'] ) ); ?></p>
 			<?php endif; ?>
 			<?php if ( function_exists( 'gacct_conf_feature' ) && gacct_conf_feature( 'work_order' ) && ! empty( $d['links']['work_order'] ) ) : ?>
-				<a class="gacct-vo-btn is-secondary" href="<?php echo esc_url( $d['links']['work_order'] ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Imprimer le bon d\'intervention', 'gestion-atelier-cct' ); ?></a>
+				<?php if ( ! empty( $d['work_order_locked'] ) ) : ?>
+					<span class="gacct-vo-btn is-secondary is-disabled" aria-disabled="true"><?php esc_html_e( 'Imprimer le bon d\'intervention', 'gestion-atelier-cct' ); ?></span>
+					<p class="gacct-vo-note"><?php esc_html_e( 'Le bon d\'intervention sera disponible dès la réception de votre paiement.', 'gestion-atelier-cct' ); ?></p>
+				<?php else : ?>
+					<a class="gacct-vo-btn is-secondary" href="<?php echo esc_url( $d['links']['work_order'] ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Imprimer le bon d\'intervention', 'gestion-atelier-cct' ); ?></a>
+				<?php endif; ?>
 			<?php endif; ?>
 			<?php if ( function_exists( 'gacct_ship_render_form' ) ) : ?>
 				<?php echo gacct_ship_render_form( $order ); // phpcs:ignore WordPress.Security.EscapeOutput -- HTML construit et échappé par le module shipping. ?>

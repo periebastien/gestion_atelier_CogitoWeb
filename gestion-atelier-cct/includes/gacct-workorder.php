@@ -157,6 +157,29 @@ function gacct_wo_maybe_render_print_page() {
 		wp_die( esc_html__( 'Cette commande a été annulée : le bon d\'intervention n\'est plus valable.', 'gestion-atelier-cct' ) );
 	}
 
+	/*
+	 * Tant que le paiement n'est pas encaissé (virement en attente, paiement
+	 * échoué), le bon n'est pas imprimable par le CLIENT : il vaut prise en
+	 * charge du matériel et porte le QR de réception. Les boutons sont grisés
+	 * côté client (page de confirmation, détail de commande), mais le lien
+	 * reste devinable — d'où cette garde, qui est la vraie protection.
+	 * L'atelier (gacct_operate) et l'admin gardent l'accès : ils peuvent avoir
+	 * à réimprimer un bon, y compris sur un dossier réglé sur place.
+	 */
+	$acces_atelier = current_user_can( GACCT_OP_CAP ) || current_user_can( 'manage_woocommerce' );
+
+	if (
+		! $acces_atelier
+		&& function_exists( 'gacct_order_payment_received' )
+		&& ! gacct_order_payment_received( $order )
+	) {
+		wp_die(
+			esc_html__( 'Le bon d\'intervention sera disponible dès la réception de votre paiement. Dès qu\'il nous parvient, vous pourrez l\'imprimer depuis votre espace client.', 'gestion-atelier-cct' ),
+			esc_html__( 'Bon d\'intervention', 'gestion-atelier-cct' ),
+			array( 'response' => 403 )
+		);
+	}
+
 	nocache_headers();
 
 	$data = gacct_wo_data( $order );

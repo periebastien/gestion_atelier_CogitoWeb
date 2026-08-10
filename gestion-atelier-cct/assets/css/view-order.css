@@ -248,6 +248,22 @@
 	border: 1.5px solid color-mix(in srgb, var(--gacct-vo-accent) 55%, #ffffff);
 }
 
+/* Action verrouillée (bon d'intervention avant encaissement) : rendue en
+   <span>, donc sans :hover ni lien. */
+.gacct-vo-btn.is-disabled,
+.gacct-vo span.gacct-vo-btn.is-disabled {
+	background: rgba(0, 0, 0, 0.05);
+	color: rgba(0, 0, 0, 0.42);
+	border-color: rgba(0, 0, 0, 0.12);
+	cursor: not-allowed;
+}
+
+.gacct-vo-note {
+	margin: 8px 0 0;
+	font-size: 14px;
+	color: var(--gacct-vo-muted);
+}
+
 .gacct-vo-btn.is-secondary:hover {
 	background: color-mix(in srgb, var(--gacct-vo-accent) 8%, #ffffff);
 }
