@@ -109,6 +109,20 @@ function gacct_wo_data( $order ) {
 
 	$logo = get_option( 'woocommerce_email_header_image' );
 
+	// Adresse d'expédition + téléphone : réglages boutique WooCommerce et page
+	// « Paiements & relances ». Rien de codé en dur (white-label).
+	$store_address = array_filter(
+		array(
+			get_bloginfo( 'name' ),
+			get_option( 'woocommerce_store_address' ),
+			get_option( 'woocommerce_store_address_2' ),
+			trim( get_option( 'woocommerce_store_postcode' ) . ' ' . get_option( 'woocommerce_store_city' ) ),
+		)
+	);
+	$store_address = array_values( array_map( function ( $line ) { return trim( $line, " ,\t" ); }, $store_address ) );
+
+	$pay_settings = function_exists( 'gacct_pay_settings' ) ? gacct_pay_settings() : array();
+
 	return apply_filters( 'gacct_wo_data', array(
 		'order'         => $order,
 		'reference'     => $order->get_order_number(),
@@ -131,6 +145,8 @@ function gacct_wo_data( $order ) {
 			'swatches' => $swatches, // 0–3 entrées { base, light } (palette fermée du site).
 		),
 		'prestations'   => function_exists( 'gacct_op_expected_items' ) ? gacct_op_expected_items( $order ) : array(),
+		'store_address' => $store_address,
+		'contact_phone' => isset( $pay_settings['contact_phone'] ) ? $pay_settings['contact_phone'] : '',
 		'slot_ts'       => $slot_ts,
 		'slot_date'     => $slot_ts ? date_i18n( get_option( 'date_format' ), $slot_ts ) : '',
 		'deadline_date' => $slot_ts ? date_i18n( get_option( 'date_format' ), $slot_ts - DAY_IN_SECONDS ) : '',

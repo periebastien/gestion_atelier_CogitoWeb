@@ -83,23 +83,19 @@
 /* Pas de border-bottom ici : une bordure suit la boîte (1140 px) et laisserait
    un trait qui s'arrête au milieu de la page. Le passage blanc → gris de
    .gacct-conf-main fait la séparation, sur toute la largeur. */
-.gacct-conf .conf { background: var(--c-surface); padding: 52px 0 44px; text-align: center; }
-.gacct-conf .conf-mark { width: 68px; height: 68px; margin: 0 auto 22px; border-radius: 999px; background: var(--c-accent-soft); display: flex; align-items: center; justify-content: center; position: relative; }
+/* Hero COMPRESSÉ : chaque pixel gagné ici est un pixel de plus pour le bloc
+   « À faire maintenant », qui doit entrer dans le premier écran d'un iPhone SE. */
+.gacct-conf .conf { background: var(--c-surface); padding: 38px 0 34px; text-align: center; }
+.gacct-conf .conf-mark { width: 56px; height: 56px; margin: 0 auto 18px; border-radius: 999px; background: var(--c-accent-soft); display: flex; align-items: center; justify-content: center; position: relative; }
 .gacct-conf .conf-mark::after { content: ''; position: absolute; inset: -8px; border-radius: 999px; border: 2px solid color-mix(in srgb, var(--c-accent) 22%, transparent); animation: gacct-pulse 2.6s ease-out infinite; }
 @keyframes gacct-pulse { 0% { transform: scale(0.9); opacity: 0.9; } 70% { transform: scale(1.18); opacity: 0; } 100% { opacity: 0; } }
-.gacct-conf .conf-mark svg { width: 32px; height: 32px; stroke: var(--c-accent); stroke-width: 3; stroke-dasharray: 60; stroke-dashoffset: 60; animation: gacct-draw 600ms 200ms ease-out forwards; }
+.gacct-conf .conf-mark svg { width: 27px; height: 27px; stroke: var(--c-accent); stroke-width: 3; stroke-dasharray: 60; stroke-dashoffset: 60; animation: gacct-draw 600ms 200ms ease-out forwards; }
 @keyframes gacct-draw { to { stroke-dashoffset: 0; } }
 .gacct-conf .conf-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--c-accent); margin-bottom: 12px; }
-.gacct-conf .conf h1 { font-size: 38px; font-weight: 900; letter-spacing: -0.025em; line-height: 1.12; margin: 0 0 14px; color: var(--c-ink); }
+.gacct-conf .conf h1 { font-size: 32px; font-weight: 900; letter-spacing: -0.025em; line-height: 1.12; margin: 0 0 14px; color: var(--c-ink); }
 .gacct-conf .conf h1 em { font-style: normal; color: var(--c-accent); }
-.gacct-conf .conf-sub { font-size: 16px; color: #666; line-height: 1.7; max-width: 560px; margin: 0 auto 26px; }
+.gacct-conf .conf-sub { font-size: 16px; color: #666; line-height: 1.7; max-width: 580px; margin: 0 auto 20px; }
 .gacct-conf .conf-sub strong { color: var(--c-ink); font-weight: 700; }
-.gacct-conf .conf-meta { display: inline-flex; align-items: stretch; gap: 0; background: var(--c-surface-alt); border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; overflow: hidden; }
-.gacct-conf .conf-meta-item { padding: 14px 24px; border-left: 1px solid rgba(0,0,0,0.07); text-align: left; }
-.gacct-conf .conf-meta-item:first-child { border-left: none; }
-.gacct-conf .conf-meta-label { font-size: 9.5px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #bbb; margin-bottom: 5px; }
-.gacct-conf .conf-meta-val { font-size: 15px; font-weight: 900; color: var(--c-ink); letter-spacing: -0.01em; white-space: nowrap; }
-.gacct-conf .conf-meta-val small { font-size: 12px; font-weight: 700; color: #888; }
 
 /* Variante attente virement */
 .gacct-conf .conf.wait .conf-mark { background: var(--c-warn-soft); }
@@ -107,10 +103,91 @@
 .gacct-conf .conf.wait .conf-mark svg { stroke: var(--c-warn); stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
 .gacct-conf .conf.wait .conf-eyebrow { color: var(--c-warn-ink); }
 .gacct-conf .conf.wait .conf-h1 em { color: var(--c-warn); }
-.gacct-conf .deadline { display: inline-flex; align-items: center; gap: 12px; background: var(--c-warn-soft); border: 1px solid color-mix(in srgb, var(--c-warn) 30%, transparent); border-radius: 999px; padding: 9px 10px 9px 18px; margin-bottom: 22px; }
-.gacct-conf .deadline-txt { font-size: 13.5px; font-weight: 800; color: var(--c-warn-ink); }
-.gacct-conf .deadline-count { display: inline-flex; align-items: baseline; gap: 5px; background: var(--c-ink); color: #fff; border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 900; }
-.gacct-conf .deadline-count b { font-size: 17px; }
+
+/* ── Micro-stepper de paiement (une seule ligne) ── */
+.gacct-conf .mini { display: inline-flex; align-items: center; background: var(--c-surface); border: 1px solid rgba(0,0,0,0.09); border-radius: 999px; padding: 5px; margin-bottom: 18px; }
+.gacct-conf .mini-seg { display: flex; align-items: center; gap: 7px; padding: 6px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 800; color: var(--c-faint); white-space: nowrap; }
+.gacct-conf .mini-seg b { color: var(--c-ink); font-weight: 900; }
+.gacct-conf .mini-seg.ok { background: var(--c-accent-soft); color: var(--c-accent-dark); }
+.gacct-conf .mini-seg.ok b { color: var(--c-accent-dark); }
+.gacct-conf .mini-seg.now { background: var(--c-warn-soft); color: var(--c-warn-ink); }
+.gacct-conf .mini-seg.now b { color: var(--c-warn-ink); }
+.gacct-conf .mini-seg svg { width: 13px; height: 13px; stroke-width: 3; }
+.gacct-conf .mini-sep { width: 14px; height: 1.5px; background: rgba(0,0,0,0.12); flex-shrink: 0; }
+
+/* ── Ligne de faits repliable ──
+   Remplace l'ancienne grille de 4 cellules méta : c'est elle qui libère la
+   hauteur nécessaire pour que le bloc d'action entre dans le premier écran. */
+.gacct-conf .facts { max-width: 620px; margin: 0 auto; background: var(--c-surface-alt); border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; text-align: left; overflow: hidden; }
+.gacct-conf .facts > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 16px; }
+.gacct-conf .facts > summary::-webkit-details-marker { display: none; }
+.gacct-conf .facts-sum { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; font-size: 13px; font-weight: 700; color: #888; }
+.gacct-conf .facts-sum b { font-weight: 900; color: var(--c-ink); }
+.gacct-conf .facts-more { display: flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 800; color: var(--c-accent-dark); white-space: nowrap; }
+.gacct-conf .facts-more svg { width: 12px; height: 12px; stroke-width: 3; transition: transform 160ms; }
+.gacct-conf .facts[open] .facts-more svg { transform: rotate(180deg); }
+.gacct-conf .facts-body { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid rgba(0,0,0,0.07); }
+.gacct-conf .facts-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 11px 16px; border-top: 1px solid rgba(0,0,0,0.06); }
+.gacct-conf .facts-row:nth-child(-n+2) { border-top: none; }
+.gacct-conf .facts-row:nth-child(odd) { border-right: 1px solid rgba(0,0,0,0.06); }
+.gacct-conf .facts-lbl { font-size: 9.5px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #bbb; }
+.gacct-conf .facts-val { font-size: 13.5px; font-weight: 900; color: var(--c-ink); text-align: right; }
+.gacct-conf .facts-val small { font-size: 11.5px; font-weight: 700; color: #888; }
+
+/* ── Message de retour des actions de repli (envoi par e-mail) ── */
+.gacct-conf-notice { scroll-margin-top: 84px; display: flex; align-items: flex-start; gap: 10px; font-size: 13.5px; font-weight: 700; line-height: 1.55; border-radius: 12px; padding: 13px 16px; margin: 0 0 18px; }
+.gacct-conf-notice.is-ok { color: var(--c-accent-dark); background: var(--c-accent-soft); }
+.gacct-conf-notice.is-warn { color: var(--c-warn-ink); background: var(--c-warn-soft); }
+.gacct-conf-notice svg { width: 16px; height: 16px; stroke-width: 2.6; margin-top: 1px; }
+
+/* ══ BLOC « À FAIRE MAINTENANT » ══
+   Premier élément du contenu, avant tout bloc financier. Les tuiles sont en
+   colonne avec un .todo-spacer en flex:1 : les boutons s'alignent en bas de
+   tuile quelle que soit la longueur du texte. */
+.gacct-conf .todo { background: var(--c-surface); border: 1px solid rgba(0,0,0,0.08); border-radius: 20px; padding: 26px 28px; margin-bottom: 22px; box-shadow: 0 6px 26px rgba(0,0,0,0.055); scroll-margin-top: 84px; }
+.gacct-conf .todo-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.gacct-conf .todo-head h2 { font-size: 20px; font-weight: 900; letter-spacing: -0.02em; margin: 0; color: var(--c-ink); }
+.gacct-conf .todo-dl { font-size: 12.5px; font-weight: 800; color: var(--c-warn-ink); background: var(--c-warn-soft); padding: 6px 13px; border-radius: 999px; }
+.gacct-conf .todo-dl b { font-weight: 900; }
+.gacct-conf .todo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: stretch; }
+.gacct-conf .todo-grid-wide { grid-template-columns: 1.15fr 1fr; }
+.gacct-conf .todo-card { display: flex; flex-direction: column; gap: 11px; border: 1.5px solid rgba(0,0,0,0.10); border-radius: 15px; padding: 20px 22px; }
+.gacct-conf .todo-card.go { border-color: color-mix(in srgb, var(--c-cta) 60%, transparent); background: #fffdf6; }
+.gacct-conf .todo-card.live { border-color: color-mix(in srgb, var(--c-accent) 50%, transparent); background: #fafeff; }
+.gacct-conf .todo-card.lock { background: #fafafa; border-style: dashed; }
+.gacct-conf .todo-top { display: flex; align-items: center; gap: 11px; }
+.gacct-conf .todo-num { width: 26px; height: 26px; border-radius: 999px; background: var(--c-ink); color: #fff; font-size: 13px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.gacct-conf .todo-card.lock .todo-num { background: #ccc; }
+.gacct-conf .todo-card h3 { font-size: 15.5px; font-weight: 900; letter-spacing: -0.012em; margin: 0; color: var(--c-ink); }
+.gacct-conf .todo-card.lock h3 { color: #8c8c8c; }
+.gacct-conf .todo-p { font-size: 13px; color: var(--c-muted); line-height: 1.6; margin: 0; }
+.gacct-conf .todo-p strong { color: var(--c-ink); }
+.gacct-conf .todo-card.lock .todo-p { color: var(--c-faint); }
+.gacct-conf .todo-spacer { flex: 1; min-height: 2px; }
+.gacct-conf .todo-cta { display: flex; gap: 9px; flex-wrap: wrap; }
+.gacct-conf .todo-cta .btn-primary, .gacct-conf .todo-cta .btn-secondary { font-size: 13px; padding: 11px 16px; }
+.gacct-conf .todo-alt { display: flex; gap: 8px 16px; flex-wrap: wrap; font-size: 12px; font-weight: 700; }
+.gacct-conf .todo-alt a,
+.gacct-conf .todo-alt button { display: inline-flex; align-items: center; gap: 5px; color: var(--c-accent-dark); }
+/* Les replis « par e-mail » sont des POST (pas d'AJAX : la page doit marcher
+   sans JS) : le <button> est repeint pour être indiscernable d'un lien. */
+.gacct-conf .todo-alt-form { margin: 0; display: inline; }
+.gacct-conf .todo-alt button { font-family: inherit; font-size: inherit; font-weight: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.gacct-conf .todo-alt button:hover { color: var(--c-accent); }
+.gacct-conf .todo-alt svg { width: 12px; height: 12px; stroke-width: 2.4; }
+.gacct-conf .todo-ref { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--c-surface); border: 1px solid color-mix(in srgb, var(--c-warn) 45%, transparent); border-radius: 10px; padding: 10px 12px; }
+.gacct-conf .todo-ref-lbl { font-size: 9px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--c-warn) 85%, #000); margin-bottom: 2px; }
+.gacct-conf .todo-ref-val { font-size: 14.5px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.gacct-conf .todo-addr { font-style: normal; font-size: 13.5px; font-weight: 700; line-height: 1.65; background: var(--c-surface); border: 1px solid rgba(0,0,0,0.09); border-radius: 11px; padding: 12px 14px; }
+.gacct-conf .todo-addr b { color: var(--c-accent-dark); font-weight: 900; }
+.gacct-conf .qrmini { display: flex; align-items: center; gap: 12px; background: var(--c-surface); border: 1px solid rgba(0,0,0,0.09); border-radius: 11px; padding: 10px 12px; }
+/* Vignette décorative : elle ne doit PAS hériter du stroke/fill des icônes. */
+.gacct-conf .qrmini-img { width: 38px; height: 38px; flex-shrink: 0; border-radius: 3px; stroke: none; fill: initial; }
+.gacct-conf .qrmini-t { font-size: 12.5px; font-weight: 800; line-height: 1.45; }
+.gacct-conf .qrmini-t small { display: block; font-size: 11.5px; font-weight: 700; color: var(--c-faint); }
+.gacct-conf .todo-card.lock .qrmini { opacity: 0.42; filter: grayscale(1); }
+.gacct-conf .lock-note { display: flex; align-items: flex-start; gap: 9px; font-size: 12px; font-weight: 700; color: var(--c-warn-ink); background: var(--c-warn-soft); border-radius: 10px; padding: 11px 13px; line-height: 1.55; margin: 0; }
+.gacct-conf .lock-note svg { width: 14px; height: 14px; stroke: color-mix(in srgb, var(--c-warn) 85%, #000); stroke-width: 2.4; margin-top: 1px; }
 
 /* ── Bloc paiement en deux temps ── */
 .gacct-conf .pay { background: var(--c-ink); color: #fff; border-radius: 20px; padding: 34px 38px; margin-bottom: 22px; }
@@ -160,7 +237,7 @@
 
 /* ── Mise en page 2 colonnes ── */
 .gacct-conf .cols { display: grid; grid-template-columns: 1fr 350px; gap: 22px; align-items: start; }
-.gacct-conf .card { background: var(--c-surface); border: 1px solid rgba(0,0,0,0.08); border-radius: 18px; padding: 30px 32px; margin-bottom: 22px; scroll-margin-top: 96px; }
+.gacct-conf .card { background: var(--c-surface); border: 1px solid rgba(0,0,0,0.08); border-radius: 18px; padding: 30px 32px; margin-bottom: 22px; scroll-margin-top: 84px; }
 .gacct-conf .card-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
 .gacct-conf .card h2 { font-size: 19px; font-weight: 900; letter-spacing: -0.015em; margin: 0; color: var(--c-ink); }
 .gacct-conf .card-hint { font-size: 12px; color: #aaa; font-weight: 600; }
@@ -274,6 +351,12 @@
 .gacct-conf .side-addr { font-size: 13px; color: #666; line-height: 1.75; margin: 0; }
 .gacct-conf .side-addr strong { display: block; color: var(--c-ink); font-weight: 800; margin-bottom: 3px; }
 
+/* ── Barre d'action collante — MOBILE UNIQUEMENT ──
+   Elle n'existe qu'en dessous de 767 px : sur desktop les deux tuiles d'action
+   sont côte à côte et toujours atteignables, une barre fixe n'aurait aucun
+   sens. Déclarée `display:none` ici, redéfinie dans la media query. */
+.gacct-conf .mbar { display: none; }
+
 /* ── Toast ── */
 .gacct-conf-toast { position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 20px); background: #1a1a1a; color: #fff; font-size: 13px; font-weight: 700; padding: 13px 20px; border-radius: 10px; box-shadow: 0 12px 34px rgba(0,0,0,0.24); opacity: 0; pointer-events: none; transition: opacity 200ms, transform 200ms; z-index: 400; display: flex; align-items: center; gap: 9px; }
 .gacct-conf-toast.show { opacity: 1; transform: translate(-50%, 0); }
@@ -292,16 +375,39 @@
 }
 @media (max-width: 767px) {
 	.gacct-conf-wrap { padding: 0 16px; }
-	.gacct-conf .conf { padding: 36px 0 32px; }
-	.gacct-conf .conf h1 { font-size: 27px; }
-	.gacct-conf .conf-sub { font-size: 14.5px; }
-	.gacct-conf .deadline { flex-direction: column; align-items: stretch; gap: 10px; border-radius: 14px; padding: 14px; text-align: center; width: 100%; }
-	.gacct-conf .deadline-count { justify-content: center; }
-	.gacct-conf .conf-meta { display: flex; flex-direction: column; width: 100%; }
-	.gacct-conf .conf-meta-item { border-left: none; border-top: 1px solid rgba(0,0,0,0.07); display: flex; align-items: baseline; justify-content: space-between; gap: 14px; padding: 12px 18px; }
-	.gacct-conf .conf-meta-item:first-child { border-top: none; }
-	.gacct-conf .conf-meta-label { margin-bottom: 0; }
+	/* Hero encore plus court : critère d'acceptation = le bloc « À faire
+	   maintenant » et son premier bouton visibles sans scroller sur iPhone SE. */
+	.gacct-conf .conf { padding: 26px 0 24px; }
+	.gacct-conf .conf-mark { width: 48px; height: 48px; margin-bottom: 15px; }
+	.gacct-conf .conf-mark svg { width: 24px; height: 24px; }
+	.gacct-conf .conf h1 { font-size: 24px; }
+	.gacct-conf .conf-sub { font-size: 14px; margin-bottom: 16px; }
+	.gacct-conf .mini { display: flex; width: 100%; justify-content: space-between; padding: 4px; margin-bottom: 16px; }
+	.gacct-conf .mini-seg { padding: 6px 9px; font-size: 11.5px; gap: 5px; }
+	.gacct-conf .mini-sep { width: 7px; }
+	.gacct-conf .facts { width: 100%; }
+	.gacct-conf .facts-sum { font-size: 12px; }
+	.gacct-conf .facts-body { grid-template-columns: 1fr; }
+	.gacct-conf .facts-row { border-right: none; border-top: 1px solid rgba(0,0,0,0.06); }
+	.gacct-conf .facts-row:first-child { border-top: none; }
+	.gacct-conf .todo { padding: 20px 16px; border-radius: 16px; }
+	.gacct-conf .todo-head { margin-bottom: 16px; gap: 10px; }
+	.gacct-conf .todo-head h2 { font-size: 18px; }
+	.gacct-conf .todo-dl { font-size: 12px; }
+	.gacct-conf .todo-grid, .gacct-conf .todo-grid-wide { grid-template-columns: 1fr; }
+	.gacct-conf .todo-card { padding: 17px 16px; }
+	.gacct-conf .todo-cta .btn-primary, .gacct-conf .todo-cta .btn-secondary { width: 100%; }
+	/* Barre d'action collante : pilotée par .show (confirmation.js). */
+	.gacct-conf .mbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 300; display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.98); backdrop-filter: blur(10px); border-top: 1px solid rgba(0,0,0,0.10); box-shadow: 0 -6px 22px rgba(0,0,0,0.10); padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); transform: translateY(115%); transition: transform 230ms ease; }
+	.gacct-conf .mbar.show { transform: translateY(0); }
+	.gacct-conf .mbar-txt { flex: 1; min-width: 0; }
+	.gacct-conf .mbar-txt b { display: block; font-size: 13px; font-weight: 900; }
+	.gacct-conf .mbar-txt span { font-size: 11.5px; font-weight: 700; color: #888; }
+	.gacct-conf .mbar .btn-primary { padding: 11px 15px; font-size: 13px; white-space: nowrap; }
 	.gacct-conf-main { padding: 28px 0 48px; }
+	/* La barre ne doit jamais masquer le dernier contenu : le pied de page du
+	   site ne nous appartient pas (template Elementor), on décale donc le body. */
+	body.gacct-conf-hasbar { padding-bottom: 80px; }
 	.gacct-conf .pay { padding: 24px 20px; border-radius: 16px; }
 	.gacct-conf .pay-top { gap: 18px; }
 	.gacct-conf .pay-total { text-align: left; }
@@ -311,6 +417,9 @@
 	.gacct-conf .bank-row { flex-direction: column; align-items: stretch; gap: 12px; }
 	.gacct-conf .bank-copy { justify-content: center; }
 	.gacct-conf .tl-row { grid-template-columns: 1fr; gap: 4px; }
+	/* Masquer la colonne « Qté » en mobile. Le pied n'utilise PAS de colspan
+	   (il a une cellule vide .ord-fill à la place) : sans ça, la 2e cellule
+	   d'une ligne de total serait le MONTANT, et les totaux disparaîtraient. */
 	.gacct-conf .ord th:nth-child(2), .gacct-conf .ord td:nth-child(2) { display: none; }
 	.gacct-conf .ord-name { font-size: 14px; }
 	.gacct-conf .step { grid-template-columns: 30px 1fr; gap: 13px; }

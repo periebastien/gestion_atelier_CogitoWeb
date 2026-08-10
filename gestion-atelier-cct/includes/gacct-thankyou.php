@@ -244,6 +244,7 @@ function gacct_conf_data( $order ) {
 function gacct_conf_links( $order ) {
 	$links = array(
 		'account'        => wc_get_page_permalink( 'myaccount' ),
+		'view_order'     => $order->get_view_order_url(),        // détail de la commande dans l'espace client.
 		'new_request'    => home_url( '/demande-intervention/' ),
 		'packing_guide'  => home_url( '/controles/' ),           // consignes d'emballage (section expédition).
 		'contact'        => home_url( '/contact/' ),
@@ -251,9 +252,154 @@ function gacct_conf_links( $order ) {
 		'receipt'        => '#',                                 // TODO : reçu de l'acompte (PDF).
 		'summary_pdf'    => '#',                                 // TODO : récapitulatif PDF.
 		'rib_pdf'        => '#',                                 // TODO : RIB téléchargeable (PDF).
+		'work_order_pdf' => '#',                                 // TODO : bon d'intervention en PDF téléchargeable.
 	);
 
 	return apply_filters( 'gacct_conf_links', $links, $order );
+}
+
+/* =============================================================================
+ *  REPLIS « JE N'AI PAS D'IMPRIMANTE / JE VEUX RECEVOIR ÇA PAR E-MAIL »
+ *
+ *  Deux actions déclenchées depuis la page de confirmation, en POST classique
+ *  (aucun AJAX : la page doit rester utilisable sans JS) puis PRG.
+ *
+ *  - `bon`  : renvoie au client le lien du bon d'intervention ;
+ *  - `rib`  : renvoie les coordonnées bancaires (template `bacs_reminder`,
+ *             déjà éditable dans Gestion Atelier > Configuration > Paiements).
+ *
+ *  Authentification : propriétaire connecté OU clé de commande (le visiteur qui
+ *  vient de commander n'a pas forcément de compte, et c'est exactement le même
+ *  niveau de preuve que celui qui lui donne accès à cette page).
+ *  Garde-fou anti-abus : un envoi par action et par commande toutes les 5 min.
+ * ============================================================================= */
+
+add_action( 'template_redirect', 'gacct_conf_handle_action', 5 );
+
+function gacct_conf_handle_action() {
+	if ( empty( $_POST['gacct_conf_action'] ) ) {
+		return;
+	}
+
+	$action   = sanitize_key( wp_unslash( $_POST['gacct_conf_action'] ) );
+	$order_id = isset( $_POST['gacct_conf_order'] ) ? absint( wp_unslash( $_POST['gacct_conf_order'] ) ) : 0;
+	$key      = isset( $_POST['gacct_conf_key'] ) ? sanitize_text_field( wp_unslash( $_POST['gacct_conf_key'] ) ) : '';
+	$order    = $order_id && function_exists( 'wc_get_order' ) ? wc_get_order( $order_id ) : false;
+
+	if ( ! $order || ! in_array( $action, array( 'bon', 'rib' ), true ) ) {
+		return;
+	}
+
+	$owner = is_user_logged_in() && (int) $order->get_customer_id() === get_current_user_id();
+
+	if ( ! $owner && ! ( $key && hash_equals( $order->get_order_key(), $key ) ) ) {
+		return;
+	}
+
+	// Un lien de commande devinable ne doit pas permettre d'arroser une boîte
+	// mail : une seule expédition par action et par commande toutes les 5 min.
+	$throttle = 'gacct_conf_sent_' . $action . '_' . $order->get_id();
+
+	if ( get_transient( $throttle ) ) {
+		$notice = 'throttled';
+	} else {
+		$notice = gacct_conf_send_action_email( $action, $order ) ? $action . '_sent' : 'failed';
+
+		if ( $action . '_sent' === $notice ) {
+			set_transient( $throttle, 1, 5 * MINUTE_IN_SECONDS );
+		}
+	}
+
+	$back = remove_query_arg( 'gacct_conf_notice', wp_get_referer() ? wp_get_referer() : $order->get_checkout_order_received_url() );
+
+	wp_safe_redirect( add_query_arg( 'gacct_conf_notice', $notice, $back ) . '#gacct-conf-notice' );
+	exit;
+}
+
+/**
+ * Envoi effectif de l'e-mail d'une action de repli.
+ *
+ * @param string   $action 'bon' | 'rib'.
+ * @param WC_Order $order  Commande.
+ * @return bool
+ */
+function gacct_conf_send_action_email( $action, $order ) {
+	if ( 'rib' === $action ) {
+		// Le template `bacs_reminder` porte déjà les coordonnées bancaires, la
+		// référence et l'échéance : on ne duplique pas un second contenu.
+		return (bool) gacct_pay_send_email(
+			$order->get_billing_email(),
+			'bacs_reminder',
+			gacct_pay_email_variables( $order )
+		);
+	}
+
+	// Bon d'intervention : le lien, pas la pièce jointe (le bon est une page
+	// imprimable, et le lien reste valable jusqu'à la fin du dossier).
+	$subject = sprintf(
+		/* translators: 1: référence de commande */
+		__( 'Votre bon d’intervention %s', 'gestion-atelier-cct' ),
+		$order->get_order_number()
+	);
+
+	$body = '<p>' . sprintf(
+		/* translators: 1: prénom */
+		esc_html__( 'Bonjour %s,', 'gestion-atelier-cct' ),
+		esc_html( $order->get_billing_first_name() )
+	) . '</p>';
+
+	$body .= '<p>' . esc_html__( 'Voici le lien vers le bon d’intervention de votre commande. Imprimez-le en A4, sans mise à l’échelle : découpez l’étiquette du bas pour la scotcher sur votre matériel, et glissez la partie haute dans le colis.', 'gestion-atelier-cct' ) . '</p>';
+
+	$body .= '<p><a href="' . esc_url( gacct_wo_print_url( $order ) ) . '">' . esc_html__( 'Ouvrir mon bon d’intervention', 'gestion-atelier-cct' ) . '</a></p>';
+
+	$body .= '<p>' . esc_html__( 'Vous pouvez transférer cet e-mail à la personne qui l’imprimera pour vous.', 'gestion-atelier-cct' ) . '</p>';
+
+	$body = apply_filters( 'gacct_conf_work_order_email_body', $body, $order );
+
+	return (bool) wp_mail(
+		$order->get_billing_email(),
+		wp_strip_all_tags( $subject ),
+		gacct_render_email_html( $subject, $body ),
+		array( 'Content-Type: text/html; charset=UTF-8' )
+	);
+}
+
+/**
+ * Message de retour après une action de repli (PRG).
+ *
+ * @return array{text:string,ok:bool}|null
+ */
+function gacct_conf_notice() {
+	$key = isset( $_GET['gacct_conf_notice'] ) ? sanitize_key( wp_unslash( $_GET['gacct_conf_notice'] ) ) : '';
+
+	$map = array(
+		'bon_sent'  => array( 'text' => __( 'Le lien du bon d’intervention vient de partir sur votre adresse e-mail.', 'gestion-atelier-cct' ), 'ok' => true ),
+		'rib_sent'  => array( 'text' => __( 'Les coordonnées bancaires viennent de repartir sur votre adresse e-mail.', 'gestion-atelier-cct' ), 'ok' => true ),
+		'throttled' => array( 'text' => __( 'Un e-mail vient déjà de vous être envoyé. Vérifiez vos indésirables, puis réessayez dans quelques minutes.', 'gestion-atelier-cct' ), 'ok' => false ),
+		'failed'    => array( 'text' => __( 'L’envoi n’a pas abouti. Appelez-nous, nous vous transmettons tout de suite ce qu’il vous faut.', 'gestion-atelier-cct' ), 'ok' => false ),
+	);
+
+	return isset( $map[ $key ] ) ? $map[ $key ] : null;
+}
+
+/**
+ * Formulaire d'une action de repli, rendu comme un simple lien.
+ *
+ * @param string   $action 'bon' | 'rib'.
+ * @param WC_Order $order  Commande.
+ * @param string   $label  Libellé du lien.
+ * @param string   $icon   Clé de `gacct_conf_icon()`.
+ * @return string
+ */
+function gacct_conf_action_form( $action, $order, $label, $icon = 'mail' ) {
+	$html  = '<form method="post" class="todo-alt-form">';
+	$html .= '<input type="hidden" name="gacct_conf_action" value="' . esc_attr( $action ) . '">';
+	$html .= '<input type="hidden" name="gacct_conf_order" value="' . esc_attr( $order->get_id() ) . '">';
+	$html .= '<input type="hidden" name="gacct_conf_key" value="' . esc_attr( $order->get_order_key() ) . '">';
+	$html .= '<button type="submit">' . gacct_conf_icon( $icon ) . esc_html( $label ) . '</button>';
+	$html .= '</form>';
+
+	return $html;
 }
 
 /**
@@ -278,11 +424,15 @@ function gacct_conf_features() {
 	return apply_filters(
 		'gacct_conf_features',
 		array(
-			'work_order'  => true,  // bon d'intervention imprimable (gacct-workorder.php, 28/07/2026).
-			'receipt'     => false, // reçu de l'acompte (PDF).
-			'summary_pdf' => false, // récapitulatif de commande (PDF).
-			'rib_pdf'     => false, // RIB téléchargeable (PDF).
-			'add_service' => false, // ajout d'une prestation à une commande existante.
+			'work_order'       => true,  // bon d'intervention imprimable (gacct-workorder.php, 28/07/2026).
+			'work_order_mail'  => true,  // « me l'envoyer par e-mail » (gacct_conf_send_action_email).
+			'work_order_share' => true,  // « le partager » (Web Share API, repli copie du lien).
+			'work_order_pdf'   => false, // bon d'intervention en PDF téléchargeable (dompdf, à faire).
+			'bank_mail'        => true,  // « me renvoyer les coordonnées bancaires par e-mail ».
+			'receipt'          => false, // reçu de l'acompte (PDF).
+			'summary_pdf'      => false, // récapitulatif de commande (PDF).
+			'rib_pdf'          => false, // RIB téléchargeable (PDF).
+			'add_service'      => false, // ajout d'une prestation à une commande existante.
 		)
 	);
 }
@@ -319,11 +469,40 @@ function gacct_conf_icon( $name ) {
 		'lock'      => '<rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>',
 		'warn'      => '<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/>',
 		'arrow'     => '<path d="M5 12h14M13 6l6 6-6 6"/>',
+		'arrow-dn'  => '<path d="M12 5v14M6 13l6 6 6-6"/>',
+		'chevron'   => '<path d="M6 9l6 6 6-6"/>',
+		'mail'      => '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 6 10-6"/>',
+		'share'     => '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/>',
 	);
 
 	$path = isset( $icons[ $name ] ) ? $icons[ $name ] : $icons['check'];
 
 	return '<svg viewBox="0 0 24 24" aria-hidden="true">' . $path . '</svg>';
+}
+
+/**
+ * Vignette décorative de QR code (38 px), pour la tuile « bon d'intervention ».
+ *
+ * Ce n'est PAS le vrai QR : à cette taille il serait illisible, et le seul QR
+ * qui compte est celui du bon imprimé (généré, lui, à partir de l'URL de scan
+ * — cf. templates/workorder.php). Purement illustratif, donc aria-hidden.
+ */
+function gacct_conf_qr_thumb() {
+	return '<svg viewBox="0 0 33 33" aria-hidden="true" focusable="false" class="qrmini-img">'
+		. '<rect width="33" height="33" fill="#fff"/>'
+		. '<g fill="#1a1a1a"><path d="M0 0h9v9H0z"/><path d="M24 0h9v9h-9z"/><path d="M0 24h9v9H0z"/></g>'
+		. '<g fill="#fff"><path d="M1.5 1.5h6v6h-6z"/><path d="M25.5 1.5h6v6h-6z"/><path d="M1.5 25.5h6v6h-6z"/></g>'
+		. '<g fill="#1a1a1a"><path d="M3 3h3v3H3z"/><path d="M27 3h3v3h-3z"/><path d="M3 27h3v3H3z"/>'
+		. '<rect x="12" y="0" width="3" height="3"/><rect x="18" y="3" width="3" height="3"/><rect x="12" y="6" width="3" height="3"/>'
+		. '<rect x="15" y="9" width="3" height="3"/><rect x="21" y="9" width="3" height="3"/><rect x="0" y="12" width="3" height="3"/>'
+		. '<rect x="6" y="12" width="3" height="3"/><rect x="12" y="12" width="3" height="3"/><rect x="18" y="12" width="3" height="3"/>'
+		. '<rect x="24" y="12" width="3" height="3"/><rect x="30" y="12" width="3" height="3"/><rect x="3" y="15" width="3" height="3"/>'
+		. '<rect x="9" y="15" width="3" height="3"/><rect x="21" y="15" width="3" height="3"/><rect x="27" y="15" width="3" height="3"/>'
+		. '<rect x="0" y="18" width="3" height="3"/><rect x="12" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/>'
+		. '<rect x="24" y="18" width="3" height="3"/><rect x="12" y="21" width="3" height="3"/><rect x="15" y="24" width="3" height="3"/>'
+		. '<rect x="21" y="24" width="3" height="3"/><rect x="27" y="24" width="3" height="3"/><rect x="12" y="27" width="3" height="3"/>'
+		. '<rect x="18" y="27" width="3" height="3"/><rect x="15" y="30" width="3" height="3"/><rect x="24" y="30" width="3" height="3"/></g>'
+		. '</svg>';
 }
 
 /**
