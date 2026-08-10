@@ -22,6 +22,7 @@ define( 'GACCT_PAY_ABANDONED_LOG_OPT', 'gacct_pay_abandoned_log' );
 define( 'GACCT_PAY_HOURLY_EVENT', 'gacct_pay_hourly_tick' );
 define( 'GACCT_PAY_MIDNIGHT_EVENT', 'gacct_pay_midnight_purge' );
 define( 'GACCT_PAY_META_REMINDER_SENT', '_gacct_bacs_reminder_sent' );
+define( 'GACCT_PAY_META_DEPOSIT_SENT', '_gacct_deposit_received_sent' );
 define( 'GACCT_PAY_META_AUTO_CANCELLED', '_gacct_bacs_auto_cancelled' );
 define( 'GACCT_PAY_NONCE', 'gacct_save_payments' );
 define( 'GACCT_PAY_PAGE_SLUG', 'gacct-payments' );
@@ -108,6 +109,25 @@ function gacct_pay_default_settings() {
 					. '<p>Le créneau atelier de votre commande <strong>{order_number}</strong>, initialement prévu le <strong>{old_slot_date}</strong>, a été déplacé au <strong>{new_slot_date}</strong>.</p>'
 					. '<p>Si votre matériel n’est pas encore parti, il doit désormais nous parvenir <strong>avant le {new_slot_date}</strong>.</p>'
 					. '<p>Ce nouveau créneau ne vous convient pas ? Répondez à cet e-mail ou appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}) : nous trouverons une autre date ensemble.</p>'
+					. '<p>À très vite,<br><br>Bastien.</p>',
+			),
+			'deposit_received' => array(
+				'enabled' => true,
+				'label'   => __( 'Paiement reçu : consignes d’expédition + bon d’intervention', 'gestion-atelier-cct' ),
+				'subject' => __( 'Paiement reçu ! Voici comment nous envoyer votre matériel - commande {order_number}', 'gestion-atelier-cct' ),
+				'body'    => '<p>Bonjour {customer_name},</p>'
+					. '<p>Nous avons bien reçu votre paiement pour la commande <strong>{order_number}</strong> : votre créneau à l’atelier du <strong>{slot_date}</strong> est confirmé. Merci de votre confiance !</p>'
+					. '<p>Il ne reste plus qu’une étape : nous faire parvenir votre matériel.</p>'
+					. '{work_order_block}'
+					. '<p><strong>Comment préparer votre colis</strong></p>'
+					. '<ol>'
+					. '<li><strong>Imprimez le bon d’intervention</strong> et glissez-le dans le colis, bien visible sur le dessus. Il porte un QR code qui nous permet d’enregistrer votre matériel dès son arrivée.</li>'
+					. '<li>Pliez votre matériel comme d’habitude et emballez-le dans un carton ou un sac solide, fermé.</li>'
+					. '<li>Expédiez le colis à l’adresse suivante :<br><strong>{workshop_address}</strong></li>'
+					. '<li>Votre colis doit nous parvenir <strong>avant le {parcel_deadline}</strong>.</li>'
+					. '</ol>'
+					. '<p>Dès que le colis est parti, indiquez-nous le transporteur et le numéro de suivi depuis <a href="{shipping_url}">votre espace client</a> : nous saurons ainsi qu’il est en route et nous pourrons l’attendre.</p>'
+					. '<p>Un petit rappel, sans malice : l’acompte réserve votre créneau. Sans réception du matériel la veille au soir, le créneau est libéré et l’acompte reste acquis. Un imprévu d’expédition ? Prévenez-nous avant la date au <strong>{contact_phone}</strong> ({contact_hours}), nous en tiendrons compte.</p>'
 					. '<p>À très vite,<br><br>Bastien.</p>',
 			),
 			'missing_items' => array(
@@ -553,6 +573,181 @@ function gacct_pay_admin_email() {
 	}
 
 	return get_option( 'admin_email' );
+}
+
+/* =============================================================================
+ *  E-MAIL « PAIEMENT REÇU » (bascule d'état 0 → 1)
+ *
+ *  Jusqu'ici, l'encaissement de l'acompte ne déclenchait AUCUN e-mail : les
+ *  notifications du workflow (notification_definitions()) commencent à l'état 2,
+ *  et le statut Kojito `acompte-paye` n'a pas d'e-mail WooCommerce attaché. Le
+ *  client validait son virement et n'entendait plus parler de nous jusqu'à la
+ *  réception de son colis — alors que c'est précisément le moment où il a besoin
+ *  de l'adresse de l'atelier, de la date limite d'arrivée et du bon à imprimer.
+ *
+ *  Le déclencheur est le changement de statut de la commande : l'e-mail part donc
+ *  quelle que soit la voie d'encaissement — bouton « Acompte encaissé » de la
+ *  console (qui pose `acompte-paye`), paiement par carte au tunnel, ou passage
+ *  manuel du statut depuis l'admin WooCommerce. La meta GACCT_PAY_META_DEPOSIT_SENT
+ *  interdit tout doublon : une commande traverse plusieurs statuts dans sa vie.
+ *
+ *  Aucune date, aucun montant, aucune URL n'est recalculé ici : tout vient de
+ *  gacct_conf_data(), la source de la page de confirmation.
+ * ============================================================================= */
+
+add_action( 'woocommerce_order_status_changed', 'gacct_pay_maybe_send_deposit_received', 25, 4 );
+
+/**
+ * @param int      $order_id
+ * @param string   $old_status
+ * @param string   $new_status
+ * @param WC_Order $order
+ */
+function gacct_pay_maybe_send_deposit_received( $order_id, $old_status, $new_status, $order ) {
+	if ( ! $order instanceof WC_Order ) {
+		$order = wc_get_order( $order_id );
+	}
+
+	if ( $order instanceof WC_Order ) {
+		gacct_pay_send_deposit_received( $order );
+	}
+}
+
+/**
+ * Envoie l'e-mail « paiement reçu » si la commande y a droit et ne l'a pas déjà eu.
+ *
+ * @param WC_Order $order
+ * @param bool     $force Rejouer l'envoi malgré la meta de garde (renvoi manuel).
+ * @return bool
+ */
+function gacct_pay_send_deposit_received( $order, $force = false ) {
+
+	if ( ! $order instanceof WC_Order ) {
+		return false;
+	}
+
+	if ( ! $force && $order->get_meta( GACCT_PAY_META_DEPOSIT_SENT ) ) {
+		return false;
+	}
+
+	// Paiement réellement encaissé (inclut le statut Kojito `acompte-paye`).
+	if ( ! function_exists( 'gacct_order_payment_received' ) || ! gacct_order_payment_received( $order ) ) {
+		return false;
+	}
+
+	if ( $order->has_status( array( 'cancelled', 'refunded', 'failed', 'trash' ) ) ) {
+		return false;
+	}
+
+	// Uniquement les commandes qui ouvrent un dossier atelier.
+	$revision_id = function_exists( 'gacct_revision_id_for_order' ) ? gacct_revision_id_for_order( $order ) : 0;
+
+	if ( ! $revision_id ) {
+		return false;
+	}
+
+	// Le matériel est-il encore attendu ? Au-delà de l'état 1 le colis est déjà
+	// là : des consignes d'expédition n'auraient plus aucun sens (cas d'une
+	// commande dont le solde est encaissé plus tard, par exemple).
+	$revision = jwcct_get_cct_item( JWCCT_CCT_REVISION, $revision_id );
+
+	if ( is_array( $revision ) && isset( $revision['etat_de_la_commande'] ) && (int) $revision['etat_de_la_commande'] > 1 ) {
+		return false;
+	}
+
+	if ( ! function_exists( 'gacct_conf_data' ) ) {
+		return false;
+	}
+
+	$data = gacct_conf_data( $order );
+
+	$sent = gacct_pay_send_email(
+		$order->get_billing_email(),
+		'deposit_received',
+		gacct_pay_email_variables( $order, array(
+			'{slot_date}'         => $data['slot_label'] ? $data['slot_label'] : __( 'la date convenue', 'gestion-atelier-cct' ),
+			'{parcel_deadline}'   => $data['parcel_label'] ? $data['parcel_label'] : __( 'la veille de votre créneau', 'gestion-atelier-cct' ),
+			'{materiel}'          => esc_html( $data['materiel'] ),
+			'{workshop_address}'  => esc_html( implode( ', ', $data['store_address'] ) ),
+			'{shipping_url}'      => esc_url( $order->get_view_order_url() ),
+			'{work_order_url}'    => esc_url( gacct_pay_deposit_work_order_url( $data ) ),
+			'{work_order_block}'  => gacct_pay_deposit_work_order_block( $data ),
+		) ),
+		true
+	);
+
+	// save_meta_data() et non save() : on est appelé DEPUIS une transition de
+	// statut, donc depuis l'intérieur d'un save() de la commande — un second
+	// save() complet relancerait la machinerie de transition.
+	$order->update_meta_data( GACCT_PAY_META_DEPOSIT_SENT, current_time( 'mysql' ) );
+	$order->save_meta_data();
+
+	$order->add_order_note( $sent
+		? __( 'Paiement encaissé : e-mail « consignes d’expédition + bon d’intervention » envoyé au client (copie admin).', 'gestion-atelier-cct' )
+		: __( 'Paiement encaissé : ERREUR, l’e-mail de consignes d’expédition n’a pas pu être envoyé au client.', 'gestion-atelier-cct' )
+	);
+
+	if ( ! $sent ) {
+		jwcct_log( 'deposit_received : envoi KO pour la commande ' . $order->get_id() . ' (' . $order->get_billing_email() . ').' );
+	}
+
+	return $sent;
+}
+
+/**
+ * URL du bon d'intervention imprimable, ou '' si la fonctionnalité est coupée.
+ *
+ * Le drapeau `work_order` de gacct_conf_features() gouverne : si le bouton est
+ * masqué sur la page de confirmation, il n'a pas à réapparaître par e-mail.
+ * `work_order_locked` est en principe faux ici (le paiement vient d'arriver),
+ * mais on le respecte plutôt que de le supposer.
+ *
+ * @param array $data Retour de gacct_conf_data().
+ * @return string
+ */
+function gacct_pay_deposit_work_order_url( array $data ) {
+	if ( ! empty( $data['work_order_locked'] ) ) {
+		return '';
+	}
+
+	if ( function_exists( 'gacct_conf_feature' ) && ! gacct_conf_feature( 'work_order' ) ) {
+		return '';
+	}
+
+	$url = isset( $data['links']['work_order'] ) ? (string) $data['links']['work_order'] : '';
+
+	return ( '' === $url || '#' === $url ) ? '' : $url;
+}
+
+/**
+ * Encart bouton « Imprimer le bon d'intervention » pour l'e-mail.
+ *
+ * Styles en ligne : les clients de messagerie n'ont pas de feuille de style, et
+ * la couleur suit celle des e-mails WooCommerce (rien de codé en dur).
+ *
+ * @param array $data Retour de gacct_conf_data().
+ * @return string HTML (vide si aucun bon disponible).
+ */
+function gacct_pay_deposit_work_order_block( array $data ) {
+	$url = gacct_pay_deposit_work_order_url( $data );
+
+	if ( ! $url ) {
+		return '';
+	}
+
+	$accent = get_option( 'woocommerce_email_base_color', '#0056b3' );
+
+	$html = '<p style="margin:24px 0;text-align:center;">'
+		. '<a href="' . esc_url( $url ) . '" style="display:inline-block;padding:14px 28px;background-color:' . esc_attr( $accent ) . ';color:#ffffff;font-size:16px;font-weight:bold;text-decoration:none;border-radius:6px;">'
+		. esc_html__( 'Imprimer mon bon d’intervention', 'gestion-atelier-cct' )
+		. '</a>'
+		. '</p>'
+		. '<p style="margin:-12px 0 24px;text-align:center;font-size:13px;color:#666;">'
+		. esc_html__( 'Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :', 'gestion-atelier-cct' )
+		. '<br><span style="word-break:break-all;">' . esc_html( $url ) . '</span>'
+		. '</p>';
+
+	return apply_filters( 'gacct_pay_deposit_work_order_block', $html, $url, $data );
 }
 
 /* =============================================================================
@@ -1475,6 +1670,15 @@ function gacct_pay_render_admin_page() {
 									<br>
 									<?php esc_html_e( 'Mise en attente / reprise du dossier :', 'gestion-atelier-cct' ); ?>
 									<code>{hold_message}</code> <?php esc_html_e( '(message personnalisé de l’opérateur, déjà mis en forme ; vide si aucun message)', 'gestion-atelier-cct' ); ?>
+									<br>
+									<?php esc_html_e( 'Paiement reçu (consignes d’expédition) :', 'gestion-atelier-cct' ); ?>
+									<code>{slot_date}</code> <?php esc_html_e( '(prise en charge à l’atelier)', 'gestion-atelier-cct' ); ?>
+									<code>{parcel_deadline}</code> <?php esc_html_e( '(date limite d’arrivée du colis)', 'gestion-atelier-cct' ); ?>
+									<code>{workshop_address}</code>
+									<code>{materiel}</code> <?php esc_html_e( '(marque · modèle · taille)', 'gestion-atelier-cct' ); ?>
+									<code>{shipping_url}</code> <?php esc_html_e( '(espace client, déclaration du suivi)', 'gestion-atelier-cct' ); ?>
+									<code>{work_order_block}</code> <?php esc_html_e( '(bouton du bon d’intervention, déjà mis en forme ; vide si indisponible)', 'gestion-atelier-cct' ); ?>
+									<code>{work_order_url}</code> <?php esc_html_e( '(lien nu du bon)', 'gestion-atelier-cct' ); ?>
 								</p>
 							</td>
 						</tr>

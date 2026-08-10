@@ -370,6 +370,35 @@ function gacct_initial_revision_state( $order ) {
 }
 
 /**
+ * Revision liee a une commande, meta d'abord, colonne order_id en repli.
+ *
+ * Le repli couvre les liaisons ratees, les commandes invitees et les dossiers
+ * crees a la main : la meta manque, mais la revision porte bien l'order_id.
+ *
+ * @param WC_Order|mixed $order
+ * @return int 0 si aucune revision.
+ */
+function gacct_revision_id_for_order( $order ) {
+
+    if ( ! $order instanceof WC_Order ) {
+        return 0;
+    }
+
+    $revision_id = absint( $order->get_meta( JWCCT_ORDER_REVISION_ID ) );
+
+    if ( $revision_id ) {
+        return $revision_id;
+    }
+
+    global $wpdb;
+
+    return absint( $wpdb->get_var( $wpdb->prepare(
+        "SELECT _ID FROM {$wpdb->prefix}jet_cct_revision WHERE order_id = %d AND cct_status = 'publish' LIMIT 1",
+        $order->get_id()
+    ) ) );
+}
+
+/**
  * Bascule 0 -> 1 quand le paiement arrive (encaissement carte, passage manuel
  * de la commande en « En cours » apres reception du virement, acompte Kojito).
  *
@@ -385,17 +414,7 @@ function gacct_sync_revision_state_on_payment( $order_id, $old_status, $new_stat
         return;
     }
 
-    $revision_id = absint( $order->get_meta( JWCCT_ORDER_REVISION_ID ) );
-
-    // Repli : meta absente (liaison ratée, commande invitée, dossier créé à la
-    // main) → retrouver la révision par sa colonne order_id.
-    if ( ! $revision_id ) {
-        global $wpdb;
-        $revision_id = absint( $wpdb->get_var( $wpdb->prepare(
-            "SELECT _ID FROM {$wpdb->prefix}jet_cct_revision WHERE order_id = %d AND cct_status = 'publish' LIMIT 1",
-            $order_id
-        ) ) );
-    }
+    $revision_id = gacct_revision_id_for_order( $order );
 
     if ( ! $revision_id ) {
         return;
