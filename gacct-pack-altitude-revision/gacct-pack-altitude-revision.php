@@ -41,7 +41,7 @@ function gacct_pack_ar_register( $packs ) {
 	$packs['altitude-revision'] = array(
 		'label'         => __( 'Pack Altitude Révision (ParachecK®)', 'gacct-pack-ar' ),
 		'models'        => 'gacct_pack_ar_models',
-		'number_format' => '{year}{seq}', // ex. 2026001 — séquence de l'atelier.
+		'number_format' => '{year}{seq4}', // ex. 20260001 — séquence de l'atelier (4 chiffres, décision Hervé du 10/08/2026 : viser le millier de voiles).
 	);
 
 	return $packs;
