@@ -252,7 +252,7 @@ function gacct_conf_links( $order ) {
 		'receipt'        => '#',                                 // TODO : reçu de l'acompte (PDF).
 		'summary_pdf'    => '#',                                 // TODO : récapitulatif PDF.
 		'rib_pdf'        => '#',                                 // TODO : RIB téléchargeable (PDF).
-		'work_order_pdf' => '#',                                 // TODO : bon d'intervention en PDF téléchargeable.
+		'work_order_pdf' => gacct_wo_pdf_url( $order ),   // bon d'intervention en PDF (gacct-workorder-pdf.php).
 	);
 
 	return apply_filters( 'gacct_conf_links', $links, $order );
@@ -427,7 +427,7 @@ function gacct_conf_features() {
 			'work_order'       => true,  // bon d'intervention imprimable (gacct-workorder.php, 28/07/2026).
 			'work_order_mail'  => true,  // « me l'envoyer par e-mail » (gacct_conf_send_action_email).
 			'work_order_share' => true,  // « le partager » (Web Share API, repli copie du lien).
-			'work_order_pdf'   => false, // bon d'intervention en PDF téléchargeable (dompdf, à faire).
+			'work_order_pdf'   => true,  // bon d'intervention en PDF téléchargeable (dompdf, 10/08/2026).
 			'bank_mail'        => true,  // « me renvoyer les coordonnées bancaires par e-mail ».
 			'receipt'          => false, // reçu de l'acompte (PDF).
 			'summary_pdf'      => false, // récapitulatif de commande (PDF).

@@ -63,7 +63,12 @@ $wo_specs = array_filter(
 </head>
 <body>
 
-<button type="button" class="wo-print-btn" onclick="window.print()"><?php esc_html_e( 'Imprimer ce bon', 'gestion-atelier-cct' ); ?></button>
+<div class="wo-actions">
+	<?php if ( function_exists( 'gacct_wo_pdf_url' ) ) : ?>
+		<a class="wo-pdf-btn" href="<?php echo esc_url( gacct_wo_pdf_url( $data['order'] ) ); ?>"><?php esc_html_e( 'Télécharger le PDF', 'gestion-atelier-cct' ); ?></a>
+	<?php endif; ?>
+	<button type="button" class="wo-print-btn" onclick="window.print()"><?php esc_html_e( 'Imprimer ce bon', 'gestion-atelier-cct' ); ?></button>
+</div>
 
 <section class="page">
 

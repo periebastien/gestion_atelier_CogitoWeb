@@ -196,6 +196,12 @@ function gacct_wo_maybe_render_print_page() {
 		);
 	}
 
+	// Variante téléchargeable (dompdf) : même document, mêmes gardes — la
+	// bifurcation est volontairement APRÈS elles.
+	if ( ! empty( $_GET['pdf'] ) && function_exists( 'gacct_wo_stream_pdf' ) ) {
+		gacct_wo_stream_pdf( $order );
+	}
+
 	nocache_headers();
 
 	$data = gacct_wo_data( $order );

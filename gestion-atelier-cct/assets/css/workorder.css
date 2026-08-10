@@ -199,11 +199,31 @@ body {
 
 /* ── Bouton imprimer (écran seulement) ───────────────────────────────── */
 
-.wo-print-btn {
+.wo-actions {
 	position: fixed;
 	right: 26px;
 	bottom: 26px;
 	z-index: 10;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.wo-pdf-btn {
+	border-radius: 999px;
+	padding: 12px 22px;
+	background: #fff;
+	color: #1a1a1a;
+	border: 1.5px solid rgba(0, 0, 0, 0.16);
+	font-size: 14px;
+	font-weight: 800;
+	text-decoration: none;
+	box-shadow: 0 6px 18px rgba(15, 35, 45, 0.18);
+}
+
+.wo-pdf-btn:hover { border-color: var(--wo-accent); color: var(--wo-accent-dark); }
+
+.wo-print-btn {
 	border: 0;
 	border-radius: 999px;
 	padding: 13px 26px;
@@ -243,7 +263,7 @@ body {
 @media print {
 	html, body { background: #fff; }
 
-	.wo-print-btn { display: none; }
+	.wo-actions { display: none; }
 
 	.page {
 		width: 210mm;
