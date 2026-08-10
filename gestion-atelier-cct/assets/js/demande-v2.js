@@ -251,12 +251,18 @@
 
 		var erreurs = {};
 
-		function erreurEtape( cle, anchorEl, message ) {
+		/**
+		 * Affiche le message d'erreur d'une étape, inséré AVANT l'ancre — ou
+		 * après elle si `apres` est vrai (le cas de la note « L'un des deux
+		 * suffit. », que l'erreur recouvrirait sinon : la note remonte de 10 px
+		 * pour se coller à ses champs).
+		 */
+		function erreurEtape( cle, anchorEl, message, apres ) {
 			if ( ! erreurs[ cle ] ) {
 				var el = document.createElement( 'div' );
 				el.className = 'gacct-v2-err';
 				el.setAttribute( 'role', 'alert' );
-				anchorEl.parentNode.insertBefore( el, anchorEl );
+				anchorEl.parentNode.insertBefore( el, apres ? anchorEl.nextSibling : anchorEl );
 				erreurs[ cle ] = el;
 			}
 			erreurs[ cle ].textContent = message;
@@ -383,7 +389,8 @@
 					erreurEtape(
 						'taillePtv',
 						noteTaillePtv || next.closest( '.jet-form-builder__next-page-wrap' ),
-						v2i18n.erreurTaillePtv || 'Indiquez au moins la taille ou le P.T.V. de votre matériel.'
+						v2i18n.erreurTaillePtv || 'Indiquez au moins la taille ou le P.T.V. de votre matériel.',
+						!! noteTaillePtv
 					);
 					return;
 				}

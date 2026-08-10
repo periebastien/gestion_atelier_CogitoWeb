@@ -51,21 +51,24 @@ function gacct_biplace_supplement_product_ids() {
  */
 add_action( 'woocommerce_product_options_general_product_data', function () {
 	global $post;
-	$cur = gacct_product_biplace_supplement( $post->ID );
+
 	echo '<div class="options_group">';
-	echo '<p class="form-field"><label>' . esc_html__( 'Supplément biplace', 'gestion-atelier-cct' ) . '</label>';
-	foreach ( gacct_biplace_options() as $val => $lab ) {
-		printf(
-			'<label style="margin-right:18px;font-weight:400;float:none;width:auto;display:inline-block"><input type="radio" name="_gacct_supplement_biplace" value="%s"%s style="margin-right:4px"> %s</label>',
-			esc_attr( $val ),
-			checked( $cur, $val, false ),
-			esc_html( $lab )
-		);
-	}
-	echo '</p>';
-	echo '<p class="form-field" style="margin-top:0"><span class="description">'
-		. esc_html__( 'Si un supplément est choisi, le formulaire de demande proposera « Solo / Biplace » pour cette prestation et ajoutera automatiquement le produit supplément correspondant au panier.', 'gestion-atelier-cct' )
-		. '</span></p>';
+
+	// woocommerce_wp_radio() rend le composant NATIF (fieldset + legend +
+	// ul.wc-radios). Les labels bricolés a la main se chevauchaient : dans le
+	// panneau produit, `.form-field label` est en float:left; width:150px, et
+	// des styles inline ne suffisent pas a remettre trois labels en ligne.
+	woocommerce_wp_radio(
+		array(
+			'id'          => '_gacct_supplement_biplace',
+			'name'        => '_gacct_supplement_biplace',
+			'label'       => __( 'Supplément biplace', 'gestion-atelier-cct' ),
+			'options'     => gacct_biplace_options(),
+			'value'       => gacct_product_biplace_supplement( $post->ID ),
+			'description' => __( 'Si un supplément est choisi, le formulaire de demande proposera « Solo / Biplace » pour cette prestation et ajoutera automatiquement le produit supplément correspondant au panier.', 'gestion-atelier-cct' ),
+		)
+	);
+
 	echo '</div>';
 } );
 

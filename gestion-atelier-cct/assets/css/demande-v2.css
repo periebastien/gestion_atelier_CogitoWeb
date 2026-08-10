@@ -221,7 +221,18 @@
 	outline: none;
 }
 
-/* Messages de validation JFB : composant erreur de la maquette. */
+/* Messages de validation JFB : composant erreur de la maquette.
+   ⚠ Adversaire mesuré : le Custom CSS du kit (post 4) pose
+   `.jet-form-builder-row .error-message { font-size: 12px !important;
+   color: #dc3545 !important }` — le !important bat notre spécificité
+   supérieure. Les erreurs JFB s'affichaient donc en 12 px à côté des nôtres
+   en 15 px. On ré-asserte ces deux seules propriétés en !important, pour que
+   TOUS les messages du parcours aient la même tête. */
+.gacct-v2 .jet-form-builder-row .error-message {
+	font-size: 15px !important;
+	color: var(--v2-red) !important;
+}
+
 .gacct-v2 .jet-form-builder-row .error-message,
 .gacct-v2 .gacct-v2-err {
 	background: var(--v2-red-soft);
