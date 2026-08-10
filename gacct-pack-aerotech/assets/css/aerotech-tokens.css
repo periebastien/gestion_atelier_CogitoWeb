@@ -81,3 +81,19 @@
 	/* Page de confirmation : fond alterné de la charte. */
 	--gacct-conf-surface-alt: #f5f7f8;
 }
+
+/* ==== Parcours de demande v2 (10/08/2026) ================================
+ *
+ * demande-v2.css route désormais TOUT son registre par des --gacct-* : sans
+ * ces tokens, le parcours reprendrait la palette du site de référence (teal,
+ * gris froids). Les valeurs ci-dessous sont celles de la charte AEROTECH,
+ * déjà utilisées par le reste du site. */
+:root {
+	/* Fond d'option cochée et de carte sélectionnée : orange pâle. */
+	--gacct-accent-soft: #fdf0e9;
+
+	/* Erreur : rouge lisible sur fond clair, distinct de l'orange d'accent. */
+	--gacct-danger: #c0392b;
+	--gacct-danger-soft: #fdeeec;
+	--gacct-danger-line: #f6d3ce;
+}
