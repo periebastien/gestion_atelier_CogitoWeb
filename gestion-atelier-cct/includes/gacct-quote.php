@@ -64,11 +64,11 @@ function gacct_state5_suffix( $order ) {
 	$decision = (string) $order->get_meta( GACCT_QUOTE_META_DECISION );
 
 	if ( 'accepted' === $decision ) {
-		return __( ' — devis validé', 'gestion-atelier-cct' );
+		return __( ' (devis validé)', 'gestion-atelier-cct' );
 	}
 
 	if ( 'refused' === $decision ) {
-		return __( ' — devis refusé', 'gestion-atelier-cct' );
+		return __( ' (devis refusé)', 'gestion-atelier-cct' );
 	}
 
 	return '';
@@ -363,7 +363,7 @@ function gacct_quote_add_lines( $order, array $lines ) {
 		$order->add_item( $item );
 
 		$added[] = sprintf(
-			'%s × %d — %s',
+			'%s × %d : %s',
 			$line['name'],
 			$line['qty'],
 			wp_strip_all_tags( wc_price( $total_ttc, array( 'currency' => $order->get_currency() ) ) )
@@ -385,7 +385,7 @@ function gacct_quote_remove_extras( $order ) {
 
 	foreach ( gacct_quote_extra_items( $order ) as $item_id => $item ) {
 		$removed[] = sprintf(
-			'%s × %d — %s',
+			'%s × %d : %s',
 			$item->get_name(),
 			$item->get_quantity(),
 			wp_strip_all_tags( wc_price( gacct_kojito_montant_ligne( $item ), array( 'currency' => $order->get_currency() ) ) )
@@ -467,7 +467,7 @@ function gacct_quote_send( $revision_id, array $lines, $comment = '' ) {
 	}
 
 	$message = sprintf(
-		__( 'Devis complémentaire envoyé au client — lignes : %s', 'gestion-atelier-cct' ),
+		__( 'Devis complémentaire envoyé au client, lignes : %s', 'gestion-atelier-cct' ),
 		implode( ' ; ', $added )
 	);
 
@@ -476,7 +476,7 @@ function gacct_quote_send( $revision_id, array $lines, $comment = '' ) {
 	}
 
 	if ( '' !== $comment ) {
-		$message .= sprintf( __( ' — commentaire : %s', 'gestion-atelier-cct' ), $comment );
+		$message .= sprintf( __( ' ; commentaire : %s', 'gestion-atelier-cct' ), $comment );
 	}
 
 	gacct_op_add_signed_note( $order, $message );
@@ -701,7 +701,7 @@ function gacct_quote_lines_html( $order ) {
 
 	foreach ( $extras as $item ) {
 		$html .= sprintf(
-			'<li><strong>%s</strong>%s — %s</li>',
+			'<li><strong>%s</strong>%s : %s</li>',
 			esc_html( $item->get_name() ),
 			$item->get_quantity() > 1 ? ' × ' . (int) $item->get_quantity() : '',
 			esc_html( wp_strip_all_tags( wc_price( gacct_kojito_montant_ligne( $item ), array( 'currency' => $order->get_currency() ) ) ) )

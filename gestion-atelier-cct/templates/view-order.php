@@ -111,8 +111,8 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 			<p>
 				<?php
 				echo esc_html( $d['quote_sent_at']
-					? sprintf( __( 'Après inspection de votre matériel, nous vous avons envoyé un devis complémentaire par email le %s. Ouvrez cet email pour l\'accepter ou le refuser en un clic — l\'intervention ne peut pas commencer sans votre réponse.', 'gestion-atelier-cct' ), date_i18n( get_option( 'date_format' ), strtotime( $d['quote_sent_at'] ) ) )
-					: __( 'Après inspection de votre matériel, nous vous avons envoyé un devis complémentaire par email. Ouvrez cet email pour l\'accepter ou le refuser en un clic — l\'intervention ne peut pas commencer sans votre réponse.', 'gestion-atelier-cct' ) );
+					? sprintf( __( 'Après inspection de votre matériel, nous vous avons envoyé un devis complémentaire par email le %s. Ouvrez cet email pour l\'accepter ou le refuser en un clic : l\'intervention ne peut pas commencer sans votre réponse.', 'gestion-atelier-cct' ), date_i18n( get_option( 'date_format' ), strtotime( $d['quote_sent_at'] ) ) )
+					: __( 'Après inspection de votre matériel, nous vous avons envoyé un devis complémentaire par email. Ouvrez cet email pour l\'accepter ou le refuser en un clic : l\'intervention ne peut pas commencer sans votre réponse.', 'gestion-atelier-cct' ) );
 				?>
 			</p>
 			<p class="gacct-vo-muted">
@@ -127,7 +127,7 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 		</div>
 	<?php elseif ( 5 === $etat && 'refused' === $d['quote']['decision'] ) : ?>
 		<div class="gacct-vo-card gacct-vo-alert is-neutral">
-			<h3><?php esc_html_e( 'Devis refusé — c\'est noté', 'gestion-atelier-cct' ); ?></h3>
+			<h3><?php esc_html_e( 'Devis refusé, c\'est noté', 'gestion-atelier-cct' ); ?></h3>
 			<p>
 				<?php
 				echo esc_html( 'return' === $d['quote']['mode']
@@ -138,7 +138,7 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 		</div>
 	<?php elseif ( 5 === $etat && 'accepted' === $d['quote']['decision'] ) : ?>
 		<div class="gacct-vo-card gacct-vo-alert is-neutral">
-			<h3><?php esc_html_e( 'Devis validé — merci !', 'gestion-atelier-cct' ); ?></h3>
+			<h3><?php esc_html_e( 'Devis validé, merci !', 'gestion-atelier-cct' ); ?></h3>
 			<p><?php esc_html_e( 'Les travaux complémentaires sont lancés. Le solde vous sera demandé à la fin de l\'intervention.', 'gestion-atelier-cct' ); ?></p>
 		</div>
 	<?php elseif ( 6 === $etat && $d['solde_du'] > 0 ) : ?>
@@ -207,7 +207,7 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 			<p>
 				<?php
 				printf(
-					esc_html__( 'Merci d\'effectuer le virement de l\'acompte (%1$s) avant le %2$s — il reste %3$s. Passé ce délai, le créneau est libéré et la commande annulée automatiquement.', 'gestion-atelier-cct' ),
+					esc_html__( 'Merci d\'effectuer le virement de l\'acompte (%1$s) avant le %2$s, il reste %3$s. Passé ce délai, le créneau est libéré et la commande annulée automatiquement.', 'gestion-atelier-cct' ),
 					'<strong>' . esc_html( $vo_fmt( $d['deposit'] ) ) . '</strong>',
 					'<strong>' . esc_html( $d['deadline_label'] ) . '</strong>',
 					'<strong>' . esc_html( sprintf( _n( '%d jour', '%d jours', $d['days_remaining'], 'gestion-atelier-cct' ), $d['days_remaining'] ) ) . '</strong>'
@@ -270,7 +270,7 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 		<div class="gacct-vo-card<?php echo 8 === $etat ? ' is-highlight' : ''; ?>">
 			<h3><?php esc_html_e( 'Retour & documents', 'gestion-atelier-cct' ); ?></h3>
 			<?php if ( 8 === $etat ) : ?>
-				<p><?php esc_html_e( 'Votre matériel est reparti vers vous — suivez son acheminement ci-dessous.', 'gestion-atelier-cct' ); ?></p>
+				<p><?php esc_html_e( 'Votre matériel est reparti vers vous : suivez son acheminement ci-dessous.', 'gestion-atelier-cct' ); ?></p>
 			<?php endif; ?>
 			<?php if ( '' !== $d['suivi'] ) : ?>
 				<?php if ( preg_match( '#^https?://#i', $d['suivi'] ) ) : ?>

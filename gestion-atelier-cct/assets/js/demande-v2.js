@@ -207,7 +207,7 @@
 			var nom = etapes[ n ] || '';
 			progressLabel.innerHTML =
 				etape.replace( String( n ), '<strong>' + n + '</strong>' ) +
-				( nom ? ' — <strong>' + escapeHtml( nom ) + '</strong>' : '' );
+				( nom ? ' · <strong>' + escapeHtml( nom ) + '</strong>' : '' );
 
 			// Segments : page courante + pages passées en accent.
 			if ( progressBar ) {
@@ -1003,7 +1003,7 @@
 				voile.choisie = { m: m, mo: mo, an: an };
 				voile.manuel = false;
 				ecrireVoile( m, mo );
-				ui.chosenNom.textContent = m + ' — ' + mo;
+				ui.chosenNom.textContent = m + ' ' + mo;
 				ui.chosenSub.textContent = an ? ( v2i18n.sortieEn || 'Modèle sorti en %s' ).replace( '%s', an ) : '';
 				ui.combo.style.display = 'none';
 				ui.notwrap.style.display = 'none';
@@ -2094,7 +2094,7 @@
 				sousInfos.push( sprintf1( v2i18n.couleursAbr || 'Couleurs : %s', valeurChamp( champs.couleur || 'couleur_copy' ) ) );
 			}
 			var voileHtml =
-				'<strong>' + escapeHtml( ( marque + ' ' + modele ).trim() || '—' ) + '</strong>' +
+				'<strong>' + escapeHtml( ( marque + ' ' + modele ).trim() || '–' ) + '</strong>' +
 				( sousInfos.length ? '<small>' + escapeHtml( sousInfos.join( ' · ' ) ) + '</small>' : '' );
 
 			// Prestations : « titre × qty », prix × qty, sous-ligne supplément biplace.
@@ -2117,17 +2117,17 @@
 					if ( supp > 0 ) {
 						prestaHtml +=
 							'<small style="display:block;padding-left:14px">' +
-							escapeHtml( ( v2i18n.suppBiplace || '+ Supplément biplace — %s' ).replace( '%s', formatMoney( supp * qte ) ) ) +
+							escapeHtml( ( v2i18n.suppBiplace || '+ Supplément biplace : %s' ).replace( '%s', formatMoney( supp * qte ) ) ) +
 							'</small>';
 					}
 				} );
 			} );
 			if ( ! prestaHtml ) {
-				prestaHtml = '—';
+				prestaHtml = '–';
 			}
 
 			// Retour.
-			var retourHtml = '—';
+			var retourHtml = '–';
 			fieldInputs( portName ).forEach( function ( input ) {
 				if ( ! input.checked ) {
 					return;
@@ -2142,7 +2142,7 @@
 			recap.innerHTML =
 				recapRow( v2i18n.recapVoile || 'Votre voile', voileHtml, 1 ) +
 				recapRow( v2i18n.recapPrestas || 'Prestations', prestaHtml, 2 ) +
-				recapRow( v2i18n.recapDate || 'Date', escapeHtml( dateEnToutesLettres() || '—' ), 3 ) +
+				recapRow( v2i18n.recapDate || 'Date', escapeHtml( dateEnToutesLettres() || '–' ), 3 ) +
 				recapRow( v2i18n.recapRetour || 'Retour', retourHtml, 3 ) +
 				'<div class="gacct-v2-total"><span>' + escapeHtml( v2i18n.total || 'Total' ) + '</span><strong>' +
 				formatMoney( dernierTotalGlobal ) + '</strong></div>' +

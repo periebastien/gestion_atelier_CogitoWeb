@@ -233,7 +233,7 @@ function gacct_demande_v2_config() {
 				'repairTitre'     => __( 'Besoin d’une réparation ?', 'gestion-atelier-cct' ),
 				'repairDesc'      => __( 'Nous examinons votre matériel à l’atelier, puis nous vous envoyons un devis détaillé par e-mail. Vous l’acceptez ou le refusez : <strong>rien n’est réparé sans votre accord.</strong>', 'gestion-atelier-cct' ),
 				'repairNote'      => __( 'Vous avez demandé un devis de réparation : inutile de choisir ici, l’atelier listera précisément ce qu’il faut remplacer.', 'gestion-atelier-cct' ),
-				'suppBiplace'     => __( '+ Supplément biplace — %s', 'gestion-atelier-cct' ),
+				'suppBiplace'     => __( '+ Supplément biplace : %s', 'gestion-atelier-cct' ),
 				// --- Navigation / autres étapes ---
 				'etapeSur'        => __( 'Étape %1$s sur %2$s', 'gestion-atelier-cct' ),
 				'erreurPresta'    => __( 'Choisissez au moins une prestation pour continuer.', 'gestion-atelier-cct' ),

@@ -10,18 +10,22 @@
  * boutons de page JFB, .mq-btn-next → .jet-form-builder__next-page, etc.
  */
 
+/* Registre de couleurs du parcours : chaque token passe par la variable
+   white-label --gacct-* correspondante, avec pour repli la valeur du site de
+   référence. Un site qui pose ses propres tokens (pack de charte) habille donc
+   tout le parcours sans toucher à cette feuille. */
 .gacct-v2 {
 	--v2-teal: var(--gacct-accent, #20c4c3);
 	--v2-teal-dark: var(--gacct-accent-dark, #17a3a2);
-	--v2-teal-soft: #e6f8f8;
+	--v2-teal-soft: var(--gacct-accent-soft, #e6f8f8);
 	--v2-yellow: var(--gacct-cta, #ffbd20);
-	--v2-ink: #1f2d3d;
-	--v2-ink2: #51606f;
-	--v2-line: #e3e8ee;
-	--v2-bg: #f6f8fa;
-	--v2-red: #c0392b;
-	--v2-red-soft: #fdeeec;
-	--v2-r: 14px;
+	--v2-ink: var(--gacct-text, #1f2d3d);
+	--v2-ink2: var(--gacct-text-muted, #51606f);
+	--v2-line: var(--gacct-border-soft, #e3e8ee);
+	--v2-bg: var(--gacct-surface-alt, #f6f8fa);
+	--v2-red: var(--gacct-danger, #c0392b);
+	--v2-red-soft: var(--gacct-danger-soft, #fdeeec);
+	--v2-r: var(--gacct-radius-lg, 14px);
 }
 
 .gacct-v2 .jet-form-builder {
@@ -692,7 +696,7 @@
 	width: 24px !important;
 	height: 24px !important;
 	box-sizing: border-box;
-	border: 2px solid #cfd8e0 !important;
+	border: 2px solid var(--gacct-border, #cfd8e0) !important;
 	border-radius: 6px !important;
 	background: #fff center / 15px no-repeat !important;
 	transition: border-color 0.15s, background-color 0.15s;
@@ -987,7 +991,7 @@
 }
 
 .gacct-v2-total--acompte {
-	background: #fff8e6;
+	background: var(--gacct-warn-soft, #fff8e6);
 	margin-top: 10px;
 }
 

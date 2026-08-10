@@ -151,7 +151,7 @@ function gacct_pay_default_settings() {
 					. '<p>Nous vous avons envoyé un devis complémentaire pour votre commande <strong>{order_number}</strong>, et nous n’avons pas encore reçu votre réponse :</p>'
 					. '{quote_lines}'
 					. '<p>Votre matériel attend à l’atelier : tant que le devis n’est ni accepté ni refusé, l’intervention ne peut pas commencer.</p>'
-					. '<p><a href="{validation_url}">Consulter le devis et donner ma réponse</a> — un clic suffit pour l’accepter ou le refuser.</p>'
+					. '<p><a href="{validation_url}">Consulter le devis et donner ma réponse</a> : un clic suffit pour l’accepter ou le refuser.</p>'
 					. '<p>Une question ? Répondez à cet e-mail ou appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}).</p>'
 					. '<p>À très vite,<br><br>Bastien.</p>',
 			),
