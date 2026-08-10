@@ -211,7 +211,8 @@ function gacct_demande_v2_config() {
 				'manuelPreciserPh' => __( 'Nom de la marque', 'gestion-atelier-cct' ),
 				'erreurVoile'     => __( 'Indiquez votre matériel pour continuer : tapez son nom ci-dessus, ou choisissez « Mon matériel n’est pas dans la liste ».', 'gestion-atelier-cct' ),
 				// Taille / P.T.V. : l'un OU l'autre suffit (un secours n'a pas de taille de voile).
-				'tailleOuPtv'     => __( 'Indiquez au moins l’un des deux : la taille ou le P.T.V.', 'gestion-atelier-cct' ),
+				'ou'              => __( 'ou', 'gestion-atelier-cct' ),
+				'tailleOuPtv'     => __( 'L’un des deux suffit.', 'gestion-atelier-cct' ),
 				'erreurTaillePtv' => __( 'Indiquez au moins la taille ou le P.T.V. de votre matériel.', 'gestion-atelier-cct' ),
 				'facultatif'      => __( 'Facultatif', 'gestion-atelier-cct' ),
 				'couleurAide'     => __( 'Choisissez les couleurs dominantes de votre matériel.', 'gestion-atelier-cct' ),

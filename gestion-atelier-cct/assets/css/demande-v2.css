@@ -163,6 +163,25 @@
 	vertical-align: 1px;
 }
 
+/* Paire Taille / P.T.V. : un « ou » entre les deux champs, pour que la règle
+   « l'un OU l'autre » se lise d'un coup d'œil. La colonne du milieu (et la
+   pastille) sont posées par demande-v2.js — la classe .gacct-v2-grille-2 sert
+   AUSSI au mode manuel de la recherche, d'où le modificateur. */
+.gacct-v2 .gacct-v2-grille-2--ou {
+	grid-template-columns: 1fr auto 1fr;
+	gap: 0 12px;
+}
+
+.gacct-v2 .gacct-v2-ou {
+	align-self: center;
+	margin-bottom: 18px; /* compense le margin-bottom des .jet-form-builder-row */
+	color: var(--v2-ink2);
+	font-size: 14px;
+	font-weight: 700;
+	text-transform: lowercase;
+	white-space: nowrap;
+}
+
 /* Note commune à la paire Taille / P.T.V. (« au moins l'un des deux »). */
 .gacct-v2 .gacct-v2-note-champ {
 	margin: -10px 0 0;
@@ -963,7 +982,15 @@
 		font-size: 22px;
 	}
 
-	.gacct-v2 .gacct-v2-grille-2 {
+	.gacct-v2 .gacct-v2-grille-2,
+	.gacct-v2 .gacct-v2-grille-2--ou {
 		grid-template-columns: 1fr;
+	}
+
+	/* Champs empilés : le « ou » prend sa propre ligne, centré, et ne compense
+	   plus la marge des rows (il est entre deux champs, pas à côté). */
+	.gacct-v2 .gacct-v2-ou {
+		justify-self: center;
+		margin: -6px 0 12px;
 	}
 }

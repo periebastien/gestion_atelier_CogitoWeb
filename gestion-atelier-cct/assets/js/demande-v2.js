@@ -304,6 +304,18 @@
 			if ( ! grille || ! grille.parentNode ) {
 				return;
 			}
+			// « ou » intercalé entre les deux champs (3ᵉ colonne de la grille) :
+			// la règle se lit sans avoir à descendre jusqu'à la note.
+			var ligneTaille = taille.closest( '.jet-form-builder-row' );
+			if ( ligneTaille && ligneTaille.nextSibling ) {
+				var ou = document.createElement( 'span' );
+				ou.className = 'gacct-v2-ou';
+				ou.setAttribute( 'aria-hidden', 'true' );
+				ou.textContent = v2i18n.ou || 'ou';
+				grille.insertBefore( ou, ligneTaille.nextSibling );
+				grille.classList.add( 'gacct-v2-grille-2--ou' );
+			}
+
 			noteTaillePtv = document.createElement( 'p' );
 			noteTaillePtv.className = 'gacct-v2-note-champ';
 			noteTaillePtv.textContent = v2i18n.tailleOuPtv || 'Indiquez au moins l’un des deux : la taille ou le P.T.V.';
