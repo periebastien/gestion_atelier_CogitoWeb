@@ -182,6 +182,13 @@
 	white-space: nowrap;
 }
 
+/* Aperçu des couleurs : masqué tant que rien n'est choisi (le socle v1 se
+   contentait de l'estomper, ce qui laissait un carré gris orphelin à droite).
+   `.has-selection` est posée sur la palette par demande-v2.js. */
+.gacct-v2 .gacct-couleurs:not( .has-selection ) .gacct-couleurs__apercu {
+	display: none;
+}
+
 /* Note commune à la paire Taille / P.T.V. (« au moins l'un des deux »). */
 .gacct-v2 .gacct-v2-note-champ {
 	margin: -10px 0 0;
