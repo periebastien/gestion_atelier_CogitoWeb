@@ -49,6 +49,7 @@ class Kojito_Acompte_Produit {
 		// Colonne "Acompte" dans la liste des produits de l'admin.
 		add_filter( 'manage_edit-product_columns', [ $this, 'ajouter_colonne_acompte' ], 20 );
 		add_action( 'manage_product_posts_custom_column', [ $this, 'afficher_colonne_acompte' ], 10, 2 );
+		add_action( 'admin_head', [ $this, 'styler_colonne_acompte' ] );
 
 		// Page de configuration (WooCommerce > Kojito Acompte : template de l'email de solde).
 		add_action( 'admin_menu', [ $this, 'ajouter_page_configuration' ] );
@@ -150,6 +151,37 @@ class Kojito_Acompte_Produit {
 	}
 
 	/**
+	 * Largeur de la colonne "Acompte" sur la liste des produits.
+	 *
+	 * La table est en `table-layout: fixed` et WooCommerce declare une largeur en %
+	 * pour toutes SES colonnes (miniature, nom, UGS, stock, prix, categories,
+	 * etiquettes...) : la somme frole 100 %, donc une colonne ajoutee sans largeur
+	 * recupere le reliquat, quelques pixels, et s'imprime lettre par lettre.
+	 * Le navigateur renormalise les % quand leur somme depasse 100 : declarer la
+	 * notre suffit, les autres se resserrent proportionnellement.
+	 */
+	public function styler_colonne_acompte() {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+
+		if ( ! $screen || 'edit-product' !== $screen->id ) {
+			return;
+		}
+
+		echo '<style>
+			.wp-list-table .column-kojito_acompte { width: 9%; }
+			.wp-list-table .column-kojito_acompte small {
+				display: block;
+				color: #646970;
+				font-size: 11px;
+				white-space: nowrap;
+			}
+			@media screen and (max-width: 782px) {
+				.wp-list-table .column-kojito_acompte { width: auto; }
+			}
+		</style>';
+	}
+
+	/**
 	 * Affiche le montant d'acompte du produit, avec la meme semantique que le panier :
 	 * vide = pas d'acompte (prix plein a la commande), 0 = tout dans le solde.
 	 */
@@ -166,7 +198,8 @@ class Kojito_Acompte_Produit {
 		}
 
 		if ( 0.0 === $acompte ) {
-			echo wp_kses_post( wc_price( 0 ) ) . '<br><small>' . esc_html__( '100 % au solde', 'kojito-acompte' ) . '</small>';
+			// Le <small> est passe en display:block par styler_colonne_acompte().
+			echo wp_kses_post( wc_price( 0 ) ) . '<small>' . esc_html__( '100 % au solde', 'kojito-acompte' ) . '</small>';
 			return;
 		}
 
