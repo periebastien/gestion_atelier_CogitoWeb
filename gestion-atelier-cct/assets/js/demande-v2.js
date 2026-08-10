@@ -1716,6 +1716,7 @@
 		 * ------------------------------------------------------------- */
 
 		var totalEtape2 = null;
+		var acompteEtape2 = null;
 
 		function buildTotalEtape2() {
 			if ( ! accordions.length ) {
@@ -1728,6 +1729,16 @@
 				'<span>' + escapeHtml( v2i18n.totalPresta || 'Total des prestations' ) + '</span>' +
 				'<strong>0 ' + devise + '</strong>';
 			last.parentNode.insertBefore( totalEtape2, last.nextSibling );
+
+			// Acompte des SEULES prestations : les frais de port (100 % à la
+			// commande) sont choisis à l'étape 3, les mêler ici contredirait le
+			// « Total des prestations » juste au-dessus.
+			acompteEtape2 = document.createElement( 'div' );
+			acompteEtape2.className = 'gacct-v2-total gacct-v2-total--acompte gacct-v2-total--etape2';
+			acompteEtape2.innerHTML =
+				'<span>' + escapeHtml( v2i18n.acompte || 'Acompte à payer aujourd’hui' ) + '</span>' +
+				'<strong>0 ' + devise + '</strong>';
+			totalEtape2.parentNode.insertBefore( acompteEtape2, totalEtape2.nextSibling );
 		}
 
 		function toutRecalculer() {
@@ -1735,6 +1746,7 @@
 			var nbPrestations = 0;
 			var sommePrestations = 0;
 			var sommePort = 0;
+			var acomptePrestations = 0;
 			var sommeAcompte = 0;
 
 			prestationNames.forEach( function ( name ) {
@@ -1749,7 +1761,7 @@
 					var qte = qtyDe( input );
 					nbPrestations++;
 					sommePrestations += ( ( parseFloat( info.prix ) || 0 ) + suppPour( input, 'prix' ) ) * qte;
-					sommeAcompte += ( acompteDe( info, parseFloat( info.prix ) || 0 ) + suppPour( input, 'acompte' ) ) * qte;
+					acomptePrestations += ( acompteDe( info, parseFloat( info.prix ) || 0 ) + suppPour( input, 'acompte' ) ) * qte;
 					heuresRequises += ( parseFloat( info.duree ) || 0 ) * qte;
 				} );
 			} );
@@ -1766,6 +1778,8 @@
 				} );
 			}
 
+			sommeAcompte += acomptePrestations;
+
 			if ( inputDuree ) {
 				inputDuree.value = decimalToTime( heuresRequises );
 			}
@@ -1778,6 +1792,10 @@
 
 			if ( totalEtape2 ) {
 				totalEtape2.querySelector( 'strong' ).textContent = formatMoney( sommePrestations );
+			}
+
+			if ( acompteEtape2 ) {
+				acompteEtape2.querySelector( 'strong' ).textContent = formatMoney( acomptePrestations );
 			}
 
 			if ( nbPrestations > 0 ) {

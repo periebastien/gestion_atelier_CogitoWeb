@@ -566,9 +566,10 @@
 	cursor: pointer;
 }
 
+/* ⚠ La ligne de la carte « réparation » n'est PAS listée ici : c'est la carte
+   entière qui se colore quand sa case est cochée (voir .gacct-v2-repair). */
 .gacct-v2 .gacct-accordion__body .jet-form-builder__field-wrap:hover,
-.gacct-v2 .gacct-accordion__body .jet-form-builder__field-wrap:has( input.checkradio-field:checked ),
-.gacct-v2 .gacct-v2-repair .jet-form-builder__field-wrap:has( input.checkradio-field:checked ) {
+.gacct-v2 .gacct-accordion__body .jet-form-builder__field-wrap:has( input.checkradio-field:checked ) {
 	background: var(--v2-teal-soft);
 }
 
@@ -755,13 +756,21 @@
 	font-size: 17px;
 }
 
-/* Carte « Votre voile a besoin d'une réparation ? ». */
+/* Carte « Besoin d'une réparation ? ».
+   Au repos elle est NEUTRE (filet gris) : bordée d'accent, elle avait l'air
+   déjà sélectionnée. C'est la case cochée qui colore la carte ENTIÈRE. */
 .gacct-v2-repair {
-	border: 2px solid var(--v2-teal);
+	border: 2px solid var(--v2-line);
 	border-radius: 12px;
 	padding: 18px 18px 8px;
 	margin-top: 18px;
 	background: #fff;
+	transition: border-color 0.15s, background 0.15s;
+}
+
+.gacct-v2-repair:has( input.checkradio-field:checked ) {
+	border-color: var(--v2-teal);
+	background: var(--v2-teal-soft);
 }
 
 .gacct-v2-repair-titre {
