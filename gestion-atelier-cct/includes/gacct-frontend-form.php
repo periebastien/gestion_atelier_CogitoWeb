@@ -762,7 +762,46 @@ function gacct_demande_prestations_map() {
 		}
 	}
 
+	gacct_demande_verifier_devis( $prestations );
+
 	return $prestations;
+}
+
+/**
+ * Garde-fou : les produits « demande de devis » DOIVENT ressortir des queries
+ * du formulaire, sinon la carte « Besoin d'une réparation ? » de l'étape 2
+ * disparaît sans le moindre message.
+ *
+ * ⚠ Le couplage est indirect et facile à casser : la case du devis est générée
+ * par la query JetEngine du champ « Suspentes & Travaux » (query 10, filtrée sur
+ * la CATÉGORIE de produits du même nom), puis sortie de l'accordéon par le JS.
+ * Retirer le produit de cette catégorie — par exemple pour le ranger dans
+ * « Réparation », qui est la catégorie de l'éditeur de devis côté atelier —
+ * suffit à faire disparaître la carte. Le produit doit donc rester dans les
+ * DEUX catégories (c'est arrivé le 10/08/2026).
+ *
+ * @param array $prestations Map product_id => données, telle que construite.
+ */
+function gacct_demande_verifier_devis( $prestations ) {
+	if ( ! function_exists( 'gacct_quote_devis_product_ids' ) ) {
+		return;
+	}
+
+	$absents = array();
+	foreach ( (array) gacct_quote_devis_product_ids() as $devis_id ) {
+		if ( ! isset( $prestations[ (string) $devis_id ] ) ) {
+			$absents[] = (int) $devis_id;
+		}
+	}
+
+	if ( $absents ) {
+		error_log(
+			sprintf(
+				'[gestion-atelier-cct] Formulaire de demande : le(s) produit(s) de devis %s ne ressorte(nt) d\'aucune query — la carte « Besoin d\'une réparation ? » ne s\'affichera pas. Vérifier leurs catégories de produit (voir gacct_demande_queries_map()).',
+				implode( ', ', $absents )
+			)
+		);
+	}
 }
 
 /**
