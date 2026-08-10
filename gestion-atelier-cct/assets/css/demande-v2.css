@@ -252,9 +252,12 @@
 	margin-top: 10px;
 }
 
+/* Nos erreurs d'étape sont des blocs autonomes, insérés ENTRE deux champs :
+   sans marge basse elles se collaient au champ suivant (les erreurs de JFB,
+   elles, vivent dans la .jet-form-builder-row et profitent de ses 18 px). */
 .gacct-v2 .gacct-v2-err {
 	display: none;
-	margin: 14px 0 0;
+	margin: 14px 0 18px;
 }
 
 .gacct-v2 .gacct-v2-err.is-on {
