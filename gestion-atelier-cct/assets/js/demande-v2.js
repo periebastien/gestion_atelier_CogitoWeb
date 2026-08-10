@@ -277,6 +277,189 @@
 		}
 
 		/* ---------------------------------------------------------------
+		 * Brouillon local (localStorage)
+		 *
+		 * Le bouton « Modifier ma demande » du checkout renvoie sur cette page,
+		 * qui repartait d'un formulaire vide : tout était à ressaisir. On garde
+		 * donc une copie de la saisie dans le navigateur (24 h), restaurée
+		 * automatiquement, avec un bouton « Recommencer à zéro ».
+		 *
+		 * Les VALEURS sont réécrites AVANT que les constructeurs d'UI ne tournent
+		 * (recherche de voile, palette de couleurs, accordéons) : ils lisent tous
+		 * les champs à leur initialisation, on n'a donc rien à piloter à la main.
+		 * Ne reste après coup que ce qui vit hors des champs : la carte de la
+		 * voile choisie et les quantités de suspentes (cf. finaliserBrouillon).
+		 *
+		 * Le brouillon est effacé par la page de confirmation de commande
+		 * (gacct-thankyou.php) : la demande est alors passée, elle ne doit plus
+		 * revenir dans un nouveau formulaire.
+		 * ------------------------------------------------------------- */
+
+		var BROUILLON_CLE = 'gacct_demande_v2_draft';
+		var BROUILLON_TTL = 24 * 60 * 60 * 1000;
+
+		// Champs pilotés par le JS ou internes à JFB : ne pas les sauvegarder,
+		// ils sont recalculés (ou dangereux à rejouer).
+		var BROUILLON_EXCLUS = [ 'action', 'nonce', 'user_id', 'submit', dateDispoName, dureeFieldName ];
+
+		var brouillonCharge = null;
+
+		function brouillonStockage() {
+			try {
+				var test = '__gacct_test__';
+				window.localStorage.setItem( test, '1' );
+				window.localStorage.removeItem( test );
+				return window.localStorage;
+			} catch ( e ) {
+				return null; // navigation privée, stockage refusé…
+			}
+		}
+
+		function champSauvegardable( el ) {
+			var nom = el.name || '';
+			if ( ! nom || 0 === nom.indexOf( '_' ) || 'hidden' === el.type && 0 === nom.indexOf( '__' ) ) {
+				return false;
+			}
+			return BROUILLON_EXCLUS.indexOf( nom.replace( /\[\]$/, '' ) ) === -1;
+		}
+
+		/**
+		 * Un brouillon ne vaut d'être gardé (et surtout d'être annoncé par le
+		 * bandeau) que s'il porte une vraie saisie : sans ce garde-fou, le
+		 * moindre événement sur un formulaire vierge en réécrivait un, et la
+		 * page suivante affichait « demande retrouvée » pour rien.
+		 */
+		function brouillonUtile( champs ) {
+			if ( ! champs ) {
+				return false;
+			}
+			if ( ( champs.marque || '' ).trim() || ( champs[ dateFieldName ] || '' ).trim() ) {
+				return true;
+			}
+			return prestationNames.some( function ( nom ) {
+				return ( champs[ nom ] || [] ).length > 0;
+			} );
+		}
+
+		function lireBrouillon() {
+			var store = brouillonStockage();
+			if ( ! store ) {
+				return null;
+			}
+			try {
+				var brut = JSON.parse( store.getItem( BROUILLON_CLE ) || 'null' );
+				if ( ! brut || brut.formId !== cfg.formId || ! brut.ts ) {
+					return null;
+				}
+				if ( Date.now() - brut.ts > BROUILLON_TTL || ! brouillonUtile( brut.champs ) ) {
+					store.removeItem( BROUILLON_CLE );
+					return null;
+				}
+				return brut;
+			} catch ( e ) {
+				return null;
+			}
+		}
+
+		function ecrireBrouillon() {
+			var store = brouillonStockage();
+			if ( ! store ) {
+				return;
+			}
+
+			var champsSauves = {};
+			Array.prototype.forEach.call(
+				form.querySelectorAll( 'input[name], select[name], textarea[name]' ),
+				function ( el ) {
+					if ( ! champSauvegardable( el ) ) {
+						return;
+					}
+					var nom = el.name.replace( /\[\]$/, '' );
+					if ( 'checkbox' === el.type || 'radio' === el.type ) {
+						if ( el.checked ) {
+							champsSauves[ nom ] = ( champsSauves[ nom ] || [] ).concat( [ el.value ] );
+						} else if ( ! champsSauves[ nom ] ) {
+							champsSauves[ nom ] = [];
+						}
+					} else {
+						champsSauves[ nom ] = el.value;
+					}
+				}
+			);
+
+			if ( ! brouillonUtile( champsSauves ) ) {
+				store.removeItem( BROUILLON_CLE );
+				return;
+			}
+
+			try {
+				store.setItem(
+					BROUILLON_CLE,
+					JSON.stringify( {
+						formId: cfg.formId,
+						ts: Date.now(),
+						champs: champsSauves,
+						voile: {
+							manuel: !! voile.manuel,
+							annee: voile.choisie ? ( voile.choisie.an || '' ) : '',
+						},
+					} )
+				);
+			} catch ( e ) {
+				// Quota plein : on ne bloque jamais la saisie pour un brouillon.
+			}
+		}
+
+		function effacerBrouillon() {
+			var store = brouillonStockage();
+			if ( store ) {
+				store.removeItem( BROUILLON_CLE );
+			}
+		}
+
+		/**
+		 * Réécrit les valeurs sauvegardées dans les champs, sans événement : on
+		 * tourne avant les constructeurs d'UI, personne n'écoute encore.
+		 */
+		function restaurerBrouillon() {
+			brouillonCharge = lireBrouillon();
+			if ( ! brouillonCharge ) {
+				return;
+			}
+
+			var champsSauves = brouillonCharge.champs || {};
+
+			Object.keys( champsSauves ).forEach( function ( nom ) {
+				var valeur = champsSauves[ nom ];
+				var els = Array.prototype.slice.call(
+					form.querySelectorAll( '[name="' + nom + '"], [name="' + nom + '[]"]' )
+				);
+				if ( ! els.length ) {
+					return;
+				}
+
+				if ( Array.isArray( valeur ) ) {
+					els.forEach( function ( el ) {
+						el.checked = valeur.indexOf( el.value ) > -1;
+					} );
+					return;
+				}
+
+				// La date n'est restaurée que si le créneau est TOUJOURS ouvert :
+				// le calendrier a pu se remplir depuis la dernière visite.
+				if ( nom === dateFieldName && valeur && typeof dispos[ valeur ] !== 'number' ) {
+					return;
+				}
+
+				els.forEach( function ( el ) {
+					el.value = valeur;
+				} );
+			} );
+		}
+
+		restaurerBrouillon();
+
+		/* ---------------------------------------------------------------
 		 * Obligatoire / facultatif : rendre la règle lisible
 		 *
 		 * L'étoile de JetFormBuilder est un « * » gris minuscule que les
@@ -542,7 +725,30 @@
 			choisie: null,    // {m, mo, an} ou null
 			manuel: false,
 			ui: null,
+			pret: false,      // référentiel chargé (fetch asynchrone)
+			enAttente: [],    // rappels à jouer une fois le référentiel là
 		};
+
+		/**
+		 * Exécute `cb` quand la liste des marques est en place. Le référentiel
+		 * arrive par fetch : tout ce qui touche au <select> des marques (la
+		 * restauration d'un brouillon, par exemple) doit attendre, sinon les
+		 * options ajoutées ensuite écrasent la sélection.
+		 */
+		function quandVoilesPretes( cb ) {
+			if ( voile.pret ) {
+				cb();
+			} else {
+				voile.enAttente.push( cb );
+			}
+		}
+
+		function voilesPretes() {
+			voile.pret = true;
+			voile.enAttente.splice( 0 ).forEach( function ( fn ) {
+				fn();
+			} );
+		}
 
 		function norm( s ) {
 			return String( s || '' )
@@ -754,11 +960,15 @@
 						autre.value = '__autre__';
 						autre.textContent = v2i18n.manuelAutre || 'Autre marque…';
 						ui.manuMarque.appendChild( autre );
+						voilesPretes();
 					} )
 					.catch( function () {
 						// Référentiel indisponible : le mode manuel reste utilisable.
 						basculeManuel();
+						voilesPretes();
 					} );
+			} else {
+				voilesPretes();
 			}
 
 			function fermerSugg() {
@@ -1983,6 +2193,158 @@
 		initQuantites();
 		initBiplace();
 		initCarteDevis();
+
+		/* ---------------------------------------------------------------
+		 * Brouillon local : ce qui ne vit pas dans un champ
+		 * ------------------------------------------------------------- */
+
+		/** Remet la voile dans son état d'affichage (carte choisie / mode manuel). */
+		function restaurerVoile() {
+			var marque = ( champMarqueCache() || {} ).value || '';
+			var modele = ( champModeleCache() || {} ).value || '';
+
+			if ( ! marque || ! modele || ! voile.ui ) {
+				return;
+			}
+
+			var manuel = !! ( brouillonCharge.voile && brouillonCharge.voile.manuel );
+
+			if ( ! manuel && voile.choisirExterne ) {
+				voile.choisirExterne( marque, modele, ( brouillonCharge.voile || {} ).annee || '' );
+				return;
+			}
+
+			if ( ! voile.basculeManuel ) {
+				return;
+			}
+
+			// basculeManuel() vide marque/modèle : on les repose ensuite.
+			voile.basculeManuel();
+			voile.ui.manuModele.value = modele;
+			ecrireVoile( marque, modele );
+
+			// ⚠ Le <select> des marques n'est peuplé qu'à l'arrivée du fetch :
+			// écrire sa valeur avant, c'est se la faire effacer par les options
+			// ajoutées ensuite.
+			quandVoilesPretes( function () {
+				var select = voile.ui.manuMarque;
+				var connue = false;
+				Array.prototype.forEach.call( select.options, function ( opt ) {
+					if ( opt.value === marque ) {
+						connue = true;
+					}
+				} );
+
+				select.value = connue ? marque : '__autre__';
+				select.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+				if ( ! connue ) {
+					voile.ui.manuAutre.value = marque;
+				}
+				ecrireVoile( marque, modele );
+			} );
+		}
+
+		/** Réinjecte les quantités de suspentes (elles vivent dans `qtys`). */
+		function restaurerQuantites() {
+			var brut = ( brouillonCharge.champs || {} ).suspentes_quantites || '';
+			if ( ! brut ) {
+				return;
+			}
+			String( brut ).split( ',' ).forEach( function ( paire ) {
+				var bits = paire.split( ':' );
+				var id = String( bits[ 0 ] || '' ).trim();
+				var qte = parseInt( bits[ 1 ], 10 );
+				if ( id && qte > 0 ) {
+					qtys[ id ] = Math.max( 1, Math.min( 9, qte ) );
+				}
+			} );
+
+			inputsSuspentes().forEach( function ( input ) {
+				var wrap = input.closest( '.jet-form-builder__field-wrap' );
+				var b = wrap ? wrap.querySelector( '.gacct-v2-qty b' ) : null;
+				if ( b ) {
+					b.textContent = qtys[ String( input.value ) ] || 1;
+				}
+			} );
+		}
+
+		/** Bandeau « demande retrouvée » + bouton de remise à zéro. */
+		function bandeauBrouillon() {
+			var page1 = form.querySelector( '.jet-form-builder-page[data-page="1"] .gacct-v2-step' )
+				|| form.querySelector( '.gacct-v2-step' );
+			if ( ! page1 ) {
+				return;
+			}
+
+			var bandeau = document.createElement( 'div' );
+			bandeau.className = 'gacct-v2-brouillon';
+			bandeau.setAttribute( 'role', 'status' );
+
+			var texte = document.createElement( 'span' );
+			texte.textContent = v2i18n.brouillonTitre || 'Nous avons retrouvé votre demande en cours.';
+
+			var reset = document.createElement( 'button' );
+			reset.type = 'button';
+			reset.className = 'gacct-v2-brouillon-reset';
+			reset.textContent = v2i18n.brouillonReset || 'Recommencer à zéro';
+			reset.addEventListener( 'click', function () {
+				effacerBrouillon();
+				window.location.reload();
+			} );
+
+			bandeau.appendChild( texte );
+			bandeau.appendChild( reset );
+
+			var titre = page1.querySelector( '.gacct-v2-sous-titre' ) || page1.firstChild;
+			if ( titre && titre.parentNode === page1 ) {
+				page1.insertBefore( bandeau, titre.nextSibling );
+			} else {
+				page1.insertBefore( bandeau, page1.firstChild );
+			}
+		}
+
+		/**
+		 * Bascule Solo/Biplace : le champ caché restauré ne suffit pas, l'état
+		 * vit aussi dans `biplaceEtat` et dans les prix affichés. On rejoue donc
+		 * le clic sur « Biplace », qui refait tout le travail.
+		 */
+		function restaurerBiplace() {
+			accordions.forEach( function ( acc ) {
+				var type = typeBiplaceDuGroupe( acc.name );
+				if ( ! type ) {
+					return;
+				}
+				var champ = form.querySelector(
+					'[name="' + ( 'secours' === type ? 'biplace_secours' : 'biplace_voile' ) + '"]'
+				);
+				if ( ! champ || '1' !== champ.value ) {
+					return;
+				}
+				var btn = acc.body.querySelector( '.gacct-v2-seg-btn[data-bi="1"]' );
+				if ( btn ) {
+					btn.click();
+				}
+			} );
+		}
+
+		if ( brouillonCharge ) {
+			restaurerVoile();
+			restaurerQuantites();
+			syncQuantites();
+			restaurerBiplace();
+			bandeauBrouillon();
+		}
+
+		// Sauvegarde au fil de la saisie (les champs cachés sont écrits par le JS,
+		// d'où l'écoute de `input` ET `change` en capture).
+		var brouillonTimer = null;
+		function planifierSauvegarde() {
+			window.clearTimeout( brouillonTimer );
+			brouillonTimer = window.setTimeout( ecrireBrouillon, 400 );
+		}
+		form.addEventListener( 'input', planifierSauvegarde, true );
+		form.addEventListener( 'change', planifierSauvegarde, true );
+
 		toutRecalculer();
 	}
 

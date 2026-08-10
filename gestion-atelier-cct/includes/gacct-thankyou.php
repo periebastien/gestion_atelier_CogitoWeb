@@ -106,6 +106,15 @@ function gacct_conf_enqueue_assets() {
 		(string) filemtime( $base_dir . '/assets/js/confirmation.js' ),
 		true
 	);
+
+	// Le formulaire de demande garde un brouillon local (24 h) pour que le
+	// bouton « Modifier ma demande » du checkout ne fasse pas tout ressaisir.
+	// La commande étant passée, ce brouillon n'a plus lieu d'être : on le
+	// supprime ici, seul endroit du parcours qui sache que c'est fini.
+	wp_add_inline_script(
+		'gacct-confirmation',
+		"try{window.localStorage.removeItem('gacct_demande_v2_draft');}catch(e){}"
+	);
 }
 
 /* =============================================================================

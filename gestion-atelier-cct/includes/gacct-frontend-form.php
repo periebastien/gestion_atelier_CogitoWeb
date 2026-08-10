@@ -196,7 +196,10 @@ function gacct_demande_v2_config() {
 				// --- Étape 1 : recherche de voile ---
 				'comboLabel'      => __( 'Marque et modèle', 'gestion-atelier-cct' ),
 				'comboPlaceholder' => __( 'Par exemple : epsilon, mentor, rush…', 'gestion-atelier-cct' ),
-				'comboAide'       => __( 'Tapez les premières lettres du nom de votre voile : la liste se remplit toute seule. Vous venez seulement pour un pliage de secours ou des travaux sur suspentes ? Choisissez « Mon matériel n’est pas dans la liste ».', 'gestion-atelier-cct' ),
+				// ⚠ Le cas « pliage de secours / suspentes » est déjà annoncé par le
+				// sous-titre de l'étape 1 (post_content du formulaire) : ne pas le
+				// répéter ici, les deux textes se suivent à l'écran.
+				'comboAide'       => __( 'Tapez les premières lettres du nom de votre voile : la liste se remplit toute seule.', 'gestion-atelier-cct' ),
 				'comboVide'       => __( 'Aucune voile trouvée pour « %s »', 'gestion-atelier-cct' ),
 				'pasDansListe'    => __( 'Mon matériel n’est pas dans la liste', 'gestion-atelier-cct' ),
 				'sortieEn'        => __( 'Modèle sorti en %s', 'gestion-atelier-cct' ),
@@ -211,6 +214,9 @@ function gacct_demande_v2_config() {
 				'manuelPreciserPh' => __( 'Nom de la marque', 'gestion-atelier-cct' ),
 				'erreurVoile'     => __( 'Indiquez votre matériel pour continuer : tapez son nom ci-dessus, ou choisissez « Mon matériel n’est pas dans la liste ».', 'gestion-atelier-cct' ),
 				// Taille / P.T.V. : l'un OU l'autre suffit (un secours n'a pas de taille de voile).
+				// --- Brouillon local (retour depuis le checkout) ---
+				'brouillonTitre'  => __( 'Nous avons retrouvé votre demande en cours : elle est pré-remplie ci-dessous.', 'gestion-atelier-cct' ),
+				'brouillonReset'  => __( 'Recommencer à zéro', 'gestion-atelier-cct' ),
 				'ou'              => __( 'ou', 'gestion-atelier-cct' ),
 				'tailleOuPtv'     => __( 'L’un des deux suffit.', 'gestion-atelier-cct' ),
 				'erreurTaillePtv' => __( 'Indiquez au moins la taille ou le P.T.V. de votre matériel.', 'gestion-atelier-cct' ),
