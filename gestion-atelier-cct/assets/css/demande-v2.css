@@ -136,6 +136,40 @@
 	color: var(--v2-ink);
 }
 
+/* Obligatoire / facultatif.
+   L'étoile de JFB est un « * » gris de la taille du texte : illisible pour un
+   néophyte. On la détache du libellé et on la peint en accent. Les champs
+   facultatifs, eux, sont marqués en toutes lettres (pastille posée par
+   demande-v2.js d'après v2.facultatifs). */
+.gacct-v2 .jet-form-builder__label .jet-form-builder__required,
+.gacct-v2 .jet-form-builder__label-text .jet-form-builder__required {
+	color: var(--v2-teal);
+	font-size: 18px;
+	line-height: 1;
+	margin-inline-start: 4px;
+	vertical-align: -2px;
+}
+
+.gacct-v2 .gacct-v2-optionnel {
+	display: inline-block;
+	margin-inline-start: 8px;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: var(--v2-bg);
+	color: var(--v2-ink2);
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.01em;
+	vertical-align: 1px;
+}
+
+/* Note commune à la paire Taille / P.T.V. (« au moins l'un des deux »). */
+.gacct-v2 .gacct-v2-note-champ {
+	margin: -10px 0 0;
+	font-size: 14px;
+	color: var(--v2-ink2);
+}
+
 .gacct-v2 .jet-form-builder__desc,
 .gacct-v2 .gacct-v2-aide {
 	font-size: 14px;

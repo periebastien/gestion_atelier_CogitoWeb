@@ -183,8 +183,11 @@ function gacct_demande_v2_config() {
 			'biplace'   => $biplace,
 			// Produits « demande de devis » (carte réparation, exclusive des suspentes).
 			'devisIds'  => function_exists( 'gacct_quote_devis_product_ids' ) ? gacct_quote_devis_product_ids() : array(),
+			// Champs explicitement facultatifs : reçoivent la pastille « Facultatif »
+			// (l'étoile des champs requis étant peu lisible pour un néophyte).
+			'facultatifs' => array( 'numero_serie' ),
 			'etapes'    => array(
-				1 => __( 'Votre voile', 'gestion-atelier-cct' ),
+				1 => __( 'Votre matériel', 'gestion-atelier-cct' ),
 				2 => __( 'Vos prestations', 'gestion-atelier-cct' ),
 				3 => __( 'La date et le retour', 'gestion-atelier-cct' ),
 				4 => __( 'Récapitulatif', 'gestion-atelier-cct' ),
@@ -193,12 +196,12 @@ function gacct_demande_v2_config() {
 				// --- Étape 1 : recherche de voile ---
 				'comboLabel'      => __( 'Marque et modèle', 'gestion-atelier-cct' ),
 				'comboPlaceholder' => __( 'Par exemple : epsilon, mentor, rush…', 'gestion-atelier-cct' ),
-				'comboAide'       => __( 'Tapez les premières lettres du nom de votre voile : la liste se remplit toute seule.', 'gestion-atelier-cct' ),
+				'comboAide'       => __( 'Tapez les premières lettres du nom de votre voile : la liste se remplit toute seule. Vous venez seulement pour un pliage de secours ou des travaux sur suspentes ? Choisissez « Mon matériel n’est pas dans la liste ».', 'gestion-atelier-cct' ),
 				'comboVide'       => __( 'Aucune voile trouvée pour « %s »', 'gestion-atelier-cct' ),
-				'pasDansListe'    => __( 'Ma voile n’est pas dans la liste', 'gestion-atelier-cct' ),
+				'pasDansListe'    => __( 'Mon matériel n’est pas dans la liste', 'gestion-atelier-cct' ),
 				'sortieEn'        => __( 'Modèle sorti en %s', 'gestion-atelier-cct' ),
 				'modifier'        => __( 'Modifier', 'gestion-atelier-cct' ),
-				'manuelIntro'     => __( 'Pas de souci : indiquez-nous votre voile ci-dessous.', 'gestion-atelier-cct' ),
+				'manuelIntro'     => __( 'Pas de souci : décrivez-nous votre matériel ci-dessous.', 'gestion-atelier-cct' ),
 				'manuelMarque'    => __( 'Marque', 'gestion-atelier-cct' ),
 				'manuelChoisir'   => __( 'Choisir la marque…', 'gestion-atelier-cct' ),
 				'manuelAutre'     => __( 'Autre marque…', 'gestion-atelier-cct' ),
@@ -206,8 +209,12 @@ function gacct_demande_v2_config() {
 				'manuelModelePh'  => __( 'Nom du modèle', 'gestion-atelier-cct' ),
 				'manuelPreciser'  => __( 'Précisez la marque', 'gestion-atelier-cct' ),
 				'manuelPreciserPh' => __( 'Nom de la marque', 'gestion-atelier-cct' ),
-				'erreurVoile'     => __( 'Indiquez votre voile pour continuer : tapez son nom ci-dessus, ou choisissez « Ma voile n’est pas dans la liste ».', 'gestion-atelier-cct' ),
-				'couleurAide'     => __( 'Choisissez les couleurs dominantes de votre voile.', 'gestion-atelier-cct' ),
+				'erreurVoile'     => __( 'Indiquez votre matériel pour continuer : tapez son nom ci-dessus, ou choisissez « Mon matériel n’est pas dans la liste ».', 'gestion-atelier-cct' ),
+				// Taille / P.T.V. : l'un OU l'autre suffit (un secours n'a pas de taille de voile).
+				'tailleOuPtv'     => __( 'Indiquez au moins l’un des deux : la taille ou le P.T.V.', 'gestion-atelier-cct' ),
+				'erreurTaillePtv' => __( 'Indiquez au moins la taille ou le P.T.V. de votre matériel.', 'gestion-atelier-cct' ),
+				'facultatif'      => __( 'Facultatif', 'gestion-atelier-cct' ),
+				'couleurAide'     => __( 'Choisissez les couleurs dominantes de votre matériel.', 'gestion-atelier-cct' ),
 				'couleurChoix'    => __( 'Votre choix : %s', 'gestion-atelier-cct' ),
 				// --- Étape 2 : prestations ---
 				'segVoile'        => __( 'Votre voile :', 'gestion-atelier-cct' ),
@@ -216,7 +223,7 @@ function gacct_demande_v2_config() {
 				'segBiplace'      => __( 'Biplace (+%s)', 'gestion-atelier-cct' ),
 				'qtyMoins'        => __( 'Retirer', 'gestion-atelier-cct' ),
 				'qtyPlus'         => __( 'Ajouter', 'gestion-atelier-cct' ),
-				'repairTitre'     => __( 'Votre voile a besoin d’une réparation ?', 'gestion-atelier-cct' ),
+				'repairTitre'     => __( 'Besoin d’une réparation ?', 'gestion-atelier-cct' ),
 				'repairDesc'      => __( 'Nous examinons votre voile à l’atelier, puis nous vous envoyons un devis détaillé par e-mail. Vous l’acceptez ou le refusez : <strong>rien n’est réparé sans votre accord.</strong>', 'gestion-atelier-cct' ),
 				'repairNote'      => __( 'Vous avez demandé un devis de réparation : inutile de choisir ici, l’atelier listera précisément ce qu’il faut remplacer.', 'gestion-atelier-cct' ),
 				'suppBiplace'     => __( '+ Supplément biplace — %s', 'gestion-atelier-cct' ),
@@ -224,12 +231,12 @@ function gacct_demande_v2_config() {
 				'etapeSur'        => __( 'Étape %1$s sur %2$s', 'gestion-atelier-cct' ),
 				'erreurPresta'    => __( 'Choisissez au moins une prestation pour continuer.', 'gestion-atelier-cct' ),
 				'erreurDate'      => __( 'Choisissez un jour disponible dans le calendrier.', 'gestion-atelier-cct' ),
-				'erreurRetour'    => __( 'Choisissez comment récupérer votre voile.', 'gestion-atelier-cct' ),
+				'erreurRetour'    => __( 'Choisissez comment récupérer votre matériel.', 'gestion-atelier-cct' ),
 				'totalPresta'     => __( 'Total des prestations', 'gestion-atelier-cct' ),
 				'total'           => __( 'Total', 'gestion-atelier-cct' ),
 				'acompte'         => __( 'Acompte à payer aujourd’hui', 'gestion-atelier-cct' ),
 				'acompteNote'     => __( 'Le reste sera à régler une fois l’intervention terminée.', 'gestion-atelier-cct' ),
-				'recapVoile'      => __( 'Votre voile', 'gestion-atelier-cct' ),
+				'recapVoile'      => __( 'Votre matériel', 'gestion-atelier-cct' ),
 				'recapPrestas'    => __( 'Prestations', 'gestion-atelier-cct' ),
 				'recapDate'       => __( 'Date', 'gestion-atelier-cct' ),
 				'recapRetour'     => __( 'Retour', 'gestion-atelier-cct' ),
@@ -311,6 +318,16 @@ function gacct_demande_garde_serveur( $request, $handler ) {
 		$erreur = __( 'Indiquez le modèle de votre voile.', 'gestion-atelier-cct' );
 	}
 
+	// Taille et P.T.V. ne sont plus obligatoires séparément : un parachute de
+	// secours n'a pas de taille de voile. On exige l'un OU l'autre.
+	if (
+		! $erreur
+		&& '' === trim( (string) ( $request['taille'] ?? '' ) )
+		&& '' === trim( (string) ( $request['ptv'] ?? '' ) )
+	) {
+		$erreur = __( 'Indiquez au moins la taille ou le P.T.V. de votre matériel.', 'gestion-atelier-cct' );
+	}
+
 	if ( ! $erreur ) {
 		$nb = 0;
 		foreach ( array( 'revisions_controle', 'pliages_secours', 'suspentes_travaux' ) as $champ ) {
@@ -330,7 +347,7 @@ function gacct_demande_garde_serveur( $request, $handler ) {
 	}
 
 	if ( ! $erreur && '' === trim( (string) ( $request['frais_de_ports'] ?? '' ) ) ) {
-		$erreur = __( 'Choisissez comment récupérer votre voile.', 'gestion-atelier-cct' );
+		$erreur = __( 'Choisissez comment récupérer votre matériel.', 'gestion-atelier-cct' );
 	}
 
 	$erreur = apply_filters( 'gacct_demande_garde_erreur', $erreur, $request, $handler );

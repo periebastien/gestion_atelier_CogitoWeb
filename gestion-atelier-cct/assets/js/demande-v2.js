@@ -270,6 +270,79 @@
 			}
 		}
 
+		/* ---------------------------------------------------------------
+		 * Obligatoire / facultatif : rendre la règle lisible
+		 *
+		 * L'étoile de JetFormBuilder est un « * » gris minuscule que les
+		 * néophytes ne voient pas. On la colore en CSS, ET on marque
+		 * explicitement les champs facultatifs (liste `v2.facultatifs`).
+		 * Taille et P.T.V. ne sont plus requis séparément : ils portent une
+		 * note commune « au moins l'un des deux ».
+		 * ------------------------------------------------------------- */
+
+		var noteTaillePtv = null;
+
+		function valeurChamp( nom ) {
+			var el = form.querySelector( '[name="' + nom + '"]' );
+			return el ? el.value.trim() : '';
+		}
+
+		function taillePtvValide() {
+			return '' !== valeurChamp( 'taille' ) || '' !== valeurChamp( 'ptv' );
+		}
+
+		function ligneDuChamp( nom ) {
+			var el = form.querySelector( '[name="' + nom + '"]' );
+			return el ? el.closest( '.jet-form-builder-row' ) : null;
+		}
+
+		function poseNoteTaillePtv() {
+			// ⚠ Viser la grille qui contient le champ taille : le mode manuel de
+			// la recherche de voile utilise AUSSI la classe gacct-v2-grille-2.
+			var taille = form.querySelector( 'input[name="taille"]' );
+			var grille = taille ? taille.closest( '.gacct-v2-grille-2' ) : null;
+			if ( ! grille || ! grille.parentNode ) {
+				return;
+			}
+			noteTaillePtv = document.createElement( 'p' );
+			noteTaillePtv.className = 'gacct-v2-note-champ';
+			noteTaillePtv.textContent = v2i18n.tailleOuPtv || 'Indiquez au moins l’un des deux : la taille ou le P.T.V.';
+			grille.parentNode.insertBefore( noteTaillePtv, grille.nextSibling );
+
+			// L'erreur se lève dès qu'une des deux valeurs est saisie.
+			[ 'taille', 'ptv' ].forEach( function ( nom ) {
+				var el = form.querySelector( '[name="' + nom + '"]' );
+				if ( el ) {
+					el.addEventListener( 'input', function () {
+						if ( taillePtvValide() ) {
+							effaceErreur( 'taillePtv' );
+						}
+					} );
+				}
+			} );
+		}
+
+		function poseFacultatifs() {
+			var libelle = v2i18n.facultatif || 'Facultatif';
+			( v2.facultatifs || [] ).forEach( function ( nom ) {
+				var row = ligneDuChamp( nom );
+				if ( ! row ) {
+					return;
+				}
+				var label = row.querySelector( '.jet-form-builder__label' );
+				if ( ! label || label.querySelector( '.gacct-v2-optionnel' ) ) {
+					return;
+				}
+				var pastille = document.createElement( 'span' );
+				pastille.className = 'gacct-v2-optionnel';
+				pastille.textContent = libelle;
+				label.appendChild( pastille );
+			} );
+		}
+
+		poseNoteTaillePtv();
+		poseFacultatifs();
+
 		/* Validation par étape, en capture AVANT le handler JFB du bouton
 		   « Continuer » : si notre règle échoue, on bloque le passage. Les champs
 		   requis natifs (taille, P.T.V., couleurs…) restent validés par JFB. */
@@ -286,9 +359,23 @@
 				if ( n === 1 && ! voileValide() ) {
 					e.preventDefault();
 					e.stopImmediatePropagation();
-					erreurEtape( 'voile', next.closest( '.jet-form-builder__next-page-wrap' ), v2i18n.erreurVoile || 'Indiquez votre voile pour continuer.' );
+					erreurEtape( 'voile', next.closest( '.jet-form-builder__next-page-wrap' ), v2i18n.erreurVoile || 'Indiquez votre matériel pour continuer.' );
 					return;
 				}
+
+				// Taille / P.T.V. : ni l'un ni l'autre n'est requis seul (un secours
+				// n'a pas de taille de voile), mais il en faut au moins un.
+				if ( n === 1 && ! taillePtvValide() ) {
+					e.preventDefault();
+					e.stopImmediatePropagation();
+					erreurEtape(
+						'taillePtv',
+						noteTaillePtv || next.closest( '.jet-form-builder__next-page-wrap' ),
+						v2i18n.erreurTaillePtv || 'Indiquez au moins la taille ou le P.T.V. de votre matériel.'
+					);
+					return;
+				}
+				effaceErreur( 'taillePtv' );
 
 				if ( n === 2 && nbPrestationsCourant === 0 ) {
 					e.preventDefault();
@@ -553,6 +640,7 @@
 
 			detailEls = [
 				grille,
+				noteTaillePtv,
 				serie ? serie.closest( '.jet-form-builder-row' ) : null,
 				couleur ? couleur.closest( '.jet-form-builder-row' ) : null,
 			].filter( Boolean );
