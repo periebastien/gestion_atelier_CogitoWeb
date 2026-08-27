@@ -45,8 +45,8 @@ function gacct_pay_default_settings() {
 		'noshow_hour'       => 18,  // bascule « Sans suite » : la veille du créneau, à partir de X heures.
 		'preslot_days_1'    => 7,   // 1er rappel « avez-vous expédié ? » : X jours avant le créneau.
 		'preslot_days_2'    => 2,   // 2e rappel : X jours avant le créneau.
-		'balance_days_1'    => 2,   // 1re relance du solde : X jours après la demande (état 6).
-		'balance_days_2'    => 5,   // 2e relance du solde : X jours après la demande.
+		'balance_days_1'    => 3,   // 1re relance du solde : X jours après la demande (état 6). Décision Bastien 28/08.
+		'balance_days_2'    => 10,  // 2e relance du solde : X jours après la demande.
 		'recap_hour'        => 8,   // récapitulatif admin quotidien : à partir de X heures.
 		'contact_phone'     => '02 31 69 39 31',
 		'contact_hours'     => 'du lundi au vendredi de 9 h 30 à 17 h 30',

@@ -470,7 +470,7 @@ function gacct_lc_on_state6_entry( $item, $prev ) {
 add_action( GACCT_PAY_HOURLY_EVENT, 'gacct_lc_process_balance_reminders', 50 );
 
 /**
- * Deux relances automatiques du solde (défaut J+2 puis J+5 après la demande),
+ * Deux relances automatiques du solde (défaut J+3 puis J+10 après la demande),
  * avec lien de paiement. Au-delà, le dossier apparaît dans le récapitulatif
  * admin quotidien (« soldes en souffrance »). Envois entre 8 h et 20 h locales.
  */
@@ -793,7 +793,7 @@ function gacct_lc_recap_sections() {
 		),
 		array(
 			'title' => __( 'Soldes en souffrance', 'gestion-atelier-cct' ),
-			'hint'  => __( 'Les deux relances automatiques sont parties. Un appel est sans doute la prochaine étape.', 'gestion-atelier-cct' ),
+			'hint'  => __( 'La demande de solde et les deux relances automatiques sont parties, le solde reste en attente. Un appel est sans doute la prochaine étape.', 'gestion-atelier-cct' ),
 			'items' => $balance_overdue,
 		),
 		array(

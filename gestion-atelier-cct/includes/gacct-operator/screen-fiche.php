@@ -501,6 +501,54 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 			echo '<button type="button" class="button" data-op-action="resend-email">' . esc_html__( 'Renvoyer l\'email au client', 'gestion-atelier-cct' ) . '</button>';
 		}
 
+		// État 6 : où en est la demande de solde (demande initiale + relances automatiques).
+		if ( 6 === $state && $order && defined( 'GACCT_LC_META_BALANCE_REF' ) ) {
+			$lc_settings = gacct_pay_settings();
+			$balance_ref = (int) $order->get_meta( GACCT_LC_META_BALANCE_REF );
+			$fmt         = get_option( 'date_format' );
+
+			echo '<div class="gacct-op-balance-track">';
+			echo '<p class="gacct-op-label">' . esc_html__( 'Suivi de la demande de solde', 'gestion-atelier-cct' ) . '</p>';
+			echo '<ul class="gacct-op-muted">';
+
+			if ( $balance_ref ) {
+				/* translators: %s: date de la demande */
+				echo '<li>' . esc_html( sprintf( __( 'Demande de solde envoyée le %s.', 'gestion-atelier-cct' ), wp_date( $fmt, $balance_ref ) ) ) . '</li>';
+			} else {
+				echo '<li>' . esc_html__( 'Demande de solde envoyée ; le chronomètre des relances démarre au prochain passage du cron horaire.', 'gestion-atelier-cct' ) . '</li>';
+			}
+
+			$rem2_sent = '';
+
+			foreach ( array(
+				array( GACCT_LC_META_BALANCE_REM1, (int) $lc_settings['balance_days_1'] ),
+				array( GACCT_LC_META_BALANCE_REM2, (int) $lc_settings['balance_days_2'] ),
+			) as $palier ) {
+				$sent_at = (string) $order->get_meta( $palier[0] );
+
+				if ( '' !== $sent_at ) {
+					// Meta posée via current_time('mysql') : déjà en heure locale, pas de conversion de fuseau.
+					/* translators: 1: palier en jours, 2: date d'envoi */
+					echo '<li>' . esc_html( sprintf( __( 'Relance automatique J+%1$d : envoyée le %2$s.', 'gestion-atelier-cct' ), $palier[1], date_i18n( $fmt, strtotime( $sent_at ) ) ) ) . '</li>';
+
+					if ( GACCT_LC_META_BALANCE_REM2 === $palier[0] ) {
+						$rem2_sent = $sent_at;
+					}
+				} elseif ( $balance_ref ) {
+					/* translators: 1: palier en jours, 2: date prévue */
+					echo '<li>' . esc_html( sprintf( __( 'Relance automatique J+%1$d : prévue vers le %2$s.', 'gestion-atelier-cct' ), $palier[1], wp_date( $fmt, $balance_ref + $palier[1] * DAY_IN_SECONDS ) ) ) . '</li>';
+				}
+			}
+
+			if ( '' !== $rem2_sent && $balance_ref ) {
+				$days_waiting = max( 0, (int) floor( ( time() - $balance_ref ) / DAY_IN_SECONDS ) );
+				/* translators: %d: jours d'attente */
+				echo '<li><strong>' . esc_html( sprintf( __( 'Relances épuisées : le solde reste en attente depuis %d jours. Le dossier est signalé chaque matin dans le récapitulatif admin ; un appel est sans doute la prochaine étape.', 'gestion-atelier-cct' ), $days_waiting ) ) . '</strong></li>';
+			}
+
+			echo '</ul></div>';
+		}
+
 		// Transitions forçables : bouton + formulaire inline motif.
 		if ( ! empty( $forceable[ $state ] ) ) {
 			foreach ( $forceable[ $state ] as $target => $force_label ) {
