@@ -73,7 +73,10 @@ function gacct_report_calc_config() {
 			'REF'  => array( 'label' => 'RÉF.', 'weight' => 0 ),
 			'ACC'  => array( 'label' => 'ACC.', 'weight' => 10 ),
 			'BE'   => array( 'label' => 'B.E.', 'weight' => 44 ),
-			'NEUF' => array( 'label' => 'NEUF', 'weight' => 75 ),
+			// Clé conservée : les rapports déjà enregistrés portent la valeur « NEUF ».
+			// Seul le libellé change, une voile révisée n'étant jamais neuve
+			// (Timothée, 18/08/2026). Abrégé comme ses voisins RÉF. / ACC. / B.E.
+			'NEUF' => array( 'label' => 'T.B.E.', 'weight' => 75 ),
 		),
 		// Interprétation d'un groupe selon sa moyenne (feuille de saisie B54).
 		'visual_scale'   => array(
@@ -121,21 +124,22 @@ function gacct_report_calc_config() {
 			array( 'max' => 1.17, 'result' => 'BON ÉTAT' ),
 			array( 'max' => null, 'result' => 'TRÈS BON ÉTAT' ),
 		),
-		// §2.5 — Rupture des suspentes. Coefficients matériau (nominal × 0.9 × k)
-		// et barème COMPLET (bucket NEUF = marge 100 %, correction maquette §7.2).
+		// §2.5 — Rupture des suspentes. Le seuil est la PMA : nominal × coef.
+		// Les coefficients portaient un facteur 0,9 de plus que la règle de
+		// l'atelier ; Timothée l'a corrigé le 18/08/2026 : PMA Aramide =
+		// nominal × 0,45, PMA Dyneema = nominal × 0,65.
 		'rupture_max_lines' => 5,
 		'rupture_materials' => array(
-			'dyneema' => array( 'label' => 'Dyneema', 'coef' => 0.585 ),
-			'aramide' => array( 'label' => 'Aramide', 'coef' => 0.405 ),
-			'vectran' => array( 'label' => 'Vectran', 'coef' => 0.405 ),
+			'dyneema' => array( 'label' => 'Dyneema', 'coef' => 0.65 ),
+			'aramide' => array( 'label' => 'Aramide', 'coef' => 0.45 ),
+			'vectran' => array( 'label' => 'Vectran', 'coef' => 0.45 ),
 		),
 		'rupture_scale'  => array(
 			array( 'max' => 0,   'eq' => true,  'result' => 'RÉFORME' ),
 			array( 'max' => 10,  'eq' => false, 'result' => 'LIMITE' ),
 			array( 'max' => 25,  'eq' => false, 'result' => 'ACCEPTABLE' ),
 			array( 'max' => 75,  'eq' => false, 'result' => 'BON ÉTAT' ),
-			array( 'max' => 100, 'eq' => false, 'result' => 'TRÈS BON ÉTAT' ),
-			array( 'max' => null, 'eq' => false, 'result' => 'NEUF' ),
+			array( 'max' => null, 'eq' => false, 'result' => 'TRÈS BON ÉTAT' ),
 		),
 		// §1.8 — Calage / freins.
 		'geometry_interps' => array(
@@ -159,7 +163,8 @@ function gacct_report_calc_config() {
 			'Triple Seven', 'Up', 'Windtech',
 		),
 		// Ordre du pire au meilleur, pour les agrégats « worst-of ».
-		'severity'       => array( 'RÉFORME', 'LIMITE', 'ACCEPTABLE', 'BON ÉTAT', 'TRÈS BON ÉTAT', 'NEUF' ),
+		// Plus d'échelon NEUF : le meilleur état atteignable est « très bon état ».
+		'severity'       => array( 'RÉFORME', 'LIMITE', 'ACCEPTABLE', 'BON ÉTAT', 'TRÈS BON ÉTAT' ),
 	);
 
 	return apply_filters( 'gacct_report_calc_config', $config );
@@ -186,7 +191,7 @@ function gacct_report_voile_texts( $type ) {
 			'rupture_intro' => 'Réalisé avec un dynamomètre DFW-03BT. Les valeurs sont exprimées en DaN. La première lettre indique la ligne d\'élévateur. Le chiffre indique le numéro de suspente en partant du centre de la voile. La troisième lettre indique l\'étage de suspente concerné. La dernière lettre indique le côté de la voile, dans le sens de vol.',
 			'comment_default' => '',
 			'legends'      => array(
-				'visual'   => array( 'RÉFORME' => 'moyenne = 0', 'LIMITE' => '0 – 10', 'ACCEPTABLE' => '10 – 44', 'BON ÉTAT' => '44 – 75', 'TRÈS BON ÉTAT' => '> 75', 'NEUF' => '100' ),
+				'visual'   => array( 'RÉFORME' => 'moyenne = 0', 'LIMITE' => '0 – 10', 'ACCEPTABLE' => '10 – 44', 'BON ÉTAT' => '44 – 75', 'TRÈS BON ÉTAT' => '> 75' ),
 				'porosity' => array( 'RÉFORME' => '< 10 s', 'LIMITE' => '10 – 11 s', 'ACCEPTABLE' => '11 – 20 s', 'BON ÉTAT' => '20 – 200 s', 'TRÈS BON ÉTAT' => '> 200 s' ),
 				'tear'     => array( 'RÉFORME' => '< 0,6', 'LIMITE' => '0,6 – 0,63', 'ACCEPTABLE' => '0,63 – 0,9', 'BON ÉTAT' => '0,9 – 1,17', 'TRÈS BON ÉTAT' => '≥ 1,17' ),
 				'rupture'  => array( 'RÉFORME' => '≤ 0 %', 'LIMITE' => '< 10 %', 'ACCEPTABLE' => '< 25 %', 'BON ÉTAT' => '< 75 %', 'TRÈS BON ÉTAT' => '≥ 75 %' ),
@@ -206,10 +211,13 @@ function gacct_report_voile_texts( $type ) {
 			'rupture_intro' => 'Mesure par étirement d\'une ligne complète de suspente jusqu\'à sa rupture avec enregistrement de la valeur max. Réalisé avec un dynamomètre DFW-03BT. Les valeurs sont exprimées en DaN. La première lettre indique la ligne d\'élévateur. Le chiffre indique le numéro de suspente en partant du centre de la voile. La troisième lettre indique l\'étage de suspente concerné. La dernière lettre indique le côté de la voile, dans le sens de vol.',
 			'comment_default' => 'Votre voile a fait l\'objet d\'une inspection partielle portant sur :' . "\n" . '- La porosité des tissus.' . "\n" . '- La résistance des suspentes.' . "\n" . '- Le contrôle du calage.' . "\n" . 'Nous ne pouvons donc pas vous donner un état général de la voile, conformément à la norme ParachecK®.',
 			'legends'      => array(
-				'visual'   => array( 'RÉFORME' => 'moyenne = 0', 'ACCEPTABLE' => '0 – 25', 'BON ÉTAT' => '25 – 75', 'TRÈS BON ÉTAT' => '75 – 100', 'NEUF' => '100' ),
-				'porosity' => array( 'RÉFORME' => '< 10 s', 'LIMITE' => '10 – 12 s', 'ACCEPTABLE' => '12 – 20 s', 'BON ÉTAT' => '20 – 95 s', 'TRÈS BON ÉTAT' => '95 – 300 s', 'NEUF' => '> 300 s' ),
-				'tear'     => array( 'RÉFORME' => '< 0,6', 'LIMITE' => '0,6 – 0,7', 'ACCEPTABLE' => '0,7 – 0,9', 'BON ÉTAT' => '0,9 – 1,2', 'TRÈS BON ÉTAT' => '1,2 – 1,5', 'NEUF' => '> 1,5' ),
-				'rupture'  => array( 'RÉFORME' => '≤ 0 %', 'LIMITE' => '< 10 %', 'ACCEPTABLE' => '< 25 %', 'BON ÉTAT' => '< 75 %', 'TRÈS BON ÉTAT' => '< 100 %', 'NEUF' => '100 %' ),
+				// Les barèmes sont communs aux deux modèles : ces légendes décrivaient
+				// d'anciennes bornes et ne correspondaient plus au calcul appliqué.
+				// Elles sont réalignées sur celles du modèle périodique.
+				'visual'   => array( 'RÉFORME' => 'moyenne = 0', 'LIMITE' => '0 – 10', 'ACCEPTABLE' => '10 – 44', 'BON ÉTAT' => '44 – 75', 'TRÈS BON ÉTAT' => '> 75' ),
+				'porosity' => array( 'RÉFORME' => '< 10 s', 'LIMITE' => '10 – 11 s', 'ACCEPTABLE' => '11 – 20 s', 'BON ÉTAT' => '20 – 200 s', 'TRÈS BON ÉTAT' => '> 200 s' ),
+				'tear'     => array( 'RÉFORME' => '< 0,6', 'LIMITE' => '0,6 – 0,63', 'ACCEPTABLE' => '0,63 – 0,9', 'BON ÉTAT' => '0,9 – 1,17', 'TRÈS BON ÉTAT' => '≥ 1,17' ),
+				'rupture'  => array( 'RÉFORME' => '≤ 0 %', 'LIMITE' => '< 10 %', 'ACCEPTABLE' => '< 25 %', 'BON ÉTAT' => '< 75 %', 'TRÈS BON ÉTAT' => '≥ 75 %' ),
 			),
 			'show_general' => false,
 			'show_results_summary' => true,

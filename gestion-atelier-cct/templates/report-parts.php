@@ -144,8 +144,16 @@ function gacct_rp2_scale_legend( array $rows, $header = '' ) {
  *                      'NON RÉALISÉ' = vide, ou un état de l'échelle).
  */
 function gacct_rp2_matrix( array $rows ) {
-	$all    = gacct_report_state_colors();
-	$scale  = array_intersect_key( $all, array_flip( array( 'NEUF', 'TRÈS BON ÉTAT', 'BON ÉTAT', 'ACCEPTABLE', 'LIMITE', 'RÉFORME' ) ) );
+	$all = gacct_report_state_colors();
+
+	// Les colonnes suivent l'échelle du pack, du meilleur au pire, au lieu
+	// d'une liste figée : un atelier qui retire un échelon (Altitude Révision
+	// a retiré NEUF le 27/08/2026) voit la colonne disparaître d'elle-même.
+	$echelle = function_exists( 'gacct_report_severity' )
+		? array_reverse( gacct_report_severity() )
+		: array( 'TRÈS BON ÉTAT', 'BON ÉTAT', 'ACCEPTABLE', 'LIMITE', 'RÉFORME' );
+
+	$scale = array_intersect_key( $all, array_flip( $echelle ) );
 	$thin   = 'border:0.5pt solid #c9d4da;';
 
 	$html = '<table style="width:100%; border-collapse:collapse;"><tr><td style="width:24%; border:0;"></td>';
@@ -159,7 +167,7 @@ function gacct_rp2_matrix( array $rows ) {
 		$html .= '<tr><td style="' . $thin . ' background:#f4f8f9; font-size:8.6px; font-weight:bold; padding:5px 6px;">' . esc_html( $row_label ) . '</td>';
 
 		if ( 'CALAGE BON' === $result ) {
-			$html .= '<td colspan="5" style="' . $thin . ' background:' . $all['BON ÉTAT'][0] . '; text-align:center; font-weight:bold; color:' . $all['BON ÉTAT'][1] . '; font-size:9px; padding:5px 2px;">X — CALAGE BON</td>'
+			$html .= '<td colspan="' . max( 1, count( $scale ) - 1 ) . '" style="' . $thin . ' background:' . $all['BON ÉTAT'][0] . '; text-align:center; font-weight:bold; color:' . $all['BON ÉTAT'][1] . '; font-size:9px; padding:5px 2px;">X — CALAGE BON</td>'
 				. '<td style="' . $thin . ' background:' . $all['RÉFORME'][0] . ';"></td>';
 		} else {
 			foreach ( $scale as $label => $c ) {
