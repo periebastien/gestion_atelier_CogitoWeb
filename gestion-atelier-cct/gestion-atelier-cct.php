@@ -51,6 +51,7 @@ require_once __DIR__ . '/includes/gacct-signature.php';
 require_once __DIR__ . '/includes/gacct-vieworder.php';
 require_once __DIR__ . '/includes/gacct-shipping.php';
 require_once __DIR__ . '/includes/gacct-client-tables.php';
+require_once __DIR__ . '/includes/gacct-regions.php';
 require_once __DIR__ . '/includes/gacct-operator/gacct-operator.php';
 
 final class GACCT_Plugin {

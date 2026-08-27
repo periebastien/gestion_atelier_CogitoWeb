@@ -1,0 +1,308 @@
+/**
+ * Landing pages régionales — .ar-region
+ * Consomme les tokens --gacct-* du thème enfant (tokens.css).
+ * Pages rendues en gabarit pleine largeur (elementor_header_footer) : les
+ * sections colorées occupent toute la largeur, le texte est recentré.
+ */
+
+.ar-region {
+	--r-teal: var(--gacct-accent, #20c4c3);
+	--r-teal-dark: var(--gacct-accent-dark, #189998);
+	--r-cta: var(--gacct-cta, #ffbd20);
+	--r-ink: var(--gacct-text, #1a1a1a);
+	--r-muted: var(--gacct-text-muted, #777);
+	--r-surface-alt: var(--gacct-surface-alt, #f8f9fa);
+	--r-border: var(--gacct-border, #e2e8f0);
+	--r-wrap: 1080px;
+	color: var(--r-ink);
+	font-size: 17px;
+	line-height: 1.65;
+}
+
+.ar-region * { box-sizing: border-box; }
+
+/* ---- HERO ---------------------------------------------------------------- */
+.ar-region-hero {
+	position: relative;
+	padding: 96px 20px 88px;
+	background: #0f2b2b;
+	overflow: hidden;
+}
+.ar-region-hero::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background-image: var(--ar-hero, none);
+	background-size: cover;
+	background-position: center;
+	opacity: 0.9;
+	z-index: 0;
+}
+.ar-region-hero::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(115deg, rgba(10,32,32,.86) 0%, rgba(10,32,32,.72) 45%, rgba(10,32,32,.45) 100%);
+	z-index: 1;
+}
+.ar-region-hero-in {
+	position: relative;
+	z-index: 2;
+	max-width: var(--r-wrap);
+	margin: 0 auto;
+	color: #fff;
+}
+.ar-region-kicker {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 18px;
+	padding: 7px 14px;
+	background: rgba(255,255,255,.12);
+	border: 1px solid rgba(255,255,255,.25);
+	border-radius: 999px;
+	font-size: 14px;
+	font-weight: 600;
+	backdrop-filter: blur(4px);
+}
+.ar-region-stars { color: var(--r-cta); letter-spacing: 1px; }
+.ar-region-h1 {
+	margin: 0 0 18px;
+	font-size: clamp(30px, 5vw, 48px);
+	line-height: 1.12;
+	font-weight: 800;
+	color: #fff;
+	max-width: 15ch;
+}
+.ar-region-intro {
+	margin: 0 0 30px;
+	max-width: 62ch;
+	font-size: clamp(16px, 2vw, 19px);
+	color: rgba(255,255,255,.92);
+}
+.ar-region-cta-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; }
+
+/* ---- CTA (bouton) -------------------------------------------------------- */
+.ar-region a.ar-region-cta {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	padding: 16px 30px;
+	background: var(--r-cta);
+	color: #1a1a1a;
+	font-size: 17px;
+	font-weight: 700;
+	text-decoration: none;
+	border: 0;
+	border-radius: 10px;
+	box-shadow: 0 10px 26px rgba(255,189,32,.35);
+	transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.ar-region a.ar-region-cta:hover {
+	transform: translateY(-2px);
+	background: #ffc94a;
+	box-shadow: 0 14px 32px rgba(255,189,32,.45);
+}
+.ar-region-cta-arrow { transition: transform .18s ease; }
+.ar-region a.ar-region-cta:hover .ar-region-cta-arrow { transform: translateX(4px); }
+.ar-region-cta-sub { font-size: 14px; color: rgba(255,255,255,.8); max-width: 34ch; }
+
+/* ---- BANDEAU CHIFFRES ---------------------------------------------------- */
+.ar-region-stats {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 1px;
+	background: var(--r-border);
+	border-bottom: 1px solid var(--r-border);
+}
+.ar-region-stat {
+	background: #fff;
+	padding: 30px 22px;
+	text-align: center;
+}
+.ar-region-stat-value {
+	display: block;
+	font-size: clamp(24px, 3vw, 32px);
+	font-weight: 800;
+	color: var(--r-teal-dark);
+	line-height: 1.1;
+}
+.ar-region-stat-label { display: block; margin-top: 6px; font-size: 14px; color: var(--r-muted); }
+
+/* ---- CORPS --------------------------------------------------------------- */
+.ar-region-body {
+	max-width: var(--r-wrap);
+	margin: 0 auto;
+	padding: 64px 20px 24px;
+}
+.ar-region-section { margin-bottom: 44px; }
+.ar-region-section h2,
+.ar-region-reviews h2,
+.ar-region-faq h2 {
+	margin: 0 0 16px;
+	font-size: clamp(23px, 3vw, 30px);
+	font-weight: 800;
+	color: var(--r-ink);
+	position: relative;
+	padding-left: 16px;
+}
+.ar-region-section h2::before,
+.ar-region-reviews h2::before,
+.ar-region-faq h2::before {
+	content: "";
+	position: absolute;
+	left: 0; top: .12em; bottom: .12em;
+	width: 5px;
+	border-radius: 3px;
+	background: var(--r-teal);
+}
+.ar-region-section p { margin: 0 0 14px; max-width: 72ch; }
+
+/* ---- TABLE ACCÈS --------------------------------------------------------- */
+.ar-region-access-table {
+	width: 100%;
+	max-width: 520px;
+	margin-top: 18px;
+	border-collapse: collapse;
+	font-size: 16px;
+}
+.ar-region-access-table th,
+.ar-region-access-table td {
+	border: 0; /* neutralise le reset Elementor (border 1px + padding 15px) */
+	border-bottom: 1px solid var(--r-border);
+	padding: 11px 14px;
+	text-align: left;
+}
+.ar-region-access-table thead th {
+	font-size: 13px;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	color: var(--r-muted);
+	font-weight: 700;
+}
+.ar-region-access-table td:last-child { font-weight: 600; color: var(--r-teal-dark); white-space: nowrap; }
+
+/* ---- AVIS ---------------------------------------------------------------- */
+.ar-region-reviews { max-width: var(--r-wrap); margin: 0 auto; padding: 20px 20px 8px; }
+.ar-region-reviews-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 20px;
+}
+.ar-region-review {
+	margin: 0;
+	padding: 26px 24px;
+	background: var(--r-surface-alt);
+	border: 1px solid var(--r-border);
+	border-radius: 14px;
+}
+.ar-region-review-stars { color: var(--r-cta); font-size: 15px; letter-spacing: 1px; }
+.ar-region-review blockquote {
+	margin: 12px 0 14px;
+	padding: 0;
+	border: 0;
+	font-size: 16px;
+	font-style: normal;
+	color: var(--r-ink);
+	quotes: "«\00a0" "\00a0»";
+}
+.ar-region-review blockquote::before { content: open-quote; color: var(--r-teal); }
+.ar-region-review blockquote::after { content: close-quote; color: var(--r-teal); }
+.ar-region-review figcaption { font-size: 14px; font-weight: 600; color: var(--r-muted); }
+
+/* ---- FAQ ----------------------------------------------------------------- */
+.ar-region-faq { max-width: var(--r-wrap); margin: 0 auto; padding: 44px 20px 8px; }
+.ar-region-faq-item {
+	border: 1px solid var(--r-border);
+	border-radius: 12px;
+	margin-bottom: 12px;
+	background: #fff;
+	overflow: hidden;
+}
+.ar-region-faq-item summary {
+	list-style: none;
+	cursor: pointer;
+	padding: 18px 22px;
+	font-weight: 700;
+	font-size: 17px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 16px;
+}
+.ar-region-faq-item summary::-webkit-details-marker { display: none; }
+.ar-region-faq-item summary::after {
+	content: "+";
+	color: var(--r-teal);
+	font-size: 24px;
+	font-weight: 400;
+	line-height: 1;
+	transition: transform .2s ease;
+}
+.ar-region-faq-item[open] summary::after { transform: rotate(45deg); }
+.ar-region-faq-a { padding: 0 22px 20px; }
+.ar-region-faq-a p { margin: 0; color: var(--r-muted); max-width: 72ch; }
+
+/* ---- CTA FINAL ----------------------------------------------------------- */
+.ar-region-cta-band {
+	margin-top: 56px;
+	padding: 64px 20px;
+	text-align: center;
+	background: linear-gradient(135deg, var(--r-teal) 0%, var(--r-teal-dark) 100%);
+	color: #fff;
+}
+.ar-region-cta-band h2 {
+	margin: 0 0 12px;
+	font-size: clamp(24px, 3.4vw, 34px);
+	font-weight: 800;
+	color: #fff;
+}
+.ar-region-cta-band p {
+	margin: 0 auto 28px;
+	max-width: 60ch;
+	color: rgba(255,255,255,.92);
+	font-size: 17px;
+}
+
+/* ---- MAILLAGE ------------------------------------------------------------ */
+.ar-region-nearby {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 40px 80px;
+	max-width: var(--r-wrap);
+	margin: 0 auto;
+	padding: 52px 20px 64px;
+}
+.ar-region-nearby-title {
+	display: block;
+	font-size: 13px;
+	text-transform: uppercase;
+	letter-spacing: .05em;
+	color: var(--r-muted);
+	font-weight: 700;
+	margin-bottom: 14px;
+}
+.ar-region-nearby ul { list-style: none; margin: 0; padding: 0; }
+.ar-region-nearby li { margin-bottom: 8px; }
+.ar-region-nearby a {
+	color: var(--r-teal-dark);
+	text-decoration: none;
+	font-weight: 600;
+	border-bottom: 1px solid transparent;
+	transition: border-color .15s ease;
+}
+.ar-region-nearby a:hover { border-bottom-color: var(--r-teal-dark); }
+
+/* ---- RESPONSIVE ---------------------------------------------------------- */
+@media (max-width: 1024px) {
+	.ar-region-stats { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 767px) {
+	.ar-region-hero { padding: 68px 18px 60px; }
+	.ar-region-body { padding: 44px 18px 16px; }
+	.ar-region-cta-sub { width: 100%; }
+	.ar-region-nearby { gap: 32px; }
+}
+@media (max-width: 480px) {
+	.ar-region-stats { grid-template-columns: 1fr; }
+}
