@@ -854,8 +854,9 @@ function gacct_op_manual_payment_reminder( $order ) {
  *  Ce n'est PAS un état de la machine 0–8 : un drapeau posé/levé par
  *  l'opérateur (champs CCT en_attente / attente_motif, setup v4) pour signaler
  *  au client qu'une voile est en pause (ex. attente d'une pièce constructeur).
- *  La mise en attente n'empêche AUCUNE transition d'état et n'est jamais levée
- *  automatiquement : c'est l'opérateur qui la lève.
+ *  La mise en attente n'empêche AUCUNE transition d'état. Elle est levée par
+ *  l'opérateur, ou automatiquement à l'envoi de la facture finale (état 6,
+ *  demande Timothée du 18/08/2026) via gacct_hold_release_auto().
  * ============================================================================= */
 
 /**
@@ -987,6 +988,43 @@ function gacct_op_hold( $revision_id, $motif ) {
 }
 
 /**
+ * Lève le drapeau « en attente » sans prévenir le client.
+ *
+ * Sert à la reprise AUTOMATIQUE : quand la facture finale part, laisser le
+ * dossier en pause n'a plus de sens (demande Timothée du 18/08/2026). On ne
+ * réutilise pas gacct_op_resume() ici, son email « dossier repris » ferait
+ * doublon avec la demande de solde envoyée dans la foulée. La levée reste
+ * tracée par une note de commande signée.
+ *
+ * @param int      $revision_id Révision concernée.
+ * @param WC_Order $order       Commande liée, pour la note.
+ * @param string   $raison      Motif inscrit dans la note.
+ * @return bool True si une attente était active et vient d'être levée.
+ */
+function gacct_hold_release_auto( $revision_id, $order, $raison ) {
+	$fresh = gacct_hold_read_fresh( $revision_id );
+
+	if ( null === $fresh || ! $fresh['active'] ) {
+		return false;
+	}
+
+	if ( ! jwcct_update_cct_item( JWCCT_CCT_REVISION, absint( $revision_id ), array(
+		'en_attente'    => '',
+		'attente_motif' => '',
+	) ) ) {
+		return false;
+	}
+
+	if ( $order instanceof WC_Order ) {
+		gacct_op_add_signed_note( $order, sprintf(
+			__( 'Mise en attente levée automatiquement : %s.', 'gestion-atelier-cct' ),
+			$raison
+		) );
+	}
+
+	return true;
+}
+/**
  * Lève le drapeau « en attente » (message FACULTATIF pour le client).
  *
  * Vide en_attente + attente_motif, note de commande signée, email client
@@ -1075,16 +1113,16 @@ function gacct_op_planning_capacities( $start_ts, $end_ts ) {
 	$occ = $wpdb->prefix . 'jet_cct_' . JWCCT_CCT_OCCUPATION;
 
 	return (array) $wpdb->get_results( $wpdb->prepare(
-		"SELECT c._ID AS capacity_id, CAST(c.date_jour AS UNSIGNED) AS day_ts,
+		"SELECT c._ID AS capacity_id, c.date_jour AS day_ts,
 			CAST(c.heures_totales_dispo AS DECIMAL(10,2)) AS capacity_hours,
 			COALESCE(SUM(TIME_TO_SEC(o.duree_totale_commande) / 3600), 0) AS occupied_hours
 		FROM {$cal} c
 		LEFT JOIN {$occ} o
-			ON CAST(o.date_reservee AS UNSIGNED) = CAST(c.date_jour AS UNSIGNED)
+			ON o.date_reservee = c.date_jour
 			AND o.cct_status = 'publish'
 		WHERE c.cct_status = 'publish'
-			AND CAST(c.date_jour AS UNSIGNED) >= %d
-			AND CAST(c.date_jour AS UNSIGNED) < %d
+			AND c.date_jour >= %d
+			AND c.date_jour < %d
 		GROUP BY c._ID, c.date_jour, c.heures_totales_dispo
 		ORDER BY day_ts ASC",
 		$start_ts,
@@ -1104,7 +1142,7 @@ function gacct_op_planning_occupations( $start_ts, $end_ts ) {
 	$rev = $wpdb->prefix . 'jet_cct_' . JWCCT_CCT_REVISION;
 
 	return (array) $wpdb->get_results( $wpdb->prepare(
-		"SELECT o._ID AS occupation_id, CAST(o.date_reservee AS UNSIGNED) AS day_ts,
+		"SELECT o._ID AS occupation_id, o.date_reservee AS day_ts,
 			o.duree_totale_commande, o.order_id,
 			r._ID AS rev_id, r.etat_de_la_commande AS rev_etat, r.marque AS rev_marque,
 			r.modele AS rev_modele, r.taille AS rev_taille, r.dossier_incomplet AS rev_incomplet
@@ -1113,8 +1151,8 @@ function gacct_op_planning_occupations( $start_ts, $end_ts ) {
 			ON ( r._ID = o.revision_id OR ( o.order_id > 0 AND r.order_id = o.order_id ) )
 			AND r.cct_status = 'publish'
 		WHERE o.cct_status = 'publish'
-			AND CAST(o.date_reservee AS UNSIGNED) >= %d
-			AND CAST(o.date_reservee AS UNSIGNED) < %d
+			AND o.date_reservee >= %d
+			AND o.date_reservee < %d
 		GROUP BY o._ID
 		ORDER BY day_ts ASC",
 		$start_ts,
@@ -1140,12 +1178,12 @@ function gacct_op_day_capacity_row( $ymd ) {
 	$cal = $wpdb->prefix . 'jet_cct_calendrier_dispo';
 
 	return $wpdb->get_row( $wpdb->prepare(
-		"SELECT _ID, CAST(date_jour AS UNSIGNED) AS day_ts,
+		"SELECT _ID, date_jour AS day_ts,
 			CAST(heures_totales_dispo AS DECIMAL(10,2)) AS capacity_hours
 		FROM {$cal}
 		WHERE cct_status = 'publish'
-			AND CAST(date_jour AS UNSIGNED) >= %d
-			AND CAST(date_jour AS UNSIGNED) < %d
+			AND date_jour >= %d
+			AND date_jour < %d
 		ORDER BY day_ts ASC LIMIT 1",
 		$start,
 		$end
@@ -1228,7 +1266,7 @@ function gacct_op_reschedule( $occupation_id, $ymd, array $args = array() ) {
 	$occupied  = (float) $wpdb->get_var( $wpdb->prepare(
 		"SELECT COALESCE(SUM(TIME_TO_SEC(duree_totale_commande) / 3600), 0)
 		FROM {$occ_table}
-		WHERE cct_status = 'publish' AND CAST(date_reservee AS UNSIGNED) = %d AND _ID != %d",
+		WHERE cct_status = 'publish' AND date_reservee = %d AND _ID != %d",
 		$new_ts,
 		$occupation_id
 	) );

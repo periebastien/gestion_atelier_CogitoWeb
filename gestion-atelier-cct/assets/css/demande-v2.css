@@ -606,6 +606,32 @@
 	filter: brightness(0.96);
 }
 
+/* Alignement de la paire « Retour » / bouton d action.
+   JetFormBuilder rend les deux boutons dans le MEME wrapper
+   (.jet-form-builder__action-button-wrapper), mais ce wrapper ne porte pas
+   toujours la classe ...__submit-wrap sur laquelle notre flex etait accroche :
+   les boutons retombaient alors en ligne, cales sur la baseline du texte, d ou
+   le decalage vertical. On vise donc le wrapper generique. On donne au passage
+   aux boutons pleins une bordure transparente de meme epaisseur que celle du
+   bouton « Retour », pour que les deux boites soient identiques quel que soit
+   le box-sizing herite. */
+.gacct-v2 .jet-form-builder__action-button-wrapper {
+	display: flex;
+	align-items: stretch;
+	gap: 14px;
+	margin-top: 26px;
+}
+
+.gacct-v2 button.jet-form-builder__next-page,
+.gacct-v2 button.jet-form-builder__submit {
+	border: 2px solid transparent;
+}
+
+.gacct-v2 .jet-form-builder__action-button-wrapper button {
+	margin: 0;
+	align-self: stretch;
+}
+
 /* ==========================================================================
    Étape 2 : lignes de prestation (template 196 dans les accordéons)
    ========================================================================== */

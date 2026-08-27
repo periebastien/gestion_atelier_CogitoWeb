@@ -70,7 +70,7 @@ function gacct_wo_order_context( $order ) {
 	), ARRAY_A );
 
 	$slot_ts = (int) $wpdb->get_var( $wpdb->prepare(
-		"SELECT CAST(date_reservee AS UNSIGNED) FROM {$wpdb->prefix}jet_cct_occupation_atelier
+		"SELECT date_reservee FROM {$wpdb->prefix}jet_cct_occupation_atelier
 		 WHERE cct_status = 'publish' AND ( order_id = %d OR revision_id = %d ) LIMIT 1",
 		$order->get_id(),
 		$revision ? absint( $revision['_ID'] ) : 0

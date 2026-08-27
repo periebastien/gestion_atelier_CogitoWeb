@@ -47,6 +47,76 @@ function gacct_biplace_supplement_product_ids() {
 }
 
 /**
+ * Ce produit est-il l'un des deux produits « supplément biplace » ?
+ *
+ * À ne pas confondre avec gacct_product_biplace_supplement(), qui dit quel
+ * supplément s'applique à une PRESTATION.
+ */
+function gacct_biplace_est_produit_supplement( $product_id ) {
+	$ids = array_map( 'absint', array_values( gacct_biplace_supplement_product_ids() ) );
+
+	return in_array( absint( $product_id ), $ids, true );
+}
+
+/**
+ * Masque la ligne « Supplément biplace » tant qu'elle est facturée 0 €.
+ *
+ * Le supplément porte un acompte nul (décision du 27/08/2026) : au moment de
+ * l'acompte, sa ligne s'affiche donc à 0,00 €, ce que le client lit comme un
+ * bug (remontée Timothée du 18/08/2026). On la cache tant qu'elle ne coûte
+ * rien. Aucune valeur n'est perdue : la ligne reste en base, visible en
+ * administration, et réapparaît côté client dès que le solde lui rend son
+ * montant réel.
+ *
+ * @param bool          $visible
+ * @param WC_Order_Item $item
+ * @return bool
+ */
+function gacct_biplace_ligne_commande_visible( $visible, $item ) {
+	if ( ! $visible || is_admin() ) {
+		return $visible;
+	}
+
+	if ( ! $item instanceof WC_Order_Item_Product ) {
+		return $visible;
+	}
+
+	if ( ! gacct_biplace_est_produit_supplement( $item->get_product_id() ) ) {
+		return $visible;
+	}
+
+	return abs( (float) $item->get_total() ) >= 0.005;
+}
+add_filter( 'woocommerce_order_item_visible', 'gacct_biplace_ligne_commande_visible', 10, 2 );
+
+/**
+ * Même règle dans le panier et le mini-panier, où le supplément est déjà
+ * ramené à son acompte (donc à 0) par le plugin Kojito.
+ *
+ * @param bool  $visible
+ * @param array $cart_item
+ * @return bool
+ */
+function gacct_biplace_ligne_panier_visible( $visible, $cart_item ) {
+	if ( ! $visible || empty( $cart_item['product_id'] ) ) {
+		return $visible;
+	}
+
+	$id = ! empty( $cart_item['variation_id'] ) ? $cart_item['variation_id'] : $cart_item['product_id'];
+
+	if ( ! gacct_biplace_est_produit_supplement( $id ) ) {
+		return $visible;
+	}
+
+	$data = isset( $cart_item['data'] ) ? $cart_item['data'] : null;
+
+	return $data ? (float) $data->get_price() >= 0.005 : $visible;
+}
+/* Panier et mini-panier : plus de masquage. Depuis le 27/08 le récapitulatif
+   affiche les prix réels et non les acomptes, donc le supplément y apparaît
+   à son vrai montant. Le filtre reste posé sur les lignes de COMMANDE, dont
+   l'affichage n'a pas encore reçu le même traitement. */
+/**
  * Boutons radio dans l'onglet Général de la fiche produit.
  */
 add_action( 'woocommerce_product_options_general_product_data', function () {

@@ -1,0 +1,352 @@
+/**
+ * Page « Mes anciennes révisions » de l'espace client.
+ *
+ * Reprend le vocabulaire visuel de client-tables.css : cartes blanches,
+ * bordure var(--line), rayon 12px, variables du kit Elementor.
+ * Breakpoints du kit : mobile <=767, tablette 768-1024, desktop >=1025.
+ *  - >=768 : tableau classique, scroll horizontal si besoin.
+ *  - <=767 : bascule en cartes (transformation CSS du tableau).
+ */
+
+.gacct-hist {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	font-family: inherit;
+}
+
+.gacct-hist-intro {
+	margin: 0;
+	color: var(--ink-3);
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+/* ---------- chiffres clés ---------- */
+
+.gacct-hist-stats {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 12px;
+}
+
+.gacct-hist-stat {
+	background: #fff;
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 14px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.gacct-hist-stat-num {
+	font-size: 22px;
+	font-weight: 700;
+	color: var(--ink);
+	line-height: 1.1;
+}
+
+.gacct-hist-stat-label {
+	font-size: 12px;
+	color: var(--ink-3);
+	text-transform: lowercase;
+}
+
+/* ---------- recherche ---------- */
+
+.gacct-hist-search {
+	position: relative;
+	display: flex;
+	align-items: center;
+}
+
+.gacct-hist-search svg {
+	position: absolute;
+	left: 12px;
+	width: 18px;
+	height: 18px;
+	fill: none;
+	stroke: var(--ink-4);
+	stroke-width: 2;
+	stroke-linecap: round;
+	pointer-events: none;
+}
+
+.gacct-hist .gacct-hist-search input[type="search"] {
+	width: 100%;
+	padding: 11px 14px 11px 40px;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	background: #fff;
+	font-size: 14px;
+	color: var(--ink);
+}
+
+.gacct-hist-search input:focus {
+	outline: none;
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px var(--teal-soft);
+}
+
+/* ---------- tableau ---------- */
+
+.gacct-hist-table {
+	width: 100%;
+	border-collapse: collapse;
+	background: #fff;
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	overflow: hidden;
+	font-size: 14px;
+}
+
+.gacct-hist-table thead th {
+	background: var(--bg-soft);
+	color: var(--ink-3);
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: .03em;
+	text-align: left;
+	padding: 11px 16px;
+	border-bottom: 1px solid var(--line);
+}
+
+.gacct-hist-table tbody td {
+	padding: 13px 16px;
+	border-bottom: 1px solid var(--line-2);
+	vertical-align: middle;
+	color: var(--ink);
+}
+
+.gacct-hist-table tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+.gacct-hist-table tbody tr:hover {
+	background: var(--bg-soft);
+}
+
+.gacct-hist-materiel-bloc {
+	display: block;
+	min-width: 0;
+}
+
+.gacct-hist-materiel {
+	display: block;
+	font-weight: 600;
+}
+
+.gacct-hist-serie {
+	display: block;
+	font-size: 12px;
+	color: var(--ink-4);
+	margin-top: 2px;
+	/* certains numeros de serie de l'ancien site font 25 caracteres sans espace */
+	overflow-wrap: anywhere;
+}
+
+.gacct-hist-couleur-texte {
+	font-size: 13px;
+	color: var(--ink-3);
+}
+
+.gacct-hist-vide-cell {
+	color: var(--ink-4);
+	font-size: 13px;
+}
+
+/* la pastille est celle de « Mon Matériel », stylée ici pour cette page */
+.gacct-hist-table .voile-swatch {
+	width: 34px;
+	height: 34px;
+	border-radius: 50%;
+	border: 1px solid rgba(0, 0, 0, .1);
+	background-clip: padding-box;
+}
+
+/* ---------- bouton de téléchargement ---------- */
+
+.gacct-hist-dl {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	padding: 8px 13px;
+	border-radius: 9px;
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+	font-size: 13px;
+	font-weight: 600;
+	text-decoration: none;
+	transition: background .15s ease;
+}
+
+.gacct-hist-dl:hover,
+.gacct-hist-dl:focus {
+	background: var(--teal);
+	color: #fff;
+}
+
+.gacct-hist-dl svg {
+	width: 16px;
+	height: 16px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+/* ---------- états ---------- */
+
+.gacct-hist-no-result {
+	margin: 0;
+	padding: 22px;
+	text-align: center;
+	color: var(--ink-3);
+	background: #fff;
+	border: 1px solid var(--line);
+	border-radius: 12px;
+}
+
+.gacct-hist-vide {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	gap: 10px;
+	padding: 44px 24px;
+	background: #fff;
+	border: 1px solid var(--line);
+	border-radius: 12px;
+}
+
+.gacct-hist-vide svg {
+	width: 42px;
+	height: 42px;
+	fill: none;
+	stroke: var(--ink-4);
+	stroke-width: 1.6;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.gacct-hist-vide h3 {
+	margin: 0;
+	font-size: 17px;
+	color: var(--ink);
+}
+
+.gacct-hist-vide p {
+	margin: 0;
+	max-width: 46ch;
+	font-size: 14px;
+	line-height: 1.55;
+	color: var(--ink-3);
+}
+
+/* ---------- mobile : le tableau devient des cartes ---------- */
+
+@media (max-width: 767px) {
+
+	.gacct-hist-stats {
+		grid-template-columns: repeat(3, 1fr);
+		gap: 8px;
+	}
+
+	.gacct-hist-stat {
+		padding: 11px 12px;
+	}
+
+	.gacct-hist-stat-num {
+		font-size: 18px;
+	}
+
+	.gacct-hist-stat-label {
+		font-size: 11px;
+	}
+
+	.gacct-hist-table,
+	.gacct-hist-table tbody,
+	.gacct-hist-table tr,
+	.gacct-hist-table td {
+		display: block;
+		width: 100%;
+	}
+
+	.gacct-hist-table {
+		border: 0;
+		background: transparent;
+	}
+
+	.gacct-hist-table thead {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		white-space: nowrap;
+	}
+
+	.gacct-hist-table tr {
+		background: #fff;
+		border: 1px solid var(--line);
+		border-radius: 12px;
+		margin-bottom: 10px;
+		padding: 6px 0;
+	}
+
+	.gacct-hist-table tbody tr:hover {
+		background: #fff;
+	}
+
+	.gacct-hist-table tbody td {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 14px;
+		border-bottom: 0;
+		padding: 7px 14px;
+	}
+
+	.gacct-hist-table tbody td::before {
+		content: attr(data-label);
+		flex-shrink: 0;
+		font-size: 11px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: .03em;
+		color: var(--ink-4);
+	}
+
+	.gacct-hist-materiel-bloc {
+		text-align: right;
+		min-width: 0;
+		flex: 1;
+	}
+
+	.gacct-hist-table tbody td {
+		align-items: flex-start;
+	}
+
+	.gacct-hist-table tbody td::before {
+		padding-top: 1px;
+	}
+
+	.gacct-hist-dl {
+		width: auto;
+	}
+}
+
+/* ---------------------------------------------------------------------------
+ * Entree « Mes anciennes revisions » de la liste de liens de l'espace client.
+ * Le widget Elementor est statique : on masque l'entree pour les visiteurs qui
+ * n'ont aucune ancienne revision (classe posee par gacct_historique_body_class).
+ * Repli volontaire : si cette CSS ne charge pas, l'entree reste VISIBLE et la
+ * page affiche « Aucune revision anterieure ». Jamais l'inverse.
+ * ------------------------------------------------------------------------ */
+
+body:not(.gacct-a-historique) .elementor-icon-list-item:has( a[href*="mes-anciennes-revisions"] ) {
+	display: none;
+}

@@ -857,6 +857,7 @@ function gacct_couleurs_voile() {
         'violet'     => array( 'base' => '#a855f7', 'light' => '#c084fc' ),
         'rose'       => array( 'base' => '#ec4899', 'light' => '#f472b6' ),
         'rose fluo'  => array( 'base' => '#ff2d9b', 'light' => '#ff7ac2' ),
+        'marron'     => array( 'base' => '#8b5a2b', 'light' => '#b07d4f' ),
         'blanc'      => array( 'base' => '#f5f5f5', 'light' => '#ffffff' ),
         'gris'       => array( 'base' => '#9ca3af', 'light' => '#d1d5db' ),
         'noir'       => array( 'base' => '#1f2937', 'light' => '#4b5563' ),
@@ -866,6 +867,117 @@ function gacct_couleurs_voile() {
         // couleurs de la query JetEngine 22 (GROUP BY de « Mon Matériel »).
         'multicolore' => array( 'base' => '#d33333', 'light' => '#eab308', 'gradient' => 'conic-gradient(#d33333,#eab308,#22c55e,#06b6d4,#a855f7,#d33333)' ),
     ) );
+}
+
+/**
+ * Synonymes de couleur : variantes orthographiques, anglais courant et coloris
+ * commerciaux des fabricants, ramenes aux noms de la palette fermee.
+ *
+ * Sert a lire les saisies libres : dossiers anterieurs au selecteur de couleurs,
+ * et surtout les 5 000 dossiers importes de l'ancien site (« LIME », « Fire »,
+ * « spectra », « Bleue »…). Couverture mesuree sur ces donnees : 95 % des
+ * champs renseignes.
+ *
+ * Une chaine vide en valeur = mot neutralise (ex. « dark », « light »).
+ *
+ * @return array<string,string> saisie => nom de la palette.
+ */
+function gacct_couleurs_synonymes() {
+	return apply_filters( 'gacct_couleurs_synonymes', array(
+		// Variantes et fautes de frappe francaises.
+		'bleue' => 'bleu', 'bleues' => 'bleu', 'bleus' => 'bleu', 'blen' => 'bleu',
+		'verte' => 'vert', 'vertes' => 'vert', 'verts' => 'vert', 'lind' => 'vert',
+		'blanche' => 'blanc', 'blanches' => 'blanc', 'blancs' => 'blanc', 'banche' => 'blanc',
+		'violette' => 'violet', 'violettes' => 'violet', 'viollet' => 'violet',
+		'voilet' => 'violet', 'aubergie' => 'violet', 'aubergine' => 'violet',
+		'noire' => 'noir', 'noires' => 'noir', 'noirs' => 'noir',
+		'grise' => 'gris', 'grises' => 'gris',
+		'rouges' => 'rouge', 'jaunes' => 'jaune', 'oranges' => 'orange',
+		'orangee' => 'orange', 'oange' => 'orange', 'orang' => 'orange',
+		'roses' => 'rose', 'fuchia' => 'rose', 'fuschia' => 'rose', 'fushia' => 'rose',
+		'fuchsia' => 'rose', 'mauve' => 'violet', 'lilas' => 'violet', 'lilack' => 'violet',
+		'prune' => 'violet', 'citron' => 'jaune', 'canari' => 'jaune', 'moutarde' => 'jaune',
+		'agrume' => 'orange', 'pistache' => 'vert', 'pomme' => 'vert', 'opale' => 'blanc',
+		'neige' => 'blanc', 'clair' => 'blanc', 'orage' => 'gris', 'feu' => 'rouge',
+		'eau' => 'cyan', 'pacifique' => 'bleu', 'royale' => 'bleu', 'boreale' => 'bleu',
+		'borealis' => 'bleu', 'bordeaux' => 'rouge', 'bordeau' => 'rouge',
+		'petrole' => 'turquoise',
+
+		// Anglais courant.
+		'blue' => 'bleu', 'red' => 'rouge', 'yellow' => 'jaune', 'green' => 'vert',
+		'grey' => 'gris', 'gray' => 'gris', 'white' => 'blanc', 'black' => 'noir',
+		'purple' => 'violet', 'pink' => 'rose', 'navy' => 'bleu', 'silver' => 'gris',
+		'dark' => '', 'light' => '',
+
+		// Coloris commerciaux : rouges.
+		'fire' => 'rouge', 'flame' => 'rouge', 'lava' => 'rouge', 'volcano' => 'rouge',
+		'magma' => 'rouge', 'pyro' => 'rouge', 'chili' => 'rouge', 'cherry' => 'rouge',
+		'ruby' => 'rouge', 'rubi' => 'rouge', 'poppy' => 'rouge', 'coral' => 'rouge',
+		'sangria' => 'rouge', 'burgundy' => 'rouge', 'mars' => 'rouge', 'vampire' => 'rouge',
+		'salsa' => 'rouge', 'energy' => 'rouge',
+
+		// Oranges.
+		'melon' => 'orange', 'mango' => 'orange', 'papaya' => 'orange',
+		'tangerine' => 'orange', 'amber' => 'orange', 'sunset' => 'orange',
+		'sunrise' => 'orange', 'tiger' => 'orange', 'tigger' => 'orange',
+		'summer' => 'orange', 'soul' => 'orange',
+		'spicy' => 'orange', 'passion' => 'orange', 'cherimoya' => 'orange',
+
+		// Jaunes.
+		'gold' => 'jaune', 'golden' => 'jaune', 'lemon' => 'jaune', 'lemond' => 'jaune',
+		'honey' => 'jaune', 'mustard' => 'jaune', 'zest' => 'jaune', 'sunny' => 'jaune',
+		'ananas' => 'jaune', 'annas' => 'jaune', 'citrus' => 'jaune', 'citrik' => 'jaune',
+
+		// Verts.
+		'lime' => 'vert fluo', 'lima' => 'vert fluo', 'acid' => 'vert fluo',
+		'alkaline' => 'vert fluo', 'mint' => 'vert', 'minth' => 'vert', 'grass' => 'vert',
+		'jungle' => 'vert', 'forest' => 'vert', 'apple' => 'vert', 'pistachio' => 'vert',
+		'quetzal' => 'vert', 'spring' => 'vert', 'calypso' => 'vert', 'emerald' => 'vert',
+
+		// Bleus, cyans, turquoises.
+		'sky' => 'bleu', 'ocean' => 'bleu', 'oasis' => 'bleu', 'sea' => 'bleu',
+		'river' => 'bleu', 'royal' => 'bleu', 'indigo' => 'bleu', 'lapis' => 'bleu',
+		'saphire' => 'bleu', 'sapphire' => 'bleu', 'neptune' => 'bleu', 'azur' => 'bleu',
+		'azure' => 'bleu', 'boreal' => 'bleu', 'winter' => 'bleu', 'pacific' => 'bleu',
+		'modern' => 'bleu', 'dolphin' => 'bleu',
+		'petrol' => 'turquoise', 'teal' => 'turquoise', 'peacock' => 'turquoise',
+		'lagoon' => 'turquoise', 'java' => 'turquoise',
+		'aqua' => 'cyan', 'water' => 'cyan', 'topaz' => 'cyan', 'breeze' => 'cyan',
+		'drop' => 'cyan', 'ice' => 'cyan', 'iceberg' => 'cyan', 'icerberg' => 'cyan',
+		'iseberg' => 'cyan', 'iceland' => 'cyan', 'aquarius' => 'cyan', 'crystal' => 'cyan',
+
+		// Roses et violets.
+		'flamingo' => 'rose', 'tulip' => 'rose', 'raspberry' => 'rose', 'rasberry' => 'rose',
+		'sandia' => 'rose', 'pomelo' => 'rose', 'magenta' => 'rose', 'berry' => 'rose',
+		'blueberry' => 'violet', 'orchid' => 'violet', 'lilac' => 'violet',
+		'cosmos' => 'violet', 'cosmic' => 'violet', 'astral' => 'violet', 'astra' => 'violet',
+
+		// Gris, blancs, noirs.
+		'storm' => 'gris', 'strom' => 'gris', 'stotm' => 'gris', 'thunder' => 'gris',
+		'tornado' => 'gris', 'haze' => 'gris', 'nimbus' => 'gris', 'cloud' => 'gris',
+		'fuel' => 'gris', 'magic' => 'noir',
+
+		// Marrons et tons terre.
+		'earth' => 'marron', 'earh' => 'marron', 'hearth' => 'marron', 'dune' => 'marron',
+		'sisal' => 'marron', 'sand' => 'marron', 'brown' => 'marron', 'chocolat' => 'marron',
+		'chocolate' => 'marron', 'cafe' => 'marron', 'sable' => 'marron', 'terre' => 'marron',
+		'taupe' => 'marron', 'kaki' => 'marron', 'bronze' => 'marron',
+
+		// Fluos.
+		'fluor' => 'jaune fluo', 'neon' => 'rose fluo',
+
+		// Multicolores.
+		'multicolor' => 'multicolore', 'multicolores' => 'multicolore',
+		'multicouleur' => 'multicolore', 'multicouleurs' => 'multicolore',
+		'mulicouleur' => 'multicolore', 'multi' => 'multicolore', 'multiples' => 'multicolore',
+		'divers' => 'multicolore', 'arlequin' => 'multicolore', 'rasta' => 'multicolore',
+		'tribal' => 'multicolore', 'spectral' => 'multicolore', 'spectre' => 'multicolore',
+		'spectra' => 'multicolore', 'rainbow' => 'multicolore', 'arc en ciel' => 'multicolore',
+		'holi' => 'multicolore', 'exotic' => 'multicolore', 'tropical' => 'multicolore',
+		'jamaica' => 'multicolore', 'fusion' => 'multicolore', 'harmony' => 'multicolore',
+		'harmonie' => 'multicolore', 'gala' => 'multicolore', 'samba' => 'multicolore',
+		'aurora' => 'multicolore', 'toutes' => 'multicolore',
+	) );
 }
 
 /**
@@ -883,6 +995,21 @@ function gacct_extraire_couleurs( $saisie ) {
     $palette = gacct_couleurs_voile();
     $texte   = ' ' . strtolower( remove_accents( (string) $saisie ) ) . ' ';
     $trouve  = array();
+
+    // Separateurs elargis : sans cela « MATRIX (jaune) » ou « Bleue/blanc1 » ne
+    // livrent rien, la parenthese restant collee au nom de couleur.
+    $texte = preg_replace( '/[()\\[\\].,:;\\/+\\-&"\']+/u', ' ', $texte );
+    $texte = preg_replace( '/\\s+/', ' ', $texte );
+
+    // Synonymes (variantes fr, anglais, coloris commerciaux), du plus long au
+    // plus court pour que « vert fluo » ne soit pas casse par « vert ».
+    $synonymes = gacct_couleurs_synonymes();
+    uksort( $synonymes, function ( $a, $b ) {
+        return strlen( $b ) - strlen( $a );
+    } );
+    foreach ( $synonymes as $de => $vers ) {
+        $texte = preg_replace( '/\\b' . preg_quote( $de, '/' ) . '\\b/u', ' ' . $vers . ' ', $texte );
+    }
 
     // 1. Noms composes, du plus long au plus court, retires du texte au passage.
     $composes = array_filter( array_keys( $palette ), function ( $nom ) {
@@ -902,7 +1029,7 @@ function gacct_extraire_couleurs( $saisie ) {
 
     // 2. Noms simples sur ce qu'il reste, en conservant leur position d'origine.
     $offset = 0;
-    foreach ( preg_split( '/[\s,\/\+\-]+/', trim( $texte ) ) as $mot ) {
+    foreach ( preg_split( '/\s+/', trim( $texte ) ) as $mot ) {
         if ( '' !== $mot && isset( $palette[ $mot ] ) ) {
             $trouve[ strpos( $texte, $mot, $offset ) ] = $palette[ $mot ];
             $offset = strpos( $texte, $mot, $offset ) + strlen( $mot );
@@ -911,7 +1038,17 @@ function gacct_extraire_couleurs( $saisie ) {
 
     ksort( $trouve );
 
-    return array_slice( array_values( $trouve ), 0, 4 );
+    // Dedoublonnage : un synonyme et le nom lui-meme peuvent designer la meme
+    // couleur a deux positions (« bordeaux rouge blanc » -> rouge, rouge, blanc).
+    $unique = array();
+    foreach ( $trouve as $teintes ) {
+        $cle = $teintes['base'] . '|' . $teintes['light'];
+        if ( ! isset( $unique[ $cle ] ) ) {
+            $unique[ $cle ] = $teintes;
+        }
+    }
+
+    return array_slice( array_values( $unique ), 0, 4 );
 }
 
 /**

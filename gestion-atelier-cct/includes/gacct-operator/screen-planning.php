@@ -19,8 +19,8 @@ function gacct_op_render_planning_screen() {
 	global $wpdb;
 	$day_start = ( new DateTimeImmutable( $today, wp_timezone() ) )->getTimestamp();
 	$next_ts   = $wpdb->get_var( $wpdb->prepare(
-		"SELECT MIN(CAST(date_reservee AS UNSIGNED)) FROM {$wpdb->prefix}jet_cct_occupation_atelier
-		 WHERE cct_status = 'publish' AND CAST(date_reservee AS UNSIGNED) >= %d",
+		"SELECT MIN(date_reservee) FROM {$wpdb->prefix}jet_cct_occupation_atelier
+		 WHERE cct_status = 'publish' AND date_reservee >= %d",
 		$day_start
 	) );
 	?>

@@ -1212,7 +1212,7 @@ function gacct_pay_release_noshow_slots() {
 			 LEFT JOIN {$rev_table} r ON r.order_id = o.order_id
 			 WHERE o.cct_status = 'publish'
 			   AND o.order_id > 0
-			   AND CAST(o.date_reservee AS UNSIGNED) < %d",
+			   AND o.date_reservee < %d",
 			$limit
 		),
 		ARRAY_A

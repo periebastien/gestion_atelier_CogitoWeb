@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Kojito Acompte Produit
  * Description: Gere les acomptes WooCommerce puis le paiement du solde sur la meme commande.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: Kojito
  * Text Domain: kojito-acompte
  */
@@ -45,6 +45,11 @@ class Kojito_Acompte_Produit {
 
 		add_action( 'kojito_declencher_paiement_solde', [ $this, 'declencher_paiement_solde' ], 10, 1 );
 		add_filter( 'woocommerce_pay_order_button_text', [ $this, 'modifier_texte_bouton_paiement_solde' ] );
+
+		// Affichage des commandes (confirmation, espace client, emails) : montrer
+		// les prix reels et non les montants d'acompte.
+		add_filter( 'woocommerce_order_formatted_line_subtotal', [ $this, 'afficher_prix_initial_ligne' ], 10, 3 );
+		add_filter( 'woocommerce_get_order_item_totals', [ $this, 'detailler_acompte_et_solde' ], 10, 2 );
 
 		// Colonne "Acompte" dans la liste des produits de l'admin.
 		add_filter( 'manage_edit-product_columns', [ $this, 'ajouter_colonne_acompte' ], 20 );
@@ -243,6 +248,234 @@ class Kojito_Acompte_Produit {
 		}
 	}
 
+	/**
+	 * Prix catalogue d'une ligne de panier, quantite comprise.
+	 *
+	 * Le prix porte par $cart_item['data'] a ete ramene a l'acompte par
+	 * modifier_prix_panier_acompte() : pour afficher ce que la ligne coute
+	 * reellement, on repart donc du produit d'origine.
+	 *
+	 * @param array $cart_item
+	 * @param bool  $ht        True pour le montant hors taxe.
+	 * @return float
+	 */
+	public static function prix_catalogue_ligne( $cart_item, $ht = false ) {
+		$product_id = ! empty( $cart_item['variation_id'] ) ? $cart_item['variation_id'] : ( $cart_item['product_id'] ?? 0 );
+		$produit    = $product_id ? wc_get_product( $product_id ) : null;
+
+		if ( ! $produit ) {
+			return 0.0;
+		}
+
+		$qty = isset( $cart_item['quantity'] ) ? (float) $cart_item['quantity'] : 1;
+
+		return $ht
+			? (float) wc_get_price_excluding_tax( $produit, [ 'qty' => $qty ] )
+			: (float) wc_get_price_including_tax( $produit, [ 'qty' => $qty ] );
+	}
+
+	/**
+	 * Somme des lignes du panier a leur prix catalogue (hors livraison).
+	 *
+	 * @param bool $ht
+	 * @return float
+	 */
+	public static function sous_total_catalogue_panier( $ht = false ) {
+		if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+			return 0.0;
+		}
+
+		$total = 0.0;
+
+		foreach ( WC()->cart->get_cart() as $cart_item ) {
+			$total += self::prix_catalogue_ligne( $cart_item, $ht );
+		}
+
+		return round( $total, wc_get_price_decimals() );
+	}
+
+	/**
+	 * Total reel du panier : ce que le client devra au bout du compte,
+	 * acompte et solde confondus.
+	 *
+	 * @param bool $ht
+	 * @return float
+	 */
+	public static function total_catalogue_panier( $ht = false ) {
+		if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+			return 0.0;
+		}
+
+		$total = self::sous_total_catalogue_panier( $ht );
+
+		$total += (float) WC()->cart->get_shipping_total();
+		if ( ! $ht ) {
+			$total += (float) WC()->cart->get_shipping_tax();
+		}
+
+		// La remise s'applique sur les prix reduits : on la reporte telle quelle,
+		// c'est le seul montant que WooCommerce garantit coherent avec le panier.
+		$total -= (float) WC()->cart->get_discount_total();
+		if ( ! $ht ) {
+			$total -= (float) WC()->cart->get_discount_tax();
+		}
+
+		return round( max( 0, $total ), wc_get_price_decimals() );
+	}
+
+	/**
+	 * Montant reellement demande au client a la commande.
+	 *
+	 * @return float
+	 */
+	public static function acompte_panier() {
+		if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+			return 0.0;
+		}
+
+		return round( (float) WC()->cart->get_total( 'edit' ), wc_get_price_decimals() );
+	}
+
+	/**
+	 * Reste a payer apres l'acompte. 0 si la commande se regle en une fois.
+	 *
+	 * @return float
+	 */
+	public static function solde_panier() {
+		return round( max( 0, self::total_catalogue_panier() - self::acompte_panier() ), wc_get_price_decimals() );
+	}
+	/**
+	 * La commande est-elle encore en paiement fractionne ?
+	 *
+	 * Une fois le solde regle, WooCommerce porte deja les montants reels :
+	 * il ne faut plus rien reecrire, sous peine d'afficher deux fois la meme
+	 * chose ou de faire mentir le total.
+	 *
+	 * @param WC_Order $order
+	 * @return bool
+	 */
+	private function commande_en_deux_temps( $order ) {
+		return $order instanceof WC_Order
+			&& $this->commande_contient_acompte( $order )
+			&& self::PHASE_SOLDE_PAYE !== $order->get_meta( self::META_PHASE_PAIEMENT );
+	}
+
+	/**
+	 * Total HT reel d'une commande, pendant du get_total_initial().
+	 *
+	 * @param WC_Order $order
+	 * @return float
+	 */
+	public static function get_total_initial_ht( $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			return 0.0;
+		}
+
+		$total = 0;
+
+		foreach ( $order->get_items() as $item ) {
+			$ht     = self::prix_initial_ht_ligne( $item );
+			$total += null !== $ht ? $ht : (float) $item->get_total();
+		}
+
+		foreach ( $order->get_items( [ 'shipping', 'fee' ] ) as $item ) {
+			$total += (float) $item->get_total();
+		}
+
+		$total -= (float) $order->get_discount_total();
+
+		return round( max( 0, $total ), wc_get_price_decimals() );
+	}
+
+	/**
+	 * Montant affiche pour une ligne de commande : son prix catalogue.
+	 *
+	 * @param string        $subtotal HTML calcule par WooCommerce.
+	 * @param WC_Order_Item $item
+	 * @param WC_Order      $order
+	 * @return string
+	 */
+	public function afficher_prix_initial_ligne( $subtotal, $item, $order ) {
+		if ( ! $this->commande_en_deux_temps( $order ) ) {
+			return $subtotal;
+		}
+
+		$initial = self::prix_initial_ttc_ligne( $item );
+
+		if ( null === $initial ) {
+			return $subtotal;
+		}
+
+		return wc_price( $initial, [ 'currency' => $order->get_currency() ] );
+	}
+
+	/**
+	 * Pied du recapitulatif : totaux reels, puis acompte et solde.
+	 *
+	 * @param array    $rows
+	 * @param WC_Order $order
+	 * @return array
+	 */
+	public function detailler_acompte_et_solde( $rows, $order ) {
+		if ( ! $this->commande_en_deux_temps( $order ) ) {
+			return $rows;
+		}
+
+		$devise = [ 'currency' => $order->get_currency() ];
+		$total  = self::get_total_initial( $order );
+
+		// 0 est un acompte valide : on ne se rabat sur le total qu'en l'absence de meta.
+		$acompte_meta = $order->get_meta( self::META_ACOMPTE_PAYE );
+		$acompte      = '' === $acompte_meta ? (float) $order->get_total() : (float) $acompte_meta;
+		$solde        = round( max( 0, $total - $acompte ), wc_get_price_decimals() );
+
+		// Sous-total : les lignes a leur prix catalogue, livraison exclue.
+		if ( isset( $rows['cart_subtotal'] ) ) {
+			$sous_total = 0;
+
+			foreach ( $order->get_items() as $item ) {
+				$initial     = self::prix_initial_ttc_ligne( $item );
+				$sous_total += null !== $initial
+					? $initial
+					: (float) $item->get_total() + (float) $item->get_total_tax();
+			}
+
+			$rows['cart_subtotal']['value'] = wc_price( $sous_total, $devise );
+		}
+
+		// TVA du total reel, et non celle du seul acompte.
+		$tva = round( $total - self::get_total_initial_ht( $order ), wc_get_price_decimals() );
+
+		foreach ( $rows as $cle => $ligne ) {
+			if ( 'tax' === $cle || 0 === strpos( (string) $cle, 'tax_' ) ) {
+				$rows[ $cle ]['value'] = wc_price( $tva, $devise );
+			}
+		}
+
+		if ( isset( $rows['order_total'] ) ) {
+			$rows['order_total']['value'] = wc_price( $total, $devise );
+		}
+
+		if ( $solde <= 0 ) {
+			return $rows;
+		}
+
+		$regle = $order->is_paid() || $order->has_status( 'acompte-paye' );
+
+		$rows['kojito_acompte'] = [
+			'label' => $regle
+				? __( 'Acompte réglé', 'kojito-acompte' )
+				: __( 'Acompte à régler', 'kojito-acompte' ),
+			'value' => wc_price( $acompte, $devise ),
+		];
+
+		$rows['kojito_solde'] = [
+			'label' => __( 'Solde après l’intervention', 'kojito-acompte' ),
+			'value' => wc_price( $solde, $devise ),
+		];
+
+		return $rows;
+	}
 	public function enregistrer_statut_acompte_paye() {
 		register_post_status(
 			'wc-acompte-paye',

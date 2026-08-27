@@ -1758,6 +1758,42 @@
 			} );
 		}
 
+		/**
+		 * Note affichée quand le groupe des suspentes est fermé faute
+		 * d'intervention choisie. Créée à part de la note de devis : les deux
+		 * verrous sont indépendants, même s'ils ne peuvent pas coexister.
+		 */
+		var noteVerrou = null;
+
+		function initNoteVerrou() {
+			var accS = accordions.filter( function ( a ) {
+				return a.name === suspentesName;
+			} )[ 0 ];
+
+			if ( ! accS ) {
+				return;
+			}
+
+			noteVerrou = document.createElement( 'p' );
+			noteVerrou.className = 'gacct-v2-repair-note';
+			noteVerrou.textContent = v2i18n.suspentesVerrou || '';
+			noteVerrou.hidden = true;
+			accS.body.insertBefore( noteVerrou, accS.body.firstChild );
+		}
+
+		/**
+		 * Une révision ou un pliage de secours est-il déjà choisi ?
+		 *
+		 * Les travaux sur suspentes viennent EN COMPLÉMENT d'une intervention :
+		 * seuls ces deux groupes ouvrent le droit de les commander.
+		 */
+		function interventionChoisie() {
+			return groupesUniques.some( function ( nom ) {
+				return fieldInputs( nom ).some( function ( el ) {
+					return 'checkbox' === el.type && el.checked;
+				} );
+			} );
+		}
 		function majExclusiviteDevis() {
 			var inputDevis = inputsSuspentes().filter( estDevis )[ 0 ];
 			if ( ! inputDevis ) {
@@ -1787,16 +1823,32 @@
 				if ( noteDevis ) {
 					noteDevis.hidden = false;
 				}
+				if ( noteVerrou ) {
+					noteVerrou.hidden = true;
+				}
 			} else {
+				// Second verrou, indépendant du devis : sans révision ni pliage de
+				// secours choisi, les suspentes restent fermées (règle du 27/08/2026).
+				var ouvert = interventionChoisie();
+
 				autres.forEach( function ( el ) {
-					el.disabled = false;
+					// Une prestation décochée après coup ne doit pas laisser
+					// derrière elle des suspentes orphelines dans le panier.
+					if ( ! ouvert && el.checked ) {
+						el.checked = false;
+						el.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+					}
+					el.disabled = ! ouvert;
 				} );
 				var accS2 = accordions.filter( function ( a ) { return a.name === suspentesName; } )[ 0 ];
 				if ( accS2 ) {
-					accS2.body.classList.remove( 'is-locked' );
+					accS2.body.classList.toggle( 'is-locked', ! ouvert );
 				}
 				if ( noteDevis ) {
 					noteDevis.hidden = true;
+				}
+				if ( noteVerrou ) {
+					noteVerrou.hidden = ouvert;
 				}
 			}
 
@@ -2193,6 +2245,7 @@
 		initQuantites();
 		initBiplace();
 		initCarteDevis();
+		initNoteVerrou();
 
 		/* ---------------------------------------------------------------
 		 * Brouillon local : ce qui ne vit pas dans un champ

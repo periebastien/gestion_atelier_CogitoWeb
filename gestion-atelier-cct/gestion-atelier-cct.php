@@ -37,6 +37,8 @@ require_once __DIR__ . '/includes/gacct-report-forms-ui.php';
 require_once __DIR__ . '/includes/gacct-frontend.php';
 require_once __DIR__ . '/includes/gacct-frontend-form.php';
 require_once __DIR__ . '/includes/gacct-voiles.php';
+require_once __DIR__ . '/includes/gacct-historique.php';
+require_once __DIR__ . '/includes/gacct-historique-ui.php';
 require_once __DIR__ . '/includes/gacct-dashboard.php';
 require_once __DIR__ . '/includes/gacct-profile.php';
 require_once __DIR__ . '/includes/gacct-debug.php';
@@ -1109,7 +1111,7 @@ final class GACCT_Plugin {
 				COALESCE(SUM(TIME_TO_SEC(o.duree_totale_commande) / 3600), 0) AS occupied_hours
 			FROM {$calendar_table} c
 			LEFT JOIN {$occupation_table} o
-				ON CAST(o.date_reservee AS UNSIGNED) = CAST(c.date_jour AS UNSIGNED)
+				ON o.date_reservee = c.date_jour
 				AND o.cct_status = %s
 				AND EXISTS (
 					SELECT 1
@@ -1124,10 +1126,10 @@ final class GACCT_Plugin {
 						)
 				)
 			WHERE c.cct_status = %s
-				AND CAST(c.date_jour AS UNSIGNED) >= %d
-				AND CAST(c.date_jour AS UNSIGNED) < %d
+				AND c.date_jour >= %d
+				AND c.date_jour < %d
 			GROUP BY c._ID, c.date_jour, c.heures_totales_dispo
-			ORDER BY CAST(c.date_jour AS UNSIGNED) ASC
+			ORDER BY c.date_jour ASC
 			",
 			'publish',
 			'publish',
@@ -1226,9 +1228,9 @@ final class GACCT_Plugin {
 				ON r._ID = {$revision_id_expr}
 				AND r.cct_status = %s
 			WHERE o.cct_status = %s
-				AND CAST(o.date_reservee AS UNSIGNED) >= %d
-				AND CAST(o.date_reservee AS UNSIGNED) < %d
-			ORDER BY CAST(o.date_reservee AS UNSIGNED) ASC, o.cct_created ASC, o._ID ASC, revision_id ASC
+				AND o.date_reservee >= %d
+				AND o.date_reservee < %d
+			ORDER BY o.date_reservee ASC, o.cct_created ASC, o._ID ASC, revision_id ASC
 			",
 			(string) $this->relation_id( 'revision_to_occupation', self::REL_REV_OCC ),
 			(string) $this->relation_id( 'client_to_revision', self::REL_CLIENT_REV ),
@@ -1527,6 +1529,12 @@ final class GACCT_Plugin {
 		if ( 6 === $state ) {
 			$order->add_order_note( __( 'Etat 6 detecte : intervention finie, preparation du paiement du solde lancee.', 'gestion-atelier-cct' ) );
 			$order->save();
+
+			// La pause n'a plus de sens une fois la facture finale partie : on la
+			// lève ici au lieu d'attendre l'opérateur (Timothée, 18/08/2026).
+			if ( function_exists( 'gacct_hold_release_auto' ) ) {
+				gacct_hold_release_auto( $revision_id, $order, __( 'facture finale envoyée au client', 'gestion-atelier-cct' ) );
+			}
 
 			do_action( 'kojito_declencher_paiement_solde', $order->get_id() );
 

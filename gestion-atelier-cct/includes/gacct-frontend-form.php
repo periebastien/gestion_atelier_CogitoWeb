@@ -232,6 +232,7 @@ function gacct_demande_v2_config() {
 				'qtyPlus'         => __( 'Ajouter', 'gestion-atelier-cct' ),
 				'repairTitre'     => __( 'Besoin d’une réparation ?', 'gestion-atelier-cct' ),
 				'repairDesc'      => __( 'Nous examinons votre matériel à l’atelier, puis nous vous envoyons un devis détaillé par e-mail. Vous l’acceptez ou le refusez : <strong>rien n’est réparé sans votre accord.</strong>', 'gestion-atelier-cct' ),
+				'suspentesVerrou' => __( 'Choisissez d’abord une révision ou un pliage de secours : les travaux sur suspentes s’ajoutent à une intervention.', 'gestion-atelier-cct' ),
 				'repairNote'      => __( 'Vous avez demandé un devis de réparation : inutile de choisir ici, l’atelier listera précisément ce qu’il faut remplacer.', 'gestion-atelier-cct' ),
 				'suppBiplace'     => __( '+ Supplément biplace : %s', 'gestion-atelier-cct' ),
 				// --- Navigation / autres étapes ---
@@ -877,12 +878,12 @@ function gacct_demande_availability_map() {
 					SELECT SUM( TIME_TO_SEC( o.duree_totale_commande ) / 3600 )
 					FROM {$occupation_table} o
 					WHERE o.cct_status = %s
-						AND CAST( o.date_reservee AS UNSIGNED ) = CAST( c.date_jour AS UNSIGNED )
+						AND o.date_reservee = c.date_jour
 				), 0 ) AS occupied_hours
 			FROM {$calendar_table} c
 			WHERE c.cct_status = %s
-				AND CAST( c.date_jour AS UNSIGNED ) >= %d
-			ORDER BY CAST( c.date_jour AS UNSIGNED ) ASC
+				AND c.date_jour >= %d
+			ORDER BY c.date_jour ASC
 			",
 			'publish',
 			'publish',
@@ -897,8 +898,8 @@ function gacct_demande_availability_map() {
 				0 AS occupied_hours
 			FROM {$calendar_table} c
 			WHERE c.cct_status = %s
-				AND CAST( c.date_jour AS UNSIGNED ) >= %d
-			ORDER BY CAST( c.date_jour AS UNSIGNED ) ASC
+				AND c.date_jour >= %d
+			ORDER BY c.date_jour ASC
 			",
 			'publish',
 			$from_ts
