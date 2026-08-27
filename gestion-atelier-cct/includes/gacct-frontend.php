@@ -767,10 +767,28 @@ function jwcct_render_order_status_tracker( $value, $order_id = 0 ) {
 
     // Bouton « Imprimer le bon d'intervention » (etats 0-1 : tant que le colis
     // n'est pas receptionne).
+    //
+    // Verrouille tant que le paiement n'est pas encaisse, comme sur la page de
+    // confirmation et sur view-order (work_order_locked) : le bon vaut prise en
+    // charge du materiel et porte le QR de reception. La page elle-meme renvoie
+    // deja un 403, mais le tableau de bord proposait un lien actif qui menait
+    // droit dessus.
     $workorder_html = '';
+    $wo_visible     = $state <= 1 && $order && function_exists( 'gacct_wo_print_url' )
+        && ! $order->has_status( array( 'cancelled', 'refunded', 'trash' ) );
+    $wo_locked      = $wo_visible && function_exists( 'gacct_order_payment_received' )
+        && ! gacct_order_payment_received( $order );
 
-    if ( $state <= 1 && $order && function_exists( 'gacct_wo_print_url' )
-        && ! $order->has_status( array( 'cancelled', 'refunded', 'trash' ) ) ) {
+    if ( $wo_locked ) {
+        $workorder_html = sprintf(
+            '<span class="gacct-workorder-print is-disabled" aria-disabled="true" title="%s">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/></svg>
+                <span>%s</span>
+            </span>',
+            esc_attr__( 'Le bon d\'intervention sera disponible dès la réception de votre paiement.', 'gestion-atelier-cct' ),
+            esc_html__( 'Imprimer le bon d\'intervention', 'gestion-atelier-cct' )
+        );
+    } elseif ( $wo_visible ) {
         $workorder_html = sprintf(
             '<a class="gacct-workorder-print" href="%s" target="_blank" rel="noopener">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/></svg>

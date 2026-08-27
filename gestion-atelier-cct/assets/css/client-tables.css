@@ -417,6 +417,18 @@
 	color: var(--teal-dark);
 }
 
+:is(#scroll, #scroll-materiel) .status-stack .gacct-workorder-print.is-disabled {
+	border-color: #d5d8dc;
+	background: #f6f7f8;
+	color: #9aa0a6;
+	cursor: not-allowed;
+}
+
+:is(#scroll, #scroll-materiel) .status-stack .gacct-workorder-print.is-disabled:hover {
+	background: #f6f7f8;
+	color: #9aa0a6;
+}
+
 :is(#scroll, #scroll-materiel) .status-stack .gacct-workorder-print svg {
 	flex: 0 0 auto;
 	display: block;
