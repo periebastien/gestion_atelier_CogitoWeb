@@ -78,3 +78,25 @@ function gacct_pack_ar_models() {
 		),
 	);
 }
+
+/* -----------------------------------------------------------------------------
+ * Documentation interne (écran Gestion Atelier > Documentation, module
+ * gacct-docs.php). Les fichiers HTML vivent dans docs/ du pack.
+ * -------------------------------------------------------------------------- */
+
+add_filter( 'gacct_docs', 'gacct_pack_ar_docs' );
+
+function gacct_pack_ar_docs( $docs ) {
+	$docs['cycle-vie'] = array(
+		'title' => __( 'Cycle de vie d\'une révision', 'gacct-pack-ar' ),
+		'desc'  => __( 'La référence complète du système : les 10 états, les transitions, les automatismes, les 17 e-mails et les décisions prises.', 'gacct-pack-ar' ),
+		'file'  => GACCT_PACK_AR_DIR . '/docs/cycle-vie-revision.html',
+	);
+	$docs['guide-atelier'] = array(
+		'title' => __( 'Guide de l\'atelier', 'gacct-pack-ar' ),
+		'desc'  => __( 'Le mode d\'emploi de la console au quotidien, écran par écran.', 'gacct-pack-ar' ),
+		'file'  => GACCT_PACK_AR_DIR . '/docs/guide-atelier.html',
+	);
+
+	return $docs;
+}

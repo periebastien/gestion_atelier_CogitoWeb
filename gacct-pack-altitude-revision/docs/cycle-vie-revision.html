@@ -1,0 +1,682 @@
+<title>Cycle de vie d'une révision</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #fafcfc;
+    --surface: #ffffff;
+    --surface-alt: #eef4f4;
+    --ink: #1c2a2a;
+    --ink-2: #46605f;
+    --ink-3: #6b8382;
+    --line: #d8e4e3;
+    --accent: #0e8b8a;
+    --accent-soft: #d9efee;
+    --ok: #2e7d4f;
+    --ok-soft: #ddefe4;
+    --warn: #a06a14;
+    --warn-soft: #f5ead2;
+    --crit: #b3402e;
+    --crit-soft: #f6ded9;
+    --code-bg: #eef4f4;
+    --shadow: 0 1px 3px rgba(28, 42, 42, 0.08);
+  }
+  :root:not([data-theme="light"]) { }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101919;
+      --surface: #16211f;
+      --surface-alt: #1c2a28;
+      --ink: #e2ecea;
+      --ink-2: #a7bcba;
+      --ink-3: #7c9391;
+      --line: #2a3b39;
+      --accent: #3cc3c1;
+      --accent-soft: #123534;
+      --ok: #62c48d;
+      --ok-soft: #16332a;
+      --warn: #dfa94e;
+      --warn-soft: #392c14;
+      --crit: #e6796a;
+      --crit-soft: #3c211c;
+      --code-bg: #1c2a28;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101919;
+    --surface: #16211f;
+    --surface-alt: #1c2a28;
+    --ink: #e2ecea;
+    --ink-2: #a7bcba;
+    --ink-3: #7c9391;
+    --line: #2a3b39;
+    --accent: #3cc3c1;
+    --accent-soft: #123534;
+    --ok: #62c48d;
+    --ok-soft: #16332a;
+    --warn: #dfa94e;
+    --warn-soft: #392c14;
+    --crit: #e6796a;
+    --crit-soft: #3c211c;
+    --code-bg: #1c2a28;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Public Sans", "Segoe UI", system-ui, sans-serif;
+    font-size: 15.5px;
+    line-height: 1.65;
+    margin: 0;
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 0 28px 90px; }
+  .prose { max-width: 74ch; }
+
+  h1, h2, h3 {
+    font-family: "Bricolage Grotesque", "Public Sans", sans-serif;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+  h1 { font-size: 2.5rem; font-weight: 700; margin: 0 0 10px; letter-spacing: -0.01em; }
+  h2 { font-size: 1.55rem; font-weight: 700; margin: 0 0 6px; }
+  h3 { font-size: 1.12rem; font-weight: 600; margin: 28px 0 8px; }
+  p { margin: 0 0 14px; }
+  a { color: var(--accent); }
+
+  header.doc {
+    padding: 56px 0 26px;
+    border-bottom: 3px solid var(--accent);
+    margin-bottom: 8px;
+  }
+  .kicker {
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 26px;
+    color: var(--ink-2);
+    font-size: 0.85rem;
+    margin-top: 14px;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+
+  nav.toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    padding: 18px 0 8px;
+    margin-bottom: 30px;
+    border-bottom: 1px solid var(--line);
+  }
+  nav.toc a {
+    text-decoration: none;
+    color: var(--ink-2);
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+  }
+  nav.toc a:hover, nav.toc a:focus-visible { color: var(--accent); border-color: var(--accent); }
+
+  section { margin: 46px 0; scroll-margin-top: 20px; }
+  .secnum {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.8rem;
+    color: var(--accent);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .lede { color: var(--ink-2); font-size: 1.02rem; margin-bottom: 20px; }
+
+  .callout {
+    background: var(--accent-soft);
+    border-left: 4px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin: 18px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-color: var(--warn); }
+  .callout.crit { background: var(--crit-soft); border-color: var(--crit); }
+  .callout p:last-child { margin-bottom: 0; }
+
+  code, .file {
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 0.82em;
+    background: var(--code-bg);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+  .file { white-space: nowrap; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); margin: 16px 0 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.86rem; }
+  th {
+    text-align: left;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--ink-3);
+    padding: 11px 14px 8px;
+    border-bottom: 2px solid var(--line);
+    background: var(--surface-alt);
+    white-space: nowrap;
+  }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  td.nowrap { white-space: nowrap; }
+  .tablecap { font-size: 0.8rem; color: var(--ink-3); margin: 6px 2px 0; }
+
+  .st {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 4px;
+    border-radius: 6px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.78rem;
+    font-weight: 600;
+    background: var(--accent-soft);
+    color: var(--accent);
+    vertical-align: -3px;
+  }
+  .st.term { background: var(--ok-soft); color: var(--ok); }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 2px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .badge.crit { background: var(--crit-soft); color: var(--crit); }
+  .badge.warn { background: var(--warn-soft); color: var(--warn); }
+  .badge.ok   { background: var(--ok-soft); color: var(--ok); }
+  .badge.info { background: var(--accent-soft); color: var(--accent); }
+
+  .auto { color: var(--ok); font-weight: 600; }
+  .manu { color: var(--warn); font-weight: 600; }
+  .client { color: var(--accent); font-weight: 600; }
+
+  ul, ol { margin: 0 0 14px; padding-left: 24px; }
+  li { margin-bottom: 6px; }
+  li::marker { color: var(--accent); }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin: 18px 0; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+    box-shadow: var(--shadow);
+  }
+  .card h4 { margin: 0 0 8px; font-size: 0.95rem; font-family: "Bricolage Grotesque", sans-serif; font-weight: 600; }
+  .card p { font-size: 0.88rem; margin-bottom: 8px; }
+  .card p:last-child { margin-bottom: 0; }
+  .card .verdict { font-size: 0.78rem; }
+
+  .scenario {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 20px 22px;
+    margin: 16px 0;
+    box-shadow: var(--shadow);
+  }
+  .scenario h3 { margin-top: 0; }
+  .scenario dl { margin: 0; display: grid; grid-template-columns: 130px 1fr; gap: 6px 16px; font-size: 0.88rem; }
+  .scenario dt { font-weight: 700; color: var(--ink-3); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; padding-top: 2px; }
+  .scenario dd { margin: 0; }
+  @media (max-width: 560px) { .scenario dl { grid-template-columns: 1fr; gap: 2px; } .scenario dt { margin-top: 8px; } }
+
+  .qlist li { margin-bottom: 14px; }
+  .qlist b { color: var(--ink); }
+
+  footer.doc {
+    margin-top: 60px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-3);
+    font-size: 0.8rem;
+  }
+</style>
+
+<div class="wrap">
+
+<header class="doc">
+  <div class="kicker">Plateforme de révision de parapentes · revision.cogitoweb.net</div>
+  <h1>Cycle de vie d'une révision</h1>
+  <p class="lede prose">Référence exhaustive et vérifiée de tout ce qui pilote une demande de révision, de la prise de rendez-vous à la clôture ou à l'abandon. L'enquête du 27 août a dressé l'état des lieux ; le chantier des 27 et 28 août a corrigé les trous : ce document décrit le système désormais en production.</p>
+  <div class="meta">
+    <span>Enquête du <b>27 août 2026</b>, chantier soldé le <b>28 août 2026</b></span>
+    <span>Source : <b>serveur de production</b> (code, configuration, base, crons), accès SSH non-root</span>
+    <span>Dépôt à jour : commit <b>6f836ff</b> (thèmes enfants inclus)</span>
+  </div>
+</header>
+
+<div class="callout prose">
+  <p><strong>Mise à jour du 28/08/2026.</strong> Les sections 3 à 6 décrivent le fonctionnement actuel, après chantier. Les sections 7 à 9 conservent les constats et questions de l'enquête, chacun annoté de sa résolution ou de la décision prise. Le mode d'emploi destiné à l'atelier est un document séparé (« Guide de l'atelier »).</p>
+</div>
+
+<nav class="toc">
+  <a href="#perime">1 · Point de départ périmé</a>
+  <a href="#reponses">2 · Les six incertitudes</a>
+  <a href="#machine">3 · Machine à états</a>
+  <a href="#transitions">4 · Tableau des transitions</a>
+  <a href="#crons">5 · Automatismes</a>
+  <a href="#emails">6 · E-mails</a>
+  <a href="#trous">7 · Trous : résolus</a>
+  <a href="#cible">8 · Processus cible : réalisé</a>
+  <a href="#questions">9 · Questions : tranchées</a>
+</nav>
+
+<section id="perime">
+  <span class="secnum">1</span>
+  <h2>Le point de départ de l'enquête était périmé</h2>
+  <div class="prose">
+    <p>Le tableau « déjà établi » (états 1 à 7 plus un état 9 local) décrivait la copie locale, qui date d'avant fin juillet. La production a été <strong>renumérotée le 28/07/2026</strong> : la machine compte désormais <strong>9 états, de 0 à 8</strong>, avec un état 0 « En attente de paiement » et un état terminal 8 « Matériel réexpédié ». Le document <span class="file">prompt-refonte-etats.md</span>, à la racine du site, est le cahier des charges de cette refonte, entièrement réalisée.</p>
+    <p>Surtout : <strong>tout un circuit de rappels et d'annulations automatiques existe déjà en production</strong> (<span class="file">includes/gacct-payments.php</span>, environ 1 300 lignes), absent de la copie locale. Il couvre l'acompte impayé, le formulaire abandonné, le paiement échoué, le devis sans réponse et le no-show. Les deux crons qui le portent sont réellement planifiés (vérifié via <code>wp cron event list</code>).</p>
+    <p>Enfin, l'état 9 « Sans suite » écrit le 27/08 en local <strong>n'existait nulle part en production</strong> au moment de l'enquête, et avait été conçu contre l'ancienne machine locale 1 à 7. <span class="badge ok">Depuis</span> Le code local a été jeté et l'état 9 <strong>redéveloppé directement contre la prod</strong> le 27/08 (module <span class="file">includes/gacct-lifecycle.php</span>) : la machine compte désormais 10 états, de 0 à 9.</p>
+  </div>
+</section>
+
+<section id="reponses">
+  <span class="secnum">2</span>
+  <h2>Réponses aux six incertitudes</h2>
+  <div class="cards">
+    <div class="card">
+      <h4>1 · Les rappels d'acompte impayé</h4>
+      <p><span class="badge ok">Trouvés</span> Ils vivent dans <span class="file">gacct-payments.php</span>, cron horaire <code>gacct_pay_hourly_tick</code> (planifié, vérifié). Virement : relance à J+2, annulation à J+3 avec e-mail client et copie admin, commande annulée, CCT supprimés, créneau libéré. Commande non finalisée ou paiement échoué : relance à H+1, suppression au premier minuit au-delà de 6 h d'ancienneté. Les souvenirs de Bastien sont exacts.</p>
+    </div>
+    <div class="card">
+      <h4>2 · Page Kojito et action « Préparer le paiement du solde »</h4>
+      <p><span class="badge ok">Vérifié</span> En prod (Kojito 1.2.0), la page de configuration <em>et</em> l'action de commande étaient bien branchées, mais <code>envoyer_email_solde()</code> n'était <strong>jamais appelée</strong> : le template éditable de cette page était du code mort. Le vrai e-mail du solde est la notification d'état 6 du workflow, qui porte <code>{payment_url}</code>. <span class="badge ok">Depuis</span> Kojito 1.3.0 : le code mort et sa page de configuration sont supprimés.</p>
+    </div>
+    <div class="card">
+      <h4>3 · L'état 6 mystère</h4>
+      <p><span class="badge ok">Résolu</span> Dans l'ancienne numérotation, 6 = « Paiement final validé » (glossaire JetEngine 18). La renumérotation du 28/07 l'a fusionné : le paiement du solde bascule désormais automatiquement 6 vers 7. La question ne se pose plus, mais le glossaire et le champ CCT portent toujours les anciens libellés (voir trou n°8).</p>
+    </div>
+    <div class="card">
+      <h4>4 · E-mails WooCommerce natifs</h4>
+      <p><span class="badge ok">Vérifié</span> Actifs côté admin : <code>new_order</code>, <code>cancelled_order</code>, <code>failed_order</code>. Actifs côté client : on-hold (coordonnées de virement), processing, completed, refunded, failed, note, reset, nouveau compte, vérification. Désactivés : <code>customer_invoice</code> et <code>customer_cancelled_order</code> (cohérent : les templates du plugin les remplacent). <span class="badge ok">Depuis</span> Destinataires harmonisés le 27/08 : <b>Hervé + contact@cogitoweb.net</b> partout, e-mails natifs Woo comme copies admin du plugin (multi-adresses).</p>
+    </div>
+    <div class="card">
+      <h4>5 · Passerelles de paiement</h4>
+      <p><span class="badge ok">Vérifié</span> Une seule active : le <strong>virement bancaire (bacs)</strong>, IBAN réel Altitude Révision configuré. WooPayments (CB) et PayPal sont installés mais désactivés : la CB attend les clés bancaires d'Hervé (bloquant noté dans PROGRES.md). Le site est encore en noindex (<code>blog_public = 0</code>) : la bascule publique n'a pas eu lieu, les commandes en base sont des tests.</p>
+    </div>
+    <div class="card">
+      <h4>6 · Ce qui libère un créneau</h4>
+      <p><span class="badge warn">Partiel</span> À l'enquête : commande jamais payée, l'annulation à J+3 supprime occupation et révision ; commande payée sans matériel, l'occupation était <strong>supprimée</strong> à minuit ; et une <strong>annulation manuelle</strong> ne libérait rien (trou n°5). <span class="badge ok">Depuis</span> Le no-show passe l'occupation en <code>draft</code> (jamais supprimée), et <strong>toute</strong> annulation de commande libère le créneau (hook sur « cancelled »). Seule l'annulation d'un impayé continue de supprimer les CCT (rien n'a été versé).</p>
+    </div>
+  </div>
+</section>
+
+<section id="machine">
+  <span class="secnum">3</span>
+  <h2>La machine à états en production</h2>
+  <div class="prose">
+    <p>Champ <code>etat_de_la_commande</code> de la CCT <code>revision</code>, numérotation fixe 0 à 9 (l'état 9 « Sans suite » a été ajouté le 27/08). Seule voie de changement côté console : <code>gacct_op_change_state()</code> (<span class="file">gacct-operator-core.php:131</span>), qui émet lui-même le hook JetEngine déclenchant les notifications. Les effets de l'entrée en état 9 vivent dans un écouteur unique de ce hook : bascule automatique, bouton console et édition directe de la CCT produisent le même résultat.</p>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>État</th><th>Libellé</th><th>Qui y amène</th></tr></thead>
+      <tbody>
+        <tr><td><span class="st">0</span></td><td>En attente de paiement</td><td>Création de la commande au checkout, avant encaissement</td></tr>
+        <tr><td><span class="st">1</span></td><td>En attente de réception</td><td><span class="auto">Automatique</span> à l'encaissement de l'acompte</td></tr>
+        <tr><td><span class="st">2</span></td><td>Voile réceptionnée</td><td><span class="manu">Atelier</span> : « Confirmer la réception »</td></tr>
+        <tr><td><span class="st">3</span></td><td>Intervention programmée</td><td><span class="manu">Atelier</span> : « Démarrer l'intervention »</td></tr>
+        <tr><td><span class="st">4</span></td><td>Devis à valider <em>(optionnel, obligatoire si produit 696)</em></td><td><span class="manu">Atelier</span> : envoi d'un devis complémentaire</td></tr>
+        <tr><td><span class="st">5</span></td><td>Intervention à finir <em>(libellé dynamique : devis validé / refusé)</em></td><td><span class="client">Client</span> : acceptation ou refus du devis</td></tr>
+        <tr><td><span class="st">6</span></td><td>Intervention finie, solde à payer</td><td><span class="manu">Atelier</span> : « Demander le solde » (rapport PDF exigé)</td></tr>
+        <tr><td><span class="st">7</span></td><td>Révision finie, rapport disponible</td><td><span class="auto">Automatique</span> au paiement du solde</td></tr>
+        <tr><td><span class="st term">8</span></td><td>Matériel réexpédié <em>(terminal)</em></td><td><span class="manu">Atelier</span> : réexpédition, suivi obligatoire</td></tr>
+        <tr><td><span class="st term">9</span></td><td>Sans suite <em>(terminal, matériel jamais reçu)</em></td><td><span class="auto">Automatique</span> la veille du créneau au soir, ou <span class="manu">Atelier</span> : « Classer sans suite » (motif obligatoire) ; refusé si la commande n'est pas payée</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="tablecap">Chemins : sans devis 2→3→6→7→8 (les états 4 et 5 ne sont jamais traversés) ; avec devis 3→4→5→6→7→8. La sortie de l'état 9 passe par la <strong>replanification</strong> depuis le planning (republication de l'occupation, retour en état 1) : jamais de transition 9→1 nue, elle serait rebasculée le soir même. La « mise en attente » est un drapeau à part, pas un état : elle ne bloque aucune transition et se lève à la main, ou automatiquement à l'entrée en état 6.</p>
+</section>
+
+<section id="transitions">
+  <span class="secnum">4</span>
+  <h2>Tableau des transitions</h2>
+  <p class="lede prose">Une ligne par transition, avec le déclencheur, les effets techniques, l'e-mail émis et l'ancrage dans le code (plugin <code>gestion-atelier-cct</code> sauf mention).</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Transition</th><th>Déclencheur</th><th>Effets techniques</th><th>E-mail (destinataires)</th><th>Code</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="nowrap">Formulaire → CCT</td>
+          <td><span class="client">Client</span> : soumission du formulaire JFB 1920</td>
+          <td>CCT <code>revision</code> + <code>occupation_atelier</code> créées en <code>draft</code>, IDs capturés (user meta + session, TTL 24 h), panier rempli</td>
+          <td>Aucun</td>
+          <td><span class="file">gacct-checkout.php</span> (actions JFB)</td>
+        </tr>
+        <tr>
+          <td class="nowrap">→ <span class="st">0</span> ou <span class="st">1</span></td>
+          <td><span class="auto">Auto</span> : commande créée au checkout, avant paiement</td>
+          <td>CCT en <code>publish</code>, <code>order_id</code> injecté, relation 12 créée ; état initial 0, ou 1 si déjà payé</td>
+          <td>Woo : <code>new_order</code> (Hervé), <code>customer_on_hold_order</code> avec IBAN (client, si virement)</td>
+          <td><span class="file">gacct-checkout.php:249, 255, 368</span></td>
+        </tr>
+        <tr>
+          <td class="nowrap"><span class="st">0</span> → <span class="st">1</span></td>
+          <td><span class="auto">Auto</span> à l'encaissement (statuts payés + <code>acompte-paye</code>) : virement encaissé en console, passerelle, ou statut posé à la main</td>
+          <td>Uniquement depuis 0 (jamais de recul) ; statut Woo <code>acompte-paye</code> posé par Kojito</td>
+          <td><code>deposit_received</code> : consignes d'expédition, date limite, bon d'intervention (client + copie admin), idempotent</td>
+          <td><span class="file">gacct-checkout.php:411</span> ; <span class="file">gacct-payments.php:598, 606, 623</span></td>
+        </tr>
+        <tr>
+          <td class="nowrap"><span class="st">1</span> rappels</td>
+          <td><span class="auto">Auto</span> : J-7 puis J-2 avant le créneau, dossier payé encore en état 0/1 sans suivi déclaré <em>(ajouté le 27/08)</em></td>
+          <td>Un e-mail par palier (metas <code>_gacct_preslot_*_sent</code>), envois 8 h à 20 h, jamais dans les 24 h suivant la commande ; purgés à toute replanification</td>
+          <td><code>pre_slot_reminder</code> avec <code>{slot_date}</code> et le lien de déclaration du suivi (client)</td>
+          <td><span class="file">gacct-lifecycle.php</span> (<code>gacct_lc_process_preslot_reminders</code>)</td>
+        </tr>
+        <tr>
+          <td class="nowrap"><span class="st">1</span> → <span class="st">2</span></td>
+          <td><span class="manu">Atelier</span> : « Confirmer la réception » (console ou scan QR)</td>
+          <td>Commentaire de réception, meta <code>_gacct_reception_date</code>, note de commande</td>
+          <td>Notification état 2 (client + admin)</td>
+          <td><span class="file">gacct-operator-core.php</span> (<code>gacct_op_receive</code>)</td>
+        </tr>
+        <tr>
+          <td class="nowrap"><span class="st">2</span> → <span class="st">3</span></td>
+          <td><span class="manu">Atelier</span> : « Démarrer l'intervention »</td>
+          <td>Bloquée si dossier incomplet (déblocage motivé)</td>
+          <td>Notification état 3 (admin seul, alerte interne)</td>
+          <td><span class="file">gacct-operator-core.php:48</span></td>
+        </tr>
+        <tr>
+          <td class="nowrap"><span class="st">3</span> → <span class="st">4</span></td>
+          <td><span class="manu">Atelier</span> : éditeur « Devis complémentaire » (seule porte d'entrée)</td>
+          <td>Lignes Kojito « acompte 0 » ajoutées à la commande, lien sécurisé HMAC à usage unique</td>
+          <td>Notification état 4 avec <code>{validation_url}</code>, lignes et nouveaux montants (client + admin)</td>
+          <td><span class="file">gacct-quote.php:418, 459</span></td>
+        </tr>
+        <tr>
+          <td class="nowrap"><span class="st">4</span> relances</td>
+          <td><span class="auto">Auto</span> : J+3 puis J+8 sans réponse <em>(2ᵉ palier ajouté le 27/08)</em></td>
+          <td>Lien régénéré à chaque relance ; à partir de J+10, signalement dans le récap admin du matin (« devis sans réponse, à appeler »)</td>
+          <td><code>quote_reminder</code> (client)</td>
+          <td><span class="file">gacct-quote.php</span> (<code>gacct_quote_process_reminders</code>)</td>
+        </tr>
+        <tr>
+          <td class="nowrap"><span class="st">4</span> → <span class="st">5</span></td>
+          <td><span class="client">Client</span> : Accepter ou Refuser sur /devis-a-valider/ ; forçable par l'atelier avec motif</td>
+          <td>Décision en meta <code>_gacct_quote_decision</code> ; au refus, lignes du devis retirées</td>
+          <td>Acceptation : <code>quote_accepted</code> avec lignes, total et solde prévisionnel <em>(ajouté le 27/08)</em>. Refus : <code>quote_refused_partial</code> ou <code>quote_refused_return</code> (client + copie admin dans les deux cas)</td>
+          <td><span class="file">gestion-atelier-cct.php:947</span> ; <span class="file">gacct-quote.php:540-590</span></td>
+        </tr>
+        <tr>
+          <td class="nowrap"><span class="st">3</span>/<span class="st">5</span> → <span class="st">6</span></td>
+          <td><span class="manu">Atelier</span> : « Intervention terminée, demander le solde »</td>
+          <td><strong>Rapport PDF exigé</strong> à l'entrée ; déclenche <code>kojito_declencher_paiement_solde</code> (total ramené au solde) ; si solde nul, enchaînement direct vers 7 ; lève automatiquement la mise en attente</td>
+          <td>Notification état 6 avec <code>{payment_url}</code> et <code>{balance_amount}</code> (client + admin)</td>
+          <td><span class="file">gacct-operator-core.php:48, ~263</span> ; kojito <span class="file">:533</span></td>
+        </tr>
+        <tr>
+          <td class="nowrap"><span class="st">6</span> → <span class="st">7</span></td>
+          <td><span class="auto">Auto</span> au paiement du solde (page order-pay de la même commande) ; forçable avec motif (encaissement hors ligne)</td>
+          <td>Kojito restaure les totaux réels de la commande (statut <code>solde_paye</code>)</td>
+          <td>Notification état 7, <strong>tous les rapports PDF joints</strong> ; envoi bloqué avec note d'erreur si aucun PDF (client + admin)</td>
+          <td><span class="file">gestion-atelier-cct.php:2545-2547, 1577-1600</span></td>
+        </tr>
+        <tr>
+          <td class="nowrap"><span class="st">6</span> relances</td>
+          <td><span class="auto">Auto</span> : J+3 puis J+10 après la demande de solde <em>(ajouté le 27/08, cadence recalée le 28/08)</em></td>
+          <td>Chronomètre <code>_gacct_balance_ref_ts</code> posé à l'entrée en 6 (re-entrée = remise à zéro) ; au-delà de la 2ᵉ relance, « soldes en souffrance » au récap admin et bloc « Suivi de la demande de solde » sur la fiche console (demande, relances, alerte relances épuisées)</td>
+          <td><code>balance_reminder</code> avec <code>{payment_url}</code> et <code>{balance_amount}</code> (client)</td>
+          <td><span class="file">gacct-lifecycle.php</span> (<code>gacct_lc_process_balance_reminders</code>)</td>
+        </tr>
+        <tr>
+          <td class="nowrap"><span class="st">7</span> → <span class="st term">8</span></td>
+          <td><span class="manu">Atelier</span> : « Matériel réexpédié », numéro ou lien de suivi obligatoire</td>
+          <td>Champ CCT <code>suivi_transporteur</code> ; état terminal</td>
+          <td>Notification état 8 avec <code>{tracking_link}</code> (client + admin)</td>
+          <td><span class="file">gacct-operator-core.php:59</span></td>
+        </tr>
+        <tr>
+          <td class="nowrap"><span class="st">0</span>/<span class="st">1</span> → <span class="st term">9</span></td>
+          <td><span class="auto">Auto</span> : la veille du créneau, dès <code>noshow_hour</code> (18 h, réglable) si le matériel n'est pas arrivé ; ou <span class="manu">Atelier</span> : « Classer sans suite » avec motif <em>(ajouté le 27/08)</em></td>
+          <td>Occupation en <code>draft</code> (créneau rendu, jamais supprimé), acompte acquis, commande ni annulée ni remboursée. <strong>Exclusions</strong> : commande non payée (refus explicite), suivi colis déclaré (signalé le matin, classement manuel)</td>
+          <td><code>noshow_release</code>, une seule fois par épisode (client + copie admin)</td>
+          <td><span class="file">gacct-lifecycle.php</span> (<code>gacct_lc_process_no_show</code>, <code>gacct_lc_on_state9_entry</code>)</td>
+        </tr>
+        <tr>
+          <td class="nowrap"><span class="st term">9</span> → <span class="st">1</span></td>
+          <td><span class="manu">Atelier</span> : replanification depuis le planning (seule sortie de l'état 9)</td>
+          <td>Occupation republiée sur la nouvelle date (même date acceptée), metas no-show et rappels purgées</td>
+          <td><code>rescheduled</code> avec la nouvelle date (client + copie admin)</td>
+          <td><span class="file">gacct-operator-core.php</span> (<code>gacct_op_reschedule</code>)</td>
+        </tr>
+        <tr>
+          <td class="nowrap">Annulation</td>
+          <td><span class="auto">Auto</span> ou <span class="manu">Atelier</span> : toute commande passée en « cancelled », quelle que soit l'origine <em>(ajouté le 27/08)</em></td>
+          <td>Occupation en <code>draft</code>, note de commande ; idempotent (le circuit des impayés a déjà supprimé les CCT avant d'annuler)</td>
+          <td>Aucun e-mail supplémentaire (les circuits d'annulation émettent déjà les leurs)</td>
+          <td><span class="file">gacct-lifecycle.php</span> (<code>gacct_lc_release_slot_on_cancel</code>)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="crons">
+  <span class="secnum">5</span>
+  <h2>Automatismes planifiés</h2>
+  <div class="prose">
+    <p>Deux crons du plugin, tous deux <strong>réellement planifiés</strong> en production. L'option de réglages <code>gacct_payment_settings</code> est absente en base : <strong>tous les délais tournent sur les défauts du code</strong>, réglables dans la page « Paiements &amp; relances » (sections Sans suite, Solde, Récap ajoutées le 27/08). Les 17 templates e-mails de la même page tournent eux aussi sur leurs défauts (aucun override en base).</p>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Cron</th><th>Traitement</th><th>Calendrier (défauts)</th><th>Effets et e-mails</th><th>Code</th></tr></thead>
+      <tbody>
+        <tr>
+          <td rowspan="8" class="nowrap"><code>gacct_pay_hourly_tick</code><br>(horaire)</td>
+          <td>Virement en attente (bacs, on-hold/pending)</td>
+          <td>Relance J+2, annulation J+3</td>
+          <td>Relance <code>bacs_reminder</code> (une fois) puis <code>bacs_cancel</code> (client + copie admin) : commande annulée, <strong>CCT révision et occupation supprimés</strong>, relations nettoyées, créneau libéré</td>
+          <td><span class="file">gacct-payments.php:797, 934</span></td>
+        </tr>
+        <tr>
+          <td>Paiement échoué ou pending non-virement</td>
+          <td>Relance H+1, suppression au premier minuit au-delà de 6 h</td>
+          <td><code>payment_failed</code> puis <code>unfinished_cancel</code> ; même nettoyage</td>
+          <td><span class="file">gacct-payments.php:859</span></td>
+        </tr>
+        <tr>
+          <td>Formulaire abandonné (CCT draft sans commande)</td>
+          <td>Relance H+1, suppression au premier minuit au-delà de 6 h</td>
+          <td><code>abandoned</code> avec lien de reprise du checkout ; CCT supprimés</td>
+          <td><span class="file">gacct-payments.php:989</span></td>
+        </tr>
+        <tr>
+          <td>Devis sans réponse (état 4)</td>
+          <td>J+3 puis J+8 <em>(2ᵉ palier ajouté le 27/08)</em></td>
+          <td><code>quote_reminder</code>, lien régénéré ; à partir de J+10, signalement au récap admin</td>
+          <td><span class="file">gacct-quote.php</span></td>
+        </tr>
+        <tr>
+          <td>Bascule « Sans suite » (matériel jamais arrivé, commande payée) <em>(refondue le 27/08)</em></td>
+          <td>La veille du créneau, dès <code>noshow_hour</code> (18 h, réglable) ; rattrapage des créneaux passés jamais traités</td>
+          <td>État → <span class="st term">9</span>, occupation en <code>draft</code> (créneau rendu, rien de supprimé), acompte acquis, <code>noshow_release</code> (client + copie admin). Exclusions : non payé, suivi colis déclaré</td>
+          <td><span class="file">gacct-lifecycle.php</span></td>
+        </tr>
+        <tr>
+          <td>Rappels avant créneau <em>(ajouté le 27/08)</em></td>
+          <td>J-7 puis J-2, envois 8 h à 20 h</td>
+          <td><code>pre_slot_reminder</code> aux dossiers payés en état 0/1 sans suivi déclaré</td>
+          <td><span class="file">gacct-lifecycle.php</span></td>
+        </tr>
+        <tr>
+          <td>Relances de solde (état 6) <em>(ajouté le 27/08)</em></td>
+          <td>J+3 puis J+10 après la demande <em>(cadence du 28/08)</em>, envois 8 h à 20 h</td>
+          <td><code>balance_reminder</code> avec lien de paiement ; ensuite « soldes en souffrance » au récap + bloc de suivi sur la fiche console</td>
+          <td><span class="file">gacct-lifecycle.php</span></td>
+        </tr>
+        <tr>
+          <td>Récapitulatif admin du matin <em>(ajouté le 27/08)</em></td>
+          <td>Une fois par jour, dès <code>recap_hour</code> (8 h, réglable) ; rien à signaler = pas d'e-mail</td>
+          <td>Cinq sections : bascules « Sans suite » du soir (garde-fou : pointer une réception oubliée avant le soir), colis annoncés pas arrivés, soldes en souffrance, devis sans réponse, virements en échéance le jour même (Hervé + agence)</td>
+          <td><span class="file">gacct-lifecycle.php</span></td>
+        </tr>
+        <tr>
+          <td class="nowrap"><code>gacct_pay_midnight_purge</code><br>(minuit)</td>
+          <td>Purge des CCT brouillons orphelins</td>
+          <td>Chaque nuit</td>
+          <td>Filet de sécurité : tout CCT référencé par une commande est épargné, anomalie journalisée</td>
+          <td><span class="file">gacct-payments.php:1072</span></td>
+        </tr>
+        <tr>
+          <td class="nowrap">Natif WooCommerce</td>
+          <td><code>woocommerce_cancel_unpaid_orders</code> (Action Scheduler)</td>
+          <td>Commandes <code>pending</code> de plus de 60 min</td>
+          <td><span class="badge ok">Neutralisé le 27/08</span> Filtre <code>woocommerce_cancel_unpaid_order</code> → false : seul le calendrier du plugin annule les impayés, avec e-mail et nettoyage. Plus aucun risque à l'activation de la CB</td>
+          <td><span class="file">gacct-lifecycle.php</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="emails">
+  <span class="secnum">6</span>
+  <h2>Trois familles d'e-mails, deux boîtes admin</h2>
+  <div class="prose">
+    <ul>
+      <li><strong>Workflow d'états</strong> (page Notifications) : 6 templates, états d'arrivée 2, 3, 4, 6, 7, 8. Pas d'e-mail pour les états 0 et 1 (couverts par Woo et <code>deposit_received</code>) ni 5 (couverts par <code>quote_accepted</code> et les deux e-mails de refus du devis).</li>
+      <li><strong>Paiements &amp; relances</strong> : 17 templates éditables : <code>bacs_reminder</code>, <code>bacs_cancel</code>, <code>abandoned</code>, <code>payment_failed</code>, <code>unfinished_cancel</code>, <code>noshow_release</code>, <code>rescheduled</code>, <code>deposit_received</code>, <code>missing_items</code>, <code>quote_reminder</code>, <code>quote_refused_partial</code>, <code>quote_refused_return</code>, <code>quote_accepted</code>, <code>hold_notice</code>, <code>hold_release</code>, <code>pre_slot_reminder</code>, <code>balance_reminder</code> (les trois derniers ajoutés le 27/08).</li>
+      <li><strong>WooCommerce natifs</strong> : voir section 2, point 4.</li>
+    </ul>
+  </div>
+  <div class="callout prose">
+    <p><strong>Destinataires harmonisés le 27/08</strong> (le constat de l'enquête : copies plugin vers contact@cogitoweb.net, natifs Woo vers Hervé, personne ne voyait tout). Désormais les copies admin du plugin comme les e-mails natifs Woo partent vers <b>herve.gabet@plaine-altitude.com et contact@cogitoweb.net</b> ; le champ du réglage accepte plusieurs adresses séparées par des virgules (instance AEROTECH non touchée : ses destinataires restent propres au client).</p>
+  </div>
+</section>
+
+<section id="trous">
+  <span class="secnum">7</span>
+  <h2>Trous et incohérences : les 13 constats et leur sort</h2>
+  <p class="lede prose">Les constats de l'enquête du 27/08, conservés tels quels, chacun avec sa résolution. Douze sur treize sont réglés ; le dernier (la mise en attente sans échéance) est assumé.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>#</th><th>Gravité</th><th>Constat (27/08)</th><th>Résolution</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><span class="badge crit">Critique</span></td><td><strong>Après un no-show, l'état reste 0 ou 1 pour toujours.</strong> Le créneau est rendu et le client prévenu, mais son espace affiche « En attente de réception » à vie, et rien ne distingue le dossier dans la console hors notes de commande.</td><td><span class="badge ok">Réglé 27/08</span> État terminal 9 « Sans suite » déployé : badge gris partout (console, espace client, e-mails), les anciens dossiers « créneau libéré » ont été migrés (2 Altitude + 1 AEROTECH).</td></tr>
+        <tr><td>2</td><td><span class="badge crit">Critique</span></td><td><strong>Le no-show supprime l'occupation</strong>, en contradiction avec la décision du 27/08 (« le créneau se libère en passant l'occupation en draft, jamais par suppression »). Le retour arrière (replanification) perd la trace du créneau d'origine.</td><td><span class="badge ok">Réglé 27/08</span> L'occupation passe en <code>draft</code> : même effet pour le calendrier (créneau rendu), trace conservée, reprise en un clic. Arbitré par Bastien le 28/08 : le nom de l'état est « Sans suite ».</td></tr>
+        <tr><td>3</td><td><span class="badge crit">Critique</span></td><td><strong>Aucun rappel avant la perte du créneau, aucun récapitulatif admin avant la bascule.</strong> Le client payé qui n'a pas expédié n'est jamais relancé avant le no-show ; l'atelier n'a pas le garde-fou du matin.</td><td><span class="badge ok">Réglé 27/08</span> Deux rappels client (J-7 et J-2), e-mail à la perte du créneau, récap admin du matin comme garde-fou. Suivi colis déclaré = pas de perte automatique (exigence confirmée par Bastien le 28/08).</td></tr>
+        <tr><td>4</td><td><span class="badge crit">Critique</span></td><td><strong>Le solde (état 6) n'est jamais relancé.</strong> Aucun automatisme, et la relance manuelle de la console ne vise que les commandes en attente d'acompte. Un client qui ignore l'e-mail d'état 6 bloque son dossier et son matériel indéfiniment, sans que personne ne soit alerté.</td><td><span class="badge ok">Réglé 28/08</span> Relances automatiques J+3 et J+10 avec lien de paiement, puis « soldes en souffrance » au récap admin et bloc « Suivi de la demande de solde » sur la fiche console (demande, relances, alerte relances épuisées).</td></tr>
+        <tr><td>5</td><td><span class="badge warn">Majeur</span></td><td><strong>Une annulation manuelle de commande ne libère rien.</strong> Aucun hook n'écoute le passage en « cancelled » : occupation publiée, créneau immobilisé, dossier non marqué.</td><td><span class="badge ok">Réglé 27/08</span> Hook sur toute annulation : occupation en <code>draft</code> et note de commande, quelle que soit l'origine.</td></tr>
+        <tr><td>6</td><td><span class="badge warn">Majeur</span></td><td><strong>Deux circuits d'annulation concurrents pour les commandes <code>pending</code>.</strong> Le natif Woo (60 min, sans nettoyage ni e-mail) court plus vite que le circuit du plugin ; deviendrait réel dès l'activation de la CB.</td><td><span class="badge ok">Réglé 27/08</span> Annulation native neutralisée (filtre <code>woocommerce_cancel_unpaid_order</code> → false) : seul le calendrier du plugin annule les impayés.</td></tr>
+        <tr><td>7</td><td><span class="badge warn">Majeur</span></td><td><strong>L'acceptation d'un devis n'envoie aucun e-mail</strong>, ni au client (pas de confirmation de son engagement) ni à l'atelier. Le refus, lui, notifie les deux.</td><td><span class="badge ok">Réglé 27/08</span> Template <code>quote_accepted</code> : confirmation au client (lignes, total, solde prévisionnel) + copie admin, symétrique du refus.</td></tr>
+        <tr><td>8</td><td><span class="badge warn">Majeur</span></td><td><strong>Le glossaire 18 et le champ CCT portaient les libellés d'avant la renumérotation</strong>, sans entrée pour l'état 8. L'admin CCT JetEngine affichait des états faux.</td><td><span class="badge ok">Réglé 27/08</span> Glossaire 18 et query 27 remis à niveau (libellés 0 à 9) sur les deux instances, script exécuté en root par Bastien.</td></tr>
+        <tr><td>9</td><td><span class="badge info">Moyen</span></td><td><strong>Code mort trompeur dans Kojito</strong> : <code>envoyer_email_solde()</code> jamais appelée, template pourtant éditable dans sa page de configuration.</td><td><span class="badge ok">Réglé 27/08</span> Kojito 1.3.0 : méthode, page de configuration et options supprimées (environ 200 lignes).</td></tr>
+        <tr><td>10</td><td><span class="badge info">Moyen</span></td><td><strong>Après une relance devis restée sans réponse (J+3), plus rien ne se passe</strong> : pas de seconde relance, pas de signalement, pas d'échéance.</td><td><span class="badge ok">Réglé 27/08</span> Seconde relance à J+8, puis signalement au récap admin dès J+10 (« à appeler, décision forçable depuis la fiche »). Pas de refus automatique : décision de Bastien.</td></tr>
+        <tr><td>11</td><td><span class="badge info">Moyen</span></td><td><strong>La mise en attente n'a ni échéance ni rappel</strong> : un dossier en pause peut dormir indéfiniment (visible en console, mais sans alerte).</td><td><span class="badge warn">Assumé</span> Pas d'échéance automatique (la pause est un geste volontaire de l'atelier). En contrepartie elle est devenue visible partout côté client le 27/08 (« En pause » sur le dashboard, badge avec motif dans Mes demandes).</td></tr>
+        <tr><td>12</td><td><span class="badge info">Moyen</span></td><td><strong>L'instance AEROTECH avait pris du retard</strong> : pas de levée automatique de la mise en attente, Kojito 1.1.0, requêtes SQL divergentes.</td><td><span class="badge ok">Réglé 27-28/08</span> Tout le chantier reporté sur AEROTECH (code, BDD, glossaire, fuseau, migration du dossier legacy), Kojito 1.3.0 des deux côtés. Ses destinataires d'e-mails restent propres au client.</td></tr>
+        <tr><td>13</td><td><span class="badge info">Moyen</span></td><td><strong>Hygiène du dépôt</strong> : modifications non commitées en prod et fichiers de sauvegarde <code>.avant-*</code> non versionnés qui ne vivent que sur le serveur Altitude.</td><td><span class="badge ok">Réglé 28/08</span> Les deux thèmes enfants sont dans le dépôt (<code>hello-theme-child-master</code> côté Altitude, <code>hello-aerotech-child</code> côté AEROTECH, commit <code>6f836ff</code>). Les 17 fichiers <code>.avant-*</code> ont été sortis des webroots et archivés dans <code>~/donnees-claude/archives-avant/</code> : le dépôt porte désormais cet historique.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="cible">
+  <span class="secnum">8</span>
+  <h2>Processus cible : proposé le 27/08, réalisé les 27-28/08</h2>
+  <p class="lede prose">Un scénario par situation d'abandon, sans recouvrement. Principes directeurs, tous appliqués : on marque, on ne supprime pas, dès lors que de l'argent a été versé ; l'acompte encaissé reste acquis ; un créneau se libère en passant l'occupation en draft ; un récapitulatif admin part le matin avant toute bascule automatique.</p>
+
+  <div class="scenario">
+    <h3>A · Acompte jamais payé (virement) <span class="badge ok">En place</span></h3>
+    <dl>
+      <dt>Circuit</dt><dd>Relance J+2, annulation J+3, CCT supprimés, créneau rendu, e-mails à chaque étape (circuit préexistant, conservé tel quel).</dd>
+      <dt>Décision</dt><dd>La suppression des CCT est conservée ici : rien n'a été versé, la commande annulée garde la trace (question n°3, tranchée par le statu quo).</dd>
+      <dt>Message client</dt><dd>Les templates existants conviennent : aucun acompte n'est mentionné comme acquis, puisque rien n'a été versé.</dd>
+    </dl>
+  </div>
+
+  <div class="scenario">
+    <h3>B · Commande jamais finalisée, paiement échoué <span class="badge ok">En place</span></h3>
+    <dl>
+      <dt>Circuit</dt><dd>Relance H+1 avec lien de reprise, suppression au premier minuit au-delà de 6 h, purge nocturne avec filet (circuit préexistant, conservé).</dd>
+      <dt>Fait le 27/08</dt><dd>Annulation native Woo neutralisée (<code>woocommerce_cancel_unpaid_order</code> → false) : la CB peut être activée sans que Woo annule en 60 minutes à la place du circuit prévu.</dd>
+    </dl>
+  </div>
+
+  <div class="scenario">
+    <h3>C · Matériel jamais reçu, acompte payé (le cœur de la refonte) <span class="badge ok">Réalisé le 27/08</span></h3>
+    <dl>
+      <dt>Rappels</dt><dd>Deux rappels client avant le créneau, à J-7 et J-2 (template <code>pre_slot_reminder</code> : « votre créneau approche, avez-vous expédié votre matériel ? », avec le lien de déclaration du numéro de suivi).</dd>
+      <dt>Garde-fou</dt><dd>Récapitulatif admin le matin : dossiers encore en état 0/1 qui basculeront le soir, en distinguant ceux qui ont déclaré un numéro de suivi (exclus de la bascule automatique, classement manuel : décision confirmée le 28/08).</dd>
+      <dt>Bascule</dt><dd>Le soir de la veille (18 h par défaut, réglable), état terminal <span class="st term">9</span> « Sans suite », réécrit pour la machine de la prod. Occupation passée en <code>draft</code> et non supprimée : le calcul de dispo ne compte que les publish, le créneau se rouvre, le retour arrière est immédiat. Refusé sur une commande non payée.</dd>
+      <dt>Créneau</dt><dd>Rendu à la vente. Replanification depuis la console : republication de l'occupation sur une nouvelle date (même date acceptée), retour en état 1, e-mail <code>rescheduled</code>.</dd>
+      <dt>Argent</dt><dd>Acompte acquis, commande conservée en <code>acompte-paye</code>, ni annulée ni remboursée.</dd>
+      <dt>Message client</dt><dd>« Votre créneau a été libéré faute de réception du matériel ; votre acompte reste acquis ; contactez l'atelier pour replanifier. » L'espace client affiche le dossier grisé « Sans suite », plus jamais « En attente de réception ».</dd>
+    </dl>
+  </div>
+
+  <div class="scenario">
+    <h3>D · Devis sans réponse (état 4) <span class="badge ok">Réalisé le 27/08</span></h3>
+    <dl>
+      <dt>Circuit</dt><dd>Relance à J+3 puis seconde relance à J+8 (liens régénérés), apparition dans le récapitulatif admin à partir de J+10 : l'atelier appelle, puis force 4→5 avec motif (mécanisme existant).</dd>
+      <dt>Décision</dt><dd>Pas de refus automatique : décider à la place du client engagerait l'atelier (question n°5, tranchée par Bastien).</dd>
+    </dl>
+  </div>
+
+  <div class="scenario">
+    <h3>E · Solde jamais payé (état 6) <span class="badge ok">Réalisé le 27/08, cadence du 28/08</span></h3>
+    <dl>
+      <dt>Circuit</dt><dd>Template <code>balance_reminder</code> (avec <code>{payment_url}</code> et <code>{balance_amount}</code>), relances automatiques <strong>J+3 et J+10</strong> après l'entrée en état 6, puis « soldes en souffrance » au récapitulatif admin et bloc « Suivi de la demande de solde » sur la fiche console.</dd>
+      <dt>Au-delà</dt><dd>Politique restant à trancher avec Hervé (question n°4, volet métier) : durée de garde du matériel non réglé, frais éventuels, sort du matériel jamais réclamé. Le dossier reste en état 6 en attendant.</dd>
+    </dl>
+  </div>
+
+  <div class="scenario">
+    <h3>F · Transversal <span class="badge ok">Réalisé le 27/08</span></h3>
+    <dl>
+      <dt>Annulation</dt><dd>Hook sur le passage en « cancelled » (quelle qu'en soit l'origine) : occupation en draft, note de commande. Le trou n°5 est fermé.</dd>
+      <dt>Récap admin</dt><dd>Un seul e-mail quotidien du matin (8 h, réglable, rien à signaler = pas d'e-mail), cinq sections : bascules « Sans suite » du soir, colis annoncés pas arrivés, soldes en souffrance, devis sans réponse, virements en échéance le jour même.</dd>
+      <dt>Devis accepté</dt><dd>E-mail <code>quote_accepted</code> au client (trace de son engagement) et copie atelier, symétrique du refus.</dd>
+      <dt>Référentiel</dt><dd>Glossaire 18 et query 27 à jour (libellés 0 à 9), code mort Kojito purgé (1.3.0), l'ensemble reporté sur AEROTECH (développement mutualisé).</dd>
+    </dl>
+  </div>
+</section>
+
+<section id="questions">
+  <span class="secnum">9</span>
+  <h2>Les huit questions, toutes tranchées</h2>
+  <ol class="qlist prose">
+    <li><b>Refaire « Sans suite » sur la prod ?</b> <span class="badge ok">Oui</span> Code local abandonné, état 9 redéveloppé directement contre la prod le 27/08 en réutilisant les décisions (état terminal, occupation en draft, acompte acquis).</li>
+    <li><b>Bascule sans suite : heure, et sort des dossiers avec suivi déclaré.</b> <span class="badge ok">Tranché</span> 18 h la veille par défaut, réglable (la valeur définitive reste posée à Hervé, tâche en attente). Suivi déclaré = exclu de la bascule automatique, signalé au récap du matin, classement manuel seulement ; confirmé par Bastien le 28/08 (« ce n'est pas la faute du client, l'atelier s'arrangera pour déplacer »).</li>
+    <li><b>Acompte jamais payé : conserver la suppression des CCT ?</b> <span class="badge ok">Oui</span> Comportement conservé : rien n'a été versé, la commande annulée garde la trace.</li>
+    <li><b>Solde impayé : cadence et politique.</b> <span class="badge ok">Cadence tranchée</span> J+3 et J+10 (fixé par Bastien le 28/08), puis signalement admin. <span class="badge warn">Reste ouvert</span> La politique au-delà (durée de garde, frais, seuil d'abandon) : à poser à Hervé, volet métier et juridique.</li>
+    <li><b>Devis sans réponse : forçage manuel ou refus automatique ?</b> <span class="badge ok">Forçage manuel</span> Deux relances puis signalement ; pas de refus automatique, décider à la place du client engagerait l'atelier.</li>
+    <li><b>Destinataires admin.</b> <span class="badge ok">Les deux</span> herve.gabet@plaine-altitude.com et contact@cogitoweb.net, pour les copies du plugin comme pour les e-mails natifs Woo (AEROTECH garde ses propres destinataires).</li>
+    <li><b>Purge du code mort Kojito ?</b> <span class="badge ok">Suppression franche</span> Kojito 1.3.0 : le vrai e-mail de solde reste la notification d'état 6 du workflow.</li>
+    <li><b>Synchronisation AEROTECH : maintenant ou après la refonte ?</b> <span class="badge ok">D'un bloc</span> Tout le retard et tout le chantier reportés ensemble les 27-28/08.</li>
+  </ol>
+  <div class="callout prose">
+    <p><strong>Fiabilité.</strong> L'inventaire initial a été vérifié dans le code de production, la configuration et la base. Le chantier a ensuite été <strong>testé en exécution réelle sur la prod</strong> : circuits du cycle de vie (37 vérifications, scénarios T0 à T8, e-mails interceptés par <code>pre_wp_mail</code>, dossiers de test restaurés), suivi de la demande de solde et récap (10 vérifications le 28/08). Le site n'a pas encore basculé en production publique (noindex) : les dossiers en base sont des tests.</p>
+  </div>
+</section>
+
+<footer class="doc">
+  Enquête du 27 août 2026, chantier des 27-28 août 2026, sur ns3181892 (accès Plesk non-root) · Dépôt gestion_atelier_CogitoWeb, commit 6f836ff · Instances : revision.cogitoweb.net et fly-aerotech.cogitoweb.net · Document mis à jour le 28 août 2026
+</footer>
+
+</div>

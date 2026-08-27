@@ -1,0 +1,580 @@
+<title>Guide de l'atelier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #fafcfc;
+    --surface: #ffffff;
+    --surface-alt: #eef4f4;
+    --ink: #1c2a2a;
+    --ink-2: #46605f;
+    --ink-3: #6b8382;
+    --line: #d8e4e3;
+    --accent: #0e8b8a;
+    --accent-soft: #d9efee;
+    --warn: #a06a14;
+    --warn-soft: #f5ead2;
+    --ok: #2e7d4f;
+    --ok-soft: #ddefe4;
+    --muted: #74807f;
+    --muted-soft: #e8ebeb;
+    --code-bg: #eef4f4;
+    --shadow: 0 1px 3px rgba(28, 42, 42, 0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101919;
+      --surface: #16211f;
+      --surface-alt: #1c2a28;
+      --ink: #e2ecea;
+      --ink-2: #a7bcba;
+      --ink-3: #7c9391;
+      --line: #2a3b39;
+      --accent: #3cc3c1;
+      --accent-soft: #123534;
+      --warn: #dfa94e;
+      --warn-soft: #392c14;
+      --ok: #62c48d;
+      --ok-soft: #16332a;
+      --muted: #91a09e;
+      --muted-soft: #212e2c;
+      --code-bg: #1c2a28;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101919;
+    --surface: #16211f;
+    --surface-alt: #1c2a28;
+    --ink: #e2ecea;
+    --ink-2: #a7bcba;
+    --ink-3: #7c9391;
+    --line: #2a3b39;
+    --accent: #3cc3c1;
+    --accent-soft: #123534;
+    --warn: #dfa94e;
+    --warn-soft: #392c14;
+    --ok: #62c48d;
+    --ok-soft: #16332a;
+    --muted: #91a09e;
+    --muted-soft: #212e2c;
+    --code-bg: #1c2a28;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Public Sans", "Segoe UI", system-ui, sans-serif;
+    font-size: 15.5px;
+    line-height: 1.65;
+    margin: 0;
+  }
+  .wrap { max-width: 1020px; margin: 0 auto; padding: 0 28px 90px; }
+  .prose { max-width: 74ch; }
+
+  h1, h2, h3, h4 {
+    font-family: "Bricolage Grotesque", "Public Sans", sans-serif;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+  h1 { font-size: 2.5rem; font-weight: 700; margin: 0 0 10px; letter-spacing: -0.01em; }
+  h2 { font-size: 1.55rem; font-weight: 700; margin: 0 0 6px; }
+  h3 { font-size: 1.1rem; font-weight: 600; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  a { color: var(--accent); }
+
+  header.doc { padding: 56px 0 26px; border-bottom: 3px solid var(--accent); margin-bottom: 8px; }
+  .kicker {
+    font-size: 0.74rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 14px;
+  }
+  .lede { color: var(--ink-2); font-size: 1.05rem; }
+
+  nav.toc {
+    display: flex; flex-wrap: wrap; gap: 6px 10px;
+    padding: 18px 0 8px; margin-bottom: 30px; border-bottom: 1px solid var(--line);
+  }
+  nav.toc a {
+    text-decoration: none; color: var(--ink-2); font-size: 0.85rem; font-weight: 600;
+    padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface);
+  }
+  nav.toc a:hover, nav.toc a:focus-visible { color: var(--accent); border-color: var(--accent); }
+
+  section { margin: 46px 0; scroll-margin-top: 20px; }
+  .secnum { font-family: "JetBrains Mono", monospace; font-size: 0.8rem; color: var(--accent); font-weight: 600; display: block; margin-bottom: 4px; }
+
+  figure { margin: 20px 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; box-shadow: var(--shadow); overflow-x: auto; }
+  figure svg { display: block; min-width: 900px; max-width: 100%; height: auto; margin: 0 auto; }
+  figcaption { font-size: 0.85rem; color: var(--ink-3); margin-top: 12px; text-align: center; }
+
+  .who {
+    display: inline-block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; padding: 2px 9px; border-radius: 999px; white-space: nowrap;
+  }
+  .who.client  { background: var(--accent-soft); color: var(--accent); }
+  .who.atelier { background: var(--warn-soft); color: var(--warn); }
+  .who.auto    { background: var(--ok-soft); color: var(--ok); }
+  .who.fin     { background: var(--muted-soft); color: var(--muted); }
+
+  .etat-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 22px; margin: 14px 0; box-shadow: var(--shadow);
+  }
+  .etat-card h3 { margin: 0 0 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .etat-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 50%;
+    font-family: "JetBrains Mono", monospace; font-size: 0.95rem; font-weight: 600;
+    background: var(--accent-soft); color: var(--accent); flex: none;
+  }
+  .etat-card.is-atelier .etat-num { background: var(--warn-soft); color: var(--warn); }
+  .etat-card.is-auto .etat-num    { background: var(--ok-soft); color: var(--ok); }
+  .etat-card.is-fin .etat-num     { background: var(--muted-soft); color: var(--muted); }
+  .etat-card dl { margin: 0; display: grid; grid-template-columns: 150px 1fr; gap: 7px 16px; font-size: 0.9rem; }
+  .etat-card dt { font-weight: 700; color: var(--ink-3); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; padding-top: 3px; }
+  .etat-card dd { margin: 0; }
+  @media (max-width: 560px) { .etat-card dl { grid-template-columns: 1fr; gap: 2px; } .etat-card dt { margin-top: 8px; } }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); margin: 16px 0 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+  th {
+    text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em;
+    color: var(--ink-3); padding: 11px 14px 8px; border-bottom: 2px solid var(--line);
+    background: var(--surface-alt); white-space: nowrap;
+  }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+
+  code {
+    font-family: "JetBrains Mono", Consolas, monospace; font-size: 0.82em;
+    background: var(--code-bg); border-radius: 4px; padding: 1px 5px;
+  }
+
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 18px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-color: var(--warn); }
+  .callout p:last-child { margin-bottom: 0; }
+
+  ul, ol { margin: 0 0 14px; padding-left: 24px; }
+  li { margin-bottom: 7px; }
+  li::marker { color: var(--accent); }
+
+  details.faq {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    padding: 0; margin: 10px 0; box-shadow: var(--shadow);
+  }
+  details.faq summary {
+    cursor: pointer; font-weight: 600; padding: 13px 18px; list-style-position: inside;
+  }
+  details.faq summary::marker { color: var(--accent); }
+  details.faq .faq-body { padding: 0 18px 14px 18px; font-size: 0.92rem; }
+
+  footer.doc { margin-top: 60px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 0.8rem; }
+</style>
+
+<div class="wrap">
+
+<header class="doc">
+  <div class="kicker">Plateforme de révision de parapentes · Mode d'emploi</div>
+  <h1>Guide de l'atelier</h1>
+  <p class="lede prose">Comment vit un dossier de révision, de la demande en ligne à la réexpédition du matériel : ce que fait le client, ce que fait l'atelier, ce que la plateforme fait toute seule, et quoi faire quand rien ne se passe comme prévu.</p>
+</header>
+
+<nav class="toc">
+  <a href="#principe">Le principe</a>
+  <a href="#diagramme">Le parcours en un coup d'œil</a>
+  <a href="#etats">Étape par étape</a>
+  <a href="#automatismes">Les automatismes</a>
+  <a href="#matin">Le point du matin</a>
+  <a href="#cas">Cas particuliers</a>
+  <a href="#emails">Qui reçoit quoi</a>
+  <a href="#reglages">Où se règle quoi</a>
+  <a href="#faq">Questions fréquentes</a>
+</nav>
+
+<section id="principe">
+  <span class="secnum">1</span>
+  <h2>Le principe</h2>
+  <div class="prose">
+    <p>Un client réserve sa révision en ligne : il choisit ses prestations, une date d'intervention, et paie un <strong>acompte</strong> qui réserve son créneau à l'atelier. Il expédie ensuite son matériel, l'atelier réalise l'intervention, le client règle le <strong>solde</strong>, récupère son <strong>rapport de contrôle</strong>, et le matériel repart.</p>
+    <p>Chaque demande crée <strong>un dossier</strong>, visible des deux côtés : dans l'espace client (avec une frise d'avancement) et dans la console atelier (menu « Gestion Atelier »). Le dossier avance à travers des <strong>états numérotés de 0 à 9</strong> : certains passages sont à faire à la main depuis la console, d'autres se font tout seuls (paiements, relances, bascules). Le fil conducteur du guide : <strong>à chaque état, quelqu'un a la main</strong>, et si cette personne ne fait rien, la plateforme relance, puis alerte l'atelier. Aucun dossier ne doit pouvoir dormir sans que quelqu'un soit prévenu.</p>
+  </div>
+</section>
+
+<section id="diagramme">
+  <span class="secnum">2</span>
+  <h2>Le parcours en un coup d'œil</h2>
+  <p class="prose">La couleur d'un état dit <strong>qui a la main pour en sortir</strong> : le client, l'atelier, ou personne (dossier clos). Les flèches vertes sont automatiques.</p>
+
+  <figure>
+    <svg viewBox="0 0 1040 430" role="img" aria-label="Diagramme des états d'un dossier : 0 attente de paiement, 1 attente de réception, 2 voile réceptionnée, 3 intervention programmée, branche optionnelle 4 devis à valider et 5 intervention à finir, 6 solde à payer, 7 révision finie, 8 matériel réexpédié. L'état 9 sans suite est atteint depuis 0 ou 1 quand le matériel n'arrive jamais, et se quitte par replanification.">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+        <marker id="arr-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--ok)"/>
+        </marker>
+        <marker id="arr-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+        </marker>
+      </defs>
+
+      <!-- Légende -->
+      <g font-family="Public Sans, sans-serif" font-size="12">
+        <circle cx="700" cy="24" r="7" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2"/>
+        <text x="713" y="28" fill="currentColor">le client agit</text>
+        <circle cx="810" cy="24" r="7" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="2"/>
+        <text x="823" y="28" fill="currentColor">l'atelier agit</text>
+        <circle cx="920" cy="24" r="7" fill="var(--muted-soft)" stroke="var(--muted)" stroke-width="2"/>
+        <text x="933" y="28" fill="currentColor">dossier clos</text>
+        <line x1="695" y1="46" x2="725" y2="46" stroke="var(--ok)" stroke-width="2" marker-end="url(#arr-ok)"/>
+        <text x="733" y="50" fill="currentColor">automatique</text>
+      </g>
+
+      <!-- Flèches rangée principale -->
+      <g stroke="var(--ok)" stroke-width="2" fill="none">
+        <line x1="86" y1="100" x2="152" y2="100" marker-end="url(#arr-ok)"/>
+        <line x1="642" y1="100" x2="762" y2="100" marker-end="url(#arr-ok)"/>
+      </g>
+      <g stroke="currentColor" stroke-width="1.6" fill="none">
+        <line x1="206" y1="100" x2="272" y2="100" marker-end="url(#arr)"/>
+        <line x1="326" y1="100" x2="392" y2="100" marker-end="url(#arr)"/>
+        <line x1="446" y1="100" x2="586" y2="100" marker-end="url(#arr)"/>
+        <line x1="816" y1="100" x2="882" y2="100" marker-end="url(#arr)"/>
+      </g>
+      <!-- Branche devis -->
+      <g stroke="currentColor" stroke-width="1.6" fill="none">
+        <path d="M 432 125 Q 440 175 466 202" marker-end="url(#arr)"/>
+        <line x1="514" y1="215" x2="576" y2="215" marker-end="url(#arr)"/>
+        <path d="M 624 198 Q 674 168 624 128" marker-end="url(#arr)"/>
+      </g>
+      <!-- Sans suite -->
+      <g stroke="var(--ok)" stroke-width="2" fill="none">
+        <path d="M 38 114 Q 8 245 155 331" marker-end="url(#arr-ok)"/>
+        <line x1="180" y1="126" x2="180" y2="308" marker-end="url(#arr-ok)"/>
+      </g>
+      <path d="M 210 322 Q 320 290 216 132" stroke="var(--muted)" stroke-width="1.6" fill="none" stroke-dasharray="5 4" marker-end="url(#arr-muted)"/>
+
+      <!-- Libellés de flèches -->
+      <g font-family="Public Sans, sans-serif" font-size="11" fill="var(--ink-3)">
+        <text x="119" y="90" text-anchor="middle">acompte</text>
+        <text x="239" y="90" text-anchor="middle">colis reçu</text>
+        <text x="359" y="90" text-anchor="middle">démarrage</text>
+        <text x="516" y="90" text-anchor="middle">fin des travaux (sans devis)</text>
+        <text x="702" y="90" text-anchor="middle">solde payé</text>
+        <text x="849" y="90" text-anchor="middle">réexpédition</text>
+        <text x="424" y="180" text-anchor="middle">devis envoyé</text>
+        <text x="543" y="203" text-anchor="middle">décision client</text>
+        <text x="689" y="176" text-anchor="middle">fin des travaux</text>
+        <text x="118" y="242" text-anchor="middle">la veille au soir,</text>
+        <text x="118" y="256" text-anchor="middle">rien reçu</text>
+        <text x="295" y="245" text-anchor="middle">reprise :</text>
+        <text x="295" y="259" text-anchor="middle">replanification</text>
+      </g>
+
+      <!-- Nœuds rangée principale -->
+      <g font-family="JetBrains Mono, monospace" font-size="15" font-weight="600" text-anchor="middle">
+        <circle cx="60"  cy="100" r="24" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2.5"/>
+        <text x="60" y="105" fill="var(--accent)">0</text>
+        <circle cx="180" cy="100" r="24" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2.5"/>
+        <text x="180" y="105" fill="var(--accent)">1</text>
+        <circle cx="300" cy="100" r="24" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="2.5"/>
+        <text x="300" y="105" fill="var(--warn)">2</text>
+        <circle cx="420" cy="100" r="24" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="2.5"/>
+        <text x="420" y="105" fill="var(--warn)">3</text>
+        <circle cx="616" cy="100" r="24" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2.5"/>
+        <text x="616" y="105" fill="var(--accent)">6</text>
+        <circle cx="790" cy="100" r="24" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="2.5"/>
+        <text x="790" y="105" fill="var(--warn)">7</text>
+        <circle cx="910" cy="100" r="24" fill="var(--muted-soft)" stroke="var(--muted)" stroke-width="2.5"/>
+        <text x="910" y="105" fill="var(--muted)">8</text>
+        <!-- Branche devis -->
+        <circle cx="490" cy="215" r="24" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2.5"/>
+        <text x="490" y="220" fill="var(--accent)">4</text>
+        <circle cx="600" cy="215" r="24" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="2.5"/>
+        <text x="600" y="220" fill="var(--warn)">5</text>
+        <!-- Sans suite -->
+        <circle cx="180" cy="335" r="24" fill="var(--muted-soft)" stroke="var(--muted)" stroke-width="2.5"/>
+        <text x="180" y="340" fill="var(--muted)">9</text>
+      </g>
+
+      <!-- Libellés des nœuds -->
+      <g font-family="Public Sans, sans-serif" font-size="12" font-weight="600" text-anchor="middle" fill="currentColor">
+        <text x="60"  y="145">Attente de</text><text x="60" y="159">paiement</text>
+        <text x="180" y="145">Attente de</text><text x="180" y="159">réception</text>
+        <text x="300" y="145">Voile</text><text x="300" y="159">réceptionnée</text>
+        <text x="420" y="145">Intervention</text><text x="420" y="159">programmée</text>
+        <text x="616" y="145">Solde</text><text x="616" y="159">à payer</text>
+        <text x="790" y="145">Révision finie,</text><text x="790" y="159">rapport dispo</text>
+        <text x="910" y="145">Matériel</text><text x="910" y="159">réexpédié</text>
+        <text x="490" y="260">Devis</text><text x="490" y="274">à valider</text>
+        <text x="600" y="260">Intervention</text><text x="600" y="274">à finir</text>
+        <text x="180" y="380">Sans suite</text>
+        <text x="180" y="394" font-weight="400" fill="var(--ink-3)">acompte acquis, créneau rendu</text>
+      </g>
+    </svg>
+    <figcaption>Le chemin normal est la rangée du haut : 0 → 1 → 2 → 3 → 6 → 7 → 8. Le détour par 4 et 5 n'existe que si l'atelier envoie un devis complémentaire. L'état 9 « Sans suite » attrape les dossiers payés dont le matériel n'arrive jamais ; on en sort en replanifiant depuis le Planning.</figcaption>
+  </figure>
+</section>
+
+<section id="etats">
+  <span class="secnum">3</span>
+  <h2>Le dossier étape par étape</h2>
+
+  <div class="etat-card">
+    <h3><span class="etat-num">0</span> En attente de paiement <span class="who client">le client agit</span></h3>
+    <dl>
+      <dt>Ce qui s'est passé</dt><dd>Le client a rempli sa demande et validé sa commande, mais l'acompte n'est pas encore encaissé (cas typique : virement en route). Le créneau est déjà réservé.</dd>
+      <dt>Le client voit</dt><dd>« En attente de virement » avec les coordonnées bancaires et la référence à indiquer. Il peut déjà expédier son matériel sans attendre.</dd>
+      <dt>L'atelier fait</dt><dd>Quand le virement apparaît sur le compte : bouton <strong>« Acompte encaissé »</strong> sur la fiche ou la liste de la console.</dd>
+      <dt>Tout seul</dt><dd>Relance du virement à J+2. Sans paiement à J+3 : commande annulée, créneau libéré, e-mail au client. Rien n'a été versé, rien n'est dû.</dd>
+    </dl>
+  </div>
+
+  <div class="etat-card">
+    <h3><span class="etat-num">1</span> En attente de réception <span class="who client">le client agit</span></h3>
+    <dl>
+      <dt>Ce qui s'est passé</dt><dd>L'acompte est encaissé. Le client a reçu par e-mail les consignes d'expédition, l'adresse de l'atelier et son bon d'intervention à glisser dans le colis (avec un QR code).</dd>
+      <dt>Le client voit</dt><dd>« En attente de réception », avec un formulaire pour déclarer son numéro de suivi colis. S'il le déclare, l'affichage devient « En cours d'acheminement vers l'atelier ».</dd>
+      <dt>L'atelier fait</dt><dd>À l'arrivée du colis : scan du QR du bon d'intervention, ou bouton <strong>« Confirmer la réception »</strong> (écran Réception). Commentaire de réception facultatif.</dd>
+      <dt>Tout seul</dt><dd>Rappels au client à J-7 et J-2 avant le créneau s'il n'a rien expédié. La veille du créneau au soir (18 h par défaut), si rien n'est arrivé : bascule en <strong>Sans suite</strong> (état 9). Un dossier avec un numéro de suivi déclaré n'est jamais basculé automatiquement : il est signalé dans le point du matin.</dd>
+    </dl>
+  </div>
+
+  <div class="etat-card is-atelier">
+    <h3><span class="etat-num">2</span> Voile réceptionnée <span class="who atelier">l'atelier agit</span></h3>
+    <dl>
+      <dt>Ce qui s'est passé</dt><dd>Le colis est arrivé et pointé. Le client a reçu la confirmation avec la date d'intervention prévue.</dd>
+      <dt>L'atelier fait</dt><dd>Au moment d'attaquer le dossier : bouton <strong>« Démarrer l'intervention »</strong>. C'est aussi le moment de replanifier si besoin (Planning, libre jusqu'à cet état).</dd>
+    </dl>
+  </div>
+
+  <div class="etat-card is-atelier">
+    <h3><span class="etat-num">3</span> Intervention programmée <span class="who atelier">l'atelier agit</span></h3>
+    <dl>
+      <dt>Ce qui s'est passé</dt><dd>L'intervention est en cours. C'est pendant le travail que l'atelier découvre les éventuels travaux supplémentaires.</dd>
+      <dt>L'atelier fait</dt><dd>Deux sorties possibles : <strong>« Intervention terminée, demander le solde »</strong> (chemin direct vers 6, le rapport PDF doit être déposé d'abord), ou envoi d'un <strong>devis complémentaire</strong> depuis la carte dédiée de la fiche (vers 4). Une commande « demande de devis » impose le passage par le devis.</dd>
+      <dt>Bon à savoir</dt><dd>Les rapports de contrôle se saisissent dès cet état (carte « Rapports de contrôle ») ; le client ne les voit qu'à l'état 7.</dd>
+    </dl>
+  </div>
+
+  <div class="etat-card">
+    <h3><span class="etat-num">4</span> Devis à valider <span class="who client">le client agit</span></h3>
+    <dl>
+      <dt>Ce qui s'est passé</dt><dd>Le client a reçu le devis par e-mail avec un lien sécurisé : il accepte ou refuse en un clic. L'intervention attend sa réponse.</dd>
+      <dt>Tout seul</dt><dd>Relances à J+3 puis J+8 sans réponse. À partir de J+10, le dossier apparaît dans le point du matin : un appel est la bonne étape suivante.</dd>
+      <dt>L'atelier fait</dt><dd>Après un accord par téléphone : <strong>« Forcer la décision du devis »</strong> avec un motif (par exemple « accord téléphonique du 12/09 »).</dd>
+      <dt>E-mails</dt><dd>Acceptation : confirmation au client avec le nouveau total, copie atelier. Refus : e-mail dédié (voir cas particuliers).</dd>
+    </dl>
+  </div>
+
+  <div class="etat-card is-atelier">
+    <h3><span class="etat-num">5</span> Intervention à finir <span class="who atelier">l'atelier agit</span></h3>
+    <dl>
+      <dt>Ce qui s'est passé</dt><dd>Le client a répondu au devis. La fiche affiche « devis validé » ou « devis refusé » : l'atelier termine avec ou sans les travaux supplémentaires.</dd>
+      <dt>L'atelier fait</dt><dd>Comme à l'état 3 : <strong>« Intervention terminée, demander le solde »</strong>, rapport PDF exigé.</dd>
+    </dl>
+  </div>
+
+  <div class="etat-card">
+    <h3><span class="etat-num">6</span> Solde à payer <span class="who client">le client agit</span></h3>
+    <dl>
+      <dt>Ce qui s'est passé</dt><dd>Le client a reçu « C'est prêt ! » avec le lien de paiement du solde (même commande, montant ajusté automatiquement, devis compris).</dd>
+      <dt>Tout seul</dt><dd>Relances du solde à J+2 et J+5. Au-delà, le dossier apparaît dans le point du matin (« soldes en souffrance »). Dès le paiement : passage automatique à l'état 7. Si le solde est nul, le dossier saute directement à 7.</dd>
+      <dt>L'atelier fait</dt><dd>Rien tant que le client n'a pas payé : le matériel reste à l'atelier. Paiement reçu autrement (chèque, espèces) : <strong>« Forcer le paiement du solde »</strong> avec motif. Des suppléments de dernière minute peuvent encore être ajoutés via la carte « Facturation ».</dd>
+    </dl>
+  </div>
+
+  <div class="etat-card is-atelier">
+    <h3><span class="etat-num">7</span> Révision finie, rapport disponible <span class="who atelier">l'atelier agit</span></h3>
+    <dl>
+      <dt>Ce qui s'est passé</dt><dd>Le solde est réglé. Le client a reçu son rapport de contrôle en pièce jointe, aussi disponible dans son espace.</dd>
+      <dt>L'atelier fait</dt><dd>Préparer le colis retour, l'expédier, puis <strong>« Matériel réexpédié »</strong> avec le numéro ou le lien de suivi (obligatoire).</dd>
+    </dl>
+  </div>
+
+  <div class="etat-card is-fin">
+    <h3><span class="etat-num">8</span> Matériel réexpédié <span class="who fin">dossier clos</span></h3>
+    <dl>
+      <dt>Ce qui s'est passé</dt><dd>Le client a reçu « Votre matériel est reparti ! » avec le suivi du colis retour. Le dossier passe dans « Terminées » côté client. Rien d'autre à faire.</dd>
+    </dl>
+  </div>
+
+  <div class="etat-card is-fin">
+    <h3><span class="etat-num">9</span> Sans suite <span class="who fin">dossier clos</span></h3>
+    <dl>
+      <dt>Ce qui s'est passé</dt><dd>Le matériel n'est jamais arrivé pour un dossier payé. Le créneau a été rendu à la vente, <strong>l'acompte reste acquis</strong> (il couvre le créneau perdu), la commande n'est ni annulée ni remboursée. Le client a été prévenu, avec une invitation à replanifier.</dd>
+      <dt>Le client voit</dt><dd>Badge gris « Sans suite » dans son espace, avec l'explication et l'invitation à contacter l'atelier.</dd>
+      <dt>Pour reprendre</dt><dd>Le client se manifeste ? <strong>Replanifier le dossier depuis le Planning</strong> (même une reprise sur la date d'origine est possible) : il repart en « En attente de réception », et les rappels repartent pour la nouvelle date.</dd>
+      <dt>Bon à savoir</dt><dd>Le classement manuel (« Classer sans suite », motif obligatoire) sert surtout aux dossiers épargnés par la bascule automatique parce qu'un colis était annoncé mais n'est jamais arrivé. Il est refusé sur une commande non payée : celle-ci relève de l'annulation automatique.</dd>
+    </dl>
+  </div>
+</section>
+
+<section id="automatismes">
+  <span class="secnum">4</span>
+  <h2>Les automatismes</h2>
+  <p class="prose">Tout tourne sans intervention, aux cadences ci-dessous (les valeurs par défaut, toutes réglables : voir <a href="#reglages">Où se règle quoi</a>). Chaque envoi ou bascule laisse une note dans la commande.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Situation</th><th>Ce qui se passe</th><th>Cadence par défaut</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Virement d'acompte pas reçu</td>
+          <td>Relance avec les coordonnées bancaires, puis annulation : commande annulée, créneau libéré, e-mail au client (rien n'était versé)</td>
+          <td>Relance J+2, annulation J+3</td>
+        </tr>
+        <tr>
+          <td>Demande jamais finalisée, paiement échoué</td>
+          <td>Relance avec lien de reprise, puis suppression de la demande et libération du créneau</td>
+          <td>Relance H+1, suppression au premier minuit après 6 h</td>
+        </tr>
+        <tr>
+          <td>Matériel pas encore expédié</td>
+          <td>Rappels « avez-vous expédié votre matériel ? » avec l'adresse et le lien de déclaration du suivi</td>
+          <td>J-7 et J-2 avant le créneau</td>
+        </tr>
+        <tr>
+          <td>Matériel jamais arrivé (dossier payé)</td>
+          <td>Bascule en « Sans suite » : créneau rendu, acompte acquis, e-mail au client. Jamais si un suivi colis est déclaré</td>
+          <td>La veille du créneau, à 18 h</td>
+        </tr>
+        <tr>
+          <td>Devis sans réponse</td>
+          <td>Relances avec un lien de validation régénéré, puis signalement au point du matin</td>
+          <td>J+3 et J+8, signalé dès J+10</td>
+        </tr>
+        <tr>
+          <td>Solde pas réglé</td>
+          <td>Relances avec le lien de paiement, puis signalement au point du matin. Le matériel ne repart pas tant que le solde n'est pas réglé</td>
+          <td>J+2 et J+5 après la demande</td>
+        </tr>
+        <tr>
+          <td>Commande annulée (quelle qu'en soit la raison)</td>
+          <td>Le créneau est libéré automatiquement</td>
+          <td>Immédiat</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="matin">
+  <span class="secnum">5</span>
+  <h2>Le point du matin</h2>
+  <div class="prose">
+    <p>Chaque matin à 8 h, s'il y a quelque chose à surveiller, les adresses admin reçoivent <strong>un seul e-mail</strong> qui liste, avec un lien direct vers chaque fiche :</p>
+    <ul>
+      <li><strong>Les dossiers qui basculeront « Sans suite » ce soir.</strong> C'est le garde-fou : si un colis est arrivé hier mais n'a pas été pointé, confirmez la réception dans la console avant le soir et la bascule n'aura pas lieu.</li>
+      <li><strong>Les colis annoncés mais pas arrivés</strong> (suivi déclaré) : ils ne basculent jamais tout seuls ; si le colis ne vient vraiment pas, classez-les sans suite à la main.</li>
+      <li><strong>Les soldes en souffrance</strong> (relances épuisées) : un appel est la prochaine étape.</li>
+      <li><strong>Les devis sans réponse</strong> depuis plus de 10 jours.</li>
+      <li><strong>Les virements qui expirent aujourd'hui</strong> (annulation automatique dans la journée).</li>
+    </ul>
+    <p>Pas d'e-mail les jours où tout va bien. L'écran « Aujourd'hui » de la console montre les mêmes informations en continu.</p>
+  </div>
+</section>
+
+<section id="cas">
+  <span class="secnum">6</span>
+  <h2>Cas particuliers</h2>
+  <div class="prose">
+    <h3>Le devis est refusé</h3>
+    <p>Deux situations, gérées automatiquement au clic du client. Cas général : les travaux supplémentaires sont retirés, l'atelier termine les prestations d'origine sans changement de prix (e-mail dédié au client). Commande « demande de devis » seule : il n'y a rien d'autre à facturer, le matériel est à retourner au client (e-mail dédié aussi). Dans les deux cas le dossier passe à l'état 5 et la fiche affiche « devis refusé ».</p>
+
+    <h3>Mettre un dossier en pause</h3>
+    <p>La <strong>mise en attente</strong> (boutons de la carte Actions, motif obligatoire, message client facultatif) signale que le dossier n'avance plus : badge côté console, bandeau côté client. Elle ne bloque aucune transition et se lève à la main ; elle se lève aussi toute seule quand la demande de solde part. À utiliser par exemple en attente d'une pièce ou d'une réponse client.</p>
+
+    <h3>Replanifier un créneau</h3>
+    <p>Depuis la vue <strong>Planning</strong> (panneau ou glisser-déposer). Libre jusqu'à l'état 2 inclus ; à partir de l'état 3 il faut être administrateur et donner un motif. Le client peut être prévenu par e-mail (case à cocher). Les rappels « avez-vous expédié ? » repartent automatiquement pour la nouvelle date. C'est aussi la porte de sortie d'un dossier « Sans suite ».</p>
+
+    <h3>Il manque des éléments dans le colis</h3>
+    <p>À la réception, un commentaire suffit dans la plupart des cas. Les anciens dossiers marqués « incomplets » bloquent le démarrage de l'intervention tant qu'un motif de déblocage n'est pas donné.</p>
+
+    <h3>Annuler une commande</h3>
+    <p>Annuler depuis WooCommerce libère le créneau automatiquement. À réserver aux dossiers non payés ou aux cas exceptionnels : pour un dossier payé dont le matériel n'arrive pas, c'est « Sans suite » qu'il faut utiliser (l'acompte reste acquis, le dossier reste visible et reprenable).</p>
+  </div>
+</section>
+
+<section id="emails">
+  <span class="secnum">7</span>
+  <h2>Qui reçoit quoi</h2>
+  <div class="prose">
+    <p><strong>Le client</strong> reçoit un e-mail à chaque étape qui le concerne : confirmation de commande et coordonnées de virement, « paiement reçu » avec les consignes d'expédition et son bon d'intervention, confirmation de réception, devis et ses relances, confirmation de sa décision, demande de solde et ses relances, rapport de contrôle, avis de réexpédition avec le suivi, et les avis d'annulation ou de classement sans suite. Tous ces textes sont modifiables (voir ci-dessous).</p>
+    <p><strong>Les adresses admin</strong> (l'atelier, plus l'agence en copie) reçoivent : une copie de chaque notification d'étape et de chaque relance ou bascule automatique, les e-mails WooCommerce de nouvelle commande, d'annulation et d'échec de paiement, et le point du matin. Plusieurs adresses peuvent être servies : elles se saisissent séparées par des virgules.</p>
+  </div>
+</section>
+
+<section id="reglages">
+  <span class="secnum">8</span>
+  <h2>Où se règle quoi</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Pour changer…</th><th>Aller dans…</th></tr></thead>
+      <tbody>
+        <tr><td>Les délais de relance et d'annulation, l'heure de bascule « Sans suite », les rappels avant créneau, les relances de solde, l'heure du point du matin, le téléphone et les horaires affichés</td><td>Gestion Atelier &gt; Configuration &gt; <strong>Paiements &amp; relances</strong></td></tr>
+        <tr><td>Le texte de chacun des 17 e-mails de relance et d'automatisme (objet et contenu, avec variables)</td><td>Gestion Atelier &gt; Configuration &gt; <strong>Paiements &amp; relances</strong>, sous les délais</td></tr>
+        <tr><td>Les e-mails d'étape (réception, devis, solde, rapport, réexpédition) et les adresses admin</td><td>Gestion Atelier &gt; Configuration &gt; <strong>Notifications</strong></td></tr>
+        <tr><td>Les jours ouverts et les heures disponibles par jour</td><td>Gestion Atelier &gt; Configuration &gt; <strong>Ouvertures</strong></td></tr>
+        <tr><td>Les coordonnées bancaires affichées au client</td><td>WooCommerce &gt; Réglages &gt; Paiements &gt; <strong>Virement bancaire</strong></td></tr>
+        <tr><td>Le montant d'acompte d'une prestation</td><td>La fiche du <strong>produit</strong> WooCommerce (champ « acompte »)</td></tr>
+        <tr><td>Le logo et la couleur des e-mails</td><td>WooCommerce &gt; Réglages &gt; <strong>E-mails</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="faq">
+  <span class="secnum">9</span>
+  <h2>Questions fréquentes</h2>
+
+  <details class="faq">
+    <summary>Le client m'appelle : son colis est parti mais son créneau approche.</summary>
+    <div class="faq-body">Demandez-lui de déclarer son numéro de suivi depuis son espace client (ou saisissez-le pour lui sur la fiche). Un dossier avec un suivi déclaré ne bascule jamais « Sans suite » automatiquement : vous le retrouverez dans le point du matin tant que le colis n'est pas pointé. Si le colis n'arrive vraiment jamais, classez-le sans suite à la main.</div>
+  </details>
+
+  <details class="faq">
+    <summary>Un colis est arrivé hier mais personne ne l'a pointé, et le dossier est annoncé « bascule ce soir ».</summary>
+    <div class="faq-body">C'est exactement le rôle du point du matin : confirmez la réception dans la console avant le soir (scan du QR ou écran Réception), et la bascule n'aura pas lieu. C'est l'état du dossier qui compte, pas la présence physique du colis.</div>
+  </details>
+
+  <details class="faq">
+    <summary>Un dossier « Sans suite » : le client veut reprendre.</summary>
+    <div class="faq-body">Ouvrez le Planning, choisissez une date ouverte avec de la place (la date d'origine est acceptée si elle est encore ouverte) et replanifiez le dossier : il revient en « En attente de réception » et les rappels repartent. L'acompte déjà versé reste valable, rien à re-encaisser.</div>
+  </details>
+
+  <details class="faq">
+    <summary>Le client a payé son acompte en direct (chèque, espèces, virement hors ligne).</summary>
+    <div class="faq-body">Bouton « Acompte encaissé » sur la fiche : le dossier avance et le client reçoit ses consignes d'expédition, exactement comme après un virement.</div>
+  </details>
+
+  <details class="faq">
+    <summary>Le client ne répond pas au devis malgré les relances.</summary>
+    <div class="faq-body">Appelez-le (le point du matin vous le rappelle dès J+10). Selon sa réponse, utilisez « Forcer la décision du devis » avec un motif qui trace l'échange (« accord téléphonique du… » ou « refus téléphonique du… »). La plateforme ne décide jamais à la place du client.</div>
+  </details>
+
+  <details class="faq">
+    <summary>Le solde n'est pas réglé depuis des semaines. Que devient le matériel ?</summary>
+    <div class="faq-body">Le dossier reste « Solde à payer » et le matériel reste à l'atelier : il ne repart jamais sans règlement. Après les deux relances automatiques, le dossier reste listé chaque matin dans les soldes en souffrance : appel, puis arrangement au cas par cas.</div>
+  </details>
+
+  <details class="faq">
+    <summary>Je me suis trompé d'état.</summary>
+    <div class="faq-body">Les transitions de la console sont volontairement limitées aux passages prévus : la plupart des erreurs se rattrapent en poursuivant le flux normal. Pour un vrai retour en arrière, passez par un administrateur (l'état peut être corrigé dans l'admin technique). Chaque changement d'état laisse une note signée dans la commande : l'historique dit toujours qui a fait quoi.</div>
+  </details>
+
+  <details class="faq">
+    <summary>Le client n'a pas reçu un e-mail.</summary>
+    <div class="faq-body">Ouvrez la commande WooCommerce : les notes disent quel e-mail est parti, quand, et à quelle adresse (et signalent tout échec d'envoi). Les e-mails d'étape peuvent être renvoyés depuis la fiche console (bouton de renvoi sur les étapes devis et solde).</div>
+  </details>
+</section>
+
+<footer class="doc">
+  Guide de la plateforme de révision · CogitoWeb · à jour du 27 août 2026 (machine à états 0-9, circuit de relances complet)
+</footer>
+
+</div>
