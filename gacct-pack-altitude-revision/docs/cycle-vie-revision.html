@@ -194,6 +194,29 @@
   }
   .st.term { background: var(--ok-soft); color: var(--ok); }
 
+  .cfg {
+    display: inline-block;
+    font-size: .72em;
+    line-height: 1;
+    padding: .18em .4em;
+    border-radius: 999px;
+    background: var(--accent-soft, rgba(14, 139, 138, .12));
+    color: var(--accent, #0e8b8a);
+    border: 1px solid currentColor;
+    vertical-align: .15em;
+    margin-left: .25em;
+    cursor: help;
+    white-space: nowrap;
+  }
+  .cfgnote {
+    border: 1px solid var(--accent, #0e8b8a);
+    border-left-width: 4px;
+    border-radius: 6px;
+    padding: 1rem 1.2rem;
+    margin: 2.2rem 0 1.5rem;
+  }
+  .cfgnote p { margin: 0 0 .6rem; }
+  .cfgnote p:last-child { margin-bottom: 0; }
   .badge {
     display: inline-block;
     font-size: 0.68rem;
@@ -383,7 +406,7 @@
         </tr>
         <tr>
           <td class="nowrap"><span class="st">1</span> rappels</td>
-          <td><span class="auto">Auto</span> : J-7 puis J-2 avant le créneau, dossier payé encore en état 0/1 sans suivi déclaré <em>(ajouté le 27/08)</em></td>
+          <td><span class="auto">Auto</span> : J-7 puis J-2 <span class="cfg" title="Valeur réglable dans l'admin, voir la note en bas de page">⚙ réglable</span> avant le créneau, dossier payé encore en état 0/1 sans suivi déclaré <em>(ajouté le 27/08)</em></td>
           <td>Un e-mail par palier (metas <code>_gacct_preslot_*_sent</code>), envois 8 h à 20 h, jamais dans les 24 h suivant la commande ; purgés à toute replanification</td>
           <td><code>pre_slot_reminder</code> avec <code>{slot_date}</code> et le lien de déclaration du suivi (client)</td>
           <td><span class="file">gacct-lifecycle.php</span> (<code>gacct_lc_process_preslot_reminders</code>)</td>
@@ -411,7 +434,7 @@
         </tr>
         <tr>
           <td class="nowrap"><span class="st">4</span> relances</td>
-          <td><span class="auto">Auto</span> : J+3 puis J+8 sans réponse <em>(2ᵉ palier ajouté le 27/08)</em></td>
+          <td><span class="auto">Auto</span> : J+3 puis J+8 <span class="cfg" title="Valeur réglable dans l'admin, voir la note en bas de page">⚙ réglable</span> sans réponse <em>(2ᵉ palier ajouté le 27/08)</em></td>
           <td>Lien régénéré à chaque relance ; à partir de J+10, signalement dans le récap admin du matin (« devis sans réponse, à appeler »)</td>
           <td><code>quote_reminder</code> (client)</td>
           <td><span class="file">gacct-quote.php</span> (<code>gacct_quote_process_reminders</code>)</td>
@@ -439,7 +462,7 @@
         </tr>
         <tr>
           <td class="nowrap"><span class="st">6</span> relances</td>
-          <td><span class="auto">Auto</span> : J+3 puis J+10 après la demande de solde <em>(ajouté le 27/08, cadence recalée le 28/08)</em></td>
+          <td><span class="auto">Auto</span> : J+3 puis J+10 <span class="cfg" title="Valeur réglable dans l'admin, voir la note en bas de page">⚙ réglable</span> après la demande de solde <em>(ajouté le 27/08, cadence recalée le 28/08)</em></td>
           <td>Chronomètre <code>_gacct_balance_ref_ts</code> posé à l'entrée en 6 (re-entrée = remise à zéro) ; au-delà de la 2ᵉ relance, « soldes en souffrance » au récap admin et bloc « Suivi de la demande de solde » sur la fiche console (demande, relances, alerte relances épuisées)</td>
           <td><code>balance_reminder</code> avec <code>{payment_url}</code> et <code>{balance_amount}</code> (client)</td>
           <td><span class="file">gacct-lifecycle.php</span> (<code>gacct_lc_process_balance_reminders</code>)</td>
@@ -453,7 +476,7 @@
         </tr>
         <tr>
           <td class="nowrap"><span class="st">0</span>/<span class="st">1</span> → <span class="st term">9</span></td>
-          <td><span class="auto">Auto</span> : la veille du créneau, dès <code>noshow_hour</code> (18 h, réglable) si le matériel n'est pas arrivé ; ou <span class="manu">Atelier</span> : « Classer sans suite » avec motif <em>(ajouté le 27/08)</em></td>
+          <td><span class="auto">Auto</span> : la veille du créneau, dès <code>noshow_hour</code> (18 h) <span class="cfg" title="Valeur réglable dans l'admin, voir la note en bas de page">⚙ réglable</span> si le matériel n'est pas arrivé ; ou <span class="manu">Atelier</span> : « Classer sans suite » avec motif <em>(ajouté le 27/08)</em></td>
           <td>Occupation en <code>draft</code> (créneau rendu, jamais supprimé), acompte acquis, commande ni annulée ni remboursée. <strong>Exclusions</strong> : commande non payée (refus explicite), suivi colis déclaré (signalé le matin, classement manuel)</td>
           <td><code>noshow_release</code>, une seule fois par épisode (client + copie admin)</td>
           <td><span class="file">gacct-lifecycle.php</span> (<code>gacct_lc_process_no_show</code>, <code>gacct_lc_on_state9_entry</code>)</td>
@@ -490,7 +513,7 @@
         <tr>
           <td rowspan="8" class="nowrap"><code>gacct_pay_hourly_tick</code><br>(horaire)</td>
           <td>Virement en attente (bacs, on-hold/pending)</td>
-          <td>Relance J+2, annulation J+3</td>
+          <td>Relance J+2, annulation J+3 <span class="cfg" title="Valeur réglable dans l'admin, voir la note en bas de page">⚙ réglable</span></td>
           <td>Relance <code>bacs_reminder</code> (une fois) puis <code>bacs_cancel</code> (client + copie admin) : commande annulée, <strong>CCT révision et occupation supprimés</strong>, relations nettoyées, créneau libéré</td>
           <td><span class="file">gacct-payments.php:797, 934</span></td>
         </tr>
@@ -508,31 +531,31 @@
         </tr>
         <tr>
           <td>Devis sans réponse (état 4)</td>
-          <td>J+3 puis J+8 <em>(2ᵉ palier ajouté le 27/08)</em></td>
+          <td>J+3 puis J+8 <span class="cfg" title="Valeur réglable dans l'admin, voir la note en bas de page">⚙ réglable</span> <em>(2ᵉ palier ajouté le 27/08)</em></td>
           <td><code>quote_reminder</code>, lien régénéré ; à partir de J+10, signalement au récap admin</td>
           <td><span class="file">gacct-quote.php</span></td>
         </tr>
         <tr>
           <td>Bascule « Sans suite » (matériel jamais arrivé, commande payée) <em>(refondue le 27/08)</em></td>
-          <td>La veille du créneau, dès <code>noshow_hour</code> (18 h, réglable) ; rattrapage des créneaux passés jamais traités</td>
+          <td>La veille du créneau, dès <code>noshow_hour</code> (18 h) <span class="cfg" title="Valeur réglable dans l'admin, voir la note en bas de page">⚙ réglable</span> ; rattrapage des créneaux passés jamais traités</td>
           <td>État → <span class="st term">9</span>, occupation en <code>draft</code> (créneau rendu, rien de supprimé), acompte acquis, <code>noshow_release</code> (client + copie admin). Exclusions : non payé, suivi colis déclaré</td>
           <td><span class="file">gacct-lifecycle.php</span></td>
         </tr>
         <tr>
           <td>Rappels avant créneau <em>(ajouté le 27/08)</em></td>
-          <td>J-7 puis J-2, envois 8 h à 20 h</td>
+          <td>J-7 puis J-2 <span class="cfg" title="Valeur réglable dans l'admin, voir la note en bas de page">⚙ réglable</span>, envois 8 h à 20 h</td>
           <td><code>pre_slot_reminder</code> aux dossiers payés en état 0/1 sans suivi déclaré</td>
           <td><span class="file">gacct-lifecycle.php</span></td>
         </tr>
         <tr>
           <td>Relances de solde (état 6) <em>(ajouté le 27/08)</em></td>
-          <td>J+3 puis J+10 après la demande <em>(cadence du 28/08)</em>, envois 8 h à 20 h</td>
+          <td>J+3 puis J+10 <span class="cfg" title="Valeur réglable dans l'admin, voir la note en bas de page">⚙ réglable</span> après la demande <em>(cadence du 28/08)</em>, envois 8 h à 20 h</td>
           <td><code>balance_reminder</code> avec lien de paiement ; ensuite « soldes en souffrance » au récap + bloc de suivi sur la fiche console</td>
           <td><span class="file">gacct-lifecycle.php</span></td>
         </tr>
         <tr>
           <td>Récapitulatif admin du matin <em>(ajouté le 27/08)</em></td>
-          <td>Une fois par jour, dès <code>recap_hour</code> (8 h, réglable) ; rien à signaler = pas d'e-mail</td>
+          <td>Une fois par jour, dès <code>recap_hour</code> (8 h) <span class="cfg" title="Valeur réglable dans l'admin, voir la note en bas de page">⚙ réglable</span> ; rien à signaler = pas d'e-mail</td>
           <td>Cinq sections : bascules « Sans suite » du soir (garde-fou : pointer une réception oubliée avant le soir), colis annoncés pas arrivés, soldes en souffrance, devis sans réponse, virements en échéance le jour même (Hervé + agence)</td>
           <td><span class="file">gacct-lifecycle.php</span></td>
         </tr>
@@ -561,12 +584,12 @@
   <div class="prose">
     <ul>
       <li><strong>Workflow d'états</strong> (page Notifications) : 6 templates, états d'arrivée 2, 3, 4, 6, 7, 8. Pas d'e-mail pour les états 0 et 1 (couverts par Woo et <code>deposit_received</code>) ni 5 (couverts par <code>quote_accepted</code> et les deux e-mails de refus du devis).</li>
-      <li><strong>Paiements &amp; relances</strong> : 17 templates éditables : <code>bacs_reminder</code>, <code>bacs_cancel</code>, <code>abandoned</code>, <code>payment_failed</code>, <code>unfinished_cancel</code>, <code>noshow_release</code>, <code>rescheduled</code>, <code>deposit_received</code>, <code>missing_items</code>, <code>quote_reminder</code>, <code>quote_refused_partial</code>, <code>quote_refused_return</code>, <code>quote_accepted</code>, <code>hold_notice</code>, <code>hold_release</code>, <code>pre_slot_reminder</code>, <code>balance_reminder</code> (les trois derniers ajoutés le 27/08).</li>
+      <li><strong>Paiements &amp; relances</strong> : 17 templates éditables <span class="cfg" title="Valeur réglable dans l'admin, voir la note en bas de page">⚙ réglable</span> : <code>bacs_reminder</code>, <code>bacs_cancel</code>, <code>abandoned</code>, <code>payment_failed</code>, <code>unfinished_cancel</code>, <code>noshow_release</code>, <code>rescheduled</code>, <code>deposit_received</code>, <code>missing_items</code>, <code>quote_reminder</code>, <code>quote_refused_partial</code>, <code>quote_refused_return</code>, <code>quote_accepted</code>, <code>hold_notice</code>, <code>hold_release</code>, <code>pre_slot_reminder</code>, <code>balance_reminder</code> (les trois derniers ajoutés le 27/08).</li>
       <li><strong>WooCommerce natifs</strong> : voir section 2, point 4.</li>
     </ul>
   </div>
   <div class="callout prose">
-    <p><strong>Destinataires harmonisés le 27/08</strong> (le constat de l'enquête : copies plugin vers contact@cogitoweb.net, natifs Woo vers Hervé, personne ne voyait tout). Désormais les copies admin du plugin comme les e-mails natifs Woo partent vers <b>herve.gabet@plaine-altitude.com et contact@cogitoweb.net</b> ; le champ du réglage accepte plusieurs adresses séparées par des virgules (instance AEROTECH non touchée : ses destinataires restent propres au client).</p>
+    <p><strong>Destinataires harmonisés le 27/08</strong> (le constat de l'enquête : copies plugin vers contact@cogitoweb.net, natifs Woo vers Hervé, personne ne voyait tout). Désormais les copies admin du plugin comme les e-mails natifs Woo partent vers <b>herve.gabet@plaine-altitude.com et contact@cogitoweb.net</b> ; le champ du réglage accepte plusieurs adresses séparées par des virgules <span class="cfg" title="Valeur réglable dans l'admin, voir la note en bas de page">⚙ réglable</span> (instance AEROTECH non touchée : ses destinataires restent propres au client).</p>
   </div>
 </section>
 
@@ -623,7 +646,7 @@
     <dl>
       <dt>Rappels</dt><dd>Deux rappels client avant le créneau, à J-7 et J-2 (template <code>pre_slot_reminder</code> : « votre créneau approche, avez-vous expédié votre matériel ? », avec le lien de déclaration du numéro de suivi).</dd>
       <dt>Garde-fou</dt><dd>Récapitulatif admin le matin : dossiers encore en état 0/1 qui basculeront le soir, en distinguant ceux qui ont déclaré un numéro de suivi (exclus de la bascule automatique, classement manuel : décision confirmée le 28/08).</dd>
-      <dt>Bascule</dt><dd>Le soir de la veille (18 h par défaut, réglable), état terminal <span class="st term">9</span> « Sans suite », réécrit pour la machine de la prod. Occupation passée en <code>draft</code> et non supprimée : le calcul de dispo ne compte que les publish, le créneau se rouvre, le retour arrière est immédiat. Refusé sur une commande non payée.</dd>
+      <dt>Bascule</dt><dd>Le soir de la veille (18 h par défaut) <span class="cfg" title="Valeur réglable dans l'admin, voir la note en bas de page">⚙ réglable</span>, état terminal <span class="st term">9</span> « Sans suite », réécrit pour la machine de la prod. Occupation passée en <code>draft</code> et non supprimée : le calcul de dispo ne compte que les publish, le créneau se rouvre, le retour arrière est immédiat. Refusé sur une commande non payée.</dd>
       <dt>Créneau</dt><dd>Rendu à la vente. Replanification depuis la console : republication de l'occupation sur une nouvelle date (même date acceptée), retour en état 1, e-mail <code>rescheduled</code>.</dd>
       <dt>Argent</dt><dd>Acompte acquis, commande conservée en <code>acompte-paye</code>, ni annulée ni remboursée.</dd>
       <dt>Message client</dt><dd>« Votre créneau a été libéré faute de réception du matériel ; votre acompte reste acquis ; contactez l'atelier pour replanifier. » L'espace client affiche le dossier grisé « Sans suite », plus jamais « En attente de réception ».</dd>
@@ -650,7 +673,7 @@
     <h3>F · Transversal <span class="badge ok">Réalisé le 27/08</span></h3>
     <dl>
       <dt>Annulation</dt><dd>Hook sur le passage en « cancelled » (quelle qu'en soit l'origine) : occupation en draft, note de commande. Le trou n°5 est fermé.</dd>
-      <dt>Récap admin</dt><dd>Un seul e-mail quotidien du matin (8 h, réglable, rien à signaler = pas d'e-mail), cinq sections : bascules « Sans suite » du soir, colis annoncés pas arrivés, soldes en souffrance, devis sans réponse, virements en échéance le jour même.</dd>
+      <dt>Récap admin</dt><dd>Un seul e-mail quotidien du matin (8 h <span class="cfg" title="Valeur réglable dans l'admin, voir la note en bas de page">⚙ réglable</span>, rien à signaler = pas d'e-mail), cinq sections : bascules « Sans suite » du soir, colis annoncés pas arrivés, soldes en souffrance, devis sans réponse, virements en échéance le jour même.</dd>
       <dt>Devis accepté</dt><dd>E-mail <code>quote_accepted</code> au client (trace de son engagement) et copie atelier, symétrique du refus.</dd>
       <dt>Référentiel</dt><dd>Glossaire 18 et query 27 à jour (libellés 0 à 9), code mort Kojito purgé (1.3.0), l'ensemble reporté sur AEROTECH (développement mutualisé).</dd>
     </dl>
@@ -674,6 +697,11 @@
     <p><strong>Fiabilité.</strong> L'inventaire initial a été vérifié dans le code de production, la configuration et la base. Le chantier a ensuite été <strong>testé en exécution réelle sur la prod</strong> : circuits du cycle de vie (37 vérifications, scénarios T0 à T8, e-mails interceptés par <code>pre_wp_mail</code>, dossiers de test restaurés), suivi de la demande de solde et récap (10 vérifications le 28/08). Le site n'a pas encore basculé en production publique (noindex) : les dossiers en base sont des tests.</p>
   </div>
 </section>
+
+<div class="cfgnote">
+  <p><span class="cfg" title="Valeur réglable dans l'admin">⚙ réglable</span> <strong>Ces valeurs se changent dans l'admin WordPress, sans développeur.</strong> Toutes les valeurs qui portent ce repère sont des réglages ; celles citées dans ce document sont les défauts en vigueur.</p>
+  <p>Cadences et textes des relances (virement, devis, solde), rappels avant créneau, heure de bascule « Sans suite », heure du récapitulatif du matin, destinataires admin et les 17 modèles d'e-mails : <strong>Gestion Atelier &gt; Configuration</strong>, onglet <strong>Paiements &amp; relances</strong>. Les 6 e-mails du workflow d'états : onglet <strong>Notifications</strong>. Heure d'ouverture et jours travaillés : onglet <strong>Atelier</strong> ; la capacité par jour se génère dans l'onglet <strong>Ouvertures</strong>.</p>
+</div>
 
 <footer class="doc">
   Enquête du 27 août 2026, chantier des 27-28 août 2026, sur ns3181892 (accès Plesk non-root) · Dépôt gestion_atelier_CogitoWeb, commit 6f836ff · Instances : revision.cogitoweb.net et fly-aerotech.cogitoweb.net · Document mis à jour le 28 août 2026

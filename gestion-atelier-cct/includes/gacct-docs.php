@@ -12,14 +12,18 @@
  *
  *   add_filter( 'gacct_docs', function ( $docs ) {
  *       $docs['mon-doc'] = array(
- *           'title' => 'Titre affiché',
- *           'desc'  => 'Une ligne de description.',
- *           'file'  => '/chemin/absolu/vers/le/fichier.html',
+ *           'title'  => 'Titre affiché',
+ *           'desc'   => 'Une ligne de description.',
+ *           'file'   => '/chemin/absolu/vers/le/fichier.html',
+ *           'public' => false, // true : consultable sans connexion (toujours noindex)
+ *           'listed' => true,  // false : lien caché, absent de l'écran Documentation
  *       );
  *       return $docs;
  *   } );
  *
- * Sans document déclaré (AEROTECH), l'écran et l'endpoint sont inertes.
+ * Un document non listé se partage par son URL seulement : donner au slug une
+ * terminaison non devinable. Sans document déclaré (AEROTECH), l'écran et
+ * l'endpoint sont inertes.
  *
  * @package gestion-atelier-cct
  */
@@ -42,7 +46,15 @@ function gacct_docs_list() {
 		if ( '' === $slug || empty( $doc['file'] ) || ! file_exists( $doc['file'] ) ) {
 			continue;
 		}
-		$out[ $slug ] = wp_parse_args( $doc, array( 'title' => $slug, 'desc' => '' ) );
+		$out[ $slug ] = wp_parse_args(
+			$doc,
+			array(
+				'title'  => $slug,
+				'desc'   => '',
+				'public' => false,
+				'listed' => true,
+			)
+		);
 	}
 
 	return $out;
@@ -66,7 +78,8 @@ function gacct_docs_user_can() {
 add_action( 'admin_menu', 'gacct_docs_register_menu', 20 );
 
 function gacct_docs_register_menu() {
-	if ( ! defined( 'GACCT_OP_MENU_SLUG' ) || ! gacct_docs_list() ) {
+	$listed = wp_list_filter( gacct_docs_list(), array( 'listed' => true ) );
+	if ( ! defined( 'GACCT_OP_MENU_SLUG' ) || ! $listed ) {
 		return;
 	}
 
@@ -89,6 +102,9 @@ function gacct_docs_render_admin_page() {
 	echo '<p>' . esc_html__( 'Les documents de référence de la plateforme. Chaque document s’ouvre dans un nouvel onglet.', 'gestion-atelier-cct' ) . '</p>';
 
 	foreach ( gacct_docs_list() as $slug => $doc ) {
+		if ( empty( $doc['listed'] ) ) {
+			continue;
+		}
 		$url = add_query_arg( 'gacct_doc', $slug, home_url( '/' ) );
 		echo '<div class="card" style="max-width:640px;padding:16px 20px;margin-top:12px;">';
 		echo '<h2 style="margin:0 0 6px;"><a href="' . esc_url( $url ) . '" target="_blank" rel="noopener">' . esc_html( $doc['title'] ) . '</a></h2>';
@@ -112,18 +128,21 @@ function gacct_docs_maybe_serve() {
 		return;
 	}
 
-	if ( ! is_user_logged_in() ) {
-		auth_redirect();
-	}
-
-	if ( ! gacct_docs_user_can() ) {
-		wp_die( esc_html__( 'Accès refusé.', 'gestion-atelier-cct' ), '', array( 'response' => 403 ) );
-	}
-
 	$docs = gacct_docs_list();
 	$slug = sanitize_key( wp_unslash( $_GET['gacct_doc'] ) );
+	$doc  = isset( $docs[ $slug ] ) ? $docs[ $slug ] : null;
 
-	if ( ! isset( $docs[ $slug ] ) ) {
+	// Un document réservé (ou inconnu) exige une session : ne rien révéler avant.
+	if ( ! $doc || empty( $doc['public'] ) ) {
+		if ( ! is_user_logged_in() ) {
+			auth_redirect();
+		}
+		if ( ! gacct_docs_user_can() ) {
+			wp_die( esc_html__( 'Accès refusé.', 'gestion-atelier-cct' ), '', array( 'response' => 403 ) );
+		}
+	}
+
+	if ( ! $doc ) {
 		wp_die( esc_html__( 'Document inconnu.', 'gestion-atelier-cct' ), '', array( 'response' => 404 ) );
 	}
 
