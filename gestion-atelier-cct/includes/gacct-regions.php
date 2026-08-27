@@ -38,10 +38,16 @@ function gacct_region_common() {
 		'cta_sub'        => 'Créneau réservé à l’avance · rapport de contrôle détaillé · retour suivi',
 		'phone'          => '',
 		'workshop'       => 'Atelier Route des Crêtes, Clécy (14570)',
-		// Chiffres réels de l'atelier (cf. analyse des 4 400 rapports + base clients).
-		'stat_reviews'   => array( 'value' => '5,0 / 5', 'label' => 'sur 260 avis Google' ),
-		'stat_volume'    => array( 'value' => '4 400+', 'label' => 'contrôles réalisés depuis 2019' ),
-		'stat_paracheck' => array( 'value' => 'PARACHECK®', 'label' => 'protocole de contrôle certifié' ),
+		// Badge avis Google du hero (widget gmbmanager.ai compact, comme l'accueil).
+		'reviews_badge_html' => '<div id="gmbmanager.ai-widget-2d7603e0-b883-4e08-9a1c-49bcbc47feba"></div>'
+			. '<script src="https://gmbmanager.ai/api/v1/widgets/2d7603e0-b883-4e08-9a1c-49bcbc47feba/embed.js" async></script>',
+		// Bandeau avis Google (widget gmbmanager.ai carrousel, comme l'accueil).
+		'reviews_band_html'  => '<div id="gmbmanager.ai-widget-4d8518ba-295b-423a-97cb-7efee025e25a"></div>'
+			. '<script src="https://gmbmanager.ai/api/v1/widgets/4d8518ba-295b-423a-97cb-7efee025e25a/embed.js" async></script>',
+		// Chiffres réels de l'atelier (base d'origine altitude-revision.fr, depuis 2019).
+		'stat_reviews'   => array( 'value' => '5,0 / 5', 'label' => 'de moyenne sur Google' ),
+		'stat_volume'    => array( 'value' => '5 000+', 'label' => 'révisions réalisées depuis 2019' ),
+		'stat_paracheck' => array( 'value' => 'PARACHECK®', 'label' => 'protocole de contrôle certifié F.F.V.L' ),
 		'nearby_title'   => 'Vous venez d’une autre région ?',
 		'links'          => array(
 			'controles'  => home_url( '/controles/' ),
@@ -93,15 +99,25 @@ function gacct_regions_data() {
 			'title'    => 'Révision de parapente en Normandie — Atelier à Clécy | Altitude Révision',
 			'meta'     => 'Atelier de révision et contrôle PARACHECK à Clécy, en Suisse Normande. Voile de parapente ou de paramoteur : déposez-la sur place ou expédiez-la, retour suivi.',
 			'h1'       => 'Révision de parapente en Normandie',
+			'h1_html'  => 'Révision de parapente <em>en Normandie</em>',
 			'hero_img' => 2239,
 			'intro'    => 'Notre atelier n’est pas installé n’importe où : Route des Crêtes, à Clécy, au pied du plus haut décollage du Nord-Ouest de la France. Les voiles que nous révisons, nous les voyons voler. Si vous êtes normand, vous êtes chez vous ici — la plupart de nos clients de la région déposent leur matériel en main propre et repartent avec les explications qui vont avec.',
-			'stat_local' => array( 'value' => '848', 'label' => 'pilotes normands nous font confiance' ),
+			'stat_local' => array( 'value' => '1 765', 'label' => 'révisions en Normandie depuis 2019' ),
+			'depts'    => array(
+				array( 'Calvados', '676' ),
+				array( 'Seine-Maritime', '487' ),
+				array( 'Eure', '298' ),
+				array( 'Manche', '245' ),
+			),
+			'brands'   => 'En Normandie, les voiles que nous voyons le plus sont les <strong>Niviuk</strong>, <strong>Advance</strong> et <strong>Ozone</strong>.',
 			'sections' => array(
 				array(
+					'eyebrow' => 'L’atelier',
 					'h2'   => 'Un atelier au bord du décollage',
 					'html' => '<p>La Suisse Normande est le terrain de jeu du vol libre normand : Clécy et ses deux décollages, Pont-d’Ouilly, les rochers de la vallée de l’Orne. Nous sommes à quelques minutes de tout ça — un contrôle déposé le matin, une discussion sur le calage de votre aile, et vous savez précisément où elle en est.</p><p>Pour les pilotes du Calvados, l’atelier est à une petite heure de Caen.</p>',
 				),
 				array(
+					'eyebrow' => 'Air marin',
 					'h2'   => 'Voler en bord de mer use les voiles plus vite',
 					'html' => '<p>Une grande partie du vol normand se fait au-dessus de l’eau : le soaring côtier du Bessin (Commes, Tracy-sur-Mer, Vierville-sur-Mer), les falaises et dunes du Nord-Cotentin gérées par Cotentin Vol Libre (Carteret, Diélette, Biville, la baie d’Écalgrain, Le Rozel), les sites du Sud-Manche autour de Granville, Champeaux et Carolles.</p><p>Le sel et le sable ne pardonnent pas. Ils s’infiltrent dans le tissu, attaquent les suspentes, accélèrent la perte de porosité. Une voile qui vole régulièrement en bord de mer mérite un contrôle plus attentif qu’une voile de montagne — et c’est précisément ce que mesure le protocole PARACHECK : porosité, résistance des suspentes, état des coutures, calage.</p>',
 				),
@@ -134,15 +150,25 @@ function gacct_regions_data() {
 			'title'    => 'Révision de parapente en Bretagne — Envoi et retour suivis | Altitude Révision',
 			'meta'     => 'Pilote breton ? Expédiez votre voile à notre atelier PARACHECK : créneau réservé à l’avance, rapport de contrôle détaillé, retour en colis protégé.',
 			'h1'       => 'Révision de parapente en Bretagne',
+			'h1_html'  => 'Révision de parapente <em>en Bretagne</em>',
 			'hero_img' => 2240,
 			'intro'    => 'Voler en Bretagne, c’est voler au-dessus de la mer. Le Menez Hom, Tréfeuntec, les falaises de Plouézec : l’essentiel de la pratique bretonne se joue en dynamique côtière, sur du granit et du sable, dans un air chargé de sel. C’est un régime d’usure particulier — et c’est exactement ce qu’un contrôle PARACHECK sait mesurer.',
-			'stat_local' => array( 'value' => '400+', 'label' => 'pilotes bretons passés à l’atelier' ),
+			'stat_local' => array( 'value' => '671', 'label' => 'révisions pour des pilotes bretons' ),
+			'depts'    => array(
+				array( 'Côtes-d’Armor', '249' ),
+				array( 'Ille-et-Vilaine', '203' ),
+				array( 'Finistère', '117' ),
+				array( 'Morbihan', '102' ),
+			),
+			'brands'   => 'En Bretagne, les marques les plus fréquentes à l’atelier sont <strong>Ozone</strong>, <strong>Advance</strong>, <strong>Niviuk</strong> et <strong>Nova</strong>.',
 			'sections' => array(
 				array(
+					'eyebrow' => 'Les sites bretons',
 					'h2'   => 'Où vous volez',
 					'html' => '<p>Le Finistère concentre les sites agréés de la région, gérés par le club Penn Ar Bed Vol Libre : le Menez Hom, site de référence de la Bretagne ; Tréfeuntec et Cameros en soaring sur la baie de Douarnenez ; le belvédère de Rosnoën, sur l’Aulne.</p><p>Dans les Côtes-d’Armor, le club Plouézailles gère MilEPat, Bonaparte et Bilfot, tous à Plouézec, à un quart d’heure de Paimpol.</p>',
 				),
 				array(
+					'eyebrow' => 'Usure côtière',
 					'h2'   => 'Sel, sable et porosité',
 					'html' => '<p>Une voile bretonne prend le sel à chaque vol. Le sel est hygroscopique : il retient l’humidité au cœur du tissu, et le sable agit comme un abrasif dans les caissons et sur les gaines de suspentes. Résultat : une perte de porosité et une baisse de résistance des lignes plus rapides que sur une voile qui ne vole qu’en montagne.</p><p>Notre contrôle mesure ces deux points précisément — porosimètre sur plusieurs zones de l’extrados, test de résistance sur les suspentes prélevées, inspection complète des coutures et du calage. Vous repartez avec un rapport chiffré, pas avec une impression.</p>',
 				),
@@ -175,15 +201,25 @@ function gacct_regions_data() {
 			'title'    => 'Révision de parapente en Pays de la Loire | Altitude Révision',
 			'meta'     => 'Vol au treuil en Vendée ou en Loire-Atlantique ? Expédiez votre voile à notre atelier PARACHECK : rapport détaillé, retour suivi, créneau réservé à l’avance.',
 			'h1'       => 'Révision de parapente en Pays de la Loire',
+			'h1_html'  => 'Révision de parapente <em>en Pays de la Loire</em>',
 			'hero_img' => 2241,
 			'intro'    => 'En Pays de la Loire, on ne décolle pas d’une pente : on décolle au treuil. C’est une pratique à part, avec ses contraintes propres — et des sollicitations mécaniques que le contrôle d’une voile doit savoir regarder.',
-			'stat_local' => array( 'value' => '270+', 'label' => 'pilotes ligériens accompagnés' ),
+			'stat_local' => array( 'value' => '368', 'label' => 'révisions pour des pilotes ligériens' ),
+			'depts'    => array(
+				array( 'Loire-Atlantique', '150' ),
+				array( 'Maine-et-Loire', '90' ),
+				array( 'Sarthe', '66' ),
+				array( 'Vendée', '35' ),
+			),
+			'brands'   => 'En Pays de la Loire, les voiles les plus confiées sont les <strong>Niviuk</strong>, <strong>Ozone</strong> et <strong>Advance</strong>.',
 			'sections' => array(
 				array(
+					'eyebrow' => 'Décollage au treuil',
 					'h2'   => 'Le treuil, mode d’accès normal à l’altitude',
 					'html' => '<p>La région est plate. L’altitude se gagne au treuil, sur les terrains vendéens de Saint-Jean-de-Beugné et Saint-Juire-Champgillon, avec des largages à plusieurs centaines de mètres.</p><p>Les clubs de la région sont nombreux et structurés : ATA – À Tire d’Aile à Saint-Herblain (44), Vendée Freevol à La Ferrière (85), Quatrième Dimension aux Sables-d’Olonne (85), AESM Cholet (49), Envol d’Anjou (49) et le Delta Club Parapente 53 à Laval.</p>',
 				),
 				array(
+					'eyebrow' => 'Contraintes mécaniques',
 					'h2'   => 'Ce que le treuil impose à une voile',
 					'html' => '<p>Un décollage au treuil, ce n’est pas une course sur une pente : c’est une traction franche appliquée d’un coup à l’ensemble du suspentage, plusieurs fois par journée de vol. Les points d’ancrage, les élévateurs, les suspentes hautes et les coutures d’attache travaillent différemment — et plus durement — que sur un vol de pente.</p><p>Un contrôle PARACHECK mesure la résistance réelle des suspentes par test de rupture, vérifie le calage complet et l’intégrité des coutures. Sur une voile treuillée régulièrement, ce n’est pas une formalité.</p>',
 				),
@@ -215,15 +251,25 @@ function gacct_regions_data() {
 			'title'    => 'Révision de parapente en Île-de-France — Envoi simple | Altitude Révision',
 			'meta'     => 'Pilote francilien ? Expédiez votre voile à notre atelier PARACHECK, ou déposez-la sur la route de la Normandie. Rapport détaillé et retour en colis suivi.',
 			'h1'       => 'Révision de parapente en Île-de-France',
+			'h1_html'  => 'Révision de parapente <em>en Île-de-France</em>',
 			'hero_img' => 2239,
 			'intro'    => 'L’Île-de-France est la région où l’on est le plus nombreux à voler, et celle où l’on vole le moins près de chez soi. Pas de relief : du treuil, quelques pentes-écoles, et des week-ends passés ailleurs. Votre matériel voyage déjà beaucoup — le faire réviser ne devrait pas être une contrainte de plus.',
-			'stat_local' => array( 'value' => '560', 'label' => 'pilotes franciliens clients de l’atelier' ),
+			'stat_local' => array( 'value' => '919', 'label' => 'révisions pour des pilotes franciliens' ),
+			'depts'    => array(
+				array( 'Yvelines', '277' ),
+				array( 'Hauts-de-Seine', '193' ),
+				array( 'Essonne', '140' ),
+				array( 'Paris', '90' ),
+			),
+			'brands'   => 'En Île-de-France, les marques les plus fréquentes à l’atelier sont <strong>Advance</strong>, <strong>Ozone</strong> et <strong>Niviuk</strong>.',
 			'sections' => array(
 				array(
+					'eyebrow' => 'Voler en plaine',
 					'h2'   => 'Voler en plaine',
 					'html' => '<p>Il n’existe pas de site de vol de pente digne de ce nom en Île-de-France. L’altitude se prend au treuil, notamment à Bassevelle et La Ferté-Gaucher en Seine-et-Marne, avec des gains dépassant les 400 mètres. Le reste des terrains sert de pente-école et d’entraînement au pilotage : le Parc du Rondeau à Évry-Courcouronnes, Villebon-sur-Yvette, Beynes, Argenteuil.</p><p>Les clubs sont nombreux et bien structurés : Les Crécerelles dans les Yvelines, Les Migrateurs à Villebon-sur-Yvette, Globe Trot’Air en Essonne, Ivry Air dans le Val-de-Marne, la section parapente du Club Alpin Île-de-France à Paris.</p>',
 				),
 				array(
+					'eyebrow' => 'Transport & pliages',
 					'h2'   => 'Une voile qui roule beaucoup',
 					'html' => '<p>Le pilote francilien type plie sa voile le vendredi soir, la déplie dans les Alpes ou le Massif central, et recommence. Ce n’est pas le vol qui use le plus, c’est le reste : pliages répétés, sac chargé, coffre chaud en plein été, humidité résiduelle quand on remballe sous la pluie.</p><p>Le contrôle mesure l’état réel du tissu et des suspentes — porosité, résistance à la rupture, coutures, calage — indépendamment du nombre d’heures que vous croyez avoir fait.</p>',
 				),
@@ -255,15 +301,25 @@ function gacct_regions_data() {
 			'title'    => 'Révision de parapente en Hauts-de-France | Altitude Révision',
 			'meta'     => 'Côte d’Opale, terrils, treuil : faites réviser votre voile hors saison. Atelier PARACHECK, créneau réservé à l’avance, retour en colis suivi.',
 			'h1'       => 'Révision de parapente en Hauts-de-France',
+			'h1_html'  => 'Révision de parapente <em>en Hauts-de-France</em>',
 			'hero_img' => 2240,
 			'intro'    => 'Voler dans les Hauts-de-France demande de la patience. Les plus beaux sites côtiers sont fermés une grande partie de l’année, le reste se vole au treuil, et le calendrier de la région ne ressemble à celui d’aucune autre. C’est aussi ce qui rend le choix du moment de la révision particulièrement simple ici.',
-			'stat_local' => array( 'value' => '220+', 'label' => 'pilotes des Hauts-de-France clients' ),
+			'stat_local' => array( 'value' => '366', 'label' => 'révisions pour des pilotes du Nord' ),
+			'depts'    => array(
+				array( 'Nord', '136' ),
+				array( 'Pas-de-Calais', '98' ),
+				array( 'Somme', '69' ),
+				array( 'Oise', '60' ),
+			),
+			'brands'   => 'Dans les Hauts-de-France, les voiles les plus confiées sont les <strong>Niviuk</strong>, <strong>Advance</strong> et <strong>ITV</strong>.',
 			'sections' => array(
 				array(
+					'eyebrow' => 'Sites & saison',
 					'h2'   => 'Une saison courte sur la côte, du treuil dans les terres',
 					'html' => '<p>Sur la Côte d’Opale, les falaises des Deux-Caps sont sous arrêtés préfectoraux de protection de biotope pris le 26 mars 2021 : au cap Blanc-Nez et à la pointe de la Crèche, le vol libre est interdit du 1ᵉʳ janvier au 31 août, pour protéger les colonies de mouettes tridactyles, de fulmars et de goélands.</p><p>Dans les terres, deux reliefs font exception, et ils sont très identitaires : le terril 11/19 de Loos-en-Gohelle, les deux plus hauts terrils d’Europe, et les collines d’Artois autour de La Comté et Bajus. Partout ailleurs — Nord, Oise, Somme, Aisne — on vole au treuil, sur des plateformes conventionnées.</p>',
 				),
 				array(
+					'eyebrow' => 'Le bon moment',
 					'h2'   => 'Le bon moment pour faire réviser',
 					'html' => '<p>C’est l’avantage inattendu d’une saison contrainte : vous savez à l’avance quand votre voile ne vole pas. Faire contrôler pendant la fermeture des sites des Caps, c’est récupérer une aile prête pour la réouverture, au lieu de la perdre une semaine en pleine saison.</p><p>Et pour les voiles qui volent au-dessus des dunes et des falaises, l’enjeu est réel : le sel et le sable accélèrent la perte de porosité et l’usure des suspentes. Le contrôle PARACHECK les mesure, chiffre en main.</p>',
 				),
@@ -342,6 +398,52 @@ function gacct_region_shortcode( $atts ) {
 	ob_start();
 	include dirname( __DIR__ ) . '/templates/region.php';
 	return (string) ob_get_clean();
+}
+
+/* =============================================================================
+ *  BLOC FOOTER « Vous venez d'une autre région ? » (toutes les pages du site)
+ * ============================================================================= */
+
+add_shortcode( 'gacct_region_footer', 'gacct_region_footer_shortcode' );
+
+/**
+ * Bloc de maillage régional pour le footer global (posé dans le footer Elementor
+ * via un widget contenant `[gacct_region_footer]`). CSS auto-portée (imprimée une
+ * fois) : le bloc apparaît sur toutes les pages, pas seulement les pages régionales.
+ *
+ * @return string HTML.
+ */
+function gacct_region_footer_shortcode() {
+	$regions = gacct_regions_data();
+	if ( empty( $regions ) ) {
+		return '';
+	}
+
+	$links = '';
+	foreach ( $regions as $slug => $r ) {
+		$links .= sprintf(
+			'<a href="%s">%s</a>',
+			esc_url( gacct_region_url( $slug ) ),
+			esc_html( (string) $r['name'] )
+		);
+	}
+
+	static $css_printed = false;
+	$css = '';
+	if ( ! $css_printed ) {
+		$css_printed = true;
+		$css = '<style>'
+			. '.gacct-rf{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 24px}'
+			. '.gacct-rf-t{font-size:15px;font-weight:800;color:#1a1a1a}'
+			. '.gacct-rf-l{display:flex;flex-wrap:wrap;gap:10px 22px}'
+			. '.gacct-rf-l a{color:#1a73e8;font-weight:700;font-size:15px;text-decoration:none;border-bottom:2px solid transparent;transition:border-color .15s}'
+			. '.gacct-rf-l a:hover{border-bottom-color:#1a73e8}'
+			. '</style>';
+	}
+
+	return $css
+		. '<div class="gacct-rf"><span class="gacct-rf-t">Vous venez d’une autre région ?</span>'
+		. '<nav class="gacct-rf-l">' . $links . '</nav></div>';
 }
 
 /* =============================================================================
