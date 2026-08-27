@@ -30,6 +30,12 @@
 	max-width: 100%;
 	overflow-x: auto;
 	-webkit-overflow-scrolling: touch;
+	/* overflow-x: auto rogne AUSSI le debordement vertical : la tooltip
+	   .status-tip, qui s'ouvre vers le haut, etait coupee au ras de l'entete
+	   sur la premiere ligne. On agrandit la zone de rognage vers le haut et on
+	   la compense par une marge negative : la mise en page ne bouge pas. */
+	padding-top: 80px;
+	margin-top: -80px;
 }
 
 :is(#scroll, #scroll-materiel) .jet-dynamic-table {
@@ -271,18 +277,19 @@
 	transform: translateY(-100%);
 	background: var(--ink);
 	color: #fff;
-	font-size: 11px;
-	font-weight: 600;
-	padding: 8px 12px;
+	font-size: 12.5px;
+	font-weight: 500;
+	letter-spacing: 0.1px;
+	padding: 10px 14px;
 	border-radius: 8px;
 	opacity: 0;
 	pointer-events: none;
 	transition: opacity 150ms;
 	z-index: 10;
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-	max-width: 240px;
+	max-width: 300px;
 	white-space: normal;
-	line-height: 1.4;
+	line-height: 1.55;
 	text-align: left;
 }
 
@@ -1237,8 +1244,11 @@
 :is(#scroll, #scroll-materiel) .progress.progress-sans-suite .progress-step {
 	opacity: .35;
 }
+/* Etat 9 : le texte etait passe en #50575e sur le fond sombre --ink, soit un
+   contraste de 1.9:1, illisible. La tooltip garde le blanc commun ; c'est le
+   badge et la frise eteinte qui portent la distinction visuelle. */
 :is(#scroll, #scroll-materiel) .status-stack--sans-suite .status-tip {
-	color: #50575e;
+	color: #fff;
 }
 
 /* ── Dossier mis en pause par l'atelier : badge dans « Mes demandes » ─────── */
