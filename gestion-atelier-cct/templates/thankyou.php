@@ -47,8 +47,72 @@ if ( 'failed' === $d['variant'] ) : ?>
 	return;
 endif;
 
+/*
+ * Dossier déjà avancé (état >= 2 : colis reçu, intervention, etc.) : la page ne
+ * rejoue plus les consignes de paiement et d'expédition, devenues fausses
+ * (retour Timothée du 18/08 : « order-received ne se met plus à jour après
+ * réception du colis »). Un bandeau court renvoie vers l'espace client, qui est
+ * la vraie page de suivi. L'état 9 « Sans suite » a son propre message.
+ */
+$conf_etat = isset( $d['etat'] ) ? $d['etat'] : null;
+
+if ( null !== $conf_etat && (int) $conf_etat >= 2 ) :
+	$etat_labels = function_exists( 'gacct_vo_state_labels' ) ? gacct_vo_state_labels() : array();
+	$etat_label  = isset( $etat_labels[ (int) $conf_etat ] ) ? $etat_labels[ (int) $conf_etat ] : '';
+	$is_ss       = ( defined( 'GACCT_STATE_SANS_SUITE' ) ? GACCT_STATE_SANS_SUITE : 9 ) === (int) $conf_etat;
+	?>
+	<div class="gacct-conf"><div class="gacct-conf-wrap">
+		<div class="conf">
+			<?php if ( $is_ss ) : ?>
+				<h1><?php esc_html_e( 'Ce dossier a été classé sans suite', 'gestion-atelier-cct' ); ?></h1>
+				<p class="conf-sub">
+					<?php esc_html_e( 'Nous n’avons jamais reçu votre matériel et le créneau réservé a été libéré ; votre acompte reste acquis, comme indiqué lors de votre commande. Vous souhaitez replanifier l’intervention ? Contactez l’atelier, nous trouverons une nouvelle date ensemble.', 'gestion-atelier-cct' ); ?>
+				</p>
+			<?php else : ?>
+				<h1>
+					<?php
+					'' !== $d['first_name']
+						? printf( /* translators: prénom */ esc_html__( 'Merci %s, votre matériel est bien arrivé à l’atelier', 'gestion-atelier-cct' ), esc_html( $d['first_name'] ) )
+						: esc_html_e( 'Votre matériel est bien arrivé à l’atelier', 'gestion-atelier-cct' );
+					?>
+				</h1>
+				<p class="conf-sub">
+					<?php
+					printf(
+						/* translators: 1: référence de commande */
+						esc_html__( 'Votre dossier %s a avancé', 'gestion-atelier-cct' ),
+						'<strong>' . esc_html( $d['reference'] ) . '</strong>'
+					);
+					if ( '' !== $etat_label ) {
+						echo ' (' . esc_html( $etat_label ) . ')';
+					}
+					echo esc_html__( ' : suivez chaque étape en direct dans votre espace client.', 'gestion-atelier-cct' );
+					?>
+				</p>
+			<?php endif; ?>
+			<?php if ( $d['materiel'] || $d['slot_label'] ) : ?>
+				<p class="conf-sub">
+					<?php if ( $d['materiel'] ) : ?><strong><?php echo esc_html( $d['materiel'] ); ?></strong><?php endif; ?>
+					<?php if ( $d['materiel'] && $d['slot_label'] && ! $is_ss ) : ?> · <?php endif; ?>
+					<?php if ( $d['slot_label'] && ! $is_ss ) : ?><?php printf( /* translators: date */ esc_html__( 'créneau du %s', 'gestion-atelier-cct' ), esc_html( $d['slot_label'] ) ); ?><?php endif; ?>
+				</p>
+			<?php endif; ?>
+			<p>
+				<a href="<?php echo esc_url( $d['links']['view_order'] ); ?>" class="btn-primary"><?php esc_html_e( 'Suivre mon dossier', 'gestion-atelier-cct' ); ?></a>
+				<a href="<?php echo esc_url( $d['links']['account'] ); ?>" class="btn-secondary"><?php esc_html_e( 'Mon espace client', 'gestion-atelier-cct' ); ?></a>
+			</p>
+			<?php if ( $d['contact_phone'] ) : ?>
+				<p class="conf-sub"><?php printf( /* translators: 1: téléphone, 2: horaires */ esc_html__( 'Une question ? Appelez l’atelier au %1$s (%2$s).', 'gestion-atelier-cct' ), '<strong>' . esc_html( $d['contact_phone'] ) . '</strong>', esc_html( $d['contact_hours'] ) ); ?></p>
+			<?php endif; ?>
+		</div>
+	</div></div>
+	<?php
+	return;
+endif;
+
 $is_bacs     = ( 'bacs' === $d['variant'] );
 $wo_locked   = ! empty( $d['work_order_locked'] );
+$ship_locked = ! empty( $d['shipping_locked'] );
 $wo_on       = gacct_conf_feature( 'work_order' );
 $deposit_txt = wp_strip_all_tags( wc_price( $d['deposit'] ) );
 $balance_txt = wp_strip_all_tags( wc_price( $d['balance'] ) );
@@ -541,25 +605,36 @@ $notice      = gacct_conf_notice();
 
 							<?php
 							/*
-							 * Expédition : jamais bloquée par le paiement. Le client peut envoyer sa
-							 * voile pendant que son virement chemine — il devra régler de toute façon,
-							 * et l'attente ferait perdre des jours sur un créneau déjà réservé.
-							 * Cette étape ne porte plus de bouton d'action primaire (ils sont tous
-							 * remontés dans « À faire maintenant ») : il n'y reste que la déclaration
-							 * du numéro de suivi, qui n'a de sens qu'une fois le colis parti.
+							 * Expédition : VERROUILLÉE tant que le paiement n'est pas encaissé
+							 * (décision Bastien du 27/08/2026, qui revient sur celle du 28/07 :
+							 * pas de consigne d'envoi ni de déclaration de suivi avant paiement).
+							 * Une fois payé, l'étape ne porte pas de bouton d'action primaire
+							 * (remontés dans « À faire maintenant ») : il n'y reste que la
+							 * déclaration du numéro de suivi.
 							 */
 							?>
-							<div class="step now">
+							<div class="step <?php echo $ship_locked ? 'pending' : 'now'; ?>">
 								<div class="step-dot"><?php echo gacct_conf_icon( 'clipboard' ); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
 								<div class="step-body">
-									<div class="step-title"><?php esc_html_e( 'Expédiez votre matériel', 'gestion-atelier-cct' ); ?> <span class="step-flag wait"><?php esc_html_e( 'À faire', 'gestion-atelier-cct' ); ?></span></div>
+									<div class="step-title"><?php esc_html_e( 'Expédiez votre matériel', 'gestion-atelier-cct' ); ?>
+										<?php if ( $ship_locked ) : ?>
+											<span class="step-flag"><?php esc_html_e( 'Dès votre paiement reçu', 'gestion-atelier-cct' ); ?></span>
+										<?php else : ?>
+											<span class="step-flag wait"><?php esc_html_e( 'À faire', 'gestion-atelier-cct' ); ?></span>
+										<?php endif; ?>
+									</div>
+									<?php if ( $ship_locked ) : ?>
+										<p class="step-txt">
+											<?php esc_html_e( 'Cette étape s’ouvrira dès la réception de votre paiement : vous recevrez alors par e-mail les consignes d’expédition, l’adresse de l’atelier et votre bon d’intervention à glisser dans le colis. Vous pourrez aussi déclarer votre numéro de suivi ici même.', 'gestion-atelier-cct' ); ?>
+										</p>
+										<p class="step-txt">
+											<?php esc_html_e( 'L’acompte réserve ce créneau pour vous : si le matériel ne nous est pas parvenu la veille au soir du créneau, celui-ci est libéré et l’acompte reste acquis à l’atelier.', 'gestion-atelier-cct' ); ?>
+										</p>
+									<?php else : ?>
 									<ol class="step-txt gacct-ship-steps">
 										<li>
 											<?php if ( $wo_on ) : ?>
 												<?php esc_html_e( 'Imprimez le', 'gestion-atelier-cct' ); ?> <strong><?php esc_html_e( 'bon d’intervention', 'gestion-atelier-cct' ); ?></strong> <?php esc_html_e( '(avec son QR code), découpez l’étiquette du bas et scotchez-la sur votre matériel.', 'gestion-atelier-cct' ); ?>
-												<?php if ( $wo_locked ) : ?>
-													<em><?php esc_html_e( 'Il sera disponible dès la réception de votre paiement.', 'gestion-atelier-cct' ); ?></em>
-												<?php endif; ?>
 											<?php else : ?>
 												<?php
 												printf(
@@ -581,6 +656,7 @@ $notice      = gacct_conf_notice();
 									</p>
 									<?php if ( function_exists( 'gacct_ship_render_form' ) ) : ?>
 										<?php echo gacct_ship_render_form( $order, array( 'intro' => false ) ); // phpcs:ignore WordPress.Security.EscapeOutput -- HTML construit et échappé par le module shipping. ?>
+									<?php endif; ?>
 									<?php endif; ?>
 								</div>
 							</div>

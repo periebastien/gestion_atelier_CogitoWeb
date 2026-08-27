@@ -95,6 +95,7 @@ function gacct_ship_texts() {
 		'err_carrier'    => __( 'Choisissez un transporteur dans la liste.', 'gestion-atelier-cct' ),
 		'err_number'     => __( 'Le numéro de suivi doit comporter de 4 à 40 caractères (lettres, chiffres, tirets, espaces).', 'gestion-atelier-cct' ),
 		'err_state'      => __( 'Votre matériel a déjà été réceptionné à l’atelier : le suivi n’est plus modifiable.', 'gestion-atelier-cct' ),
+		'err_unpaid'     => __( 'La déclaration d’expédition sera disponible dès la réception de votre paiement.', 'gestion-atelier-cct' ),
 		'err_auth'       => __( 'Vous n’êtes pas autorisé à modifier cette commande.', 'gestion-atelier-cct' ),
 		'err_generic'    => __( 'L’enregistrement a échoué. Réessayez, ou contactez-nous.', 'gestion-atelier-cct' ),
 	);
@@ -285,6 +286,13 @@ function gacct_ship_save( $order, $carrier, $number ) {
 		return new WP_Error( 'state', gacct_ship_text( 'err_state' ) );
 	}
 
+	// Paiement non encaissé : l'expédition est verrouillée (décision Bastien du
+	// 27/08/2026, qui revient sur celle du 28/07) — pas de déclaration de suivi
+	// avant paiement, miroir serveur du verrou d'affichage `shipping_locked`.
+	if ( function_exists( 'gacct_order_payment_received' ) && ! gacct_order_payment_received( $order ) ) {
+		return new WP_Error( 'unpaid', gacct_ship_text( 'err_unpaid' ) );
+	}
+
 	$previous = gacct_ship_info( $row );
 
 	// Rien ne change : succès silencieux, pas de note en double.
@@ -469,6 +477,13 @@ function gacct_ship_render_form( $order, $args = array() ) {
 	$info     = gacct_ship_info( $row );
 
 	if ( $readonly && ! $info ) {
+		return '';
+	}
+
+	// Paiement non encaissé : pas de formulaire du tout (décision Bastien du
+	// 27/08/2026) — la garde d'écriture gacct_ship_save() refuse de toute façon.
+	if ( ! $readonly && ! $info
+		&& function_exists( 'gacct_order_payment_received' ) && ! gacct_order_payment_received( $order ) ) {
 		return '';
 	}
 

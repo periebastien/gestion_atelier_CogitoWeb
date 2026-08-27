@@ -975,3 +975,25 @@
 	letter-spacing: 0.03em;
 	cursor: help;
 }
+
+/* ── Modale « coordonnées bancaires » de la carte virement (27/08/2026) ───── */
+.gacct-rib-modal {
+	border: 0;
+	border-radius: 14px;
+	padding: 0;
+	max-width: min(480px, calc(100vw - 32px));
+	width: 100%;
+	box-shadow: 0 18px 50px rgba(15, 23, 23, .25);
+}
+.gacct-rib-modal::backdrop { background: rgba(15, 23, 23, .55); }
+.gacct-rib-modal .rib-box { padding: 22px; }
+.gacct-rib-modal .rib-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.gacct-rib-modal .rib-head h3 { margin: 0; font-size: 18px; }
+.gacct-rib-modal .rib-close { border: 0; background: none; font-size: 26px; line-height: 1; cursor: pointer; color: #6b7280; padding: 2px 6px; }
+.gacct-rib-modal .rib-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; }
+.gacct-rib-modal .rib-row.hl { border-color: #f0c987; background: #fdf6e9; }
+.gacct-rib-modal .rib-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #6b7280; }
+.gacct-rib-modal .rib-val { font-weight: 700; word-break: break-all; }
+.gacct-rib-modal .rib-copy { flex: none; border: 1px solid #20c4c3; color: #0f766e; background: #fff; border-radius: 8px; padding: 6px 12px; cursor: pointer; font-weight: 600; }
+.gacct-rib-modal .rib-copy:hover { background: #e9fbfa; }
+.gacct-rib-modal .rib-note { font-size: 13px; color: #6b7280; margin: 12px 0 0; }

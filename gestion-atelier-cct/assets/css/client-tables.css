@@ -1228,3 +1228,10 @@
 :is(#scroll, #scroll-materiel) .status-stack--sans-suite .status-tip {
 	color: #50575e;
 }
+
+/* ── Dossier mis en pause par l'atelier : badge dans « Mes demandes » ─────── */
+:is(#scroll, #scroll-materiel) .badge.badge-hold {
+	background: #f8dda7;
+	color: #6b4d00;
+	cursor: help;
+}

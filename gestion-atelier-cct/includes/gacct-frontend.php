@@ -788,10 +788,31 @@ function jwcct_render_order_status_tracker( $value, $order_id = 0 ) {
         $label .= gacct_state5_suffix( $order );
     }
 
+    // Dossier mis en pause par l'atelier : badge visible dans la table « Mes
+    // demandes » aussi (retour Timothée du 18/08 : la pause n'apparaissait que
+    // sur view-order et en pastille discrète du tableau de bord).
+    $hold_html = '';
+
+    if ( $order_id && $state >= 2 && $state <= 6 ) {
+        global $wpdb;
+        $hold_row = $wpdb->get_row( $wpdb->prepare(
+            "SELECT en_attente, attente_motif FROM {$wpdb->prefix}jet_cct_revision WHERE order_id = %d AND cct_status = 'publish' LIMIT 1",
+            $order_id
+        ), ARRAY_A );
+
+        if ( is_array( $hold_row ) && ! empty( $hold_row['en_attente'] ) ) {
+            $hold_html = sprintf(
+                ' <span class="badge badge-hold" title="%s">%s</span>',
+                esc_attr( (string) $hold_row['attente_motif'] ),
+                esc_html__( 'En pause', 'gestion-atelier-cct' )
+            );
+        }
+    }
+
     return sprintf(
         '<div class="status-stack">
             <div class="status-tip">%s</div>
-            <span class="badge %s">%s</span>
+            <span class="badge %s">%s</span>%s
             <div class="progress %s">%s</div>
             <div class="progress-labels">%s</div>
             %s
@@ -799,6 +820,7 @@ function jwcct_render_order_status_tracker( $value, $order_id = 0 ) {
         $s['tip'],
         esc_attr( $s['badge'] ),
         esc_html( $label ),
+        $hold_html,
         esc_attr( $s['progress'] ),
         $steps_html,
         $labels_html,
@@ -830,7 +852,9 @@ function jwcct_render_wc_order_link( $value ) {
     $date_created = $order->get_date_created();
 
     // Formatage de la date : 3 mai 2026 · 15:43
-    $formatted_date = date_i18n( 'j F Y', $date_created->getTimestamp() );
+    // date_i18n() du WC_DateTime (heure locale WooCommerce) et non getTimestamp()
+    // (UTC) : une commande passée entre minuit et 2 h affichait la veille.
+    $formatted_date = $date_created->date_i18n( 'j F Y' );
     $formatted_time = $date_created->date( 'H:i' );
     $view_url = $order->get_view_order_url();
 

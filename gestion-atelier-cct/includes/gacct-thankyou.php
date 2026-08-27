@@ -161,7 +161,20 @@ function gacct_conf_data( $order ) {
 		}
 	}
 
+	$etat = null;
+
 	$revision_id = (int) $order->get_meta( JWCCT_ORDER_REVISION_ID );
+
+	// Repli par la colonne order_id quand la meta manque (même filet que
+	// gacct_vo_data() : commandes invitées, liaison ratée au checkout).
+	if ( ! $revision_id ) {
+		global $wpdb;
+		$revision_id = (int) $wpdb->get_var( $wpdb->prepare(
+			"SELECT _ID FROM {$wpdb->prefix}jet_cct_revision WHERE order_id = %d AND cct_status = 'publish' LIMIT 1",
+			$order->get_id()
+		) );
+	}
+
 	if ( $revision_id ) {
 		$revision = jwcct_get_cct_item( JWCCT_CCT_REVISION, $revision_id );
 		if ( is_array( $revision ) ) {
@@ -173,6 +186,14 @@ function gacct_conf_data( $order ) {
 				)
 			);
 			$materiel = implode( ' · ', $parts );
+
+			// État du dossier atelier : la page de confirmation s'en sert pour ne
+			// plus rejouer les consignes d'expédition quand le colis est déjà là
+			// (retour Timothée du 18/08 : la page restait figée sur son contenu
+			// initial quel que soit l'avancement).
+			if ( '' !== (string) ( $revision['etat_de_la_commande'] ?? '' ) ) {
+				$etat = (int) $revision['etat_de_la_commande'];
+			}
 		}
 	}
 
@@ -194,15 +215,22 @@ function gacct_conf_data( $order ) {
 	);
 	$store_address = array_map( function ( $line ) { return trim( $line, " ,\t" ); }, $store_address );
 
+	$payment_received = function_exists( 'gacct_order_payment_received' )
+		? gacct_order_payment_received( $order )
+		: true;
+
 	$data = array(
 		'variant'          => $variant,
+		'etat'             => $etat,
 		// Bon d'intervention : verrouillé tant que le paiement n'est pas
 		// encaissé (le bon vaut prise en charge du matériel — cf. la garde
 		// serveur de gacct_wo_maybe_render_print_page(), qui refuse la page
 		// au client dans le même cas ; l'atelier, lui, y a toujours accès).
-		'work_order_locked' => function_exists( 'gacct_order_payment_received' )
-			? ! gacct_order_payment_received( $order )
-			: false,
+		'work_order_locked' => ! $payment_received,
+		// Expédition : verrouillée elle aussi tant que rien n'est encaissé
+		// (décision Bastien du 27/08/2026, qui REVIENT sur celle du 28/07 :
+		// pas de déclaration de suivi ni de consigne d'envoi avant paiement).
+		'shipping_locked'  => ! $payment_received,
 		'order'            => $order,
 		'reference'        => $order->get_order_number(),
 		'first_name'       => $order->get_billing_first_name(),
@@ -213,7 +241,9 @@ function gacct_conf_data( $order ) {
 		'deposit'          => $deposit,
 		'balance'          => $balance,
 		'percent'          => $percent,
-		'deposit_date'     => $order->get_meta( '_kojito_date_acompte_paye' ) ? wp_date( get_option( 'date_format' ), strtotime( $order->get_meta( '_kojito_date_acompte_paye' ) ) ) : wp_date( get_option( 'date_format' ) ),
+		// date_i18n et non wp_date : la meta est stockée en heure LOCALE
+		// (current_time), wp_date rajouterait l'offset une seconde fois.
+		'deposit_date'     => $order->get_meta( '_kojito_date_acompte_paye' ) ? date_i18n( get_option( 'date_format' ), strtotime( $order->get_meta( '_kojito_date_acompte_paye' ) ) ) : wp_date( get_option( 'date_format' ) ),
 		'slot_ts'          => $slot_ts,
 		'slot_label'       => $slot_ts ? wp_date( 'j F Y', $slot_ts ) : '',
 		'parcel_label'     => $parcel_ts ? wp_date( 'j F Y', $parcel_ts ) : '',

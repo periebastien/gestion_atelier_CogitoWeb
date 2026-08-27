@@ -462,7 +462,10 @@ function gacct_dash_data( $user_id = 0 ) {
 				'taille'         => (string) $row['taille'],
 				'couleurs'       => $couleurs,
 				'gradient'       => $gradient,
-				'tracker'        => gacct_dash_tracker( $etat ),
+				'tracker'        => gacct_dash_tracker(
+					$etat,
+					function_exists( 'gacct_quote_has_quote_context' ) ? gacct_quote_has_quote_context( $order, $etat ) : true
+				),
 				'extra'          => gacct_dash_revision_extra( $row, $order, $conf ),
 				'url'            => gacct_dash_revision_url( $revision_id, $order_id ),
 			);
@@ -648,7 +651,7 @@ function gacct_dash_materiel_label( array $row ) {
  * @param int $etat État 0–8.
  * @return array{pct:int,label:string,step:string,is_action:bool}
  */
-function gacct_dash_tracker( $etat ) {
+function gacct_dash_tracker( $etat, $has_quote = true ) {
 	// État terminal 9 « Sans suite » : hors frise, barre pleine, aucune action.
 	if ( 9 === (int) $etat ) {
 		$tracker = array(
@@ -661,14 +664,19 @@ function gacct_dash_tracker( $etat ) {
 		return (array) apply_filters( 'gacct_dashboard_tracker', $tracker, 9 );
 	}
 
-	$total = 9;
-	$etat  = max( 0, min( 8, (int) $etat ) );
+	$etat = max( 0, min( 8, (int) $etat ) );
 
-	// Progression = étapes franchies / 9 (état 0 → 11 %, état 8 → 100 %).
+	// MÊME comptage que view-order (retour Timothée du 18/08 : « étape 7 sur 9 »
+	// ici contre « étape 5 sur 7 » là-bas pour le même dossier) : un dossier
+	// sans devis complémentaire ne traverse jamais les états 4 et 5, sa frise
+	// compte 7 étapes.
+	$total = $has_quote ? 9 : 7;
+	$pos   = ( $has_quote || $etat <= 3 ) ? min( 8, $etat ) + 1 : $etat - 1;
+
 	$tracker = array(
-		'pct'       => (int) round( ( $etat + 1 ) / $total * 100 ),
+		'pct'       => (int) round( $pos / $total * 100 ),
 		'label'     => gacct_dash_text( 'state_' . $etat ),
-		'step'      => sprintf( gacct_dash_text( 'step' ), $etat + 1, $total ),
+		'step'      => sprintf( gacct_dash_text( 'step' ), $pos, $total ),
 		'is_action' => in_array( $etat, array( 0, 4, 6 ), true ),
 	);
 
@@ -900,7 +908,11 @@ function gacct_dash_action_virement( $order, array $conf ) {
 		),
 		'note'      => sprintf( gacct_dash_text( 'virement_note' ), isset( $conf['deadline_label'] ) ? $conf['deadline_label'] : '' ),
 		'chip'      => gacct_dash_chip_days( $days ),
+		// L'URL reste le repli sans JS ; avec JS, le CTA ouvre la modale RIB
+		// (bank_rows) au lieu de renvoyer vers la page de commande complète
+		// (demande Bastien du 27/08/2026).
 		'url'       => $order->get_checkout_order_received_url(),
+		'bank_rows' => isset( $conf['bank_rows'] ) && is_array( $conf['bank_rows'] ) ? $conf['bank_rows'] : array(),
 		'cta_label' => gacct_dash_text( 'virement_cta' ),
 		'cta_style' => 'primary',
 		'icon'      => 'card',
@@ -1191,7 +1203,9 @@ function gacct_dash_render_actions( $value = null ) {
 		)
 	);
 
-	$html = '';
+	$html      = '';
+	$modals    = '';
+	$modal_num = 0;
 
 	foreach ( $data['actions'] as $action ) {
 		$couleur = isset( $couleurs[ $action['type'] ] ) ? $couleurs[ $action['type'] ] : 'blue';
@@ -1204,14 +1218,26 @@ function gacct_dash_render_actions( $value = null ) {
 			? '<div class="action-note">' . esc_html( $action['note'] ) . '</div>'
 			: '';
 
+		// Carte virement : le CTA ouvre une modale avec les seules coordonnées
+		// bancaires (demande Bastien du 27/08/2026) ; l'URL de la page complète
+		// reste le repli sans JS.
+		$modal_attr = '';
+		if ( 'virement' === $action['type'] && ! empty( $action['bank_rows'] ) ) {
+			$modal_num++;
+			$modal_id   = 'gacct-rib-modal-' . $modal_num;
+			$modal_attr = ' data-rib-open="' . esc_attr( $modal_id ) . '"';
+			$modals    .= gacct_dash_rib_modal_html( $modal_id, $action['bank_rows'] );
+		}
+
 		$bouton = '';
 		if ( ! empty( $action['url'] ) && ! empty( $action['cta_label'] ) ) {
 			$bouton = sprintf(
-				'<a class="action-btn %1$s" href="%2$s">%3$s%4$s</a>',
+				'<a class="action-btn %1$s" href="%2$s"%5$s>%3$s%4$s</a>',
 				esc_attr( 'ghost' === $action['cta_style'] ? 'ghost' : 'primary' ),
 				esc_url( $action['url'] ),
 				esc_html( $action['cta_label'] ),
-				gacct_dash_icon( 'arrow' )
+				gacct_dash_icon( 'arrow' ),
+				$modal_attr
 			);
 		}
 
@@ -1239,7 +1265,71 @@ function gacct_dash_render_actions( $value = null ) {
 		);
 	}
 
+	// Modales RIB + leur JS (une seule fois, à la suite des cartes). Sans JS,
+	// le lien du CTA navigue normalement vers la page de commande.
+	if ( '' !== $modals ) {
+		$html .= $modals;
+		$html .= '<script>(function(){'
+			. 'document.addEventListener("click",function(e){'
+			. 'var o=e.target.closest("[data-rib-open]");'
+			. 'if(o){var d=document.getElementById(o.getAttribute("data-rib-open"));if(d&&d.showModal){e.preventDefault();d.showModal();}return;}'
+			. 'var c=e.target.closest("[data-rib-close]");'
+			. 'if(c){var dc=c.closest("dialog");if(dc){dc.close();}return;}'
+			. 'var b=e.target.closest("[data-rib-copy]");'
+			. 'if(b&&navigator.clipboard){navigator.clipboard.writeText(b.getAttribute("data-rib-copy"));'
+			. 'var t=b.textContent;b.textContent="' . esc_js( __( 'Copié !', 'gestion-atelier-cct' ) ) . '";'
+			. 'setTimeout(function(){b.textContent=t;},1600);}'
+			. '});'
+			. 'document.addEventListener("click",function(e){if(e.target instanceof HTMLDialogElement&&e.target.classList.contains("gacct-rib-modal")){e.target.close();}});'
+			. '})();</script>';
+	}
+
 	return (string) apply_filters( 'gacct_dashboard_actions_html', $html, $data );
+}
+
+/**
+ * Modale « coordonnées bancaires » de la carte virement : les lignes de
+ * gacct_pay_bank_rows() (référence, titulaire, IBAN, BIC, montant), chacune
+ * avec son bouton copier — le même contenu que le bloc de la page de
+ * confirmation, sans le reste de la page.
+ *
+ * @param string $modal_id  Id HTML de la dialog.
+ * @param array  $bank_rows Lignes label/valeur/copy/highlight.
+ * @return string HTML.
+ */
+function gacct_dash_rib_modal_html( $modal_id, array $bank_rows ) {
+	$rows_html = '';
+
+	foreach ( $bank_rows as $row ) {
+		if ( ! is_array( $row ) || '' === (string) ( $row['value'] ?? '' ) ) {
+			continue;
+		}
+
+		$rows_html .= sprintf(
+			'<div class="rib-row%1$s"><div class="rib-cell"><div class="rib-lbl">%2$s</div><div class="rib-val">%3$s</div></div>'
+			. '<button type="button" class="rib-copy" data-rib-copy="%4$s">%5$s</button></div>',
+			! empty( $row['highlight'] ) ? ' hl' : '',
+			esc_html( $row['label'] ),
+			esc_html( $row['value'] ),
+			esc_attr( isset( $row['copy'] ) ? $row['copy'] : $row['value'] ),
+			esc_html__( 'Copier', 'gestion-atelier-cct' )
+		);
+	}
+
+	return sprintf(
+		'<dialog class="gacct-rib-modal" id="%1$s">'
+			. '<div class="rib-box">'
+				. '<div class="rib-head"><h3>%2$s</h3><button type="button" class="rib-close" data-rib-close aria-label="%3$s">&times;</button></div>'
+				. '%4$s'
+				. '<p class="rib-note">%5$s</p>'
+			. '</div>'
+		. '</dialog>',
+		esc_attr( $modal_id ),
+		esc_html__( 'Coordonnées bancaires', 'gestion-atelier-cct' ),
+		esc_attr__( 'Fermer', 'gestion-atelier-cct' ),
+		$rows_html,
+		esc_html__( 'Indiquez bien la référence dans le libellé du virement : c’est elle qui rattache votre paiement à votre commande.', 'gestion-atelier-cct' )
+	);
 }
 
 /**
@@ -1650,8 +1740,15 @@ function gacct_dash_render_tracker_compact( $revision_id ) {
 		return '';
 	}
 
-	$etat    = ( '' === (string) ( $row['etat_de_la_commande'] ?? '' ) ) ? 0 : (int) $row['etat_de_la_commande'];
-	$tracker = gacct_dash_tracker( $etat );
+	$etat = ( '' === (string) ( $row['etat_de_la_commande'] ?? '' ) ) ? 0 : (int) $row['etat_de_la_commande'];
+
+	// Même critère 7/9 étapes que view-order (dossier sans devis = 7 étapes).
+	$order     = absint( $row['order_id'] ?? 0 ) ? wc_get_order( absint( $row['order_id'] ) ) : false;
+	$has_quote = function_exists( 'gacct_quote_has_quote_context' )
+		? gacct_quote_has_quote_context( $order, $etat )
+		: true;
+
+	$tracker = gacct_dash_tracker( $etat, $has_quote );
 	$action  = ! empty( $tracker['is_action'] ) ? ' action' : '';
 
 	// État 5 : le libellé précise la décision rendue sur le devis.
@@ -1664,15 +1761,24 @@ function gacct_dash_render_tracker_compact( $revision_id ) {
 		$tracker['label'] = gacct_ship_texts()['in_transit'];
 	}
 
-	// Dossier mis en pause par l'atelier : badge + motif en infobulle.
+	// Dossier mis en pause par l'atelier : le libellé d'état l'annonce en clair
+	// (la pastille seule passait inaperçue, retour Timothée du 18/08) + badge
+	// avec motif en infobulle.
 	$hold       = function_exists( 'gacct_hold_info' ) ? gacct_hold_info( $row ) : array( 'active' => false, 'motif' => '' );
-	$hold_badge = ! empty( $hold['active'] )
-		? sprintf(
+	$hold_badge = '';
+
+	if ( ! empty( $hold['active'] ) ) {
+		$tracker['label'] = sprintf(
+			/* translators: %s: libellé d'état */
+			__( 'En pause · %s', 'gestion-atelier-cct' ),
+			$tracker['label']
+		);
+		$hold_badge = sprintf(
 			'<span class="tracker-hold" title="%s">%s</span>',
 			esc_attr( $hold['motif'] ),
 			esc_html__( 'En attente', 'gestion-atelier-cct' )
-		)
-		: '';
+		);
+	}
 
 	return sprintf(
 		'<div class="tracker">'
