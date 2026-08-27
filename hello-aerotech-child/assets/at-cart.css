@@ -1,0 +1,403 @@
+/* ==========================================================================
+   AEROTECH — Panier & Commande (tunnel WooCommerce classique)
+   Maquettes : templates/cart/Cart.dc.html, templates/checkout/Checkout.dc.html
+   Dépend de at-shop.css (tokens sur .at-shop, gouttières .at-shop-wrap,
+   typo .at-h1/.at-h2/.at-chapo/.at-crumb, boutons .at-shop .at-btn).
+   ========================================================================== */
+
+.at-cart-wrap{padding-top:30px;padding-bottom:72px}
+.at-shop .at-i{flex:none}
+.at-shop svg[fill="none"]{fill:none}
+
+/* ---------- en-tête + étapes ---------- */
+.at-cart-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-top:22px}
+.at-cart-head .at-h1{margin:0;font-size:40px}
+.at-steps{list-style:none;display:flex;align-items:center;gap:14px;margin:0;padding:0;font-size:13px;font-weight:700;color:var(--text-faint)}
+.at-step{display:flex;align-items:center;gap:8px}
+.at-step-n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-family:var(--font-display);background:var(--ink-100);color:var(--text-muted);flex:none}
+.at-step--current{color:var(--text-strong)}
+.at-step--current .at-step-n{background:var(--orange-400);color:#fff}
+.at-step--done{color:var(--text-muted)}
+.at-step--done .at-step-n{background:var(--olive-400);color:#fff}
+.at-steps-sep{display:flex;color:var(--ink-300)}
+@media(max-width:767px){
+  .at-cart-head{flex-direction:column;align-items:flex-start;gap:16px}
+  .at-cart-head .at-h1{font-size:30px}
+  .at-steps{font-size:12px;gap:8px}
+}
+
+/* message d'accessibilité (aria-live) : lu, non affiché */
+.at-live{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- grille ---------- */
+.at-cart-grid{display:grid;grid-template-columns:1.62fr 1fr;gap:48px;align-items:start;margin-top:34px}
+@media(max-width:1024px){.at-cart-grid{grid-template-columns:1fr;gap:32px}}
+
+.at-shop .at-card{background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);box-shadow:var(--shadow-card)}
+
+/* ---------- lignes du panier ---------- */
+.at-lines{overflow:hidden}
+.at-lines-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 24px;border-bottom:1px solid var(--divider)}
+.at-lines-head b{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted)}
+@keyframes atLineIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.at-line{display:grid;grid-template-columns:112px 1fr auto;gap:22px;align-items:start;padding:24px;border-bottom:1px solid var(--divider);animation:atLineIn .45s cubic-bezier(.16,1,.3,1) backwards}
+.at-line-media{border-radius:14px;overflow:hidden;background:var(--ink-50);aspect-ratio:1/1}
+.at-line-media img{width:100%;height:100%;object-fit:cover;display:block}
+.at-line-brand{display:block;font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--taupe-500)}
+.at-line-name{display:inline-block;font-family:var(--font-display);font-weight:700;font-size:19px;letter-spacing:-.01em;color:var(--text-strong)!important;text-decoration:none;margin-top:5px}
+.at-line-variant{display:block;font-size:13.5px;color:var(--text-muted);margin-top:6px}
+.at-line-stock{display:inline-flex;align-items:center;gap:7px;margin-top:10px;font-size:12.5px;font-weight:700;color:var(--olive-400)}
+.at-line-actions{display:flex;align-items:center;gap:14px;margin-top:16px;flex-wrap:wrap}
+.at-qty{display:inline-flex;align-items:center;background:var(--surface-card);border:1px solid var(--border-default);border-radius:12px;overflow:hidden}
+.at-qty-btn{width:42px;height:46px;border:none;background:transparent;color:var(--text-body);display:grid;place-items:center;cursor:pointer;transition:background .16s ease}
+.at-qty-btn[disabled]{opacity:.4;cursor:default}
+.at-qty-v{min-width:30px;text-align:center;font-family:var(--font-display);font-weight:700;font-size:15px}
+.at-line-rm{display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 16px;border:1px solid var(--border-subtle);border-radius:12px;background:transparent;color:var(--text-muted);font-family:var(--font-body);font-size:13.5px;font-weight:600;cursor:pointer;transition:color .16s ease,border-color .16s ease}
+.at-line-price{text-align:right;white-space:nowrap}
+.at-line-price b{font-family:var(--font-display);font-weight:800;font-size:19px;letter-spacing:-.01em;color:var(--text-strong)}
+.at-line-price > span{display:block;font-size:12.5px;color:var(--text-faint);margin-top:5px}
+.at-line-price .amount{white-space:nowrap}
+@media(hover:hover){
+  .at-line-name:hover{color:var(--orange-400)!important}
+  .at-qty-btn:hover:not([disabled]){background:var(--ink-50)}
+  .at-line-rm:hover{color:var(--orange-400);border-color:var(--orange-400)}
+}
+@media(max-width:767px){
+  .at-line{grid-template-columns:84px 1fr;row-gap:14px;padding:18px}
+  .at-line-price{grid-column:1/-1;display:flex;align-items:baseline;justify-content:space-between;text-align:left}
+  .at-line-price span{margin-top:0}
+}
+.at-lines-foot{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 24px;flex-wrap:wrap;font-size:13px;color:var(--text-muted)}
+.at-back{display:inline-flex;align-items:center;gap:9px;font-size:14px;font-weight:700;text-decoration:none;color:var(--text-strong)!important}
+@media(hover:hover){.at-back:hover{color:var(--orange-400)!important}}
+
+/* bandeau « Annuler » après un retrait */
+.at-undo{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px;padding:12px 16px;border-radius:var(--radius-lg);background:var(--ink-900);color:#fff;font-size:13.5px}
+.at-undo button{border:none;background:transparent;color:var(--orange-300);font-family:var(--font-body);font-size:13.5px;font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+/* encadré atelier */
+.at-callout{display:flex;gap:14px;align-items:flex-start;margin-top:20px;background:var(--surface-soft);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:20px 22px}
+.at-callout .at-i{color:var(--orange-400)}
+.at-callout b{display:block;font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:-.01em;color:var(--text-strong)}
+.at-callout p{font-size:13.5px;line-height:1.6;color:var(--text-muted);margin:6px 0 0;max-width:62ch}
+
+/* ---------- colonne récapitulatif ---------- */
+.at-sum{position:sticky;top:104px;padding:26px;transition:opacity .18s ease}
+.at-sum.is-busy{opacity:.55;pointer-events:none}
+@media(max-width:1024px){.at-sum{position:static}}
+.at-sum-t{display:block;font-family:var(--font-display);font-weight:800;font-size:21px;letter-spacing:-.02em;color:var(--text-strong)}
+
+/* code promo */
+.at-promo{margin-top:20px;padding:16px 0;border-top:1px solid var(--divider);border-bottom:1px solid var(--divider)}
+.at-promo-head{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:0;border:none;background:transparent;font-family:var(--font-body);font-size:14px;font-weight:600;color:var(--text-body);cursor:pointer}
+.at-promo-head > span{display:inline-flex;align-items:center;gap:9px}
+.at-promo-head .at-i:first-child{color:var(--orange-400)}
+.at-promo-chev{color:var(--text-muted);transition:transform .2s cubic-bezier(.16,1,.3,1)}
+.at-promo[data-open="1"] .at-promo-chev{transform:rotate(180deg)}
+.at-promo-body{max-height:180px;overflow:hidden;opacity:1;margin-top:14px;transition:max-height .28s cubic-bezier(.16,1,.3,1),opacity .2s ease,margin-top .28s ease}
+.at-promo[data-open="0"] .at-promo-body{max-height:0;opacity:0;margin-top:0}
+.at-promo-row{display:flex;gap:10px}
+.at-promo-input{flex:1;min-width:0;height:48px;padding:0 14px;border:2px solid var(--border-subtle);border-radius:12px;background:var(--surface-subtle);font-family:var(--font-body);font-size:14px;color:var(--text-strong);outline:none}
+.at-promo-input:focus{border-color:var(--orange-400);background:var(--surface-card)}
+.at-promo-apply{height:48px;padding:0 20px;border:none;border-radius:12px;background:var(--ink-900);color:#fff;font-family:var(--font-body);font-size:14px;font-weight:700;cursor:pointer;transition:background .18s ease}
+@media(hover:hover){.at-promo-apply:hover{background:var(--ink-700)}}
+.at-promo-msg{font-size:12.5px;margin:8px 0 0;color:var(--text-muted)}
+.at-promo-msg.is-error{color:#C2410C}
+.at-promo-msg:empty{display:none}
+.at-promo-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.at-promo-tag{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 6px 0 12px;border-radius:var(--radius-pill);background:rgba(112,116,85,.12);color:var(--olive-400);font-size:12.5px;font-weight:800;letter-spacing:.04em}
+.at-promo-rm{display:grid;place-items:center;width:20px;height:20px;border:none;border-radius:50%;background:transparent;color:inherit;cursor:pointer}
+@media(hover:hover){.at-promo-rm:hover{background:rgba(112,116,85,.2)}}
+
+/* totaux */
+.at-sum-rows{display:flex;flex-direction:column;gap:12px;margin-top:18px;font-size:14.5px}
+.at-sum-row{display:flex;justify-content:space-between;gap:12px;color:var(--text-body)}
+.at-sum-row b{font-weight:700;color:var(--text-strong)}
+.at-sum-row--muted span:last-child{color:var(--text-muted)}
+.at-sum-row--discount b{color:var(--olive-400)}
+.at-free{color:var(--olive-400)}
+.at-sum-total{margin-top:20px;padding-top:18px;border-top:1px solid var(--divider);display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.at-sum-total b{font-family:var(--font-display);font-weight:800;letter-spacing:-.02em;color:var(--text-strong);font-size:20px}
+.at-sum-total .at-sum-total-v,.at-sum-total .at-sum-total-v .amount{font-size:28px}
+.at-sum-cta{display:flex;align-items:center;justify-content:center;gap:10px;height:56px;margin-top:20px;border-radius:var(--radius-pill);background:var(--orange-400);color:#fff!important;font-size:15.5px;font-weight:700;text-decoration:none;box-shadow:var(--shadow-card);transition:background .2s ease}
+@media(hover:hover){.at-sum-cta:hover{background:var(--orange-500)}}
+
+/* franco de port */
+.at-franco{margin-top:18px}
+.at-franco-top{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--text-muted)}
+.at-franco-top .amount{font-weight:700;color:var(--text-body)}
+.at-franco-bar{height:6px;border-radius:99px;background:var(--ink-100);overflow:hidden;margin-top:8px}
+.at-franco-bar span{display:block;height:100%;border-radius:99px;background:var(--olive-400);transition:width .32s cubic-bezier(.16,1,.3,1)}
+
+.at-reassure-list{list-style:none;padding:0;margin:20px 0 0;display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--text-muted)}
+.at-reassure-list li{display:flex;gap:10px;align-items:flex-start}
+.at-reassure-list .at-i{color:var(--orange-400);margin-top:1px}
+
+/* ---------- ventes croisées ---------- */
+.at-cross{margin-top:64px}
+.at-cross .at-h2{font-size:28px;margin:0}
+.at-cross .at-chapo{font-size:14.5px;margin-top:10px;max-width:64ch}
+.at-cross-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;margin-top:26px}
+@media(max-width:1024px){.at-cross-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:767px){.at-cross-grid{grid-template-columns:1fr}}
+.at-cross-card{display:flex;flex-direction:column;background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);padding:14px;transition:transform .22s cubic-bezier(.16,1,.3,1),box-shadow .22s ease}
+@media(hover:hover){.at-cross-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-card-hover)}}
+.at-cross-card.is-added{animation:atLineIn .45s cubic-bezier(.16,1,.3,1)}
+.at-cross-media{display:block;aspect-ratio:4/3;border-radius:12px;overflow:hidden;background:var(--ink-50)}
+.at-cross-media img{width:100%;height:100%;object-fit:cover;display:block}
+.at-cross-brand{display:block;font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--taupe-500);margin-top:14px}
+.at-cross-name{font-family:var(--font-display);font-weight:700;font-size:16.5px;letter-spacing:-.01em;margin-top:5px}
+.at-cross-name a{color:var(--text-strong)!important;text-decoration:none}
+@media(hover:hover){.at-cross-name a:hover{color:var(--orange-400)!important}}
+.at-cross-meta{font-size:13px;color:var(--text-muted);margin-top:6px}
+.at-cross-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;padding-top:16px}
+.at-cross-price,.at-cross-price .amount{font-family:var(--font-display);font-weight:800;font-size:17px;color:var(--text-strong)}
+.at-cross-price del{display:none}
+.at-cross-add{display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 16px;border:none;border-radius:var(--radius-pill);background:var(--orange-400);color:#fff;font-family:var(--font-body);font-size:13.5px;font-weight:700;cursor:pointer;transition:background .18s ease}
+.at-cross-add.is-loading{opacity:.6;pointer-events:none}
+@media(hover:hover){.at-cross-add:hover{background:var(--orange-500)}}
+
+/* ---------- bande de réassurance ---------- */
+.at-reassure{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin-top:56px}
+@media(max-width:1024px){.at-reassure{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:767px){.at-reassure{grid-template-columns:1fr}}
+.at-reassure > div{display:flex;gap:12px;align-items:flex-start}
+.at-reassure .at-i{color:var(--orange-400)}
+.at-reassure b{display:block;font-size:14px;font-weight:700;color:var(--text-strong)}
+.at-reassure span{display:block;font-size:13px;line-height:1.55;color:var(--text-muted);margin-top:4px}
+
+/* ---------- panier vide ---------- */
+.at-empty{padding:72px 32px;text-align:center;margin-top:40px}
+.at-empty-i{color:var(--taupe-400)}
+.at-empty h2{font-family:var(--font-display);font-weight:800;font-size:26px;letter-spacing:-.02em;margin:18px 0 0;color:var(--text-strong)}
+.at-empty p{font-size:15px;line-height:1.65;color:var(--text-muted);margin:12px auto 0;max-width:46ch}
+.at-empty-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:26px}
+.at-shop .at-empty-btns .at-btn{height:52px}
+
+/* ---------- mouvement réduit ---------- */
+@media (prefers-reduced-motion:reduce){
+  .at-cart *,.at-cart *::before,.at-cart *::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  .at-cross-card:hover{transform:none}
+}
+
+/* ---------- montants wc_price() ----------
+   wc_price() rend <span class="amount">…<span class="currencySymbol">€</span></span> :
+   sans cette règle, tout `display:block` posé sur les <span> d'un conteneur
+   (légende de prix, ligne de réassurance) casse le montant sur plusieurs lignes.
+   Déclarée en fin de feuille pour gagner à spécificité égale. */
+.at-shop .woocommerce-Price-amount,
+.at-shop .woocommerce-Price-currencySymbol{display:inline;white-space:nowrap}
+
+/* ---------- notices WooCommerce (ajout au panier, erreurs) ---------- */
+.at-shop .woocommerce-message,
+.at-shop .woocommerce-error,
+.at-shop .woocommerce-info,
+.woocommerce-notices-wrapper .woocommerce-message,
+.woocommerce-notices-wrapper .woocommerce-error,
+.woocommerce-notices-wrapper .woocommerce-info{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  max-width:1520px;margin:18px auto 0;padding:14px 18px;border:1px solid var(--border-subtle);
+  border-left:4px solid var(--olive-400);border-radius:var(--radius-lg);background:var(--surface-subtle);
+  font-family:var(--font-body);font-size:14px;color:var(--text-body);list-style:none}
+.woocommerce-notices-wrapper .woocommerce-error{border-left-color:#C2410C}
+.woocommerce-notices-wrapper .woocommerce-info{border-left-color:var(--orange-400)}
+.woocommerce-notices-wrapper :is(.woocommerce-message,.woocommerce-error,.woocommerce-info)::before{content:none}
+.woocommerce-notices-wrapper .button{display:inline-flex;align-items:center;height:40px;padding:0 18px;border:none;
+  border-radius:var(--radius-pill);background:var(--ink-900);color:#fff!important;font-size:13.5px;font-weight:700;text-decoration:none}
+@media(hover:hover){.woocommerce-notices-wrapper .button:hover{background:var(--ink-700)}}
+@media(max-width:1024px){.woocommerce-notices-wrapper > *{margin-left:20px;margin-right:20px}}
+@media(max-width:767px){.woocommerce-notices-wrapper > *{margin-left:14px;margin-right:14px}}
+
+/* ==========================================================================
+   COMMANDE (checkout) — handoff §7
+   ========================================================================== */
+.at-co-wrap{padding-top:24px;padding-bottom:72px}
+.at-co-top{margin-bottom:14px}
+.at-co-grid{display:grid;grid-template-columns:1.62fr 1fr;gap:48px;align-items:start;margin-top:30px}
+.at-co-main{display:flex;flex-direction:column;gap:26px;min-width:0}
+.at-co-side{display:flex;flex-direction:column;gap:16px;min-width:0}
+@media(min-width:1025px){.at-co-side{position:sticky;top:104px}}
+@media(max-width:1024px){.at-co-grid{display:flex;flex-direction:column;gap:26px}.at-co-side{order:-1}}
+
+.at-co-card{padding:26px}
+.at-co-card-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.at-co-card-head h2{font-family:var(--font-display);font-weight:800;font-size:20px;letter-spacing:-.02em;color:var(--text-strong);margin:0}
+.at-co-login{font-size:13.5px;color:var(--text-muted)}
+.at-co-login a{color:var(--orange-400);font-weight:700;text-decoration:none}
+
+/* ---------- champs : label en position haute permanente (handoff §7.1) ---------- */
+.at-co-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.at-co .form-row{position:relative;margin:0;padding:0;grid-column:1/-1;width:auto!important;float:none!important}
+.at-co .form-row-first,.at-co .form-row-last{grid-column:span 1}
+.at-co #billing_postcode_field,.at-co #shipping_postcode_field,
+.at-co #billing_city_field,.at-co #shipping_city_field{grid-column:span 1}
+@media(max-width:1024px){.at-co .form-row,.at-co .form-row-first,.at-co .form-row-last,
+  .at-co #billing_postcode_field,.at-co #shipping_postcode_field,
+  .at-co #billing_city_field,.at-co #shipping_city_field{grid-column:1/-1}}
+.at-co .form-row > label{position:absolute;left:15px;top:8px;z-index:2;margin:0;padding:0;font-family:var(--font-body);font-size:11.5px;font-weight:700;color:var(--text-faint);pointer-events:none;transition:color .16s ease}
+.at-co .form-row .required{color:inherit;border:none;text-decoration:none}
+.at-co .form-row:focus-within > label{color:var(--orange-400)}
+.at-co .woocommerce-input-wrapper{display:block;width:100%}
+.at-co input.input-text,.at-co textarea,.at-co select{width:100%;box-sizing:border-box;font-family:var(--font-body);font-size:15px;line-height:1.3;color:var(--text-strong);background:var(--surface-page);border:2px solid var(--border-subtle);border-radius:12px;padding:22px 14px 8px;min-height:56px;outline:none;box-shadow:none;transition:border-color .16s ease}
+.at-co textarea{min-height:104px;resize:vertical;padding-top:24px}
+.at-co input.input-text:focus,.at-co textarea:focus,.at-co select:focus{border-color:var(--orange-400)}
+.at-co select{appearance:none;-webkit-appearance:none;cursor:pointer;background-image:none}
+.at-co .form-row.woocommerce-invalid input.input-text,
+.at-co .form-row.woocommerce-invalid select,
+.at-co .form-row.woocommerce-invalid textarea{border-color:#C2410C}
+.at-co .form-row.woocommerce-invalid > label{color:#C2410C}
+/* select2 (pays / région) habillé comme un champ */
+.at-co .select2-container--default .select2-selection--single{height:56px;border:2px solid var(--border-subtle);border-radius:12px;background:var(--surface-page)}
+.at-co .select2-container--default .select2-selection--single .select2-selection__rendered{line-height:1.3;padding:26px 34px 8px 12px;color:var(--text-strong);font-size:15px}
+.at-co .select2-container--default .select2-selection--single .select2-selection__arrow{height:54px;right:8px}
+.at-co .select2-container--default.select2-container--open .select2-selection--single{border-color:var(--orange-400)}
+
+.at-check{display:flex;align-items:flex-start;gap:11px;margin-top:16px;font-size:13.5px;line-height:1.6;color:var(--text-muted);cursor:pointer}
+.at-check input[type=checkbox]{width:18px;height:18px;margin:2px 0 0;accent-color:var(--orange-400);cursor:pointer;flex:none}
+.at-check span{display:inline-flex;align-items:center;gap:8px}
+.at-co-shipfields{margin-top:16px}
+.at-co-shipfields:not(.is-on){display:none}
+
+/* ---------- cartes-radio livraison + paiement (handoff §7.3) ---------- */
+.at-radios{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.at-radio{position:relative}
+.at-radio > input[type=radio]{position:absolute;opacity:0;width:0;height:0}
+.at-radio-box{display:flex;gap:14px;padding:18px;border:2px solid var(--border-subtle);border-radius:14px;background:var(--surface-subtle);cursor:pointer;transition:border-color .16s ease,background .16s ease}
+.at-radio-dot{width:20px;height:20px;flex:none;margin-top:1px;border:2px solid var(--border-default);border-radius:50%;display:grid;place-items:center;transition:border-color .16s ease}
+.at-radio-dot::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--orange-400);transform:scale(0);transition:transform .16s cubic-bezier(.16,1,.3,1)}
+.at-radio-main{flex:1;min-width:0}
+.at-radio-title{display:flex;align-items:center;gap:9px;font-size:14.5px;font-weight:700;color:var(--text-strong)}
+.at-radio-i{color:var(--orange-400)}
+.at-radio-price{margin-left:auto;font-family:var(--font-display);font-weight:800;font-size:14.5px}
+.at-radio-desc{display:none;font-size:13.5px;line-height:1.55;color:var(--text-muted);margin-top:6px}
+.at-radio-desc p{margin:0}
+.at-radio-desc--always{display:block}
+.at-radio > input:checked ~ .at-radio-box .at-radio-desc{display:block}
+.at-radio > input:checked ~ .at-radio-box{border-color:var(--ink-900);background:var(--surface-card)}
+.at-radio > input:checked ~ .at-radio-box .at-radio-dot{border-color:var(--orange-400)}
+.at-radio > input:checked ~ .at-radio-box .at-radio-dot::after{transform:scale(1)}
+.at-radio > input:focus-visible ~ .at-radio-box{box-shadow:0 0 0 3px rgba(236,103,44,.28)}
+@media(hover:hover){.at-radio > input:not(:checked) ~ .at-radio-box:hover{border-color:var(--border-default)}}
+.at-radio-fields{display:none;padding:14px 18px 0}
+.at-radio > input:checked ~ .at-radio-fields{display:block}
+.at-radio-fields p{font-size:13.5px;color:var(--text-muted)}
+.at-muted{font-size:13.5px;color:var(--text-muted)}
+
+/* note de commande */
+.at-co-note-toggle{margin-top:20px}
+.at-co-note{margin-top:12px}
+.at-co-note[hidden]{display:none!important}
+
+/* pied de formulaire */
+.at-co-place{margin:0;padding:0}
+.at-co-terms{font-size:13px;line-height:1.6;color:var(--text-muted);margin-top:20px}
+.at-co-terms a{color:var(--orange-400);font-weight:700;text-decoration:none}
+.at-co-terms .woocommerce-terms-and-conditions-wrapper{margin:0}
+.at-co-submit{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:58px;margin-top:16px;border:none;border-radius:var(--radius-pill);background:var(--orange-400);color:#fff;font-family:var(--font-body);font-size:16px;font-weight:700;cursor:pointer;box-shadow:var(--shadow-card);transition:background .2s ease,transform .14s ease}
+@media(hover:hover){.at-co-submit:hover{background:var(--orange-500)}}
+.at-co-submit:active{transform:translateY(1px) scale(.995)}
+.at-co-submit[disabled]{opacity:.7;pointer-events:none}
+.at-co-submit .woocommerce-Price-amount{color:#fff}
+.at-co-secure{display:block;text-align:center;font-size:12.5px;color:var(--text-faint);margin-top:12px}
+
+/* ---------- résumé ---------- */
+.at-co-sumtoggle{display:none}
+.at-co-sum{padding:26px}
+.at-co-sum .at-sum-t{margin:0 0 18px}
+.at-rev{width:100%;border-collapse:collapse;border:0}
+.at-rev th,.at-rev td{border:0;padding:0;background:transparent}
+/* Zebre d'Elementor : son reset.css pose
+   `table tbody > tr:nth-child(2n+1) > td { background: rgba(128,128,128,.07) }`,
+   soit (0,1,4) — il bat la ligne ci-dessus (0,1,1) et raye une ligne sur deux
+   du resume. On repasse a (0,2,3) en s'ancrant sur le conteneur. */
+.at-co-review .at-rev tbody>tr>th,.at-co-review .at-rev tbody>tr>td{background:transparent}
+/* Prestations d'atelier : pas de vignette, la colonne ne porte que la
+   pastille de quantite et se resserre. */
+.at-rev-media--noimg{width:30px;vertical-align:top;padding-top:2px}
+.at-rev-row{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;padding:10px 0}
+.at-rev-media{position:relative;width:64px}
+.at-rev-media img{width:64px;height:64px;object-fit:cover;border-radius:12px;display:block}
+.at-rev-qty{position:absolute;top:-6px;right:-6px;min-width:21px;height:21px;padding:0 5px;border-radius:999px;background:var(--ink-900);color:#fff;font:800 11px/21px var(--font-display),sans-serif;text-align:center}
+.at-rev-body b{display:block;font-size:14px;font-weight:700;color:var(--text-strong);line-height:1.35}
+.at-rev-body span{display:block;font-size:12.5px;color:var(--text-muted);margin-top:3px}
+.at-rev-price{font-size:14px;font-weight:700;color:var(--text-strong);white-space:nowrap}
+.at-rev-items.is-collapsed .at-rev-row--extra{display:none}
+.at-rev-more td{padding-top:6px}
+.at-rev-morebtn{display:inline-flex;align-items:center;gap:6px;border:none;background:transparent;padding:0;font-family:var(--font-body);font-size:13px;font-weight:700;color:var(--orange-400);cursor:pointer}
+.at-rev-foot{display:block;margin-top:16px;padding-top:16px;border-top:1px solid var(--divider)}
+.at-rev-foot tr{display:flex;justify-content:space-between;gap:12px;padding:5px 0;font-size:14.5px;color:var(--text-body)}
+.at-rev-foot th{font-weight:400;text-align:left}
+.at-rev-foot td{font-weight:700;color:var(--text-strong);text-align:right}
+.at-rev-tax th,.at-rev-tax td{color:var(--text-muted);font-weight:400}
+.at-rev-discount td{color:var(--olive-400)}
+.at-rev-total{margin-top:10px;padding-top:14px;border-top:1px solid var(--divider);align-items:baseline}
+.at-rev-total th{font-family:var(--font-display);font-weight:800;font-size:20px;letter-spacing:-.02em;color:var(--text-strong)}
+.at-rev-total td,.at-rev-total .amount{font-family:var(--font-display);font-weight:800;font-size:28px;letter-spacing:-.02em;color:var(--text-strong)}
+
+/* résumé replié sous 1024 px */
+@media(max-width:1024px){
+  .at-co-sumtoggle{display:flex;align-items:center;gap:12px;width:100%;padding:16px 18px;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);background:var(--surface-card);font-family:var(--font-body);font-size:14.5px;font-weight:600;color:var(--text-body);cursor:pointer;box-shadow:var(--shadow-card)}
+  .at-co-sumtoggle b{margin-left:auto;font-family:var(--font-display);font-weight:800;font-size:16px;color:var(--text-strong)}
+  .at-co-sumchev{transition:transform .2s cubic-bezier(.16,1,.3,1)}
+  .at-co-sumtoggle[aria-expanded="true"] .at-co-sumchev{transform:rotate(180deg)}
+  .at-co-sum{display:none}
+  .at-co-sum.is-open{display:block}
+  .at-co-callout,.at-co-reassure{display:none}
+}
+@media(max-width:767px){
+  .at-co-fields{grid-template-columns:1fr}
+  .at-co-card{padding:20px}
+  .at-co-wrap .at-cart-head .at-h1{font-size:30px}
+}
+
+/* ---------- correctifs de cascade (checkout) ----------
+   Adversaires réels : la feuille du tunnel atelier peint `.button.alt` en violet
+   (0,2,0 + !important), et WooCommerce/hello posent leurs propres paddings sur
+   `#payment #place_order`. On vise plus spécifique ET après. */
+.at-co #payment .at-co-submit,
+.at-co .at-co-place .at-co-submit{background:var(--orange-400)!important;color:#fff!important;border:none!important;border-radius:var(--radius-pill)!important;font-family:var(--font-body)!important;font-size:16px!important;font-weight:700!important;height:58px!important;padding:0 26px!important;letter-spacing:0!important;text-transform:none!important}
+@media(hover:hover){.at-co #payment .at-co-submit:hover,.at-co .at-co-place .at-co-submit:hover{background:var(--orange-500)!important}}
+.at-co .at-co-submit .at-co-submit-sep{opacity:.75;margin:0 2px}
+.at-co .at-co-submit .woocommerce-Price-amount,
+.at-co .at-co-submit bdi{color:#fff!important}
+
+/* le libellé du champ tient lieu de placeholder (sauf la note de commande) */
+.at-co input.input-text::placeholder,
+.at-co textarea::placeholder{color:transparent}
+.at-co #order_comments::placeholder{color:var(--text-faint)}
+.at-co #order_comments_field > label{display:none}
+.at-co #order_comments{padding-top:14px}
+
+/* le bloc « code promo » natif de WooCommerce est remplacé par l'accordéon du résumé */
+/* la notice est rendue par woocommerce_before_checkout_form, hors du wrapper .at-co */
+body.woocommerce-checkout .woocommerce-form-coupon-toggle,
+body.woocommerce-checkout .checkout_coupon{display:none}
+
+/* accordéon code promo dans le résumé (replié par défaut, handoff §7.4) */
+.at-co-sum .at-promo{margin-top:18px}
+
+/* WooCommerce peint #payment en gris (#ebe9eb) et arrondit ses blocs : le
+   conteneur doit rester transparent, la carte blanche est déjà autour. */
+.at-co #payment,
+.at-co #payment .payment_box,
+.at-co #payment ul.payment_methods{background:transparent;border:0;padding:0;margin:0;border-radius:0}
+.at-co #payment .payment_box::before{display:none}
+.at-co #payment div.form-row{padding:0}
+
+/* notices WooCommerce : elles sont rendues hors du wrapper .at-shop */
+body.woocommerce-cart .woocommerce-notices-wrapper,
+body.woocommerce-checkout .woocommerce-notices-wrapper{max-width:1520px;margin:0 auto;padding:0 24px}
+@media(max-width:1024px){body.woocommerce-cart .woocommerce-notices-wrapper,body.woocommerce-checkout .woocommerce-notices-wrapper{padding:0 20px}}
+@media(max-width:767px){body.woocommerce-cart .woocommerce-notices-wrapper,body.woocommerce-checkout .woocommerce-notices-wrapper{padding:0 14px}}
+body.woocommerce-cart .woocommerce-notices-wrapper > *,
+body.woocommerce-checkout .woocommerce-notices-wrapper > *{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  margin:18px 0 0;padding:14px 18px;border:1px solid #E4E1DB;border-left:4px solid #707455;
+  border-radius:16px;background:#F5F7F8;font-family:'Nunito Sans',sans-serif;font-size:14px;color:#2C3845;list-style:none}
+body.woocommerce-cart .woocommerce-notices-wrapper .woocommerce-error,
+body.woocommerce-checkout .woocommerce-notices-wrapper .woocommerce-error{border-left-color:#C2410C}
+body.woocommerce-cart .woocommerce-notices-wrapper > *::before,
+body.woocommerce-checkout .woocommerce-notices-wrapper > *::before{content:none}
+body.woocommerce-cart .woocommerce-notices-wrapper .button,
+body.woocommerce-checkout .woocommerce-notices-wrapper .button{display:inline-flex;align-items:center;height:40px;padding:0 18px;border:none;
+  border-radius:999px;background:#101820;color:#fff!important;font-size:13.5px;font-weight:700;text-decoration:none;line-height:40px}

@@ -1,0 +1,312 @@
+/* ==========================================================================
+   AEROTECH — page Contact (maquette templates/contact/Contact.dc.html)
+   Chargée uniquement sur la page Contact (enqueue conditionnel functions.php).
+   Scope : la classe .at-ct est posée sur chaque conteneur de section Elementor.
+   Les tokens dupliquent ceux de .at-shop (at-shop.css) — même valeurs, autre scope.
+   ========================================================================== */
+
+.at-ct{
+--orange-300:#F0945F;--orange-400:#EC672C;--orange-500:#D9551B;--orange-600:#B8470F;
+--olive-400:#707455;--ink-50:#F5F7F8;--ink-100:#E8ECEE;--ink-300:#8A95A0;--ink-400:#62707C;
+--ink-500:#44525F;--ink-700:#2C3845;--ink-800:#1C2630;--ink-900:#101820;
+--taupe-300:#B8A88B;--taupe-400:#9F8F73;--taupe-500:#87775C;
+--surface-page:#fff;--surface-card:#fff;--surface-subtle:#F5F7F8;--sky-100:#E7F0F0;
+--border-subtle:#E4E1DB;--border-default:#D8D4CD;--divider:#E8ECEE;
+--text-strong:#101820;--text-body:#2C3845;--text-muted:#62707C;--text-faint:#8A95A0;
+--text-heading-taupe:#6B5E48;--error:#C2410C;
+--radius-lg:16px;--radius-xl:24px;--radius-pill:999px;
+--shadow-card:0 1px 2px rgba(16,24,32,.05),0 6px 18px rgba(16,24,32,.06);
+--shadow-card-hover:0 4px 10px rgba(16,24,32,.08),0 18px 40px rgba(16,24,32,.12);
+--focus-ring:0 0 0 3px rgba(236,103,44,.28);
+--font-display:'Rubik',sans-serif;--font-body:'Nunito Sans',sans-serif;
+--ease:cubic-bezier(0.16,1,0.3,1);
+font-family:var(--font-body);color:var(--text-strong);line-height:1.6}
+
+.at-ct :focus-visible{outline:none;box-shadow:var(--focus-ring)}
+/* garde globale : Elementor peint `fill` directement sur les svg des widgets
+   icon/button/icon-list (règle générée > attribut de présentation) → sans ça les
+   icônes en trait deviennent des aplats, souvent seulement au survol. */
+.at-ct svg[fill="none"]{fill:none!important}
+
+/* ---------- gouttières 24 / 20 / 14 (handoff §0) ---------- */
+.e-con.at-ct{padding-left:24px;padding-right:24px}
+@media(max-width:1024px){.e-con.at-ct{padding-left:20px;padding-right:20px}}
+@media(max-width:767px){.e-con.at-ct{padding-left:14px;padding-right:14px}}
+/* les conteneurs imbriqués ne rajoutent jamais de gouttière (défaut Elementor 10px) */
+.at-ct .e-con{--padding-left:0px;--padding-right:0px}
+
+/* ---------- typo ---------- */
+.at-ct .at-eyebrow .elementor-heading-title,.at-ct .at-eyebrow{font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--taupe-400);font-family:var(--font-body)}
+.at-ct .at-eyebrow--dark .elementor-heading-title{color:var(--taupe-300)}
+.at-ct .at-h1 .elementor-heading-title{font-family:var(--font-display);font-weight:800;font-size:46px;line-height:1.06;letter-spacing:-.02em;color:var(--text-heading-taupe);text-wrap:balance}
+.at-ct .at-h2 .elementor-heading-title{font-family:var(--font-display);font-weight:800;font-size:34px;line-height:1.14;letter-spacing:-.02em;color:var(--text-heading-taupe);text-wrap:balance}
+.at-ct .at-h2--light .elementor-heading-title{color:#fff}
+.at-ct .at-h3 .elementor-heading-title{font-family:var(--font-display);font-weight:800;font-size:24px;line-height:1.2;letter-spacing:-.02em;color:var(--text-strong)}
+.at-ct .at-h4 .elementor-heading-title{font-family:var(--font-display);font-weight:800;font-size:20px;line-height:1.2;letter-spacing:-.02em;color:var(--text-strong)}
+.at-ct .elementor-heading-title em{font-style:normal;color:var(--orange-400)}
+.at-ct .at-chapo{font-size:16px;line-height:1.65;color:var(--text-body);max-width:56ch;text-wrap:pretty}
+.at-ct .at-chapo--sm{font-size:15px;max-width:40ch}
+@media(max-width:767px){
+  .at-ct .at-h1 .elementor-heading-title{font-size:32px}
+  .at-ct .at-h2 .elementor-heading-title{font-size:26px}
+}
+
+/* ---------- fil d'ariane ---------- */
+/* rendu et styles communs au site : bloc AT-CRUMB du kit 6 */
+.at-ct .elementor-widget.at-ct-crumb{margin:0 0 12px}
+
+/* ---------- en-tête : titre + pilules ---------- */
+/* meme grille et meme gap que .at-ct-main > .e-con-inner : la colonne des
+   pilules tombe exactement sur la carte AEROTECH SAS de la section suivante. */
+.e-con.at-ct-head{display:grid;grid-template-columns:1.45fr 1fr;gap:48px;align-items:end}
+.e-con.at-ct-pills{display:flex;flex-direction:row;flex-wrap:wrap;justify-content:center;gap:12px;width:auto}
+.at-ct .at-ct-pill .elementor-button{display:inline-flex;align-items:center;gap:11px;height:52px;padding:0 24px;border-radius:var(--radius-pill);font-family:var(--font-body);font-size:15px;font-weight:700;line-height:1;transition:background .2s ease,color .16s ease}
+.at-ct .at-ct-pill .elementor-button-content-wrapper{display:inline-flex;align-items:center;gap:11px}
+.at-ct .at-ct-pill .elementor-button-icon{display:inline-flex;flex:none}
+.at-ct .at-ct-pill .elementor-button-icon svg{width:19px;height:19px}
+.at-ct .at-ct-pill--tel .elementor-button{background:var(--orange-400);color:#fff;box-shadow:var(--shadow-card)}
+.at-ct .at-ct-pill--mail .elementor-button{background:var(--ink-900);color:#fff}
+.at-ct .at-ct-pill--wa .elementor-button{background:#25D366;color:#08130C}
+.at-ct .at-ct-pill--wa .elementor-button-icon svg{width:20px;height:20px}
+@media(hover:hover){
+  .at-ct .at-ct-pill--tel .elementor-button:hover{background:var(--orange-500);color:#fff}
+  .at-ct .at-ct-pill--mail .elementor-button:hover{background:var(--ink-700);color:#fff}
+  .at-ct .at-ct-pill--wa .elementor-button:hover{background:#1FB855;color:#08130C}
+}
+@media(max-width:1024px){.e-con.at-ct-head{grid-template-columns:1fr;gap:28px;align-items:start}.e-con.at-ct-pills{justify-content:flex-start}}
+@media(max-width:767px){
+  .e-con.at-ct-pills{flex-direction:column;width:100%}
+  .at-ct .at-ct-pill,.at-ct .at-ct-pill .elementor-button{width:100%}
+  .at-ct .at-ct-pill .elementor-button{justify-content:center}
+}
+
+/* ---------- grille principale : formulaire / coordonnées ----------
+   ⚠️ .at-ct-main est un conteneur BOXED : ses enfants sont dans .e-con-inner,
+   c'est donc lui qui doit porter la grille (une grille posée sur le .e-con
+   extérieur n'a qu'un seul enfant, l'inner, et tout s'empile). */
+.e-con.at-ct-main > .e-con-inner{display:grid;grid-template-columns:1.45fr 1fr;gap:48px;align-items:start}
+@media(max-width:1024px){.e-con.at-ct-main > .e-con-inner{grid-template-columns:1fr;gap:36px}}
+
+/* cartes blanches */
+.e-con.at-ct-card{background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);box-shadow:var(--shadow-card);padding:26px}
+.e-con.at-ct-card--form{padding:32px}
+.e-con.at-ct-aside{display:flex;flex-direction:column;gap:20px}
+
+/* ==========================================================================
+   Formulaire (widget Elementor Pro Form) — labels flottants
+   Elementor rend le label AVANT le champ : le motif `input ~ label` de la
+   maquette est remplacé par :has() sur le groupe, même rendu.
+   ========================================================================== */
+.at-ctf .elementor-form-fields-wrapper{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:0}
+/* width:auto!important — adversaire .elementor-col-100/.elementor-col-50 (width:100%/50%)
+   qui casserait la grille */
+.at-ctf .elementor-field-group{position:relative;padding:0;margin:0;width:auto!important;max-width:none;grid-column:1/-1;display:block}
+.at-ctf .elementor-field-group.elementor-col-50{grid-column:span 1}
+@media(max-width:767px){.at-ctf .elementor-field-group.elementor-col-50{grid-column:1/-1}}
+
+.at-ctf .elementor-field-textual,
+.at-ctf .elementor-field-group .elementor-select-wrapper select{
+  width:100%;box-sizing:border-box;font-family:var(--font-body);font-size:15px;line-height:1.35;
+  color:var(--text-strong);background:var(--surface-card);border:2px solid var(--border-subtle);
+  border-radius:12px;padding:24px 14px 9px;outline:none;box-shadow:none;
+  transition:border-color .16s ease;min-height:58px}
+.at-ctf textarea.elementor-field-textual{min-height:132px;resize:vertical;display:block;padding-top:26px}
+.at-ctf .elementor-field-group .elementor-select-wrapper{position:relative;display:block}
+.at-ctf .elementor-field-group .elementor-select-wrapper select{appearance:none;-webkit-appearance:none;cursor:pointer;height:58px}
+/* chevron du sprite (masque + currentColor) à la place de l'icône par défaut d'Elementor */
+.at-ctf .elementor-select-wrapper::after{content:"";position:absolute;right:14px;top:50%;transform:translateY(-50%);width:20px;height:20px;background:var(--text-muted);pointer-events:none;
+  -webkit-mask:var(--at-chevron) center/20px 20px no-repeat;mask:var(--at-chevron) center/20px 20px no-repeat}
+.at-ctf .elementor-select-wrapper .select-caret-down-wrapper,
+.at-ctf .elementor-select-wrapper i,
+.at-ctf .elementor-select-wrapper svg{display:none!important}
+
+.at-ctf .elementor-field-group > .elementor-field-label{
+  position:absolute;left:16px;top:18px;margin:0;padding:0;z-index:1;
+  font-family:var(--font-body);font-size:15px;font-weight:600;color:var(--text-muted);
+  pointer-events:none;transform-origin:left top;
+  transition:transform .16s var(--ease),color .16s ease}
+/* état haut : focus, champ rempli, et toujours pour un select */
+.at-ctf .elementor-field-group:has(:is(input,textarea,select):focus) > .elementor-field-label,
+.at-ctf .elementor-field-group:has(:is(input,textarea):not(:placeholder-shown)) > .elementor-field-label,
+.at-ctf .elementor-field-type-select > .elementor-field-label{
+  transform:translateY(-10px) scale(.72);font-weight:700;letter-spacing:.02em}
+.at-ctf .elementor-field-group:has(:is(input,textarea,select):focus) > .elementor-field-label{color:var(--orange-400)}
+.at-ctf :is(input,textarea,select).elementor-field-textual:focus,
+.at-ctf .elementor-select-wrapper select:focus{border-color:var(--orange-400)}
+.at-ctf :is(input,textarea).elementor-field-textual::placeholder{color:transparent}
+.at-ctf .elementor-mark-required .elementor-field-label:after{content:" *";color:inherit}
+
+/* le honeypot rend un div hors .elementor-field-group : il ne doit pas occuper
+   une cellule de la grille (le champ reste dans le DOM et donc soumis) */
+.at-ctf .elementor-form-fields-wrapper > .elementor-field-type-text:not(.elementor-field-group){display:none}
+
+/* case « Ce numéro est sur WhatsApp » : sous le champ téléphone (colonne droite).
+   NB : le `css_classes` d'un champ Elementor est posé sur le CHAMP (ici le
+   .elementor-field-subgroup), pas sur le groupe → le placement vise la classe
+   générée .elementor-field-group-<custom_id>. */
+/* .elementor-field-group.elementor-field-group-wa_num : (0,3,0) pour battre
+   .elementor-field-group.elementor-col-50{grid-column:span 1} déclarée plus haut */
+.at-ctf .elementor-field-group.elementor-field-group-wa_num{grid-column:2;margin-top:-5px}
+@media(max-width:767px){.at-ctf .elementor-field-group.elementor-field-group-wa_num{grid-column:1/-1;margin-top:0}}
+.at-ctf .at-f-wa{display:flex}
+.at-ctf .at-f-wa .elementor-field-option label{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--text-muted);cursor:pointer}
+.at-ctf .at-f-wa input[type=checkbox]{width:17px;height:17px;accent-color:#25D366;cursor:pointer;margin:0}
+.at-ctf .at-f-wa .elementor-field-option label::before{content:"";width:17px;height:17px;flex:none;background:#25D366;
+  -webkit-mask:var(--at-whatsapp) center/17px 17px no-repeat;mask:var(--at-whatsapp) center/17px 17px no-repeat}
+
+/* préférence de contact : fieldset + pilules radio */
+.at-ctf .elementor-field-group-preference{border:2px solid var(--border-subtle);border-radius:12px;padding:16px 16px 18px}
+.at-ctf .elementor-field-group-preference > .elementor-field-label{position:static;transform:none;font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--text-muted);display:block;margin-bottom:12px;text-transform:none;pointer-events:auto}
+.at-ctf .at-f-pref{display:flex;flex-wrap:wrap;gap:10px}
+.at-ctf .at-f-pref .elementor-field-option{position:relative}
+.at-ctf .at-f-pref input[type=radio]{position:absolute;opacity:0;width:0;height:0}
+.at-ctf .at-f-pref .elementor-field-option label{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 16px;
+  border:2px solid var(--border-subtle);border-radius:var(--radius-pill);background:var(--surface-subtle);
+  font-size:14px;font-weight:600;color:var(--text-body);cursor:pointer;
+  transition:border-color .16s ease,background .16s ease,color .16s ease}
+.at-ctf .at-f-pref .elementor-field-option label::before{content:"";width:17px;height:17px;flex:none;background:var(--text-muted);
+  -webkit-mask-position:center;mask-position:center;-webkit-mask-size:17px 17px;mask-size:17px 17px;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+.at-ctf .at-f-pref .elementor-field-option:nth-child(1) label::before{-webkit-mask-image:var(--at-mail);mask-image:var(--at-mail)}
+.at-ctf .at-f-pref .elementor-field-option:nth-child(2) label::before{-webkit-mask-image:var(--at-phone);mask-image:var(--at-phone)}
+.at-ctf .at-f-pref .elementor-field-option:nth-child(3) label::before{-webkit-mask-image:var(--at-whatsapp);mask-image:var(--at-whatsapp)}
+.at-ctf .at-f-pref .elementor-field-option input:checked + label{border-color:var(--orange-400);background:var(--surface-card);color:var(--text-strong);font-weight:700}
+.at-ctf .at-f-pref .elementor-field-option input:checked + label::before{background:var(--orange-400)}
+.at-ctf .at-f-pref .elementor-field-option input:focus-visible + label{box-shadow:var(--focus-ring)}
+@media(hover:hover){.at-ctf .at-f-pref .elementor-field-option input:not(:checked) + label:hover{border-color:var(--border-default)}}
+
+/* Les cases à cocher portent un `field_label` (uniquement pour nommer le champ
+   dans l'e-mail et l'export des envois) : il ne doit pas s'afficher, le libellé
+   visible est celui de la case elle-même. */
+.at-ctf :is(.elementor-field-group-rgpd,.elementor-field-group-newsletter,.elementor-field-group-wa_num) > .elementor-field-label{display:none}
+
+/* cases RGPD / newsletter */
+.at-ctf :is(.elementor-field-group-rgpd,.elementor-field-group-newsletter) .elementor-field-option{display:flex;align-items:flex-start;gap:11px}
+.at-ctf :is(.elementor-field-group-rgpd,.elementor-field-group-newsletter) label{font-size:13.5px;line-height:1.6;color:var(--text-muted);cursor:pointer}
+.at-ctf :is(.elementor-field-group-rgpd,.elementor-field-group-newsletter) label a{color:var(--orange-400);font-weight:700;text-decoration:none}
+.at-ctf input.elementor-acceptance-field{width:18px;height:18px;min-height:0;margin:2px 0 0;padding:0;border:none;border-radius:0;accent-color:var(--orange-400);cursor:pointer;flex:none}
+.at-ctf .elementor-field-group-rgpd{margin-top:4px}
+
+/* bouton d'envoi */
+.at-ctf .elementor-field-type-submit{grid-column:1/-1;padding:0}
+.at-ctf .elementor-button[type=submit]{display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;height:58px;border:none;border-radius:var(--radius-pill);background:var(--orange-400);
+  color:#fff;font-family:var(--font-body);font-size:16px;font-weight:700;cursor:pointer;
+  box-shadow:var(--shadow-card);transition:background .2s ease,transform .14s ease}
+.at-ctf .elementor-button[type=submit] .elementor-button-content-wrapper{display:inline-flex;align-items:center;gap:10px}
+.at-ctf .elementor-button[type=submit] svg{width:17px;height:17px}
+@media(hover:hover){.at-ctf .elementor-button[type=submit]:hover{background:var(--orange-500)}}
+.at-ctf .elementor-button[type=submit]:active{transform:translateY(1px) scale(.995)}
+.at-ctf .elementor-button[type=submit][disabled],
+.at-ctf form.elementor-form-waiting .elementor-button[type=submit]{opacity:.65;pointer-events:none}
+
+/* messages + erreurs de validation */
+.at-ctf .elementor-message{font-size:13.5px;line-height:1.6;margin-top:14px}
+.at-ctf .elementor-message-success{color:var(--olive-400);font-weight:700}
+.at-ctf .elementor-message-danger{color:var(--error);font-weight:600}
+.at-ctf .elementor-field-group.elementor-error :is(input,textarea,select){border-color:var(--error)}
+.at-ctf .elementor-field-group .elementor-error-message,
+.at-ctf .elementor-field-group .elementor-message-danger{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--error);margin-top:5px}
+.at-ctf .elementor-field-group .elementor-error-message::before,
+.at-ctf .elementor-field-group .elementor-message-danger::before{content:"";width:14px;height:14px;flex:none;background:currentColor;
+  -webkit-mask:var(--at-alert) center/14px 14px no-repeat;mask:var(--at-alert) center/14px 14px no-repeat}
+.at-ct .at-ct-formnote{display:block;text-align:center;font-size:12.5px;color:var(--text-faint)}
+
+/* ---------- colonne coordonnées ---------- */
+.at-ct .at-ct-coord .elementor-icon-box-wrapper{display:flex;gap:12px;align-items:flex-start;text-align:left}
+.at-ct .at-ct-coord .elementor-icon-box-icon{margin:0;flex:none}
+.at-ct .at-ct-coord .elementor-icon{color:var(--orange-400)}
+.at-ct .at-ct-coord .elementor-icon svg{width:19px;height:19px}
+.at-ct .at-ct-coord .elementor-icon-box-title{margin:0;font-family:var(--font-body);font-size:14.5px;font-weight:700;line-height:1.5;color:var(--text-strong)}
+.at-ct .at-ct-coord .elementor-icon-box-description{margin:0;font-size:14.5px;line-height:1.6;color:var(--text-muted)}
+.at-ct .at-ct-coord .elementor-icon-box-description a{color:var(--text-muted);text-decoration:none;word-break:break-all}
+.at-ct .at-ct-coord .elementor-icon-box-description a:hover{color:var(--orange-400)}
+.e-con.at-ct-coords{display:flex;flex-direction:column;gap:16px}
+
+/* ronds sociaux */
+.e-con.at-ct-social{display:flex;flex-direction:row;gap:8px;width:auto;margin-top:20px;padding-top:18px;border-top:1px solid var(--divider)}
+.at-ct .at-ct-soc .elementor-icon{width:38px;height:38px;border-radius:50%;border:1px solid var(--border-default);display:grid;place-items:center;color:var(--text-body);transition:background .16s ease,border-color .16s ease,color .16s ease}
+.at-ct .at-ct-soc .elementor-icon-wrapper{display:flex}
+.at-ct .at-ct-soc .elementor-icon svg{width:17px;height:17px}
+@media(hover:hover){.at-ct .at-ct-soc .elementor-icon:hover{background:var(--orange-400);border-color:var(--orange-400);color:#fff}}
+
+/* horaires (widget texte, éditable dans l'éditeur Elementor) */
+.at-ct .at-ct-hours ul{list-style:none;padding:0;margin:0;font-size:14px}
+.at-ct .at-ct-hours li{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--divider);color:var(--text-body)}
+.at-ct .at-ct-hours li > span:first-child,.at-ct .at-ct-hours li > strong{font-weight:600}
+.at-ct .at-ct-hours li > span:last-child{color:var(--text-muted);text-align:right}
+.at-ct .at-ct-hours li em{color:var(--text-faint);font-style:italic}
+.at-ct .at-ct-hours p{font-size:13px;line-height:1.6;color:var(--text-muted);margin:16px 0 0}
+.at-ct .at-ct-hourshead .elementor-icon-box-wrapper{display:flex;gap:9px;align-items:center;text-align:left}
+.at-ct .at-ct-hourshead .elementor-icon{color:var(--orange-400)}
+.at-ct .at-ct-hourshead .elementor-icon svg{width:17px;height:17px}
+.at-ct .at-ct-hourshead .elementor-icon-box-title{margin:0;font-family:var(--font-display);font-weight:800;font-size:18px;letter-spacing:-.02em;color:var(--text-strong)}
+
+/* ==========================================================================
+   Section sombre — carte & accès
+   ========================================================================== */
+.e-con.at-ct-dark{background:var(--ink-900);color:#fff}
+.at-ct-dark .at-chapo,.at-ct-dark p{color:rgba(255,255,255,.82)}
+.e-con.at-ct-mapgrid{display:grid;grid-template-columns:1.7fr 1fr;gap:26px;align-items:stretch}
+@media(max-width:1024px){.e-con.at-ct-mapgrid{grid-template-columns:1fr}}
+
+/* carte Google Maps + placeholder de consentement (widget html) */
+.at-ct .at-map{position:relative;border-radius:var(--radius-xl);overflow:hidden;border:1px solid rgba(255,255,255,.14);min-height:420px;height:100%;background:var(--ink-800)}
+@media(max-width:1024px){.at-ct .at-map{min-height:340px}}
+.at-ct .at-map iframe{width:100%;height:100%;min-height:420px;border:0;display:block}
+@media(max-width:1024px){.at-ct .at-map iframe{min-height:340px}}
+.at-ct .at-map-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:32px}
+.at-ct .at-map-ph i{width:32px;height:32px;background:var(--taupe-300);
+  -webkit-mask:var(--at-map-pin) center/32px 32px no-repeat;mask:var(--at-map-pin) center/32px 32px no-repeat}
+.at-ct .at-map-ph p{font-size:14px;line-height:1.6;color:rgba(255,255,255,.8);margin:0;max-width:44ch}
+.at-ct .at-map-ph .at-map-btn{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 20px;border:none;border-radius:var(--radius-pill);background:var(--orange-400);color:#fff;font-family:var(--font-body);font-size:14px;font-weight:700;cursor:pointer;transition:background .2s ease}
+@media(hover:hover){.at-ct .at-map-ph .at-map-btn:hover{background:var(--orange-500)}}
+.at-ct .at-map-ph .at-map-dir{font-size:13px;font-weight:700;color:#fff;text-decoration:underline;text-underline-offset:3px}
+.at-ct .at-map[data-consent="1"] .at-map-ph{display:none}
+
+/* cartes d'accès (colonne droite) */
+.e-con.at-ct-accs{display:flex;flex-direction:column;gap:16px}
+.e-con.at-ct-acc{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:var(--radius-lg);padding:22px}
+.at-ct .at-ct-acc-t .elementor-heading-title{font-family:var(--font-display);font-weight:800;font-size:17px;color:#fff}
+.at-ct .at-ct-acc-p{font-size:14px;line-height:1.65;color:rgba(255,255,255,.78)}
+.at-ct .at-ct-dir .elementor-button{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 18px;border-radius:var(--radius-pill);font-family:var(--font-body);font-size:14px;font-weight:700;line-height:1;transition:background .2s ease,color .16s ease,border-color .16s ease}
+.at-ct .at-ct-dir .elementor-button-content-wrapper{display:inline-flex;align-items:center;gap:8px}
+.at-ct .at-ct-dir .elementor-button-icon{display:inline-flex;flex:none}
+.at-ct .at-ct-dir .elementor-button-icon svg{width:17px;height:17px}
+.at-ct .at-ct-dir--solid .elementor-button{background:var(--orange-400);color:#fff}
+.at-ct .at-ct-dir--ghost .elementor-button{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4)}
+@media(hover:hover){
+  .at-ct .at-ct-dir--solid .elementor-button:hover{background:var(--orange-500);color:#fff}
+  .at-ct .at-ct-dir--ghost .elementor-button:hover{background:#fff;color:var(--ink-900);border-color:#fff}
+}
+/* encadré d'annonce */
+.at-ct .at-ct-notice .elementor-icon-box-wrapper{display:flex;gap:12px;align-items:flex-start;text-align:left;
+  background:rgba(236,103,44,.12);border:1px solid rgba(236,103,44,.34);border-radius:var(--radius-lg);padding:18px}
+.at-ct .at-ct-notice .elementor-icon-box-icon{margin:0;flex:none}
+.at-ct .at-ct-notice .elementor-icon{color:var(--orange-400)}
+.at-ct .at-ct-notice .elementor-icon svg{width:20px;height:20px}
+.at-ct .at-ct-notice .elementor-icon-box-title{display:none}
+.at-ct .at-ct-notice .elementor-icon-box-description{margin:0;font-size:13.5px;line-height:1.6;color:rgba(255,255,255,.85)}
+
+/* ==========================================================================
+   FAQ
+   ========================================================================== */
+.e-con.at-ct-faqgrid{display:grid;grid-template-columns:1fr 1.4fr;gap:48px;align-items:start}
+@media(max-width:1024px){.e-con.at-ct-faqgrid{grid-template-columns:1fr;gap:32px}}
+.at-ct .at-ct-faq .e-n-accordion{display:flex;flex-direction:column;gap:10px}
+.at-ct .at-ct-faq .e-n-accordion-item{background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:4px 20px;overflow:hidden}
+.at-ct .at-ct-faq .e-n-accordion-item-title{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:18px 0;background:transparent;border:none;font-family:var(--font-body);font-size:15.5px;font-weight:700;
+  text-align:left;color:var(--text-strong);cursor:pointer;list-style:none}
+.at-ct .at-ct-faq .e-n-accordion-item-title::-webkit-details-marker{display:none}
+.at-ct .at-ct-faq .e-n-accordion-item-title-icon{flex:none;color:var(--orange-400)}
+.at-ct .at-ct-faq .e-n-accordion-item-title-icon svg{width:21px;height:21px;transition:transform .2s var(--ease)}
+.at-ct .at-ct-faq .e-n-accordion-item[open] .e-n-accordion-item-title-icon svg{transform:rotate(180deg)}
+.at-ct .at-ct-faq .e-con{--padding-top:0px;--padding-bottom:18px;--padding-left:0px;--padding-right:0px;background:transparent}
+.at-ct .at-ct-faq .at-ct-faq-a{font-size:14.5px;line-height:1.7;color:var(--text-muted)}
+
+/* ---------- mouvement réduit ---------- */
+@media (prefers-reduced-motion:reduce){
+  .at-ct *,.at-ct *::before,.at-ct *::after{transition-duration:.01ms!important;animation-duration:.01ms!important}
+  .at-ct .at-ct-pill .elementor-button:active,.at-ctf .elementor-button[type=submit]:active{transform:none}
+}

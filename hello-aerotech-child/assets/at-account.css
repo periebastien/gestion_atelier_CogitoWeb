@@ -1,0 +1,319 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   AEROTECH — Espace client : header simplifié et tiroir de navigation.
+   ──────────────────────────────────────────────────────────────────────────
+   Habillage du template Elementor « AEROTECH Header client » (416) et des deux
+   gabarits du tiroir JetMenu (« profil » 414 / « pied » 415). Chargé par
+   inc/account.php sur la seule page 289 (et tous ses onglets Profile Builder).
+
+   Le MARKUP est 100 % Elementor natif (conteneurs + widgets image, icon-list,
+   jet-mobile-menu, button, shortcode). Cette feuille ne porte que ce
+   qu'Elementor ne sait pas exprimer en réglages : le collage de la barre, le
+   gabarit du logo dans un parent flex, la bascule de la ligne téléphone en
+   pastille ronde, et l'habillage du tiroir.
+
+   ⚠ Spécificité : les feuilles d'Elementor sont chargées APRÈS celle-ci (cette
+   feuille est enqueuée en priorité 25 sur wp_enqueue_scripts, les CSS de
+   documents Elementor le sont plus tard). À spécificité égale elles gagnent.
+   Les règles qui affrontent une base Elementor — `.e-con{width:var(--width)}`,
+   `{display:var(--display)}` (0,1,0) — sont donc écrites à (0,2,0) au minimum.
+
+   Paliers : 1025 et 768 sont les breakpoints du kit (viewport_lg / viewport_md).
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── La barre colle en haut sur toute la largeur ────────────────────────────
+   L'espace client est une application : la barre reste accessible au scroll,
+   comme la colonne latérale. Le sticky vit sur le wrapper de la location
+   Elementor (enfant direct de <body>) : posé sur `.at-chdr`, il serait inerte
+   — son parent ne mesure que la hauteur de la barre, et un sticky ne colle que
+   dans les limites de son parent. */
+body.at-account header.elementor-location-header {
+	position: sticky;
+	top: 0;
+	z-index: 300;
+}
+
+/* La barre d'administration est fixe au-dessus de 600px de large (32px en
+   desktop, 46px entre 601 et 782). En dessous elle repasse en `absolute` et
+   ne décale plus rien. Ne concerne que les comptes staff — un client connecté
+   n'a pas de barre d'admin. */
+body.at-account.admin-bar header.elementor-location-header {
+	top: 32px;
+}
+
+@media (max-width: 782px) {
+	body.at-account.admin-bar header.elementor-location-header {
+		top: 46px;
+	}
+}
+
+@media (max-width: 600px) {
+	body.at-account.admin-bar header.elementor-location-header {
+		top: 0;
+	}
+}
+
+/* (0,2,0) : bat `.e-con` (0,1,0), chargé après cette feuille. */
+.at-chdr.e-con {
+	border-bottom: 1px solid #EAEDF0;
+}
+
+/* ── Logo ──────────────────────────────────────────────────────────────────
+   Trois propriétés obligatoires dans un parent flex : sans `flex-shrink`, le
+   wrapper se fait comprimer, et le `max-width:100%` posé par Elementor sur
+   l'<img> l'écrase alors sur la hauteur fixée (ratio cassé). */
+.at-chdr .at-chdr-logo {
+	flex-shrink: 0;
+	line-height: 0;
+}
+
+.at-chdr .at-chdr-logo img {
+	width: auto;
+	max-width: none;
+	height: 42px;
+	display: block;
+}
+
+/* Le widget image est en `text-align:center` par défaut : dans un flanc flex
+   plus large que lui, le logo se centrerait au lieu de rester au bord. */
+.at-chdr .at-chdr-logo {
+	text-align: left;
+}
+
+/* Le logo horizontal fait 500×88 : à 42px de haut il mesure 239px de large et
+   mange presque tout un écran de 375. */
+@media (max-width: 1024px) {
+	.at-chdr .at-chdr-logo img {
+		height: 34px;
+	}
+}
+
+@media (max-width: 767px) {
+	.at-chdr .at-chdr-logo img {
+		height: 30px;
+	}
+}
+
+/* ── Groupe d'actions à droite ─────────────────────────────────────────────
+   Un conteneur enfant Elementor reçoit `--width:100%` : sans ça le groupe
+   occupe toute la largeur restante et le `space-between` n'a plus d'effet.
+   Adversaire : `.e-con{width:var(--width)}` (0,1,0) → (0,2,0) suffit. */
+.at-chdr .e-con.at-chdr-actions {
+	width: fit-content;
+	flex-shrink: 0;
+}
+
+/* ── Ligne téléphone ───────────────────────────────────────────────────────
+   Au repos : icône + numéro. Sous 1025px : pastille ronde 42px, icône seule —
+   même gabarit que les pastilles `.at-icon-round` du header public. */
+.at-chdr .at-chdr-tel .elementor-icon-list-item > a {
+	transition: color 160ms;
+}
+
+/* ⚠ Le contrôle `icon_color` du widget icon-list fait générer un `fill` sur le
+   `svg`. Notre icône est en TRAIT (`fill="none"`, `stroke="currentColor"`) :
+   le fill ne peint rien et la couleur venait de `color`, hérité du lien —
+   c'est-à-dire du bleu par défaut du navigateur. On pilote donc `color`, ce
+   que `stroke="currentColor"` consomme. Même motif pour l'icône du tiroir. */
+.at-chdr .at-chdr-tel .elementor-icon-list-icon svg {
+	color: #101820;
+	transition: color 160ms;
+}
+
+.at-chdr .at-chdr-tel .elementor-icon-list-item > a:hover .elementor-icon-list-icon svg {
+	color: #EC672C;
+}
+
+@media (max-width: 1024px) {
+	.at-chdr .at-chdr-tel .elementor-icon-list-text {
+		display: none;
+	}
+	.at-chdr .at-chdr-tel .elementor-icon-list-item > a {
+		width: 42px;
+		height: 42px;
+		border-radius: 999px;
+		background: #F5F7F8;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.at-chdr .at-chdr-tel .elementor-icon-list-icon {
+		margin: 0;
+		padding: 0;
+	}
+}
+
+/* ── Bouton hamburger ──────────────────────────────────────────────────────
+   Le widget jet-mobile-menu n'a AUCUN contrôle de fond pour son toggle (seuls
+   couleur d'icône, taille, padding et rayon existent) : la pastille est posée
+   ici. Icône 24 + padding 9×2 = 42px, comme la pastille téléphone. */
+.at-chdr .at-chdr-burger .jet-mobile-menu__toggle {
+	background: #F5F7F8;
+	border-radius: 999px;
+	transition: background 160ms;
+}
+
+.at-chdr .at-chdr-burger .jet-mobile-menu__toggle:hover {
+	background: #EAEDF0;
+}
+
+/* Le widget est masqué en desktop par le réglage `hide_desktop`, mais son
+   conteneur garde la gouttière du flex : on le sort complètement du flux. */
+.at-chdr .at-chdr-burger.elementor-hidden-desktop {
+	display: none;
+}
+
+@media (max-width: 1024px) {
+	.at-chdr .at-chdr-burger.elementor-hidden-desktop {
+		display: block;
+	}
+}
+
+/* ── Garde SVG ─────────────────────────────────────────────────────────────
+   Les widgets `icon-list` et `button` font générer par Elementor une règle
+   posée DIRECTEMENT sur `svg`, qui bat l'attribut de présentation du fichier :
+   sans cette garde, les icônes en trait deviennent des aplats — souvent
+   seulement AU SURVOL, les règles hover peignant aussi le `fill`. */
+body.at-account svg[fill="none"] {
+	fill: none !important;
+}
+
+/* JetMenu peut tourner en mode « fill svg icon » et peindre tous les tracés
+   en currentColor. Nos icônes de menu sont filaires. */
+body.at-account .jet-mobile-menu__instance .jet-menu-icon svg[fill="none"] path {
+	fill: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Tiroir de navigation client (≤1024)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Le tiroir est injecté par JetMenu dans le DOM du widget, sous le header :
+   on le passe au-dessus de la barre collante (z-index 300). */
+body.at-account .jet-mobile-menu__container,
+body.at-account .jet-mobile-menu__cover {
+	z-index: 400;
+}
+
+/* ── Bouton de fermeture ───────────────────────────────────────────────────
+   JetMenu le range dans `.jet-mobile-menu__controls`, ENTRE le gabarit d'en-tête
+   et la liste : il flotte alors au milieu du tiroir, sous le bouton d'appel à
+   l'action (défaut visible tel quel sur le site de référence). On le sort du
+   flux en haut à droite ; le gabarit 414 réserve la place par son padding haut.
+   Sa classe est `__back` — JetMenu réutilise le contrôle « retour » comme
+   fermeture au premier niveau (aria-label « Close Menu »). */
+body.at-account .jet-mobile-menu__container-inner {
+	position: relative;
+}
+
+body.at-account .jet-mobile-menu__controls {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	z-index: 5;
+	padding: 0;
+}
+
+body.at-account .jet-mobile-menu__back {
+	width: 38px;
+	height: 38px;
+	border-radius: 999px;
+	background: #F5F7F8;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background 160ms;
+}
+
+body.at-account .jet-mobile-menu__back:hover {
+	background: #EAEDF0;
+}
+
+body.at-account .jet-mobile-menu__back svg {
+	width: 18px;
+	height: 18px;
+}
+
+/* ── Carte profil (gabarit 414) ────────────────────────────────────────── */
+.at-cmenu-card.e-con {
+	background: #FFFFFF;
+	border: 1px solid #D8D4CD;
+	border-radius: 12px;
+}
+
+.at-cmenu-name {
+	font-size: 14px;
+	font-weight: 800;
+	color: #101820;
+	line-height: 1.25;
+}
+
+/* Le nom et l'adresse peuvent être longs : on les tronque plutôt que de
+   laisser la carte s'étirer et pousser le bouton hors de l'écran. La troncature
+   doit porter sur l'élément qui contient VRAIMENT le texte — pour le champ
+   dynamique JetEngine c'est `.jet-listing-dynamic-field`, pas le wrapper du
+   widget, sinon le texte est coupé net sans points de suspension. */
+.at-cmenu-name,
+.at-cmenu-mail .jet-listing-dynamic-field {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	display: block;
+}
+
+/* La colonne nom/e-mail est un conteneur enfant : Elementor lui pose
+   `--width:100%`, soit toute la largeur du contenu de la carte. Avec l'avatar
+   de 40px à côté, la rangée dépassait et `flex-wrap:wrap` (défaut d'Elementor)
+   renvoyait le texte SOUS l'avatar. Elle doit prendre l'espace restant, et
+   `min-width:0` est indispensable pour que la troncature opère — sans lui le
+   `min-width:auto` implicite d'un enfant flex l'élargit au contenu.
+   Adversaire : `.e-con{width:var(--width)}` (0,1,0) ; ce sélecteur est à (0,3,0). */
+.at-cmenu-card.e-con {
+	flex-wrap: nowrap;
+}
+
+.at-cmenu-card.e-con > .e-con {
+	width: auto;
+	flex: 1 1 0;
+	min-width: 0;
+	overflow: hidden;
+}
+
+/* ── Entrées du menu ───────────────────────────────────────────────────── */
+/* JetMenu pose son propre gabarit d'items ; on ne corrige que l'écart
+   icône/libellé, calé sur celui de la barre latérale (12px). */
+body.at-account .jet-mobile-menu__item .jet-menu-icon {
+	margin-inline-end: 12px;
+}
+
+/* ── Pied du tiroir (gabarit 415) ──────────────────────────────────────── */
+/* Les règles `.elementor-icon-list-item` de la page 289 sont désormais
+   cantonnées à `.sidebar` (elles fuyaient sur tout le document) : le pied du
+   tiroir porte donc son propre habillage, identique. */
+.at-cmenu-foot .e-con-inner,
+.at-cmenu-foot {
+	border-top: 1px solid #EAEDF0;
+}
+
+.at-cmenu-logout .elementor-icon-list-item > a {
+	display: flex;
+	align-items: center;
+	padding: 12px 8px;
+	border-radius: 8px;
+	transition: background 120ms, color 120ms;
+}
+
+.at-cmenu-logout .elementor-icon-list-item > a:hover {
+	background: rgba(0, 0, 0, 0.04);
+}
+
+/* Même piège que la ligne téléphone : icône en trait, on pilote `color`. */
+.at-cmenu-logout .elementor-icon-list-icon svg {
+	width: 20px;
+	height: 20px;
+	color: #6C7278;
+	stroke-width: 1.9;
+}
+
+.at-cmenu-logout .elementor-icon-list-item > a:hover .elementor-icon-list-icon svg {
+	color: #101820;
+}

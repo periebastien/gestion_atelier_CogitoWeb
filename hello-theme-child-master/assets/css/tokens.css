@@ -1,0 +1,56 @@
+/**
+ * Palette « Altitude Révision » — LA source des variables --gacct-*.
+ *
+ * Le plugin gestion-atelier-cct ne déclare plus ces variables que dans un
+ * `:where(:root)` de repli NEUTRE (spécificité 0) : ce fichier gagne donc
+ * quel que soit l'ordre de chargement des feuilles. Un autre atelier écrit
+ * son propre tokens.css et n'a rien à toucher dans le plugin.
+ *
+ * Valeurs reprises telles quelles du bloc :root de
+ * plugins/gestion-atelier-cct/assets/css/demande-intervention.css
+ * (déménagé ici le 03/08/2026) — aucun changement de rendu attendu.
+ *
+ * Chargé sur tout le front : les écrans du plugin (formulaire, confirmation,
+ * espace client, détail de commande) peuvent apparaître sur n'importe quelle
+ * page.
+ */
+
+:root {
+	/* Accent : la maquette du site ne comporte aucun bleu.
+	   --gacct-accent pilote badges, sélection et focus. */
+	--gacct-accent: #20c4c3;
+	--gacct-accent-dark: #189998;
+	--gacct-accent-soft: #f0fafa;
+	--gacct-accent-2: #20c4c3;
+
+	/* Appel à l'action (jaune de la charte). */
+	--gacct-cta: #ffbd20;
+
+	/* Créneaux du calendrier de réservation. */
+	--gacct-dispo-bg: #e6f7ec;
+	--gacct-dispo-txt: #137a3b;
+	--gacct-dispo-border: rgba(19, 122, 59, 0.3);
+	--gacct-complete-txt: #cccccc;
+	--gacct-disabled-txt: #dddddd;
+
+	/* Texte. */
+	--gacct-text: #1a1a1a;
+	--gacct-text-muted: #777777;
+	--gacct-text-faint: #999999;
+	--gacct-text-empty: #95a5a6;
+
+	/* Surfaces et traits. */
+	--gacct-surface: #ffffff;
+	--gacct-surface-alt: #f8f9fa;
+	--gacct-border: #e2e8f0;
+	--gacct-border-light: #f0f0f0;
+
+	/* Formes. */
+	--gacct-radius: 8px;
+	--gacct-radius-lg: 16px;
+	--gacct-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+
+	/* Badges. */
+	--gacct-badge-bg: var(--gacct-accent);
+	--gacct-badge-txt: #ffffff;
+}

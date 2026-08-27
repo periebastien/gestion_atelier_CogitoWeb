@@ -1,0 +1,166 @@
+/* ==========================================================================
+   AEROTECH — Commande : champs alignés sur le design system (lot « nettoyage »)
+   Chargé APRÈS at-cart.css (dépendance déclarée dans inc/checkout-fields.php) :
+   à spécificité égale, c'est cette feuille qui gagne.
+
+   Ce qu'elle corrige, par rapport au rendu WooCommerce brut :
+   - labels flottants aux mêmes métriques que le formulaire de contact
+     (champ 58 px, label 15 px qui remonte en scale .72) au lieu d'une
+     légende de 11,5 px collée en haut en permanence ;
+   - astérisque rouge de WooCommerce masquée — l'obligation est portée par
+     aria-required, posé en PHP — et « (facultatif) » remis en gris discret ;
+   - champ Pays (select2/selectWoo) remis aux dimensions des autres champs,
+     chevron du site, liste déroulante repeinte (le bleu #5897fb de select2
+     disparaît) ;
+   - message d'erreur sous le champ, en plus du bandeau WooCommerce.
+
+   ⚠️ La liste déroulante de select2 est injectée en fin de <body>, hors du
+   wrapper .at-co : ses règles sont portées par body.woocommerce-checkout et
+   ne peuvent donc PAS utiliser les tokens (déclarés sur .at-shop) → couleurs
+   en littéral, volontairement.
+   ========================================================================== */
+
+.at-co{
+  --at-fh:58px;
+  /* chevron 1.8 px, même dessin que le sprite ; `black` et non #000 : le # doit
+     être encodé dans une data-URI, autant l'éviter (la couleur vient du mask) */
+  --at-chev:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+}
+
+/* ---------- champs texte ----------
+   ⚠️ Adversaire : woocommerce.css pose
+   `.woocommerce form .form-row .input-text, .woocommerce form .form-row select`
+   (0,3,1) avec padding .5em, border 1px rgba(32,7,7,.8) et radius 4px. Les
+   règles `.at-co input.input-text` d'at-cart.css (0,2,1) perdaient depuis le
+   début : les champs n'avaient donc ni notre bordure, ni notre rayon, ni notre
+   padding. Le `form` intercalé remonte à 0,3,2 et repasse devant. */
+.at-co form .form-row input.input-text,
+.at-co form .form-row textarea,
+.at-co form .form-row select{
+  min-height:var(--at-fh);
+  padding:24px 14px 9px;
+  font-size:15px;line-height:1.35;
+  color:var(--text-strong);
+  background:var(--surface-card);
+  border:2px solid var(--border-subtle);
+  border-radius:12px}
+.at-co form .form-row select{height:var(--at-fh)}
+.at-co form .form-row textarea{min-height:120px;padding-top:26px}
+/* focus et erreur doivent repasser devant la règle de base ci-dessus (0,3,2) */
+.at-co form .form-row :is(input.input-text,textarea,select):focus{border-color:var(--orange-400)}
+
+/* ---------- label flottant ----------
+   WooCommerce rend le <label> AVANT le champ : le motif `input ~ label` de la
+   maquette est remplacé par :has() sur .form-row, comme sur la page Contact. */
+.at-co .form-row > label{
+  position:absolute;left:16px;top:18px;z-index:2;margin:0;padding:0;
+  font-family:var(--font-body);font-size:15px;font-weight:600;color:var(--text-muted);
+  pointer-events:none;transform-origin:left top;
+  transition:transform .16s cubic-bezier(.16,1,.3,1),color .16s ease}
+
+/* état haut : focus, champ rempli, et toujours pour un select (il a une valeur) */
+.at-co .form-row:has(:is(input,textarea,select):focus) > label,
+.at-co .form-row:has(:is(input,textarea):not(:placeholder-shown)) > label,
+.at-co .form-row:has(.select2-container--open) > label,
+.at-co .form-row:has(select) > label{
+  transform:translateY(-10px) scale(.72);font-weight:700;letter-spacing:.02em}
+
+.at-co .form-row:has(:is(input,textarea,select):focus) > label,
+.at-co .form-row:has(.select2-container--open) > label{color:var(--orange-400)}
+
+/* l'astérisque est masquée (aria-required prend le relais côté lecteurs
+   d'écran) ; « (facultatif) » reste, mais discret */
+.at-co .form-row .required{display:none}
+.at-co .form-row .optional{font-weight:400;color:var(--text-faint)}
+
+/* ---------- champ Pays (select2 / selectWoo) ---------- */
+.at-co .select2-container{display:block;width:100%!important}
+.at-co .select2-container--default .select2-selection--single{
+  height:var(--at-fh);
+  border:2px solid var(--border-subtle);border-radius:12px;
+  background:var(--surface-card);outline:none}
+.at-co .select2-container--default .select2-selection--single .select2-selection__rendered{
+  padding:24px 42px 9px 14px;line-height:1.35;
+  font-family:var(--font-body);font-size:15px;color:var(--text-strong)}
+.at-co .select2-container--default .select2-selection--single .select2-selection__arrow{
+  top:0;right:13px;height:var(--at-fh);width:20px}
+/* triangle CSS de select2 → chevron du site (mask + currentColor) */
+.at-co .select2-container--default .select2-selection--single .select2-selection__arrow b{display:none}
+.at-co .select2-container--default .select2-selection--single .select2-selection__arrow::after{
+  content:"";position:absolute;inset:0;background:var(--text-muted);
+  transition:transform .18s cubic-bezier(.16,1,.3,1);
+  -webkit-mask:var(--at-chev) center/20px 20px no-repeat;
+  mask:var(--at-chev) center/20px 20px no-repeat}
+.at-co .select2-container--default.select2-container--open .select2-selection--single{border-color:var(--orange-400)}
+.at-co .select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow::after{transform:rotate(180deg)}
+.at-co .select2-container--default .select2-selection--single:focus{border-color:var(--orange-400)}
+
+/* liste déroulante : hors .at-co (fin de <body>) → couleurs littérales */
+body.woocommerce-checkout .select2-dropdown{
+  border:2px solid #D8D4CD;border-radius:12px;overflow:hidden;
+  box-shadow:0 18px 44px rgba(16,24,32,.14);
+  font-family:'Nunito Sans',sans-serif}
+body.woocommerce-checkout .select2-dropdown--below{margin-top:5px}
+body.woocommerce-checkout .select2-dropdown--above{margin-top:-5px}
+body.woocommerce-checkout .select2-search--dropdown{padding:10px}
+body.woocommerce-checkout .select2-search--dropdown .select2-search__field{
+  border:2px solid #E4E1DB;border-radius:10px;padding:9px 12px;
+  font:15px/1.35 'Nunito Sans',sans-serif;color:#101820;outline:none}
+body.woocommerce-checkout .select2-search--dropdown .select2-search__field:focus{border-color:#EC672C}
+body.woocommerce-checkout .select2-results__options{max-height:280px}
+body.woocommerce-checkout .select2-results__option{padding:10px 14px;font-size:15px;color:#2C3845}
+/* selectWoo pose data-selected là où select2 posait aria-selected : les deux */
+body.woocommerce-checkout .select2-container--default .select2-results__option--highlighted[aria-selected],
+body.woocommerce-checkout .select2-container--default .select2-results__option--highlighted[data-selected]{
+  background:#F5F7F8;color:#101820}
+body.woocommerce-checkout .select2-container--default .select2-results__option[aria-selected=true],
+body.woocommerce-checkout .select2-container--default .select2-results__option[data-selected=true]{
+  background:#fff;color:#101820;font-weight:700}
+
+/* ---------- erreurs ---------- */
+.at-co form .form-row.woocommerce-invalid :is(input.input-text,textarea,select),
+.at-co form .form-row.woocommerce-invalid .select2-selection--single{border-color:#C2410C}
+.at-co .form-row.woocommerce-invalid > label{color:#C2410C}
+/* message en flux (et non en absolu) : la ligne de grille s'agrandit, rien ne
+   passe sous le champ suivant */
+.at-co .form-row.woocommerce-invalid::after{
+  display:block;margin:6px 2px 0;
+  font-family:var(--font-body);font-size:12.5px;font-weight:600;color:#C2410C;
+  content:"Merci de vérifier ce champ"}
+.at-co .form-row.woocommerce-invalid-required-field::after{content:"Ce champ est obligatoire"}
+.at-co #billing_email_field.woocommerce-invalid-email::after,
+.at-co #shipping_email_field.woocommerce-invalid-email::after{content:"Adresse e-mail invalide"}
+.at-co .form-row.woocommerce-invalid-phone::after{content:"Numéro de téléphone invalide"}
+.at-co .form-row.woocommerce-invalid-postcode::after{content:"Code postal invalide pour le pays choisi"}
+
+/* bandeau d'erreurs rendu DANS le formulaire après un envoi AJAX refusé
+   (.woocommerce-NoticeGroup-checkout) : mêmes codes que les notices du site */
+.at-co .woocommerce-NoticeGroup{margin:0 0 22px}
+.at-co .woocommerce-NoticeGroup .woocommerce-error{
+  list-style:none;margin:0;padding:14px 18px;
+  border:1px solid #E4E1DB;border-left:4px solid #C2410C;border-radius:16px;
+  background:#F5F7F8;font-family:var(--font-body);font-size:14px;line-height:1.6;color:#2C3845}
+.at-co .woocommerce-NoticeGroup .woocommerce-error li{margin:0;padding:0;list-style:none}
+.at-co .woocommerce-NoticeGroup .woocommerce-error::before,
+.at-co .woocommerce-NoticeGroup .woocommerce-error li::before{content:none}
+
+/* ---------- résumé de la commande : filets parasites ----------
+   Même piège de spécificité que les champs. WooCommerce pose
+   `.woocommerce table.shop_table` (0,2,1 → bordure sur les 4 côtés de la table,
+   + margin 0 -1px 24px 0) et `.woocommerce table.shop_table tbody th,
+   … tfoot td, … tfoot th` (0,2,2 → border-top sur CHAQUE cellule). Les resets
+   `.at-rev` / `.at-rev th, .at-rev td` d'at-cart.css (0,1,0 et 0,1,1) perdaient :
+   d'où le cadre autour du tableau et les traits courts au-dessus de chaque
+   libellé ET de chaque montant — les cellules sont des éléments flex, chacune
+   dessine son filet sur sa propre largeur.
+
+   On ne réinitialise QUE la table et ses cellules : les deux filets voulus sont
+   portés par `tfoot.at-rev-foot` et `tr.at-rev-total`, hors de portée. */
+.at-co .at-sum table.at-rev{border:0;margin:0}
+.at-co .at-sum table.at-rev :is(thead,tbody,tfoot) :is(th,td){border:0}
+
+/* ---------- exceptions ----------
+   La note de commande garde son vrai placeholder et n'a pas de label visible :
+   elle ne suit pas le motif flottant (padding-top d'at-cart.css à restaurer,
+   la règle générique .at-co textarea ci-dessus passant après). */
+.at-co #order_comments{padding-top:14px}
