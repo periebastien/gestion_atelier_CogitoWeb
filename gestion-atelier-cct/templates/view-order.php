@@ -31,6 +31,7 @@ $vo_fmt = static function ( $amount ) {
 
 $is_bacs_waiting = ( 'bacs' === $d['variant'] );
 $is_dead         = $order->has_status( array( 'cancelled', 'refunded', 'failed' ) );
+$is_sans_suite   = ( defined( 'GACCT_STATE_SANS_SUITE' ) ? GACCT_STATE_SANS_SUITE : 9 ) === (int) $etat;
 
 // Barre de progression : 9 étapes avec devis, 7 sans (les états 4 et 5 sont masqués).
 $has_quote  = function_exists( 'gacct_quote_has_quote_context' ) ? gacct_quote_has_quote_context( $order, $etat ) : true;
@@ -83,7 +84,12 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 			</span>
 		</div>
 
-		<?php if ( null !== $etat && ! $is_dead ) : ?>
+		<?php if ( $is_sans_suite ) : ?>
+			<div class="gacct-vo-hold">
+				<strong><?php esc_html_e( 'Dossier classé sans suite', 'gestion-atelier-cct' ); ?></strong>
+				<p><?php esc_html_e( 'Nous n’avons jamais reçu votre matériel et le créneau qui vous était réservé a été libéré. Votre acompte reste acquis, comme indiqué lors de votre commande. Vous souhaitez replanifier l’intervention ? Contactez l’atelier : nous trouverons une nouvelle date ensemble.', 'gestion-atelier-cct' ); ?></p>
+			</div>
+		<?php elseif ( null !== $etat && ! $is_dead ) : ?>
 			<div class="gacct-vo-progress" role="img" aria-label="<?php echo esc_attr( $state_txt ); ?>">
 				<div class="gacct-vo-progress-bar<?php echo $needs_you ? ' is-warning' : ''; ?>" style="width:<?php echo (int) $pct; ?>%"></div>
 			</div>

@@ -54,6 +54,7 @@
 .gacct-op .gacct-op-badge.etat-6 { background: #f8dda7; color: #6b4d00; }
 .gacct-op .gacct-op-badge.etat-7 { background: #c6e1c6; color: #204d1c; }
 .gacct-op .gacct-op-badge.etat-8 { background: #a8d5a2; color: #17400f; }
+.gacct-op .gacct-op-badge.etat-9 { background: #e0e0e0; color: #50575e; }
 
 /* Cartes : look « postbox » de l'admin WordPress. */
 .gacct-op .gacct-op-card {

@@ -30,6 +30,7 @@ function gacct_asset_version( $relative ) {
 require_once __DIR__ . '/includes/gacct-checkout.php';
 require_once __DIR__ . '/includes/gacct-products.php';
 require_once __DIR__ . '/includes/gacct-payments.php';
+require_once __DIR__ . '/includes/gacct-lifecycle.php';
 require_once __DIR__ . '/includes/gacct-thankyou.php';
 require_once __DIR__ . '/includes/gacct-reports.php';
 require_once __DIR__ . '/includes/gacct-report-forms.php';
@@ -540,8 +541,8 @@ final class GACCT_Plugin {
 								<label for="gacct_admin_email"><?php esc_html_e( 'Email administrateur', 'gestion-atelier-cct' ); ?></label>
 							</th>
 							<td>
-								<input type="email" id="gacct_admin_email" name="admin_email" class="regular-text" value="<?php echo esc_attr( $settings['admin_email'] ); ?>">
-								<p class="description"><?php esc_html_e( 'Adresse utilisee pour les alertes et copies admin.', 'gestion-atelier-cct' ); ?></p>
+								<input type="text" id="gacct_admin_email" name="admin_email" class="regular-text" value="<?php echo esc_attr( $settings['admin_email'] ); ?>">
+								<p class="description"><?php esc_html_e( 'Adresse(s) des alertes, copies admin et du recapitulatif du matin. Plusieurs adresses possibles, separees par des virgules (ex. atelier + agence).', 'gestion-atelier-cct' ); ?></p>
 							</td>
 						</tr>
 					</tbody>
@@ -844,11 +845,30 @@ final class GACCT_Plugin {
 			return new WP_Error( 'gacct_bad_nonce', __( 'Verification de securite echouee.', 'gestion-atelier-cct' ) );
 		}
 
-		$admin_email = isset( $_POST['admin_email'] ) ? sanitize_email( wp_unslash( $_POST['admin_email'] ) ) : '';
+		// Plusieurs adresses acceptées, séparées par des virgules ; chacune est
+		// validée individuellement (consommées par gacct_pay_admin_emails()).
+		$raw_admin = isset( $_POST['admin_email'] ) ? sanitize_text_field( wp_unslash( $_POST['admin_email'] ) ) : '';
+		$admins    = array();
 
-		if ( '' === $admin_email || ! is_email( $admin_email ) ) {
+		foreach ( array_map( 'trim', explode( ',', $raw_admin ) ) as $candidate ) {
+			if ( '' === $candidate ) {
+				continue;
+			}
+			if ( ! is_email( $candidate ) ) {
+				return new WP_Error( 'gacct_bad_admin_email', sprintf(
+					/* translators: %s: adresse invalide */
+					__( 'Adresse email administrateur invalide : %s', 'gestion-atelier-cct' ),
+					$candidate
+				) );
+			}
+			$admins[] = $candidate;
+		}
+
+		if ( empty( $admins ) ) {
 			return new WP_Error( 'gacct_bad_admin_email', __( 'Adresse email administrateur invalide.', 'gestion-atelier-cct' ) );
 		}
+
+		$admin_email = implode( ', ', array_unique( $admins ) );
 
 		$posted_emails = isset( $_POST['emails'] ) && is_array( $_POST['emails'] ) ? wp_unslash( $_POST['emails'] ) : array();
 		$definitions   = $this->notification_definitions();
@@ -1066,6 +1086,27 @@ final class GACCT_Plugin {
 		$order->save();
 
 		gacct_quote_mark_decision( $order, 'accepted' );
+
+		// Confirmation de l'engagement au client + copie atelier (le refus a ses
+		// propres e-mails dans gacct_quote_refuse ; sans celui-ci, personne
+		// n'etait prevenu d'une acceptation).
+		if ( function_exists( 'gacct_pay_send_email' ) ) {
+			$accept_sent = gacct_pay_send_email(
+				$order->get_billing_email(),
+				'quote_accepted',
+				gacct_pay_email_variables( $order, array(
+					'{quote_lines}'   => gacct_quote_lines_html( $order ),
+					'{quote_total}'   => wp_strip_all_tags( wc_price( gacct_kojito_total_initial( $order ) ) ),
+					'{quote_balance}' => wp_strip_all_tags( wc_price( gacct_quote_new_balance( $order ) ) ),
+				) ),
+				true
+			);
+
+			$order->add_order_note( $accept_sent
+				? __( 'E-mail « devis accepté » envoyé au client (copie admin).', 'gestion-atelier-cct' )
+				: __( 'ERREUR : échec de l’envoi de l’e-mail « devis accepté ».', 'gestion-atelier-cct' ) );
+			$order->save();
+		}
 
 		$new_revision = $this->get_revision_row( $revision_id );
 		$this->process_revision_state_transition( $revision_id, GACCT_STATE_QUOTE_DECIDED, $new_revision, $prev_revision, 'validation_url' );
@@ -1621,27 +1662,32 @@ final class GACCT_Plugin {
 		}
 
 		if ( in_array( 'admin', $config['recipients'], true ) ) {
-			$admin_email = $this->notification_admin_email();
+			// Plusieurs adresses possibles (atelier + agence) : une copie chacune.
+			$admin_emails = function_exists( 'gacct_pay_admin_emails' )
+				? gacct_pay_admin_emails()
+				: array_filter( array( $this->notification_admin_email() ), 'is_email' );
 
-			if ( is_email( $admin_email ) ) {
-				$sent = $this->send_notification_email( $admin_email, $subject, $body, $attachments );
+			if ( ! empty( $admin_emails ) ) {
+				foreach ( $admin_emails as $admin_email ) {
+					$sent = $this->send_notification_email( $admin_email, $subject, $body, $attachments );
 
-				if ( $sent ) {
-					$order->add_order_note(
-						sprintf(
-							__( 'Copie admin envoyee : %1$s a l adresse %2$s.', 'gestion-atelier-cct' ),
-							$label,
-							$admin_email
-						)
-					);
-				} else {
-					$order->add_order_note(
-						sprintf(
-							__( 'ERREUR : Echec de l envoi de la copie admin %1$s a %2$s.', 'gestion-atelier-cct' ),
-							$label,
-							$admin_email
-						)
-					);
+					if ( $sent ) {
+						$order->add_order_note(
+							sprintf(
+								__( 'Copie admin envoyee : %1$s a l adresse %2$s.', 'gestion-atelier-cct' ),
+								$label,
+								$admin_email
+							)
+						);
+					} else {
+						$order->add_order_note(
+							sprintf(
+								__( 'ERREUR : Echec de l envoi de la copie admin %1$s a %2$s.', 'gestion-atelier-cct' ),
+								$label,
+								$admin_email
+							)
+						);
+					}
 				}
 			} else {
 				$order->add_order_note( sprintf( __( 'ERREUR : Copie admin %s non envoyee, adresse admin invalide.', 'gestion-atelier-cct' ), $label ) );
@@ -1729,7 +1775,9 @@ final class GACCT_Plugin {
 		}
 
 		return array(
-			'admin_email' => ! empty( $settings['admin_email'] ) && is_email( $settings['admin_email'] ) ? $settings['admin_email'] : get_option( 'admin_email' ),
+			// Peut contenir PLUSIEURS adresses séparées par des virgules : la
+			// validation fine vit dans gacct_pay_admin_emails().
+			'admin_email' => ! empty( $settings['admin_email'] ) ? (string) $settings['admin_email'] : get_option( 'admin_email' ),
 			'emails'      => $emails,
 		);
 	}

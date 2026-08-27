@@ -157,5 +157,6 @@ function gacct_vo_state_labels() {
 		6 => __( 'Solde à régler', 'gestion-atelier-cct' ),
 		7 => __( 'Révision terminée', 'gestion-atelier-cct' ),
 		8 => __( 'Matériel réexpédié', 'gestion-atelier-cct' ),
+		9 => __( 'Sans suite', 'gestion-atelier-cct' ),
 	) );
 }

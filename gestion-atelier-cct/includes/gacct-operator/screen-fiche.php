@@ -411,22 +411,33 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 	echo '</div>'; // .gacct-op-head
 
 	// ---------------------------------------------------------------- Frise 0→8.
+	// L'état 9 « Sans suite » est terminal HORS frise : encart dédié à la place.
 	echo '<div class="gacct-op-card gacct-op-steps-card">';
 	echo '<h2>' . esc_html__( 'Avancement', 'gestion-atelier-cct' ) . '</h2>';
-	echo '<ol class="gacct-op-steps">';
-	foreach ( $labels as $i => $label ) {
-		$class = 'gacct-op-step';
-		if ( $i < $state ) {
-			$class .= ' done';
-		} elseif ( $i === $state ) {
-			$class .= ' current';
+
+	if ( defined( 'GACCT_STATE_SANS_SUITE' ) && GACCT_STATE_SANS_SUITE === (int) $state ) {
+		echo '<p><span class="gacct-op-badge etat-9">' . esc_html__( 'Sans suite', 'gestion-atelier-cct' ) . '</span></p>';
+		echo '<p class="description">' . esc_html__( 'Matériel jamais reçu : le créneau a été libéré, l’acompte reste acquis, la commande n’est ni annulée ni remboursée. Pour reprendre ce dossier, replanifiez-le depuis le Planning : il reviendra en « En attente de réception » sur la nouvelle date.', 'gestion-atelier-cct' ) . '</p>';
+	} else {
+		echo '<ol class="gacct-op-steps">';
+		foreach ( $labels as $i => $label ) {
+			if ( defined( 'GACCT_STATE_SANS_SUITE' ) && GACCT_STATE_SANS_SUITE === (int) $i ) {
+				continue;
+			}
+			$class = 'gacct-op-step';
+			if ( $i < $state ) {
+				$class .= ' done';
+			} elseif ( $i === $state ) {
+				$class .= ' current';
+			}
+			if ( 5 === $i ) {
+				$label .= gacct_state5_suffix( $order );
+			}
+			echo '<li class="' . esc_attr( $class ) . '"><span class="gacct-op-step-dot">' . esc_html( $i ) . '</span><span class="gacct-op-step-label">' . esc_html( $label ) . '</span></li>';
 		}
-		if ( 5 === $i ) {
-			$label .= gacct_state5_suffix( $order );
-		}
-		echo '<li class="' . esc_attr( $class ) . '"><span class="gacct-op-step-dot">' . esc_html( $i ) . '</span><span class="gacct-op-step-label">' . esc_html( $label ) . '</span></li>';
+		echo '</ol>';
 	}
-	echo '</ol>';
+
 	echo '</div>';
 
 	// ---------------------------------------------------------------- Actions.

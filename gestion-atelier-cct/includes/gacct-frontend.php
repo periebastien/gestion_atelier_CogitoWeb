@@ -651,6 +651,27 @@ function jwcct_tracker_current_order_id() {
 function jwcct_render_order_status_tracker( $value, $order_id = 0 ) {
     if ( $value === '' || $value === null ) return '';
 
+    // État terminal 9 « Sans suite » : hors frise. Badge gris + barre complète
+    // grisée — la classe done-all range la ligne dans l'onglet « Terminées »
+    // de la barre d'outils (client-tables.js filtre sur .progress.done-all).
+    if ( 9 === absint( $value ) ) {
+        $steps = '';
+        for ( $i = 0; $i < 7; $i++ ) {
+            $steps .= '<div class="progress-step done"></div>';
+        }
+
+        return sprintf(
+            '<div class="status-stack status-stack--sans-suite">
+                <div class="status-tip">%s</div>
+                <span class="badge badge-sans-suite">%s</span>
+                <div class="progress done-all progress-sans-suite">%s</div>
+            </div>',
+            esc_html__( 'Nous n’avons jamais reçu votre matériel : le créneau réservé a été libéré et l’acompte reste acquis. Contactez l’atelier pour replanifier l’intervention.', 'gestion-atelier-cct' ),
+            esc_html__( 'Sans suite', 'gestion-atelier-cct' ),
+            $steps
+        );
+    }
+
     $config = jwcct_tracker_config();
 
     if ( ! isset( $config[ $value ] ) ) return $value;

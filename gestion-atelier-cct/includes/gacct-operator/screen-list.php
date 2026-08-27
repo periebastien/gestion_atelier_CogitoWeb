@@ -17,7 +17,7 @@ function gacct_op_list_current_args() {
 	$state = null;
 	if ( isset( $_GET['etat'] ) && '' !== $_GET['etat'] ) {
 		$state = absint( wp_unslash( $_GET['etat'] ) );
-		$state = ( $state >= 0 && $state <= 8 ) ? $state : null;
+		$state = ( $state >= 0 && $state <= 9 ) ? $state : null;
 	}
 
 	$orderby = isset( $_GET['orderby'] ) ? sanitize_key( wp_unslash( $_GET['orderby'] ) ) : 'slot';
@@ -86,6 +86,14 @@ function gacct_op_list_payment_label( $order ) {
  * « Avancement » de la fiche, format cellule de tableau.
  */
 function gacct_op_list_render_steps( $state, array $labels ) {
+	// L'état 9 « Sans suite » est terminal HORS frise : un badge, pas des étapes.
+	if ( defined( 'GACCT_STATE_SANS_SUITE' ) && GACCT_STATE_SANS_SUITE === (int) $state ) {
+		echo '<span class="gacct-op-badge etat-9">' . esc_html__( 'Sans suite', 'gestion-atelier-cct' ) . '</span>';
+		return;
+	}
+
+	unset( $labels[ defined( 'GACCT_STATE_SANS_SUITE' ) ? GACCT_STATE_SANS_SUITE : 9 ] );
+
 	// Code couleur de l'espace client : teal = la balle est chez le client
 	// (paiement, expédition, devis, solde), orange = l'atelier doit agir,
 	// vert = dossier bouclé.

@@ -174,6 +174,7 @@ function gacct_dash_texts() {
 		'state_6' => __( 'Solde à régler', 'gestion-atelier-cct' ),
 		'state_7' => __( 'Révision terminée', 'gestion-atelier-cct' ),
 		'state_8' => __( 'Matériel réexpédié', 'gestion-atelier-cct' ),
+		'state_9' => __( 'Sans suite (matériel jamais reçu)', 'gestion-atelier-cct' ),
 	);
 
 	$texts = (array) apply_filters( 'gacct_dashboard_texts', $defaults );
@@ -648,6 +649,18 @@ function gacct_dash_materiel_label( array $row ) {
  * @return array{pct:int,label:string,step:string,is_action:bool}
  */
 function gacct_dash_tracker( $etat ) {
+	// État terminal 9 « Sans suite » : hors frise, barre pleine, aucune action.
+	if ( 9 === (int) $etat ) {
+		$tracker = array(
+			'pct'       => 100,
+			'label'     => gacct_dash_text( 'state_9' ),
+			'step'      => '',
+			'is_action' => false,
+		);
+
+		return (array) apply_filters( 'gacct_dashboard_tracker', $tracker, 9 );
+	}
+
 	$total = 9;
 	$etat  = max( 0, min( 8, (int) $etat ) );
 

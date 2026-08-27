@@ -33,8 +33,9 @@ function gacct_op_state_labels() {
 		4 => __( 'Devis à valider', 'gestion-atelier-cct' ),
 		5 => __( 'Intervention à finir', 'gestion-atelier-cct' ),
 		6 => __( 'Intervention finie, solde à payer', 'gestion-atelier-cct' ),
-		7 => __( 'Révision finie — rapport disponible', 'gestion-atelier-cct' ),
+		7 => __( 'Révision finie, rapport disponible', 'gestion-atelier-cct' ),
 		8 => __( 'Matériel réexpédié', 'gestion-atelier-cct' ),
+		9 => __( 'Sans suite (matériel jamais reçu)', 'gestion-atelier-cct' ),
 	) );
 }
 
@@ -65,6 +66,13 @@ function gacct_op_allowed_transitions() {
  */
 function gacct_op_forceable_transitions() {
 	return apply_filters( 'gacct_op_forceable_transitions', array(
+		// Classement manuel « Sans suite » : sert surtout aux dossiers épargnés
+		// par la bascule automatique (suivi colis déclaré mais jamais arrivé).
+		// Les effets (occupation en draft, e-mail, acompte acquis) sont ceux de
+		// la bascule automatique : un seul écouteur, gacct_lc_on_state9_entry.
+		// Reprise : replanifier depuis le Planning (9 → 1 automatique).
+		0 => array( 9 => __( 'Classer sans suite', 'gestion-atelier-cct' ) ),
+		1 => array( 9 => __( 'Classer sans suite', 'gestion-atelier-cct' ) ),
 		4 => array( 5 => __( 'Forcer la décision du devis', 'gestion-atelier-cct' ) ),
 		6 => array( 7 => __( 'Forcer le paiement du solde', 'gestion-atelier-cct' ) ),
 	) );
@@ -211,6 +219,20 @@ function gacct_op_change_state( $revision_id, $new_state, array $args = array() 
 
 		if ( empty( $extra['operateur_id'] ) ) {
 			$extra['operateur_id'] = get_current_user_id();
+		}
+	}
+
+	// Entrée en 9 « Sans suite » : réservée aux commandes PAYÉES (l'e-mail au
+	// client dit « votre acompte reste acquis », il serait mensonger sinon).
+	// Un dossier non payé relève des calendriers d'annulation automatique
+	// (virement J+2/J+3, paiement non abouti) qui nettoient et préviennent déjà.
+	if ( defined( 'GACCT_STATE_SANS_SUITE' ) && GACCT_STATE_SANS_SUITE === $new_state ) {
+		if ( ! $order instanceof WC_Order
+			|| ( function_exists( 'gacct_order_payment_received' ) && ! gacct_order_payment_received( $order ) ) ) {
+			return new WP_Error(
+				'gacct_op_noshow_unpaid',
+				__( 'Ce dossier n\'est pas payé : il ne peut pas être classé sans suite (l\'acompte n\'est pas acquis). L\'annulation automatique pour non-paiement s\'en charge, ou annulez la commande depuis WooCommerce.', 'gestion-atelier-cct' )
+			);
 		}
 	}
 
@@ -1237,9 +1259,15 @@ function gacct_op_reschedule( $occupation_id, $ymd, array $args = array() ) {
 
 	$state = $revision ? absint( $revision['etat_de_la_commande'] ?? 0 ) : 0;
 
+	// Reprise d'un dossier « Sans suite » : la replanification EST la porte de
+	// sortie de l'état 9 (une transition 9 → 1 nue laisserait une occupation en
+	// brouillon sur une date passée, que la bascule reclasserait le soir même).
+	// Accessible à l'atelier comme les états 0-2.
+	$resume_from_9 = ( defined( 'GACCT_STATE_SANS_SUITE' ) && GACCT_STATE_SANS_SUITE === $state );
+
 	// Libre tant que l'intervention n'a pas démarré (états 0–2) ; ensuite,
 	// admins uniquement et motif obligatoire.
-	if ( $state >= 3 ) {
+	if ( $state >= 3 && ! $resume_from_9 ) {
 		if ( ! current_user_can( gacct_op_reschedule_admin_cap() ) ) {
 			return new WP_Error( 'gacct_op_reschedule_locked', __( 'À partir de l\'état 3 (intervention programmée), la replanification est réservée aux administrateurs.', 'gestion-atelier-cct' ) );
 		}
@@ -1257,7 +1285,10 @@ function gacct_op_reschedule( $occupation_id, $ymd, array $args = array() ) {
 	$old_ts = absint( $occupation['date_reservee'] ?? 0 );
 	$new_ts = (int) $target['day_ts'];
 
-	if ( $old_ts === $new_ts ) {
+	// Même jour : refusé en replanification ordinaire, mais AUTORISÉ pour la
+	// reprise d'un dossier « Sans suite » (le colis arrive finalement : on
+	// republie l'occupation sur place, le contrôle de capacité s'applique).
+	if ( $old_ts === $new_ts && ! $resume_from_9 ) {
 		return new WP_Error( 'gacct_op_same_day', __( 'L\'occupation est déjà sur ce jour.', 'gestion-atelier-cct' ) );
 	}
 
@@ -1287,7 +1318,15 @@ function gacct_op_reschedule( $occupation_id, $ymd, array $args = array() ) {
 		) );
 	}
 
-	if ( ! jwcct_update_cct_item( JWCCT_CCT_OCCUPATION, $occupation_id, array( 'date_reservee' => $new_ts ) ) ) {
+	$occ_fields = array( 'date_reservee' => $new_ts );
+
+	// Reprise depuis l'état 9 : l'occupation avait été passée en brouillon pour
+	// libérer le créneau, elle est republiée sur la nouvelle date.
+	if ( $resume_from_9 && 'publish' !== (string) ( $occupation['cct_status'] ?? '' ) ) {
+		$occ_fields['cct_status'] = 'publish';
+	}
+
+	if ( ! jwcct_update_cct_item( JWCCT_CCT_OCCUPATION, $occupation_id, $occ_fields ) ) {
 		return new WP_Error( 'gacct_op_update_failed', __( 'La mise à jour de l\'occupation a échoué.', 'gestion-atelier-cct' ) );
 	}
 
@@ -1297,7 +1336,39 @@ function gacct_op_reschedule( $occupation_id, $ymd, array $args = array() ) {
 	$new_str  = wp_date( $date_fmt, $new_ts );
 	$notified = false;
 
+	// Reprise : le dossier « Sans suite » revient en état 1 (en attente de
+	// réception) et l'épisode sans suite est soldé (les metas de garde sont
+	// purgées : une nouvelle bascule redeviendra possible si le client rate
+	// aussi ce créneau, avec un nouvel e-mail).
+	if ( $resume_from_9 && $revision ) {
+		$revision_id = absint( $revision['_ID'] );
+		$fields      = array( 'etat_de_la_commande' => '1' );
+
+		if ( jwcct_update_cct_item( JWCCT_CCT_REVISION, $revision_id, $fields ) ) {
+			$new_item = array_merge( $revision, $fields, array( '_ID' => $revision_id ) );
+			do_action( 'jet-engine/custom-content-types/updated-item/revision', $new_item, $revision, null );
+		}
+
+		if ( $order ) {
+			$order->delete_meta_data( GACCT_PAY_META_NOSHOW_RELEASED );
+			$order->delete_meta_data( GACCT_PAY_META_NOSHOW_SLOT );
+			// Les rappels « avez-vous expédié ? » repartent pour le nouveau créneau.
+			$order->delete_meta_data( '_gacct_preslot_j7_sent' );
+			$order->delete_meta_data( '_gacct_preslot_j2_sent' );
+			$order->save_meta_data();
+			gacct_op_add_signed_note( $order, __( 'Dossier « Sans suite » repris : occupation republiée, retour en état 1 (en attente de réception).', 'gestion-atelier-cct' ) );
+		}
+	}
+
 	if ( $order ) {
+		// La date change : les rappels « avez-vous expédié ? » redeviennent dus
+		// pour le nouveau créneau.
+		if ( ! $resume_from_9 ) {
+			$order->delete_meta_data( '_gacct_preslot_j7_sent' );
+			$order->delete_meta_data( '_gacct_preslot_j2_sent' );
+			$order->save_meta_data();
+		}
+
 		$message = sprintf( __( 'Créneau replanifié : %1$s → %2$s', 'gestion-atelier-cct' ), $old_str, $new_str );
 		if ( '' !== $reason ) {
 			$message .= sprintf( ' — motif : %s', $reason );

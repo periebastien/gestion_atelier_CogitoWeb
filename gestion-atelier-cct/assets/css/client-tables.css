@@ -1216,3 +1216,15 @@
 	fill: none;
 	stroke-width: 2;
 }
+
+/* ── Dossier « Sans suite » (état 9) : badge gris, frise éteinte ──────────── */
+:is(#scroll, #scroll-materiel) .badge.badge-sans-suite {
+	background: #e9e9ec;
+	color: #50575e;
+}
+:is(#scroll, #scroll-materiel) .progress.progress-sans-suite .progress-step {
+	opacity: .35;
+}
+:is(#scroll, #scroll-materiel) .status-stack--sans-suite .status-tip {
+	color: #50575e;
+}

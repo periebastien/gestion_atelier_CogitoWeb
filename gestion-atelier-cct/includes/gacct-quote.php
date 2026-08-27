@@ -37,6 +37,7 @@ define( 'GACCT_QUOTE_ITEM_FLAG', '_gacct_quote_extra' );
 define( 'GACCT_QUOTE_META_COMMENT', '_gacct_quote_comment' );
 define( 'GACCT_QUOTE_META_SENT_AT', '_gacct_quote_sent_at' );
 define( 'GACCT_QUOTE_META_REMINDED_AT', '_gacct_quote_reminded_at' );
+define( 'GACCT_QUOTE_META_REMINDED2_AT', '_gacct_quote_reminded2_at' );
 define( 'GACCT_QUOTE_META_DECISION', '_gacct_quote_decision' );
 define( 'GACCT_QUOTE_META_DECIDED_AT', '_gacct_quote_decided_at' );
 define( 'GACCT_QUOTE_META_REFUSAL_MODE', '_gacct_quote_refusal_mode' );
@@ -450,6 +451,7 @@ function gacct_quote_send( $revision_id, array $lines, $comment = '' ) {
 	$order->update_meta_data( GACCT_QUOTE_META_COMMENT, $comment );
 	$order->update_meta_data( GACCT_QUOTE_META_SENT_AT, current_time( 'mysql' ) );
 	$order->delete_meta_data( GACCT_QUOTE_META_REMINDED_AT );
+	$order->delete_meta_data( GACCT_QUOTE_META_REMINDED2_AT );
 	$order->delete_meta_data( GACCT_QUOTE_META_DECISION );
 	$order->delete_meta_data( GACCT_QUOTE_META_DECIDED_AT );
 	$order->delete_meta_data( GACCT_QUOTE_META_REFUSAL_MODE );
@@ -622,14 +624,18 @@ function gacct_quote_validation_url( $order, $revision_id ) {
 add_action( GACCT_PAY_HOURLY_EVENT, 'gacct_quote_process_reminders', 20 );
 
 /**
- * Relance les devis sans réponse : révisions à l'état 4 dont l'envoi date de
- * plus de {quote_reminder_days} jours, une seule relance par devis envoyé.
+ * Relance les devis sans réponse : révisions à l'état 4, deux paliers
+ * ({quote_reminder_days} puis {quote_reminder_days_2} jours après l'envoi),
+ * une relance par palier et par devis envoyé, lien régénéré à chaque fois.
+ * Au-delà, le dossier est signalé dans le récapitulatif admin quotidien
+ * (gacct-lifecycle.php, seuil {quote_alert_days}).
  */
 function gacct_quote_process_reminders() {
 	global $wpdb;
 
 	$settings = gacct_pay_settings();
-	$days     = isset( $settings['quote_reminder_days'] ) ? max( 1, (int) $settings['quote_reminder_days'] ) : 3;
+	$days_1   = isset( $settings['quote_reminder_days'] ) ? max( 1, (int) $settings['quote_reminder_days'] ) : 3;
+	$days_2   = isset( $settings['quote_reminder_days_2'] ) ? max( $days_1 + 1, (int) $settings['quote_reminder_days_2'] ) : 8;
 
 	$rev_table = $wpdb->prefix . 'jet_cct_' . JWCCT_CCT_REVISION;
 	$rows      = $wpdb->get_results(
@@ -645,10 +651,6 @@ function gacct_quote_process_reminders() {
 			continue;
 		}
 
-		if ( '' !== (string) $order->get_meta( GACCT_QUOTE_META_REMINDED_AT ) ) {
-			continue;
-		}
-
 		// Date d'envoi du devis : meta dédiée, sinon celle du token (anciens dossiers).
 		$sent_at = (string) $order->get_meta( GACCT_QUOTE_META_SENT_AT );
 
@@ -658,7 +660,26 @@ function gacct_quote_process_reminders() {
 
 		$sent_ts = $sent_at ? strtotime( $sent_at ) : 0;
 
-		if ( ! $sent_ts || ( current_time( 'timestamp' ) - $sent_ts ) < $days * DAY_IN_SECONDS ) {
+		if ( ! $sent_ts ) {
+			continue;
+		}
+
+		$elapsed = current_time( 'timestamp' ) - $sent_ts;
+
+		// Palier dû le plus avancé d'abord : un dossier très ancien qui n'a
+		// jamais été relancé ne reçoit qu'UN e-mail, pas deux d'affilée.
+		if ( $elapsed >= $days_2 * DAY_IN_SECONDS && '' === (string) $order->get_meta( GACCT_QUOTE_META_REMINDED2_AT ) ) {
+			$meta_key = GACCT_QUOTE_META_REMINDED2_AT;
+			$days     = $days_2;
+
+			// Le palier 1 est consommé au passage : plus jamais dû.
+			if ( '' === (string) $order->get_meta( GACCT_QUOTE_META_REMINDED_AT ) ) {
+				$order->update_meta_data( GACCT_QUOTE_META_REMINDED_AT, current_time( 'mysql' ) );
+			}
+		} elseif ( $elapsed >= $days_1 * DAY_IN_SECONDS && '' === (string) $order->get_meta( GACCT_QUOTE_META_REMINDED_AT ) ) {
+			$meta_key = GACCT_QUOTE_META_REMINDED_AT;
+			$days     = $days_1;
+		} else {
 			continue;
 		}
 
@@ -675,7 +696,7 @@ function gacct_quote_process_reminders() {
 			) )
 		);
 
-		$order->update_meta_data( GACCT_QUOTE_META_REMINDED_AT, current_time( 'mysql' ) );
+		$order->update_meta_data( $meta_key, current_time( 'mysql' ) );
 		$order->add_order_note( $sent
 			? sprintf( __( 'Relance devis sans réponse (J+%d) envoyée au client, lien régénéré.', 'gestion-atelier-cct' ), $days )
 			: __( 'ERREUR : échec de l\'envoi de la relance devis.', 'gestion-atelier-cct' ) );
