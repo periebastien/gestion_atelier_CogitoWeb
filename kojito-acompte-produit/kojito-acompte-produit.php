@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Kojito Acompte Produit
  * Description: Gere les acomptes WooCommerce puis le paiement du solde sur la meme commande.
- * Version: 1.3.0
+ * Version: 1.3.1
  * Author: Kojito
  * Text Domain: kojito-acompte
  */
@@ -591,8 +591,26 @@ class Kojito_Acompte_Produit {
 	}
 
 	public function autoriser_statut_acompte_pour_validation_solde( $statuses, $order ) {
-		if ( $order instanceof WC_Order && $this->commande_contient_acompte( $order ) ) {
-			$statuses[] = 'acompte-paye';
+		if ( ! $order instanceof WC_Order || ! $this->commande_contient_acompte( $order ) ) {
+			return array_unique( $statuses );
+		}
+
+		$statuses[] = 'acompte-paye';
+
+		/*
+		 * Passerelles qui posent 'processing' au retour du navigateur, AVANT que
+		 * leur webhook n'appelle payment_complete() : c'est le cas de CAWL /
+		 * Worldline (OrderUpdater::adjustWcStatus, statusCode 9 = capture).
+		 * Sans 'processing' dans la liste, payment_complete() ne declenche jamais
+		 * woocommerce_payment_complete : l'acompte n'est pas enregistre, le statut
+		 * acompte-paye n'est jamais pose et le workflow atelier reste bloque.
+		 *
+		 * La garde sur la phase de paiement limite l'ouverture au SEUL premier
+		 * encaissement : des que l'acompte est enregistre la meta est posee, et
+		 * une livraison de webhook en double ne rejoue rien.
+		 */
+		if ( '' === $order->get_meta( self::META_PHASE_PAIEMENT ) ) {
+			$statuses[] = 'processing';
 		}
 
 		return array_unique( $statuses );
