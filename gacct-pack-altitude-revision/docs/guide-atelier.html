@@ -210,7 +210,7 @@
   <p class="prose">La couleur d'un état dit <strong>qui a la main pour en sortir</strong> : le client, l'atelier, ou personne (dossier clos). Les flèches vertes sont automatiques.</p>
 
   <figure>
-    <svg viewBox="0 0 1040 430" role="img" aria-label="Diagramme des états d'un dossier : 0 attente de paiement, 1 attente de réception, 2 voile réceptionnée, 3 intervention programmée, branche optionnelle 4 devis à valider et 5 intervention à finir, 6 solde à payer, 7 révision finie, 8 matériel réexpédié. L'état 9 sans suite est atteint depuis 0 ou 1 quand le matériel n'arrive jamais, et se quitte par replanification.">
+    <svg viewBox="0 0 1040 430" role="img" aria-label="Diagramme des états d'un dossier : 0 attente de paiement, 1 attente de réception, 2 voile réceptionnée, 3 intervention programmée, branche optionnelle 4 devis à valider et 5 intervention à finir, 6 solde à payer, 7 révision finie, 8 matériel réexpédié. L'état 9 sans suite est atteint depuis 0 ou 1 quand le matériel n'arrive jamais, et se quitte par replanification. Entre les états 2 et 6, le dossier peut être mis en pause : le dossier garde son état, le client est prévenu par e-mail à la mise en pause (avec le motif saisi par l'atelier) et à la reprise.">
       <defs>
         <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
@@ -233,6 +233,16 @@
         <text x="933" y="28" fill="currentColor">dossier clos</text>
         <line x1="695" y1="46" x2="725" y2="46" stroke="var(--ok)" stroke-width="2" marker-end="url(#arr-ok)"/>
         <text x="733" y="50" fill="currentColor">automatique</text>
+      </g>
+
+      <!-- Zone de mise en pause (drapeau, états 2 à 6) -->
+      <path d="M 274 238 L 274 80 Q 274 64 290 64 L 632 64 Q 648 64 648 80 L 648 276 Q 648 292 632 292 L 290 292 Q 274 292 274 276 L 274 268" fill="none" stroke="var(--warn)" stroke-width="1.5" stroke-dasharray="6 5" opacity="0.75"/>
+      <g font-family="Public Sans, sans-serif">
+        <rect x="330" y="309" width="3.5" height="11" rx="1" fill="var(--warn)"/>
+        <rect x="336" y="309" width="3.5" height="11" rx="1" fill="var(--warn)"/>
+        <text x="346" y="319" font-size="12" font-weight="600" fill="var(--warn)">Mise en pause possible à tout moment dans cette zone</text>
+        <text x="346" y="336" font-size="11" fill="var(--ink-3)">l'atelier saisit un motif, envoyé au client par e-mail ;</text>
+        <text x="346" y="350" font-size="11" fill="var(--ink-3)">à la reprise, le client est de nouveau prévenu</text>
       </g>
 
       <!-- Flèches rangée principale -->
@@ -317,7 +327,7 @@
         <text x="180" y="394" font-weight="400" fill="var(--ink-3)">acompte acquis, créneau rendu</text>
       </g>
     </svg>
-    <figcaption>Le chemin normal est la rangée du haut : 0 → 1 → 2 → 3 → 6 → 7 → 8. Le détour par 4 et 5 n'existe que si l'atelier envoie un devis complémentaire. L'état 9 « Sans suite » attrape les dossiers payés dont le matériel n'arrive jamais ; on en sort en replanifiant depuis le Planning.</figcaption>
+    <figcaption>Le chemin normal est la rangée du haut : 0 → 1 → 2 → 3 → 6 → 7 → 8. Le détour par 4 et 5 n'existe que si l'atelier envoie un devis complémentaire. L'état 9 « Sans suite » attrape les dossiers payés dont le matériel n'arrive jamais ; on en sort en replanifiant depuis le Planning. La zone en pointillés rappelle que tant que le matériel est à l'atelier (états 2 à 6), le dossier peut être mis en pause : ce n'est pas un état, le dossier reste où il est, mais le client est prévenu par e-mail à la mise en pause comme à la reprise (voir « Cas particuliers »).</figcaption>
   </figure>
 </section>
 
@@ -358,7 +368,7 @@
     <dl>
       <dt>Ce qui s'est passé</dt><dd>L'intervention est en cours. C'est pendant le travail que l'atelier découvre les éventuels travaux supplémentaires.</dd>
       <dt>L'atelier fait</dt><dd>Deux sorties possibles : <strong>« Intervention terminée, demander le solde »</strong> (chemin direct vers 6, le rapport PDF doit être déposé d'abord), ou envoi d'un <strong>devis complémentaire</strong> depuis la carte dédiée de la fiche (vers 4). Une commande « demande de devis » impose le passage par le devis.</dd>
-      <dt>Bon à savoir</dt><dd>Les rapports de contrôle se saisissent dès cet état (carte « Rapports de contrôle ») ; le client ne les voit qu'à l'état 7.</dd>
+      <dt>Bon à savoir</dt><dd>Les rapports de contrôle se saisissent dès cet état (carte « Rapports de contrôle ») ; le client ne les voit qu'à l'état 7. Si le dossier doit patienter (pièce en commande, réponse attendue), pensez à la <a href="#cas">mise en pause</a> : le client est prévenu par e-mail avec le motif que vous saisissez.</dd>
     </dl>
   </div>
 
@@ -454,6 +464,11 @@
           <td>J+2 et J+5 après la demande</td>
         </tr>
         <tr>
+          <td>Dossier encore en pause quand la demande de solde part</td>
+          <td>La mise en attente est levée automatiquement, sans e-mail de reprise (l'e-mail « c'est prêt » suffit)</td>
+          <td>Immédiat</td>
+        </tr>
+        <tr>
           <td>Commande annulée (quelle qu'en soit la raison)</td>
           <td>Le créneau est libéré automatiquement</td>
           <td>Immédiat</td>
@@ -487,7 +502,13 @@
     <p>Deux situations, gérées automatiquement au clic du client. Cas général : les travaux supplémentaires sont retirés, l'atelier termine les prestations d'origine sans changement de prix (e-mail dédié au client). Commande « demande de devis » seule : il n'y a rien d'autre à facturer, le matériel est à retourner au client (e-mail dédié aussi). Dans les deux cas le dossier passe à l'état 5 et la fiche affiche « devis refusé ».</p>
 
     <h3>Mettre un dossier en pause</h3>
-    <p>La <strong>mise en attente</strong> (boutons de la carte Actions, motif obligatoire, message client facultatif) signale que le dossier n'avance plus : badge côté console, bandeau côté client. Elle ne bloque aucune transition et se lève à la main ; elle se lève aussi toute seule quand la demande de solde part. À utiliser par exemple en attente d'une pièce ou d'une réponse client.</p>
+    <p>Quand un dossier va rester immobile quelque temps (pièce constructeur en commande, réponse client attendue, surcharge de l'atelier), la <strong>mise en attente</strong> évite le silence radio : bouton <strong>« Mettre en attente… »</strong> dans la carte Actions de la fiche, possible tant que le matériel est à l'atelier (états 2 à 6). Ce n'est pas un changement d'état : le dossier reste où il est et aucune transition n'est bloquée.</p>
+    <ul>
+      <li><strong>À la mise en pause</strong>, le motif est <strong>obligatoire</strong> et il est <strong>envoyé tel quel au client</strong> dans l'e-mail « dossier mis en attente » : rédigez-le pour lui, pas pour la console (« nous attendons une pièce du constructeur, votre voile est en pause quelques jours » plutôt que « attente fournisseur »).</li>
+      <li><strong>Pendant la pause</strong>, le dossier porte un badge « En attente » partout dans la console (fiche, liste avec son onglet dédié, écran Aujourd'hui) et le client voit « En pause » avec le motif dans son espace.</li>
+      <li><strong>À la reprise</strong>, bouton <strong>« Reprendre le dossier… »</strong> : le client reçoit l'e-mail « dossier repris », avec votre message si vous en saisissez un (facultatif, par exemple « la pièce est arrivée, votre voile repasse en atelier cette semaine »).</li>
+    </ul>
+    <p>Le client est donc prévenu dans les deux sens, à chaque fois avec l'information que vous saisissez. Cas particulier : si la demande de solde part alors que le dossier est encore en pause, la pause se lève toute seule, sans e-mail de reprise (l'e-mail « c'est prêt » dit déjà tout). Les textes des deux e-mails sont modifiables comme les autres (voir <a href="#reglages">Où se règle quoi</a>).</p>
 
     <h3>Replanifier un créneau</h3>
     <p>Depuis la vue <strong>Planning</strong> (panneau ou glisser-déposer). Libre jusqu'à l'état 2 inclus ; à partir de l'état 3 il faut être administrateur et donner un motif. Le client peut être prévenu par e-mail (case à cocher). Les rappels « avez-vous expédié ? » repartent automatiquement pour la nouvelle date. C'est aussi la porte de sortie d'un dossier « Sans suite ».</p>
@@ -504,7 +525,7 @@
   <span class="secnum">7</span>
   <h2>Qui reçoit quoi</h2>
   <div class="prose">
-    <p><strong>Le client</strong> reçoit un e-mail à chaque étape qui le concerne : confirmation de commande et coordonnées de virement, « paiement reçu » avec les consignes d'expédition et son bon d'intervention, confirmation de réception, devis et ses relances, confirmation de sa décision, demande de solde et ses relances, rapport de contrôle, avis de réexpédition avec le suivi, et les avis d'annulation ou de classement sans suite. Tous ces textes sont modifiables (voir ci-dessous).</p>
+    <p><strong>Le client</strong> reçoit un e-mail à chaque étape qui le concerne : confirmation de commande et coordonnées de virement, « paiement reçu » avec les consignes d'expédition et son bon d'intervention, confirmation de réception, devis et ses relances, confirmation de sa décision, demande de solde et ses relances, rapport de contrôle, avis de réexpédition avec le suivi, les avis de mise en pause (avec le motif saisi par l'atelier) et de reprise du dossier, et les avis d'annulation ou de classement sans suite. Tous ces textes sont modifiables (voir ci-dessous).</p>
     <p><strong>Les adresses admin</strong> (l'atelier, plus l'agence en copie) reçoivent : une copie de chaque notification d'étape et de chaque relance ou bascule automatique, les e-mails WooCommerce de nouvelle commande, d'annulation et d'échec de paiement, et le point du matin. Plusieurs adresses peuvent être servies : elles se saisissent séparées par des virgules.</p>
   </div>
 </section>
@@ -563,6 +584,11 @@
   </details>
 
   <details class="faq">
+    <summary>J'attends une pièce constructeur, le dossier va rester bloqué deux semaines.</summary>
+    <div class="faq-body">Mettez le dossier en pause (bouton « Mettre en attente… » de la fiche, entre les états 2 et 6). Le motif que vous saisissez part directement au client par e-mail : écrivez-le pour lui. À la reprise, « Reprendre le dossier… » le prévient de nouveau, avec votre message si vous en ajoutez un. Entre les deux, le dossier est repérable dans la console (badge et onglet « En attente ») et le client voit « En pause » dans son espace : personne n'a besoin d'appeler pour savoir où ça en est.</div>
+  </details>
+
+  <details class="faq">
     <summary>Je me suis trompé d'état.</summary>
     <div class="faq-body">Les transitions de la console sont volontairement limitées aux passages prévus : la plupart des erreurs se rattrapent en poursuivant le flux normal. Pour un vrai retour en arrière, passez par un administrateur (l'état peut être corrigé dans l'admin technique). Chaque changement d'état laisse une note signée dans la commande : l'historique dit toujours qui a fait quoi.</div>
   </details>
@@ -574,7 +600,7 @@
 </section>
 
 <footer class="doc">
-  Guide de la plateforme de révision · CogitoWeb · à jour du 27 août 2026 (machine à états 0-9, circuit de relances complet)
+  Guide de la plateforme de révision · CogitoWeb · à jour du 28 août 2026 (machine à états 0-9, circuit de relances complet, mise en pause d'un dossier)
 </footer>
 
 </div>
