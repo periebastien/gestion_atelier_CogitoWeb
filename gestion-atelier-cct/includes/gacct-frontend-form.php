@@ -460,8 +460,15 @@ function gacct_demande_build_data() {
 			'materielTitre'   => __( 'Votre matériel', 'gestion-atelier-cct' ),
 			'materielNouveau' => __( 'Nouvelle voile', 'gestion-atelier-cct' ),
 			'materielAide'    => __( 'Sélectionnez une voile déjà suivie chez nous pour préremplir sa fiche, ou déclarez une nouvelle voile.', 'gestion-atelier-cct' ),
+			'materielAnciennes'      => __( 'Sélectionner une ancienne voile', 'gestion-atelier-cct' ),
+			'materielAnciennesAide'  => __( 'Voiles révisées chez nous avant la nouvelle plateforme. Cliquez-en une pour préremplir sa fiche.', 'gestion-atelier-cct' ),
+			'materielAncienneBadge'  => __( 'Ancien site', 'gestion-atelier-cct' ),
+			/* translators: %s: année de la dernière révision */
+			'materielAncienneAnnee'  => __( 'révisée en %s', 'gestion-atelier-cct' ),
 		),
 	);
+
+	$data['materielsHistorique'] = gacct_demande_materiels_historique( $data['materiels'] );
 
 	$remat_id = gacct_demande_remat_id();
 	if ( $remat_id ) {
@@ -469,6 +476,53 @@ function gacct_demande_build_data() {
 	}
 
 	return apply_filters( 'gacct_demande_data', $data );
+}
+
+/**
+ * Les voiles de l'historique de l'ancien site du client connecté, pour la boîte
+ * repliée « Sélectionner une ancienne voile » du formulaire de demande — moins
+ * celles qu'il a déjà fait suivre dans le nouveau système (même n° de série,
+ * ou même marque + modèle + taille), qui ont déjà leur carte normale.
+ *
+ * Vide (donc boîte absente) si le module historique n'est pas actif sur ce
+ * site : le site AEROTECH et tout futur site sans historique ne voient rien.
+ *
+ * @param array<int,array<string,mixed>> $materiels Voiles du nouveau système
+ *                                                  (gacct_demande_materiels_client()).
+ * @return array<int,array<string,mixed>>
+ */
+function gacct_demande_materiels_historique( array $materiels ) {
+	if ( ! function_exists( 'gacct_historique_materiels_client' ) ) {
+		return array();
+	}
+
+	// Une même voile peut porter son n° de série d'un côté et pas de l'autre :
+	// chaque voile est identifiée par ses DEUX clés possibles (série, et
+	// marque + modèle + taille), une correspondance sur l'une ou l'autre suffit.
+	$cles = static function ( array $v ) {
+		return array_filter( array(
+			gacct_historique_signature_voile( '', '', '', $v['numero_serie'] ?? '' ),
+			gacct_historique_signature_voile( $v['marque'] ?? '', $v['modele'] ?? '', $v['taille'] ?? '', '' ),
+		) );
+	};
+
+	$suivies = array();
+	foreach ( $materiels as $materiel ) {
+		foreach ( $cles( $materiel ) as $cle ) {
+			$suivies[ $cle ] = true;
+		}
+	}
+
+	$anciennes = array();
+	foreach ( gacct_historique_materiels_client() as $voile ) {
+		if ( array_intersect_key( array_flip( $cles( $voile ) ), $suivies ) ) {
+			continue;
+		}
+		unset( $voile['signature'] );
+		$anciennes[] = $voile;
+	}
+
+	return $anciennes;
 }
 
 /**

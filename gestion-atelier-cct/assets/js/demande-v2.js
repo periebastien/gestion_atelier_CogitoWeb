@@ -1259,7 +1259,10 @@
 
 		function initSelecteurMateriel() {
 			var materiels = cfg.materiels || [];
-			if ( ! materiels.length ) {
+			// Voiles de l'ancien site (module historique) : absentes des cartes
+			// principales, proposées dans une boîte repliée plus discrète.
+			var anciennes = cfg.materielsHistorique || [];
+			if ( ! materiels.length && ! anciennes.length ) {
 				return;
 			}
 
@@ -1448,6 +1451,86 @@
 			} );
 			cartes.push( entreeNouvelle );
 			liste.appendChild( carteNouvelle );
+
+			/* -----------------------------------------------------------
+			 * Anciennes voiles (historique de l'ancien site) : un lien
+			 * discret qui déplie une boîte de cartes atténuées. Les cartes
+			 * rejoignent le même groupe radio que les voiles suivies : en
+			 * sélectionner une désélectionne les autres et préremplit la
+			 * fiche à l'identique. Aucune écriture côté serveur, la voile
+			 * n'entre dans le matériel qu'à la soumission de la demande.
+			 * --------------------------------------------------------- */
+			if ( anciennes.length ) {
+				var toggle = document.createElement( 'button' );
+				toggle.type = 'button';
+				toggle.className = 'gacct-materiel__anciennes-toggle';
+				toggle.setAttribute( 'aria-expanded', 'false' );
+				toggle.innerHTML =
+					'<svg class="gacct-materiel__anciennes-chevron" viewBox="0 0 24 24" width="14" height="14" ' +
+					'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+					'<polyline points="6 9 12 15 18 9"></polyline></svg>' +
+					'<span>' +
+					escapeHtml( i18n.materielAnciennes || 'Sélectionner une ancienne voile' ) +
+					' (' + anciennes.length + ')</span>';
+				bloc.appendChild( toggle );
+
+				var boite = document.createElement( 'div' );
+				boite.className = 'gacct-materiel__anciennes';
+				boite.hidden = true;
+
+				var aideAnciennes = document.createElement( 'div' );
+				aideAnciennes.className = 'gacct-materiel__aide';
+				aideAnciennes.textContent = i18n.materielAnciennesAide || '';
+				boite.appendChild( aideAnciennes );
+
+				var listeAnciennes = document.createElement( 'div' );
+				listeAnciennes.className = 'gacct-materiel__liste';
+				listeAnciennes.setAttribute( 'role', 'radiogroup' );
+				listeAnciennes.setAttribute( 'aria-label', i18n.materielAnciennes || 'Anciennes voiles' );
+				boite.appendChild( listeAnciennes );
+
+				anciennes.forEach( function ( materiel ) {
+					var details = [];
+					if ( materiel.numero_serie ) {
+						details.push( materiel.numero_serie );
+					}
+					if ( materiel.annee && i18n.materielAncienneAnnee ) {
+						details.push( i18n.materielAncienneAnnee.replace( '%s', materiel.annee ) );
+					}
+
+					var carte = document.createElement( 'button' );
+					carte.type = 'button';
+					carte.className = 'gacct-materiel__carte gacct-materiel__carte--ancienne';
+					carte.setAttribute( 'role', 'radio' );
+					carte.setAttribute( 'aria-checked', 'false' );
+					carte.innerHTML =
+						'<span class="gacct-materiel__carte-badge">' +
+						escapeHtml( i18n.materielAncienneBadge || 'Ancien site' ) +
+						'</span>' +
+						'<span class="gacct-materiel__carte-titre">' +
+						escapeHtml( ( libelleMarque( materiel.marque ) || '' ) + ' ' + ( materiel.modele || '' ) ).trim() +
+						'</span>' +
+						'<span class="gacct-materiel__carte-detail">' +
+						escapeHtml( details.join( ' · ' ) ) +
+						'</span>';
+
+					var entree = { el: carte, materiel: materiel };
+					carte.addEventListener( 'click', function () {
+						selectionner( entree );
+					} );
+					cartes.push( entree );
+					listeAnciennes.appendChild( carte );
+				} );
+
+				bloc.appendChild( boite );
+
+				toggle.addEventListener( 'click', function () {
+					var ouvert = boite.hidden;
+					boite.hidden = ! ouvert;
+					toggle.setAttribute( 'aria-expanded', ouvert ? 'true' : 'false' );
+					toggle.classList.toggle( 'is-open', ouvert );
+				} );
+			}
 
 			ancre.parentNode.insertBefore( bloc, ancre );
 

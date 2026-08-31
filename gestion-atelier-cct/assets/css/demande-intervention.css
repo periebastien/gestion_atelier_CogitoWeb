@@ -1191,6 +1191,75 @@ span.flatpickr-weekday {
 	flex-shrink: 0;
 }
 
+/* --- Anciennes voiles (historique de l'ancien site) : lien discret + boîte
+   repliée, cartes atténuées pour les distinguer des voiles suivies. --- */
+.gacct-materiel__anciennes-toggle {
+	display: inline-flex !important;
+	align-items: center;
+	gap: 6px;
+	margin-top: 10px;
+	padding: 0 !important;
+	background: none !important;
+	border: 0 !important;
+	font: inherit;
+	font-size: 12px;
+	color: var(--gacct-text-muted);
+	cursor: pointer;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+.gacct-materiel__anciennes-toggle:hover {
+	color: var(--gacct-accent-dark, var(--gacct-accent));
+}
+
+.gacct-materiel__anciennes-toggle:focus-visible {
+	outline: 2px solid var(--gacct-accent);
+	outline-offset: 2px;
+}
+
+.gacct-materiel__anciennes-chevron {
+	flex-shrink: 0;
+	transition: transform 150ms ease;
+}
+
+.gacct-materiel__anciennes-toggle.is-open .gacct-materiel__anciennes-chevron {
+	transform: rotate(180deg);
+}
+
+.gacct-materiel__anciennes {
+	margin-top: 10px;
+	padding: 12px 14px;
+	border: 1px dashed var(--gacct-border);
+	border-radius: var(--gacct-radius);
+	background: var(--gacct-surface-muted, transparent);
+}
+
+.gacct-materiel__anciennes .gacct-materiel__aide {
+	margin-bottom: 8px;
+}
+
+.gacct-materiel__carte--ancienne {
+	opacity: 0.75;
+}
+
+.gacct-materiel__carte--ancienne:hover,
+.gacct-materiel__carte--ancienne.is-active {
+	opacity: 1;
+}
+
+.gacct-materiel__carte-badge {
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--gacct-text-muted);
+	border: 1px solid var(--gacct-border);
+	border-radius: 999px;
+	padding: 1px 7px;
+	margin-bottom: 2px;
+}
+
 @media (max-width: 781px) {
 	.gacct-materiel__carte {
 		min-width: 130px;

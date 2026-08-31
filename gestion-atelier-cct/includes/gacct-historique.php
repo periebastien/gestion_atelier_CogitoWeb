@@ -210,6 +210,97 @@ function gacct_historique_client( $user_id = 0, $recherche = '' ) {
 }
 
 /**
+ * Signature d'identité d'une voile (dédoublonnage inter-tables) : le numéro de
+ * série normalisé s'il existe, sinon marque + modèle + taille normalisés. Les
+ * clés portent un préfixe pour qu'un n° de série ne puisse jamais entrer en
+ * collision avec un triplet.
+ *
+ * @param string $marque  Marque.
+ * @param string $modele  Modèle.
+ * @param string $taille  Taille.
+ * @param string $serie   Numéro de série.
+ * @return string '' si la voile n'est pas identifiable (ni série, ni marque+modèle).
+ */
+function gacct_historique_signature_voile( $marque, $modele, $taille, $serie ) {
+	$norm = static function ( $v ) {
+		return preg_replace( '/[^A-Z0-9]/', '', strtoupper( remove_accents( (string) $v ) ) );
+	};
+
+	$serie = $norm( $serie );
+	if ( '' !== $serie ) {
+		return 'sn:' . $serie;
+	}
+
+	$marque = $norm( $marque );
+	$modele = $norm( $modele );
+	if ( '' === $marque || '' === $modele ) {
+		return '';
+	}
+
+	return 'mm:' . $marque . '|' . $modele . '|' . $norm( $taille );
+}
+
+/**
+ * Les voiles distinctes de l'historique d'un client, prêtes pour le sélecteur
+ * « Votre matériel » du formulaire de demande : une entrée par voile (la
+ * révision la plus récente fait foi), même forme que
+ * gacct_demande_materiels_client() + `annee` (année de dernière révision) et
+ * `signature` (pour l'exclusion des voiles déjà suivies dans le nouveau
+ * système, faite par l'appelant).
+ *
+ * Aucune écriture : la voile n'entre réellement dans le matériel du client
+ * qu'à la soumission d'une demande d'intervention, qui crée un dossier normal.
+ *
+ * @param int $user_id Client (0 = utilisateur courant).
+ * @return array<int,array<string,mixed>>
+ */
+function gacct_historique_materiels_client( $user_id = 0 ) {
+	$materiels = array();
+	$vus       = array();
+
+	// gacct_historique_client() trie déjà de la plus récente à la plus
+	// ancienne : la première occurrence d'une voile est la bonne. Une même
+	// voile revient souvent avec le n° de série tantôt rempli, tantôt vide :
+	// chaque ligne est donc identifiée par ses DEUX clés (n° de série, et
+	// marque + modèle + taille + couleur), une correspondance suffit à
+	// l'écarter. La couleur distingue deux ailes identiques d'un même club.
+	foreach ( gacct_historique_client( $user_id ) as $row ) {
+		$cle_sn = gacct_historique_signature_voile( '', '', '', $row['numero_serie'] ?? '' );
+		$cle_mm = gacct_historique_signature_voile( $row['marque'] ?? '', $row['modele'] ?? '', $row['taille'] ?? '', '' );
+		if ( '' !== $cle_mm ) {
+			$cle_mm .= '|' . preg_replace( '/[^A-Z0-9]/', '', strtoupper( remove_accents( (string) ( $row['couleur'] ?? '' ) ) ) );
+		}
+
+		$cles = array_filter( array( $cle_sn, $cle_mm ) );
+		if ( ! $cles || array_intersect_key( array_flip( $cles ), $vus ) ) {
+			continue;
+		}
+		foreach ( $cles as $cle ) {
+			$vus[ $cle ] = true;
+		}
+
+		$signature = '' !== $cle_sn ? $cle_sn : gacct_historique_signature_voile( $row['marque'] ?? '', $row['modele'] ?? '', $row['taille'] ?? '', '' );
+
+		$date  = (string) ( $row['date_revision'] ?? '' );
+		$annee = preg_match( '/^(\d{4})/', $date, $m ) ? $m[1] : '';
+
+		$materiels[] = array(
+			'historique_id' => (int) ( $row['id'] ?? 0 ),
+			'marque'        => (string) ( $row['marque'] ?? '' ),
+			'modele'        => (string) ( $row['modele'] ?? '' ),
+			'numero_serie'  => (string) ( $row['numero_serie'] ?? '' ),
+			'taille'        => (string) ( $row['taille'] ?? '' ),
+			'couleur'       => (string) ( $row['couleur'] ?? '' ),
+			'ptv'           => (string) ( $row['ptv'] ?? '' ),
+			'annee'         => $annee,
+			'signature'     => $signature,
+		);
+	}
+
+	return $materiels;
+}
+
+/**
  * Nombre d'anciennes révisions d'un client (pour n'afficher l'onglet que s'il y en a).
  *
  * @param int $user_id Client (0 = utilisateur courant).
