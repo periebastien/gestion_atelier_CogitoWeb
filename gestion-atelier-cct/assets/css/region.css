@@ -264,14 +264,22 @@
 }
 .ar-region-nearby-block--regions a:hover { color: #1257b8; border-bottom-color: #1a73e8; }
 
-/* Bandeau avis Google : panneau grisé, boxé (comme l'accueil), pas pleine largeur */
+/* Bandeau avis Google : bande grisée PLEINE LARGEUR (comme l'accueil), contenu centré.
+   Le fond déborde de la colonne Elementor (max-width 1140) via box-shadow + clip-path
+   — cf. CLAUDE.md « Fond pleine largeur ». Filet haut/bas seulement (un bord latéral
+   s'arrêterait au milieu de la page). */
 .ar-region-gband {
-	max-width: var(--r-wrap);
-	margin: 28px auto;
-	padding: 12px 20px;
+	margin: 32px 0;
+	padding: 20px;
 	background: #fafafa;
-	border: 1px solid var(--r-border);
-	border-radius: 18px;
+	box-shadow: 0 0 0 100vmax #fafafa;
+	clip-path: inset(0 -100vmax);
+	border-top: 1px solid var(--r-border);
+	border-bottom: 1px solid var(--r-border);
+}
+.ar-region-gband > * {
+	max-width: var(--r-wrap);
+	margin-inline: auto;
 }
 
 /* ---- RESPONSIVE ---------------------------------------------------------- */

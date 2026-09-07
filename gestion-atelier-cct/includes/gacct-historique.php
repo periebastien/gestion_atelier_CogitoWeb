@@ -32,7 +32,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Version du schéma : incrémentée à chaque évolution de la table.
  */
 function gacct_historique_db_version() {
-	return 1;
+	return 2;
 }
 
 function gacct_historique_table() {
@@ -73,12 +73,14 @@ function gacct_historique_maybe_install() {
 			facture_fichier VARCHAR(255) NOT NULL DEFAULT '',
 			commentaire TEXT NULL,
 			cree_le DATETIME NOT NULL,
+			revision_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
 			PRIMARY KEY  (id),
 			UNIQUE KEY ancien_id (ancien_id),
 			KEY user_id (user_id),
 			KEY date_revision (date_revision),
 			KEY marque_modele (marque, modele),
-			KEY ancien_client_id (ancien_client_id)
+			KEY ancien_client_id (ancien_client_id),
+			KEY revision_id (revision_id)
 		) {$charset};"
 	);
 

@@ -134,7 +134,7 @@ add_action( 'jet-form-builder/custom-action/ajouter_configurateur_panier', funct
         $supplements = (array) gacct_biplace_supplement_product_ids();
 
         foreach ( [ 'voile' => 'biplace_voile', 'secours' => 'biplace_secours' ] as $type => $champ ) {
-            if ( empty( $request[ $champ ] ) || empty( $supplements[ $type ] ) ) {
+            if ( '1' !== (string) ( $request[ $champ ] ?? '' ) || empty( $supplements[ $type ] ) ) {
                 continue;
             }
 

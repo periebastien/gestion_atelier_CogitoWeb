@@ -451,3 +451,38 @@
 		transition: none;
 	}
 }
+
+/* ── Page courante et survol de la nav (07/09/2026) ─────────────────────────
+   Elementor pose `elementor-item-active` sur l entrée de la page courante
+   (et `current-menu-item` sur le <li>). Couleur d accent turquoise + trait
+   fin sous le libellé, qui s étire au survol (0 → 100 %) et reste plein sur
+   la page courante. Le lien est déjà en `transition: color`, on ajoute le
+   pseudo-élément. Spécificité (0,5,0) pour battre la règle de couleur active
+   générée par le widget (0,4,0). Scopé à `--main` comme tout le reste.
+   ────────────────────────────────────────────────────────────────────────── */
+.ar-mnav .elementor-nav-menu--main .elementor-nav-menu > li > a.elementor-item {
+	position: relative;
+	padding-bottom: 3px;
+}
+.ar-mnav .elementor-nav-menu--main .elementor-nav-menu > li > a.elementor-item::after {
+	content: "";
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 2px;
+	border-radius: 2px;
+	background: #20c4c3;
+	transform: scaleX(0);
+	transform-origin: left center;
+	transition: transform 220ms ease;
+}
+.ar-mnav .elementor-nav-menu--main .elementor-nav-menu > li > a.elementor-item:hover::after,
+.ar-mnav .elementor-nav-menu--main .elementor-nav-menu > li > a.elementor-item:focus-visible::after,
+.ar-mnav .elementor-nav-menu--main .elementor-nav-menu > li > a.elementor-item.elementor-item-active::after {
+	transform: scaleX(1);
+}
+.ar-mnav .elementor-nav-menu--main .elementor-nav-menu > li > a.elementor-item.elementor-item-active,
+.ar-acc .elementor-nav-menu--main .elementor-nav-menu > li > a.elementor-item.elementor-item-active {
+	color: #20c4c3;
+}
