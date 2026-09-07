@@ -190,6 +190,7 @@
   <a href="#automatismes">Les automatismes</a>
   <a href="#matin">Le point du matin</a>
   <a href="#cas">Cas particuliers</a>
+  <a href="#anciennes-revisions">Anciennes révisions</a>
   <a href="#emails">Qui reçoit quoi</a>
   <a href="#reglages">Où se règle quoi</a>
   <a href="#faq">Questions fréquentes</a>
@@ -518,6 +519,19 @@
 
     <h3>Annuler une commande</h3>
     <p>Annuler depuis WooCommerce libère le créneau automatiquement. À réserver aux dossiers non payés ou aux cas exceptionnels : pour un dossier payé dont le matériel n'arrive pas, c'est « Sans suite » qu'il faut utiliser (l'acompte reste acquis, le dossier reste visible et reprenable).</p>
+
+    <h3 id="anciennes-revisions">Reprendre une révision de l'ancien site</h3>
+    <p>Les dossiers de l'ancien site ont été importés dans <strong>Historique atelier &gt; Révisions</strong> (menu de gauche). Ils sont figés : ni rapport à déposer, ni changement d'état. Le client les retrouve dans « Mes anciennes révisions » de son espace. Mais certaines voiles étaient <strong>encore à l'atelier</strong> le jour du changement de site : pour les finir dans le nouveau système, il faut d'abord les y faire entrer.</p>
+    <ol>
+      <li><strong>Trouver le dossier</strong> dans Historique atelier &gt; Révisions (recherche par marque, modèle, numéro de série ou référence de l'ancien site).</li>
+      <li><strong>Cliquer « Basculer dans l'atelier »</strong> dans la colonne « Nouvel atelier », puis confirmer. Le bouton n'existe que si le dossier est rattaché à un compte client ; sinon, rattachez d'abord le client (voir plus bas).</li>
+      <li>Une <strong>révision est créée dans la console</strong>, directement à l'état 3 « Intervention programmée », avec le matériel du dossier (marque, modèle, taille, couleur, numéro de série, PTV) et un commentaire qui rappelle la référence de l'ancien site. Le message de confirmation donne le lien vers sa fiche. Dans Historique atelier, la ligne affiche désormais « Révision n° … » à la place du bouton : un dossier ne peut être basculé qu'une fois.</li>
+      <li><strong>Traiter la révision comme les autres</strong> : saisir le rapport de contrôle dans la carte « Rapports de contrôle » de la fiche, puis <strong>« Intervention terminée, demander le solde »</strong> (le PDF du rapport est obligatoire avant).</li>
+      <li><strong>Le solde</strong> : ces dossiers n'ont pas de commande dans le nouveau site, aucun paiement en ligne n'est possible et aucune demande de solde ne part. Encaissez comme vous l'avez toujours fait pour ces clients, puis passez à l'état 7 avec <strong>« Forcer le paiement du solde »</strong> (motif obligatoire, par exemple « réglé à l'atelier »). Le client reçoit alors son rapport de contrôle et le retrouve dans son espace.</li>
+      <li><strong>Réexpédier</strong> avec « Matériel réexpédié » et le numéro de suivi, comme d'habitude. Le dossier est clos.</li>
+    </ol>
+    <p>Bon à savoir : la voile basculée apparaît dans « Mon matériel » de l'espace client dès la bascule, donc le client pourra la recommander en un clic la prochaine fois. Le dossier de l'ancien site, lui, reste consultable dans Historique atelier et dans « Mes anciennes révisions », avec son rapport d'origine s'il en avait un.</p>
+    <p>Dossier « non rattaché » : l'ancien site n'avait pas d'adresse e-mail valide pour ce client. Il faut d'abord un compte client sur le nouveau site (le client s'inscrit, ou vous le créez dans Utilisateurs), puis demander à CogitoWeb de rattacher le dossier à ce compte ; sans compte, la bascule est refusée car la révision n'aurait personne à qui être livrée.</p>
   </div>
 </section>
 

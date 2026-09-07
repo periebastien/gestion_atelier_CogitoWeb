@@ -474,7 +474,7 @@
 	border-radius: 2px;
 	background: #20c4c3;
 	transform: scaleX(0);
-	transform-origin: left center;
+	transform-origin: center center;
 	transition: transform 220ms ease;
 }
 .ar-mnav .elementor-nav-menu--main .elementor-nav-menu > li > a.elementor-item:hover::after,
