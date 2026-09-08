@@ -1328,3 +1328,12 @@
 .gacct-tb-stat-num {
 	overflow-wrap: anywhere;
 }
+
+/* Respiration entre la barre d'onglets (En cours / Terminées / Toutes) et le
+   tableau ou les cartes (08/09/2026, retour Bastien : la première carte collait
+   à la barre, sur mobile comme sur PC). Le wrapper a un padding-top 80 /
+   margin-top -80 (tooltip), net 0 : l'espace se pose sur le conteneur. */
+#scroll,
+#scroll-materiel {
+	margin-top: 18px;
+}
