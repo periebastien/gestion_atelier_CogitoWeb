@@ -1,0 +1,253 @@
+/* =============================================================================
+ * Espace client : « Mes commandes » (/mon-compte/commandes/)
+ * — gestion-atelier-cct / includes/gacct-orders.php + templates/orders.php
+ *
+ * Même registre que profile.css / dashboard.css : aucune couleur en dur, les
+ * variables --gacct-* du thème avec les replis « Altitude Révision ». Le détail
+ * d'une commande (?commande=) est rendu par templates/view-order.php et stylé
+ * par view-order.css, chargée en même temps.
+ * ============================================================================= */
+
+.gacct-orders {
+	--ord-ink:         var(--gacct-text, #1a1a1a);
+	--ord-ink-2:       var(--gacct-dash-ink-2, #4a4748);
+	--ord-ink-3:       var(--gacct-dash-ink-3, #6b6b6b);
+	--ord-teal:        var(--gacct-accent, #20c4c3);
+	--ord-teal-dark:   var(--gacct-accent-dark, #189998);
+	--ord-teal-soft:   var(--gacct-dash-accent-soft, #e8f8f8);
+	--ord-yellow:      var(--gacct-cta, #ffbd20);
+	--ord-yellow-dark: var(--gacct-cta-dark, #e0a800);
+	--ord-orange-soft: var(--gacct-warn-soft, #fff1e8);
+	--ord-orange-ink:  var(--gacct-warn-ink, #c45a10);
+	--ord-blue-soft:   var(--gacct-info-soft, #ecf3ff);
+	--ord-blue-ink:    var(--gacct-info, #4a8bf5);
+	--ord-green-soft:  var(--gacct-success-soft, #e6f7f1);
+	--ord-green-ink:   var(--gacct-success-ink, #047857);
+	--ord-red-soft:    var(--gacct-danger-soft, #fff5f5);
+	--ord-red-ink:     var(--gacct-danger, #c92a2a);
+	--ord-surface:     var(--gacct-surface, #fff);
+	--ord-surface-alt: var(--gacct-dash-surface-alt, #fafafa);
+	--ord-line:        var(--gacct-line, rgba(0, 0, 0, 0.07));
+	--ord-line-2:      var(--gacct-line-strong, rgba(0, 0, 0, 0.12));
+	--ord-radius:      var(--gacct-dash-radius, 9px);
+	--ord-radius-lg:   var(--gacct-dash-radius-lg, 14px);
+
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	color: var(--ord-ink);
+}
+
+.gacct-orders-intro {
+	margin: 0;
+	color: var(--ord-ink-3);
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+/* ── Notices / retour ─────────────────────────────────────────────────── */
+
+.gacct-orders-notice {
+	padding: 12px 16px;
+	border-radius: var(--gacct-dash-radius, 9px);
+	border: 1px solid transparent;
+	font-size: 14px;
+	margin-bottom: 16px;
+}
+.gacct-orders-notice--error {
+	background: var(--gacct-danger-soft, #fff5f5);
+	border-color: var(--gacct-danger-line, #ffd7d7);
+	color: var(--gacct-danger, #c92a2a);
+}
+
+.gacct-orders-back {
+	margin: 0 0 14px;
+	font-size: 14px;
+}
+.gacct-orders-back a {
+	color: var(--gacct-accent-dark, #189998);
+	font-weight: 700;
+	text-decoration: none;
+}
+.gacct-orders-back a:hover {
+	text-decoration: underline;
+}
+
+/* ── Liste ────────────────────────────────────────────────────────────── */
+
+.gacct-orders-list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.gacct-orders-head,
+.gacct-orders-row {
+	display: grid;
+	grid-template-columns: 1.1fr 0.9fr 1.6fr 1.5fr 1fr 34px;
+	gap: 14px;
+	align-items: center;
+}
+
+.gacct-orders-head {
+	padding: 0 18px;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--ord-ink-3);
+}
+
+.gacct-orders-row {
+	background: var(--ord-surface);
+	border: 1px solid var(--ord-line-2);
+	border-left: 4px solid var(--ord-line-2);
+	border-radius: var(--ord-radius-lg);
+	padding: 14px 18px;
+	color: inherit;
+	text-decoration: none;
+	font-size: 14px;
+	line-height: 1.4;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.gacct-orders-row:hover,
+.gacct-orders-row:focus-visible {
+	border-color: var(--ord-teal);
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+	transform: translateY(-1px);
+	color: inherit;
+	outline: none;
+}
+
+/* Liseré selon qui a la main : jaune = vous, turquoise = atelier, vert = fini */
+.gacct-orders-row--you  { border-left-color: var(--ord-yellow); }
+.gacct-orders-row--shop { border-left-color: var(--ord-teal); }
+.gacct-orders-row--done { border-left-color: var(--gacct-success, #10b981); }
+.gacct-orders-row--dead { border-left-color: var(--ord-line-2); opacity: 0.75; }
+
+.gacct-orders-row > span {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+.gacct-orders-row strong {
+	font-weight: 800;
+	color: var(--ord-ink);
+}
+.gacct-orders-row small {
+	color: var(--ord-ink-3);
+	font-size: 12px;
+}
+.gacct-orders-materiel {
+	color: var(--ord-ink-2);
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Libellés de colonne répétés dans chaque carte : mobile uniquement */
+.gacct-orders-label {
+	display: none;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--ord-ink-3);
+}
+
+.gacct-orders-badge {
+	display: inline-block;
+	align-self: flex-start;
+	padding: 4px 10px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 1.3;
+	background: var(--ord-teal-soft);
+	color: var(--ord-teal-dark);
+}
+.gacct-orders-row--you  .gacct-orders-badge { background: var(--ord-orange-soft); color: var(--ord-orange-ink); }
+.gacct-orders-row--done .gacct-orders-badge { background: var(--ord-green-soft); color: var(--ord-green-ink); }
+.gacct-orders-row--dead .gacct-orders-badge { background: var(--ord-surface-alt); color: var(--ord-ink-3); }
+
+.gacct-orders-go {
+	align-items: center;
+	justify-content: center;
+	color: var(--ord-teal-dark);
+}
+.gacct-orders-go svg {
+	width: 22px;
+	height: 22px;
+}
+.gacct-orders-go-txt {
+	display: none;
+}
+
+/* ── Vide ─────────────────────────────────────────────────────────────── */
+
+.gacct-orders-card {
+	background: var(--ord-surface);
+	border: 1px solid var(--ord-line-2);
+	border-radius: var(--ord-radius-lg);
+	padding: 26px 24px;
+}
+.gacct-orders-empty h3 {
+	margin: 0 0 6px;
+	font-size: 18px;
+	font-weight: 800;
+}
+.gacct-orders-empty p {
+	margin: 0 0 16px;
+	color: var(--ord-ink-3);
+	font-size: 14px;
+}
+.gacct-orders-btn {
+	display: inline-block;
+	padding: 11px 18px;
+	border-radius: var(--ord-radius);
+	background: var(--ord-yellow);
+	color: var(--ord-ink);
+	font-weight: 800;
+	font-size: 14px;
+	text-decoration: none;
+}
+.gacct-orders-btn:hover {
+	background: var(--ord-yellow-dark);
+	color: var(--ord-ink);
+}
+
+/* ── Mobile : cartes ──────────────────────────────────────────────────── */
+
+@media (max-width: 767px) {
+	.gacct-orders-head {
+		display: none;
+	}
+	.gacct-orders-row {
+		grid-template-columns: 1fr 1fr;
+		gap: 12px 14px;
+		padding: 14px 16px;
+	}
+	.gacct-orders-label {
+		display: block;
+	}
+	.gacct-orders-materiel,
+	.gacct-orders-state {
+		grid-column: 1 / -1;
+	}
+	.gacct-orders-row > .gacct-orders-go {
+		grid-column: 1 / -1;
+		flex-direction: row;
+		justify-content: flex-end;
+		gap: 4px;
+		font-size: 13px;
+		font-weight: 700;
+	}
+	.gacct-orders-go svg {
+		order: 2;
+		width: 18px;
+		height: 18px;
+	}
+	.gacct-orders-go-txt {
+		display: inline;
+	}
+}

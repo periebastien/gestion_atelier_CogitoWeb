@@ -344,7 +344,7 @@ $notice      = gacct_conf_notice();
 								</p>
 							<?php else : ?>
 								<div class="todo-cta">
-									<a href="<?php echo esc_url( $d['links']['work_order'] ); ?>" class="btn-primary"><?php esc_html_e( 'Imprimer le bon', 'gestion-atelier-cct' ); ?> <?php echo gacct_conf_icon( 'printer' ); // phpcs:ignore WordPress.Security.EscapeOutput ?></a>
+									<a href="<?php echo esc_url( $d['links']['work_order'] ); ?>" class="btn-primary" target="_blank" rel="noopener"><?php esc_html_e( 'Imprimer le bon', 'gestion-atelier-cct' ); ?> <?php echo gacct_conf_icon( 'printer' ); // phpcs:ignore WordPress.Security.EscapeOutput ?></a>
 								</div>
 								<div class="todo-alt">
 									<?php if ( gacct_conf_feature( 'work_order_pdf' ) ) : ?>
