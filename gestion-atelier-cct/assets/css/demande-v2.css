@@ -1097,11 +1097,18 @@
 
 /* Bloc sellette / secours sous la carte cochée (08/09/2026). */
 .gacct-v2 .gacct-v2-equip-bloc {
-	margin: 2px 0 14px 38px;
+	margin: 6px 0 14px;
+	padding: 0;
+}
+.gacct-v2 .gacct-v2-equip-groupe {
+	margin-top: 10px;
 	padding: 14px 16px 4px;
-	border-left: 3px solid var(--v2-teal);
-	border-radius: 0 10px 10px 0;
+	border: 1.5px solid var(--v2-line);
+	border-radius: 12px;
 	background: #fff;
+}
+.gacct-v2 .gacct-v2-step--voile [hidden] {
+	display: none !important;
 }
 .gacct-v2 .gacct-v2-equip-intro {
 	margin: 0 0 10px;
@@ -1126,8 +1133,7 @@
 	margin-bottom: 12px;
 }
 @media (max-width: 600px) {
-	.gacct-v2 .gacct-v2-equip-bloc {
-		margin-left: 0;
+	.gacct-v2 .gacct-v2-equip-groupe {
 		padding: 12px 12px 2px;
 	}
 	.gacct-v2 .gacct-v2-equip-grille {

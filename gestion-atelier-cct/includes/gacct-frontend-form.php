@@ -194,9 +194,11 @@ function gacct_demande_v2_config() {
 				'sellette' => array( 'sellette_marque', 'sellette_modele', 'sellette_taille' ),
 				'secours'  => array( 'secours_marque', 'secours_modele', 'secours_taille', 'secours_date' ),
 			),
+			// Ordre inversé le 08/09/2026 (décision Bastien) : les prestations
+			// d'abord, puis le matériel adapté à ce qui est coché.
 			'etapes'    => array(
-				1 => __( 'Votre matériel', 'gestion-atelier-cct' ),
-				2 => __( 'Vos prestations', 'gestion-atelier-cct' ),
+				1 => __( 'Vos prestations', 'gestion-atelier-cct' ),
+				2 => __( 'Votre matériel', 'gestion-atelier-cct' ),
 				3 => __( 'La date et le retour', 'gestion-atelier-cct' ),
 				4 => __( 'Récapitulatif', 'gestion-atelier-cct' ),
 			),
@@ -246,6 +248,15 @@ function gacct_demande_v2_config() {
 				// --- Navigation / autres étapes ---
 				'etapeSur'        => __( 'Étape %1$s sur %2$s', 'gestion-atelier-cct' ),
 				'erreurPresta'    => __( 'Choisissez au moins une prestation pour continuer.', 'gestion-atelier-cct' ),
+				'erreurCouleur'   => __( 'Sélectionnez au moins une couleur de votre voile.', 'gestion-atelier-cct' ),
+				'erreurSecours'   => __( 'Indiquez la marque et le modèle de votre parachute de secours.', 'gestion-atelier-cct' ),
+				'erreurSellette'  => __( 'Indiquez la marque et le modèle de votre sellette.', 'gestion-atelier-cct' ),
+				'materielVoile'   => __( 'Tapez la marque ou le modèle de votre voile, ou choisissez « Mon matériel n’est pas dans la liste ».', 'gestion-atelier-cct' ),
+				'materielEquip'   => __( 'Décrivez le matériel concerné par vos prestations : nous préparons votre rapport avec ces informations.', 'gestion-atelier-cct' ),
+				'equipSellette'   => __( 'Votre sellette', 'gestion-atelier-cct' ),
+				'equipSecours'    => __( 'Votre parachute de secours', 'gestion-atelier-cct' ),
+				'recapSellette'   => __( 'Sellette', 'gestion-atelier-cct' ),
+				'recapSecours'    => __( 'Secours', 'gestion-atelier-cct' ),
 				'erreurDate'      => __( 'Choisissez un jour disponible dans le calendrier.', 'gestion-atelier-cct' ),
 				'erreurRetour'    => __( 'Choisissez comment récupérer votre matériel.', 'gestion-atelier-cct' ),
 				'totalPresta'     => __( 'Total des prestations', 'gestion-atelier-cct' ),
@@ -311,6 +322,40 @@ function gacct_demande_rendered_form_id() {
  *  GARDE SERVEUR DU FORMULAIRE (action call_hook `gacct_valider_demande`)
  * ============================================================================= */
 
+/**
+ * Quel matériel une demande doit-elle décrire, d'après les prestations cochées ?
+ * Voile : toute révision/inspection hors « équipement », ou des travaux sur
+ * suspentes. Secours : un pliage, ou un contrôle complet équipement. Sellette :
+ * le contrôle complet équipement (produits `gacct_demande_equipement_ids`).
+ * Miroir JS : prestationsCochees() dans demande-v2.js.
+ *
+ * @param array $request Valeurs soumises (ou tableau de champs).
+ * @return array{voile:bool,secours:bool,sellette:bool}
+ */
+function gacct_demande_materiel_requis( array $request ) {
+	$equip_ids = array_map( 'intval', (array) apply_filters( 'gacct_demande_equipement_ids', array( 19 ) ) );
+
+	$liste = static function ( $v ) {
+		if ( is_string( $v ) ) {
+			$v = '' === trim( $v ) ? array() : array( $v );
+		}
+		return array_values( array_filter( array_map( 'intval', (array) $v ) ) );
+	};
+
+	$revisions = $liste( $request['revisions_controle'] ?? array() );
+	$pliages   = $liste( $request['pliages_secours'] ?? array() );
+	$suspentes = $liste( $request['suspentes_travaux'] ?? array() );
+
+	$equip = (bool) array_intersect( $revisions, $equip_ids );
+	$voile = (bool) array_diff( $revisions, $equip_ids ) || ! empty( $suspentes );
+
+	return array(
+		'voile'    => $voile,
+		'secours'  => $equip || ! empty( $pliages ),
+		'sellette' => $equip,
+	);
+}
+
 add_action( 'jet-form-builder/custom-action/gacct_valider_demande', 'gacct_demande_garde_serveur', 10, 2 );
 
 /**
@@ -326,22 +371,39 @@ add_action( 'jet-form-builder/custom-action/gacct_valider_demande', 'gacct_deman
 function gacct_demande_garde_serveur( $request, $handler ) {
 	$erreur = '';
 
-	if ( '' === trim( (string) ( $request['marque'] ?? '' ) ) ) {
-		$erreur = __( 'Indiquez la marque de votre voile.', 'gestion-atelier-cct' );
+	// Depuis le 08/09/2026 les prestations sont choisies AVANT le matériel : ce
+	// que l'on exige dépend de ce qui est coché (gacct_demande_materiel_requis).
+	$requis = gacct_demande_materiel_requis( $request );
+
+	if ( $requis['voile'] ) {
+		if ( '' === trim( (string) ( $request['marque'] ?? '' ) ) ) {
+			$erreur = __( 'Indiquez la marque de votre voile.', 'gestion-atelier-cct' );
+		}
+
+		if ( ! $erreur && '' === trim( (string) ( $request['modele'] ?? '' ) ) ) {
+			$erreur = __( 'Indiquez le modèle de votre voile.', 'gestion-atelier-cct' );
+		}
+
+		// Taille OU P.T.V. : l'un des deux suffit.
+		if (
+			! $erreur
+			&& '' === trim( (string) ( $request['taille'] ?? '' ) )
+			&& '' === trim( (string) ( $request['ptv'] ?? '' ) )
+		) {
+			$erreur = __( 'Indiquez au moins la taille ou le P.T.V. de votre voile.', 'gestion-atelier-cct' );
+		}
+
+		if ( ! $erreur && '' === trim( (string) ( $request['couleur_copy'] ?? '' ) ) ) {
+			$erreur = __( 'Sélectionnez au moins une couleur de votre voile.', 'gestion-atelier-cct' );
+		}
 	}
 
-	if ( ! $erreur && '' === trim( (string) ( $request['modele'] ?? '' ) ) ) {
-		$erreur = __( 'Indiquez le modèle de votre voile.', 'gestion-atelier-cct' );
+	if ( ! $erreur && $requis['secours'] && ( '' === trim( (string) ( $request['secours_marque'] ?? '' ) ) || '' === trim( (string) ( $request['secours_modele'] ?? '' ) ) ) ) {
+		$erreur = __( 'Indiquez la marque et le modèle de votre parachute de secours.', 'gestion-atelier-cct' );
 	}
 
-	// Taille et P.T.V. ne sont plus obligatoires séparément : un parachute de
-	// secours n'a pas de taille de voile. On exige l'un OU l'autre.
-	if (
-		! $erreur
-		&& '' === trim( (string) ( $request['taille'] ?? '' ) )
-		&& '' === trim( (string) ( $request['ptv'] ?? '' ) )
-	) {
-		$erreur = __( 'Indiquez au moins la taille ou le P.T.V. de votre matériel.', 'gestion-atelier-cct' );
+	if ( ! $erreur && $requis['sellette'] && ( '' === trim( (string) ( $request['sellette_marque'] ?? '' ) ) || '' === trim( (string) ( $request['sellette_modele'] ?? '' ) ) ) ) {
+		$erreur = __( 'Indiquez la marque et le modèle de votre sellette.', 'gestion-atelier-cct' );
 	}
 
 	if ( ! $erreur ) {

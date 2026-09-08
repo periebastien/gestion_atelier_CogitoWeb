@@ -22,6 +22,10 @@ function gacct_op_today_material( array $revision ) {
 		trim( (string) ( $revision['taille'] ?? '' ) ),
 	) );
 
+	if ( ! $parts && function_exists( 'gacct_equip_materiel_fallback' ) && '' !== gacct_equip_materiel_fallback( $revision ) ) {
+		return gacct_equip_materiel_fallback( $revision );
+	}
+
 	return $parts ? implode( ' ', $parts ) : __( 'Matériel non renseigné', 'gestion-atelier-cct' );
 }
 

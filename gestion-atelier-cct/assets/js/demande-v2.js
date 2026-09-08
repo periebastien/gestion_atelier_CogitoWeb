@@ -557,33 +557,71 @@
 				var page = e.target.closest( '.jet-form-builder-page' );
 				var n = page ? parseInt( page.dataset.page, 10 ) : 0;
 
-				if ( n === 1 && ! voileValide() ) {
-					e.preventDefault();
-					e.stopImmediatePropagation();
-					erreurEtape( 'voile', next.closest( '.jet-form-builder__next-page-wrap' ), v2i18n.erreurVoile || 'Indiquez votre matériel pour continuer.' );
-					return;
-				}
-
-				// Taille / P.T.V. : ni l'un ni l'autre n'est requis seul (un secours
-				// n'a pas de taille de voile), mais il en faut au moins un.
-				if ( n === 1 && ! taillePtvValide() ) {
-					e.preventDefault();
-					e.stopImmediatePropagation();
-					erreurEtape(
-						'taillePtv',
-						noteTaillePtv || next.closest( '.jet-form-builder__next-page-wrap' ),
-						v2i18n.erreurTaillePtv || 'Indiquez au moins la taille ou le P.T.V. de votre matériel.',
-						!! noteTaillePtv
-					);
-					return;
-				}
-				effaceErreur( 'taillePtv' );
-
-				if ( n === 2 && nbPrestationsCourant === 0 ) {
+				/* Ordre inversé le 08/09/2026 : étape 1 = prestations, étape 2 =
+				   matériel adapté (voile / secours / sellette selon ce qui est coché,
+				   cf. prestationsCochees()). */
+				if ( n === 1 && nbPrestationsCourant === 0 ) {
 					e.preventDefault();
 					e.stopImmediatePropagation();
 					erreurEtape( 'presta', next.closest( '.jet-form-builder__next-page-wrap' ), v2i18n.erreurPresta || 'Choisissez au moins une prestation pour continuer.' );
 					return;
+				}
+
+				if ( n === 2 ) {
+					var besoin = prestationsCochees();
+					var wrapNext = next.closest( '.jet-form-builder__next-page-wrap' );
+
+					if ( besoin.voile && ! voileValide() ) {
+						e.preventDefault();
+						e.stopImmediatePropagation();
+						erreurEtape( 'voile', wrapNext, v2i18n.erreurVoile || 'Indiquez votre matériel pour continuer.' );
+						return;
+					}
+
+					// Taille / P.T.V. : ni l'un ni l'autre n'est requis seul, mais il
+					// en faut au moins un pour une voile.
+					if ( besoin.voile && ! taillePtvValide() ) {
+						e.preventDefault();
+						e.stopImmediatePropagation();
+						erreurEtape(
+							'taillePtv',
+							noteTaillePtv || wrapNext,
+							v2i18n.erreurTaillePtv || 'Indiquez au moins la taille ou le P.T.V. de votre matériel.',
+							!! noteTaillePtv
+						);
+						return;
+					}
+					effaceErreur( 'taillePtv' );
+
+					if ( besoin.voile && '' === valeurChamp( champs.couleur || 'couleur_copy' ) ) {
+						e.preventDefault();
+						e.stopImmediatePropagation();
+						erreurEtape( 'couleur', wrapNext, v2i18n.erreurCouleur || 'Sélectionnez au moins une couleur de votre voile.' );
+						return;
+					}
+					effaceErreur( 'couleur' );
+
+					if ( besoin.secours && ( '' === valeurChamp( 'secours_marque' ) || '' === valeurChamp( 'secours_modele' ) ) ) {
+						e.preventDefault();
+						e.stopImmediatePropagation();
+						erreurEtape( 'secours', wrapNext, v2i18n.erreurSecours || 'Indiquez la marque et le modèle de votre parachute de secours.' );
+						return;
+					}
+					effaceErreur( 'secours' );
+
+					if ( besoin.sellette && ( '' === valeurChamp( 'sellette_marque' ) || '' === valeurChamp( 'sellette_modele' ) ) ) {
+						e.preventDefault();
+						e.stopImmediatePropagation();
+						erreurEtape( 'sellette', wrapNext, v2i18n.erreurSellette || 'Indiquez la marque et le modèle de votre sellette.' );
+						return;
+					}
+					effaceErreur( 'sellette' );
+
+					// Pas de voile concernée : on ne transmet aucune donnée de voile
+					// (un choix fait puis abandonné ne doit pas polluer le dossier).
+					if ( ! besoin.voile ) {
+						viderChampsVoile();
+					}
 				}
 
 				if ( n === 3 ) {
@@ -1711,12 +1749,36 @@
 			return rows;
 		}
 
-		/* Le bloc se glisse SOUS la carte cochée (option retenue par Bastien le
-		   08/09/2026 au soir) : sous « Contrôle complet Équipement » avec les deux
-		   groupes, sous un pliage de secours avec le groupe secours seul. Les
-		   lignes du formulaire sont déplacées dans le bloc (mêmes inputs, JFB les
-		   retrouve par leur nom), les libellés perdent leur préfixe au profit
-		   d'un sous-titre par groupe. */
+		/**
+		 * Ce que le matériel de l'étape 2 doit décrire, d'après l'étape 1
+		 * (miroir PHP : gacct_demande_materiel_requis).
+		 */
+		function prestationsCochees() {
+			var voile = false, secours = false, sellette = false;
+			fieldInputs( 'revisions_controle' ).forEach( function ( el ) {
+				if ( el.type !== 'checkbox' || ! el.checked ) { return; }
+				if ( equipIds.indexOf( String( el.value ) ) > -1 ) { secours = true; sellette = true; } else { voile = true; }
+			} );
+			fieldInputs( 'suspentes_travaux' ).forEach( function ( el ) {
+				if ( el.type === 'checkbox' && el.checked ) { voile = true; }
+			} );
+			fieldInputs( 'pliages_secours' ).forEach( function ( el ) {
+				if ( el.type === 'checkbox' && el.checked ) { secours = true; }
+			} );
+			return { voile: voile, secours: secours, sellette: sellette };
+		}
+
+		function viderChampsVoile() {
+			[ 'marque', 'modele', 'taille', 'ptv', 'numero_serie', champs.couleur || 'couleur_copy' ].forEach( function ( nom ) {
+				var el = form.querySelector( '[name="' + nom + '"]' );
+				if ( el ) { el.value = ''; }
+			} );
+			if ( voile ) { voile.choisie = false; }
+		}
+
+		/* Bloc « équipement » de l'étape 2 : deux groupes (sellette, secours)
+		   construits une fois à partir des 7 lignes JFB, placés après le bloc
+		   voile. Libellés raccourcis au profit d'un sous-titre par groupe. */
 		var equipBloc = null;
 
 		function equipConstruire() {
@@ -1732,13 +1794,8 @@
 			equipBloc.className = 'gacct-v2-equip-bloc';
 			equipBloc.hidden = true;
 
-			var intro = document.createElement( 'p' );
-			intro.className = 'gacct-v2-equip-intro';
-			intro.textContent = v2i18n.equipIntro || 'Décrivez le matériel concerné : nous préparons votre rapport avec ces informations.';
-			equipBloc.appendChild( intro );
-
-			[ [ 'sellette', rowsS, v2i18n.equipSellette || 'Votre sellette', /^Sellette\s*:\s*/i ],
-			  [ 'secours', rowsP, v2i18n.equipSecours || 'Votre parachute de secours', /^Parachute de secours\s*:\s*/i ] ].forEach( function ( g ) {
+			[ [ 'secours', rowsP, v2i18n.equipSecours || 'Votre parachute de secours', /^Parachute de secours\s*:\s*/i ],
+			  [ 'sellette', rowsS, v2i18n.equipSellette || 'Votre sellette', /^Sellette\s*:\s*/i ] ].forEach( function ( g ) {
 				if ( ! g[ 1 ].length ) {
 					return;
 				}
@@ -1761,55 +1818,54 @@
 				groupe.appendChild( grille );
 				equipBloc.appendChild( groupe );
 			} );
+
+			var stepVoile = form.querySelector( '.gacct-v2-step--voile' );
+			if ( stepVoile ) {
+				stepVoile.appendChild( equipBloc );
+			} else {
+				form.appendChild( equipBloc );
+			}
 			return equipBloc;
 		}
 
-		function equipCarte( input ) {
-			return input ? input.closest( '.jet-form-builder__field-wrap' ) : null;
+		/** Lignes du bloc voile (à masquer quand aucune voile n'est concernée). */
+		function lignesVoile() {
+			var out = [];
+			[ '.gacct-v2-voile', '.gacct-materiel', '.gacct-v2-grille-2', '.gacct-couleurs-row' ].forEach( function ( sel ) {
+				form.querySelectorAll( '.gacct-v2-step--voile ' + sel ).forEach( function ( el ) { out.push( el ); } );
+			} );
+			var serie = ligneDuChamp( 'numero_serie' );
+			if ( serie ) { out.push( serie ); }
+			if ( noteTaillePtv ) { out.push( noteTaillePtv ); }
+			return out;
 		}
 
 		function majEquipement() {
 			var bloc = equipConstruire();
-			if ( ! bloc ) {
-				return;
-			}
-			var carteEquip = null;
-			fieldInputs( 'revisions_controle' ).forEach( function ( el ) {
-				if ( el.type === 'checkbox' && el.checked && equipIds.indexOf( String( el.value ) ) > -1 ) {
-					carteEquip = equipCarte( el );
-				}
-			} );
-			var cartePliage = null;
-			fieldInputs( 'pliages_secours' ).forEach( function ( el ) {
-				if ( el.type === 'checkbox' && el.checked ) {
-					cartePliage = equipCarte( el );
-				}
-			} );
+			var besoin = prestationsCochees();
 
-			var cible = carteEquip || cartePliage;
-			var groupeS = bloc.querySelector( '.gacct-v2-equip-groupe-sellette' );
-			var groupeP = bloc.querySelector( '.gacct-v2-equip-groupe-secours' );
+			lignesVoile().forEach( function ( el ) { el.hidden = ! besoin.voile; } );
 
-			if ( groupeS ) {
-				groupeS.hidden = ! carteEquip;
-				if ( ! carteEquip ) {
-					groupeS.querySelectorAll( 'input' ).forEach( function ( i ) { i.value = ''; } );
+			if ( bloc ) {
+				var groupeS = bloc.querySelector( '.gacct-v2-equip-groupe-sellette' );
+				var groupeP = bloc.querySelector( '.gacct-v2-equip-groupe-secours' );
+				if ( groupeS ) {
+					groupeS.hidden = ! besoin.sellette;
+					if ( ! besoin.sellette ) { groupeS.querySelectorAll( 'input' ).forEach( function ( i ) { i.value = ''; } ); }
 				}
-			}
-			if ( groupeP ) {
-				groupeP.hidden = ! cible;
-				if ( ! cible ) {
-					groupeP.querySelectorAll( 'input' ).forEach( function ( i ) { i.value = ''; } );
+				if ( groupeP ) {
+					groupeP.hidden = ! besoin.secours;
+					if ( ! besoin.secours ) { groupeP.querySelectorAll( 'input' ).forEach( function ( i ) { i.value = ''; } ); }
 				}
+				bloc.hidden = ! ( besoin.secours || besoin.sellette );
 			}
 
-			if ( cible ) {
-				if ( bloc.previousElementSibling !== cible ) {
-					cible.parentNode.insertBefore( bloc, cible.nextSibling );
-				}
-				bloc.hidden = false;
-			} else {
-				bloc.hidden = true;
+			// Sous-titre de l'étape 2 selon le matériel attendu.
+			var sousTitre = form.querySelector( '.gacct-v2-step--voile .gacct-v2-sous-titre' );
+			if ( sousTitre ) {
+				sousTitre.textContent = besoin.voile
+					? ( v2i18n.materielVoile || 'Tapez la marque ou le modèle de votre voile, ou choisissez « Mon matériel n’est pas dans la liste ».' )
+					: ( v2i18n.materielEquip || 'Décrivez le matériel concerné par vos prestations.' );
 			}
 		}
 
@@ -1817,14 +1873,14 @@
 			var t = e.target;
 			if ( t && t.type === 'checkbox' ) {
 				var n = t.getAttribute( 'data-field-name' ) || t.name || '';
-				if ( /revisions_controle|pliages_secours/.test( n ) ) {
+				if ( /revisions_controle|pliages_secours|suspentes_travaux/.test( n ) ) {
 					majEquipement();
 				}
 			}
 		} );
-		// Le clic sur une carte est aussi géré par le template Crocoblock (cocher
-		// sans passer par un vrai « change ») : on resynchronise après coup.
-		form.addEventListener( 'click', function () { setTimeout( majEquipement, 0 ); } );
+		if ( window.jQuery ) {
+			window.jQuery( document ).on( 'jet-form-builder/switch-page', function () { setTimeout( majEquipement, 0 ); } );
+		}
 		setTimeout( majEquipement, 0 );
 
 		/* --- Choix unique décochable : une case cochée décoche ses sœurs.
@@ -2363,9 +2419,22 @@
 			if ( valeurChamp( champs.couleur || 'couleur_copy' ) ) {
 				sousInfos.push( sprintf1( v2i18n.couleursAbr || 'Couleurs : %s', valeurChamp( champs.couleur || 'couleur_copy' ) ) );
 			}
-			var voileHtml =
-				'<strong>' + escapeHtml( ( marque + ' ' + modele ).trim() || '–' ) + '</strong>' +
-				( sousInfos.length ? '<small>' + escapeHtml( sousInfos.join( ' · ' ) ) + '</small>' : '' );
+			var besoinRecap = prestationsCochees();
+			var voileHtml = '';
+			if ( besoinRecap.voile ) {
+				voileHtml +=
+					'<strong>' + escapeHtml( ( marque + ' ' + modele ).trim() || '–' ) + '</strong>' +
+					( sousInfos.length ? '<small>' + escapeHtml( sousInfos.join( ' · ' ) ) + '</small>' : '' );
+			}
+			[ [ 'secours', besoinRecap.secours, v2i18n.recapSecours || 'Secours', [ 'secours_marque', 'secours_modele', 'secours_taille', 'secours_date' ] ],
+			  [ 'sellette', besoinRecap.sellette, v2i18n.recapSellette || 'Sellette', [ 'sellette_marque', 'sellette_modele', 'sellette_taille' ] ] ].forEach( function ( g ) {
+				if ( ! g[ 1 ] ) { return; }
+				var vals = g[ 3 ].map( valeurChamp ).filter( function ( v ) { return '' !== v; } );
+				voileHtml += '<span style="display:block">' + escapeHtml( g[ 2 ] ) + ' : <strong>' + escapeHtml( vals.join( ' · ' ) || '–' ) + '</strong></span>';
+			} );
+			if ( ! voileHtml ) {
+				voileHtml = '–';
+			}
 
 			// Prestations : « titre × qty », prix × qty, sous-ligne supplément biplace.
 			var prestaHtml = '';
@@ -2410,8 +2479,8 @@
 			} );
 
 			recap.innerHTML =
-				recapRow( v2i18n.recapVoile || 'Votre voile', voileHtml, 1 ) +
-				recapRow( v2i18n.recapPrestas || 'Prestations', prestaHtml, 2 ) +
+				recapRow( v2i18n.recapPrestas || 'Prestations', prestaHtml, 1 ) +
+				recapRow( v2i18n.recapVoile || 'Votre matériel', voileHtml, 2 ) +
 				recapRow( v2i18n.recapDate || 'Date', escapeHtml( dateEnToutesLettres() || '–' ), 3 ) +
 				recapRow( v2i18n.recapRetour || 'Retour', retourHtml, 3 ) +
 				'<div class="gacct-v2-total"><span>' + escapeHtml( v2i18n.total || 'Total' ) + '</span><strong>' +

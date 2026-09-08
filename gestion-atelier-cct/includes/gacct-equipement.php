@@ -141,3 +141,17 @@ function gacct_equip_label( array $revision, $kind ) {
 
 	return implode( ' · ', $parts );
 }
+
+/**
+ * Libellé de repli d'un dossier SANS voile (pliage de secours seul, contrôle
+ * équipement) : secours puis sellette. '' si rien n'est décrit.
+ */
+function gacct_equip_materiel_fallback( array $row ) {
+	foreach ( array( 'secours' => __( 'Secours', 'gestion-atelier-cct' ), 'sellette' => __( 'Sellette', 'gestion-atelier-cct' ) ) as $kind => $prefix ) {
+		$label = gacct_equip_label( $row, $kind );
+		if ( '' !== $label ) {
+			return $prefix . ' ' . $label;
+		}
+	}
+	return '';
+}

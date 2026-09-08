@@ -663,6 +663,12 @@ function gacct_dash_materiel_label( array $row ) {
 		)
 	);
 
+	// Dossier sans voile (pliage de secours seul, contrôle équipement) : le
+	// secours ou la sellette décrits à la demande servent de libellé (08/09/2026).
+	if ( empty( $parts ) && function_exists( 'gacct_equip_materiel_fallback' ) ) {
+		return gacct_equip_materiel_fallback( $row );
+	}
+
 	return implode( ' · ', $parts );
 }
 
