@@ -619,8 +619,10 @@
 
 					// Pas de voile concernée : on ne transmet aucune donnée de voile
 					// (un choix fait puis abandonné ne doit pas polluer le dossier).
+					// APRES la validation JetFormBuilder du clic (sinon un champ voile
+					// vidé pendant le clic bloque le passage de page).
 					if ( ! besoin.voile ) {
-						viderChampsVoile();
+						setTimeout( viderChampsVoile, 60 );
 					}
 				}
 
@@ -1810,7 +1812,8 @@
 				g[ 1 ].forEach( function ( r ) {
 					var label = r.row.querySelector( '.jet-form-builder__label-text' ) || r.row.querySelector( 'label' );
 					if ( label && ! label.dataset.gacctCourt ) {
-						label.textContent = label.textContent.replace( g[ 3 ], '' );
+						var court = label.textContent.replace( g[ 3 ], '' ).trim();
+						label.textContent = court.charAt( 0 ).toUpperCase() + court.slice( 1 );
 						label.dataset.gacctCourt = '1';
 					}
 					grille.appendChild( r.row );

@@ -85,6 +85,12 @@ function gacct_dash_texts() {
 		/* translators: %s: lien vers le détail de la commande */
 		'expedition_track_ask'  => __( 'Dès l’envoi, renseignez votre numéro de suivi depuis %s.', 'gestion-atelier-cct' ),
 		'expedition_track_ask_link' => __( 'le détail de votre commande', 'gestion-atelier-cct' ),
+		// Dépôt à la boutique déclaré (08/09/2026) : la carte ne réclame plus d’envoi.
+		'expedition_depot_title' => __( 'Matériel déposé à la boutique', 'gestion-atelier-cct' ),
+		'expedition_depot_text'  => __( '%1$s. Votre créneau du %2$s reste réservé : l’atelier prendra votre matériel en charge à cette date.', 'gestion-atelier-cct' ),
+		'expedition_depot_text_solo' => __( '%s. Votre créneau reste réservé.', 'gestion-atelier-cct' ),
+		'expedition_depot_cta'   => __( 'Voir ma confirmation de commande', 'gestion-atelier-cct' ),
+		'expedition_depot_note'  => __( 'Une erreur de date ? Modifiez la déclaration ci-dessous, ou prévenez-nous.', 'gestion-atelier-cct' ),
 		/* translators: 1: transporteur, 2: numéro de suivi */
 		'expedition_track_done' => __( 'Colis %1$s n° %2$s annoncé.', 'gestion-atelier-cct' ),
 		'expedition_track_follow' => __( 'Suivre', 'gestion-atelier-cct' ),
@@ -1055,19 +1061,26 @@ function gacct_dash_action_expedition( $order, array $conf, array $row = array()
 		'guide_url'        => isset( $links['packing_guide'] ) ? (string) $links['packing_guide'] : '',
 	);
 
+	$is_depot = ( $ship && ! empty( $ship['depot'] ) );
+	if ( $is_depot ) {
+		$text = ! empty( $conf['slot_label'] )
+			? sprintf( gacct_dash_text( 'expedition_depot_text' ), '<span class="hl">' . esc_html( $ship['label'] ) . '</span>', esc_html( (string) $conf['slot_label'] ) )
+			: sprintf( gacct_dash_text( 'expedition_depot_text_solo' ), '<span class="hl">' . esc_html( $ship['label'] ) . '</span>' );
+	}
+
 	return array(
 		'ship_html' => $ship_html,
-		'instr'     => $instr,
+		'instr'     => $is_depot ? array() : $instr, // dépôt déclaré : le CTA mène à la confirmation, pas aux instructions d’envoi
 		'type'      => 'expedition',
-		'title'     => gacct_dash_text( 'expedition_title' ),
+		'title'     => gacct_dash_text( $is_depot ? 'expedition_depot_title' : 'expedition_title' ),
 		'text_html' => $text,
-		'note'      => gacct_dash_text( 'expedition_note' ),
-		'chip'      => $parcel_ts ? gacct_dash_chip_days( max( 0, $days ) ) : '',
+		'note'      => gacct_dash_text( $is_depot ? 'expedition_depot_note' : 'expedition_note' ),
+		'chip'      => ( $parcel_ts && ! $is_depot ) ? gacct_dash_chip_days( max( 0, $days ) ) : '',
 		'url'       => $order->get_checkout_order_received_url(),
-		'cta_label' => gacct_dash_text( 'expedition_cta' ),
-		'cta_style' => 'primary',
+		'cta_label' => gacct_dash_text( $is_depot ? 'expedition_depot_cta' : 'expedition_cta' ),
+		'cta_style' => $is_depot ? 'ghost' : 'primary',
 		'icon'      => 'truck',
-		'urgent'    => gacct_dash_action_urgent( 'expedition', ( $parcel_ts && $days <= 2 ), array( 'days' => $days, 'parcel_ts' => $parcel_ts, 'slot_ts' => $slot_ts ) ),
+		'urgent'    => gacct_dash_action_urgent( 'expedition', ( ! $is_depot && $parcel_ts && $days <= 2 ), array( 'days' => $days, 'parcel_ts' => $parcel_ts, 'slot_ts' => $slot_ts, 'depot' => $is_depot ) ),
 		'sort_ts'   => $parcel_ts ? $parcel_ts : time(),
 	);
 }

@@ -237,7 +237,10 @@
 	   reconstruit « Commander · <total> » après lui, en lisant le total du résumé. */
 	function syncSubmit() {
 		var btn = document.getElementById('place_order');
-		var total = document.querySelector('.at-rev-total td');
+		/* Montant a payer AUJOURD'HUI : l'acompte (ligne Kojito .at-rev-acompte) quand
+		   il existe, sinon le total (08/09/2026 : le bouton affichait 230 EUR pour un
+		   acompte de 60 EUR). */
+		var total = document.querySelector('.at-rev-acompte td') || document.querySelector('.at-rev-total td');
 		if (!btn || !total) { return; }
 		var sprite = (window.AT_CART && AT_CART.sprite) || '';
 		btn.innerHTML =

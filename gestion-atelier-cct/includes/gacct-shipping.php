@@ -117,6 +117,7 @@ function gacct_ship_texts() {
 		'depot_hint'     => __( 'Vous déposez votre matériel vous-même ? Choisissez « Dépôt à la boutique » et indiquez la date : votre créneau reste réservé, même si le dépôt a lieu la veille ou le week-end.', 'gestion-atelier-cct' ),
 		'err_date'       => __( 'Indiquez la date de votre dépôt à la boutique.', 'gestion-atelier-cct' ),
 		'ok_saved'       => __( 'Merci, votre numéro de suivi est enregistré.', 'gestion-atelier-cct' ),
+		'ok_saved_depot' => __( 'Merci, votre dépôt à la boutique est noté : votre créneau reste réservé.', 'gestion-atelier-cct' ),
 		'err_carrier'    => __( 'Choisissez un transporteur dans la liste.', 'gestion-atelier-cct' ),
 		'err_number'     => __( 'Le numéro de suivi doit comporter de 4 à 40 caractères (lettres, chiffres, tirets, espaces).', 'gestion-atelier-cct' ),
 		'err_state'      => __( 'Votre matériel a déjà été réceptionné à l’atelier : le suivi n’est plus modifiable.', 'gestion-atelier-cct' ),
@@ -449,7 +450,7 @@ function gacct_ship_handle_post() {
 		gacct_ship_redirect( 'error_' . $result->get_error_code(), $order );
 	}
 
-	gacct_ship_redirect( 'saved', $order );
+	gacct_ship_redirect( gacct_ship_is_depot( $carrier ) ? 'saved_depot' : 'saved', $order );
 }
 
 /**
@@ -509,10 +510,14 @@ function gacct_ship_notice_html( $order_id = 0 ) {
 	if ( 'saved' === $code ) {
 		return '<p class="gacct-ship-notice is-success">' . esc_html( gacct_ship_text( 'ok_saved' ) ) . '</p>';
 	}
+	if ( 'saved_depot' === $code ) {
+		return '<p class="gacct-ship-notice is-success">' . esc_html( gacct_ship_text( 'ok_saved_depot' ) ) . '</p>';
+	}
 
 	$map = array(
 		'error_carrier'  => 'err_carrier',
 		'error_number'   => 'err_number',
+		'error_date'     => 'err_date',
 		'error_state'    => 'err_state',
 		'error_auth'     => 'err_auth',
 		'error_revision' => 'err_generic',

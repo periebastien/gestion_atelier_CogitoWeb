@@ -129,8 +129,19 @@ function gacct_nom_complet_facturation() {
     $user_id = get_current_user_id();
     $prenom = get_user_meta($user_id, 'billing_first_name', true);
     $nom = get_user_meta($user_id, 'billing_last_name', true);
+    $nom_complet = trim($prenom . ' ' . $nom);
 
-    return esc_html(trim($prenom . ' ' . $nom));
+    // Nouveau compte sans facturation encore renseignée (08/09/2026) : prénom /
+    // nom du profil WordPress, puis nom affiché, plutôt qu'une carte vide.
+    if ( '' === $nom_complet ) {
+        $user        = get_userdata( $user_id );
+        $nom_complet = $user ? trim( $user->first_name . ' ' . $user->last_name ) : '';
+        if ( '' === $nom_complet && $user ) {
+            $nom_complet = $user->display_name;
+        }
+    }
+
+    return esc_html($nom_complet);
 }
 
 /*
@@ -699,8 +710,11 @@ function jwcct_render_order_status_tracker( $value, $order_id = 0 ) {
 
         if ( $transit ) {
             $ship_texts = gacct_ship_texts();
-            $s['label'] = $ship_texts['in_transit'];
-            $s['tip']   = sprintf( $ship_texts['in_transit_tip'], $transit['carrier_label'], $transit['number'] );
+            // Dépôt à la boutique déclaré : libellé et info-bulle dédiés (08/09/2026).
+            $s['label'] = ! empty( $transit['status_label'] ) ? $transit['status_label'] : $ship_texts['in_transit'];
+            $s['tip']   = ! empty( $transit['depot'] )
+                ? '<strong>Info :</strong> ' . esc_html( $transit['label'] ) . '. ' . esc_html__( 'Votre créneau reste réservé.', 'gestion-atelier-cct' )
+                : sprintf( $ship_texts['in_transit_tip'], $transit['carrier_label'], $transit['number'] );
         }
     }
 
