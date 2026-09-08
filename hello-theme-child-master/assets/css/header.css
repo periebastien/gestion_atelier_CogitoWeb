@@ -573,3 +573,41 @@
 	background: #1a1a1a;
 	color: #fff;
 }
+
+/* ── Tiroir mobile client : la croix de fermeture en haut à droite ────────
+   (08/09/2026, retour Bastien). JetMenu rend la croix (`.jet-mobile-menu__back`
+   dans `.jet-mobile-menu__controls`) SOUS le template d'en-tête (970 : carte
+   du compte + « Nouvelle intervention »), donc au milieu du tiroir. On la sort
+   du flux : contrôles en absolu dans l'angle haut droit du tiroir, l'en-tête
+   descend d'autant pour ne pas passer dessous. Le menu client n'a pas de
+   sous-niveaux : les fils d'Ariane et le « retour » ne sont jamais rendus. */
+.ar-mob-jetburger .jet-mobile-menu__container-inner {
+	position: relative;
+	padding-top: 48px;
+}
+.ar-mob-jetburger .jet-mobile-menu__controls {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	margin: 0;
+	padding: 0;
+	z-index: 3;
+	display: flex;
+	justify-content: flex-end;
+}
+.ar-mob-jetburger .jet-mobile-menu__controls .jet-mobile-menu__back {
+	width: 40px;
+	height: 40px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 10px;
+	cursor: pointer;
+}
+.ar-mob-jetburger .jet-mobile-menu__controls .jet-mobile-menu__back:hover {
+	background: rgba(0, 0, 0, 0.05);
+}
+.ar-mob-jetburger .jet-mobile-menu__controls .jet-mobile-menu__back svg {
+	width: 18px;
+	height: 18px;
+}

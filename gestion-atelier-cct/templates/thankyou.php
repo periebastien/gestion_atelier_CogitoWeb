@@ -654,6 +654,7 @@ $notice      = gacct_conf_notice();
 									<p class="step-txt">
 										<?php esc_html_e( 'L’acompte réserve ce créneau pour vous : si le matériel ne nous est pas parvenu la veille au soir, le créneau est libéré et l’acompte reste acquis à l’atelier, car cette place ne peut plus être proposée à un autre client. Un imprévu d’expédition ? Prévenez-nous avant la date, nous en tiendrons compte.', 'gestion-atelier-cct' ); ?>
 									</p>
+										<p class="step-txt"><?php esc_html_e( 'Vous déposez votre matériel vous-même à la boutique, même la veille ou le week-end ? Déclarez-le ci-dessous en choisissant « Dépôt à la boutique » : votre créneau reste réservé.', 'gestion-atelier-cct' ); ?></p>
 									<?php if ( function_exists( 'gacct_ship_render_form' ) ) : ?>
 										<?php echo gacct_ship_render_form( $order, array( 'intro' => false ) ); // phpcs:ignore WordPress.Security.EscapeOutput -- HTML construit et échappé par le module shipping. ?>
 									<?php endif; ?>
