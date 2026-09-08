@@ -304,6 +304,54 @@ function gacct_conf_links( $order ) {
  *  Garde-fou anti-abus : un envoi par action et par commande toutes les 5 min.
  * ============================================================================= */
 
+/* =============================================================================
+ *  Retour sur la page de confirmation d'une commande payée par carte (CAWL)
+ * -----------------------------------------------------------------------------
+ *  Le plugin CAWL (Worldline) accroche `wlop_order_received_page` (déclenché par
+ *  son propre hook `wp`, priorité 5) et LÈVE UNE EXCEPTION FATALE dès
+ *  que l'URL ne porte pas le paramètre `hostedCheckoutId` du retour de
+ *  paiement. Or notre espace client renvoie le client sur cette page bien après
+ *  (« Voir les instructions d'envoi », e-mail paiement reçu) : écran blanc
+ *  « erreur critique » (08/09/2026, commande 2345).
+ *
+ *  Une fois la transaction enregistrée (`_wlop_transaction_id`), ce traitement
+ *  n'a plus rien à faire : on le débranche pour les visites sans
+ *  `hostedCheckoutId`. Le retour initial de Worldline, lui, porte toujours le
+ *  paramètre et reste traité normalement.
+ * ============================================================================= */
+
+add_action( 'wp', 'gacct_conf_neutralise_cawl_revisit', 4 );
+
+function gacct_conf_neutralise_cawl_revisit() {
+	if ( ! function_exists( 'is_order_received_page' ) || ! is_order_received_page() ) {
+		return;
+	}
+
+	// phpcs:disable WordPress.Security.NonceVerification
+	if ( '' !== (string) get_query_var( 'hostedCheckoutId' ) || ! empty( $_GET['hostedCheckoutId'] ) ) {
+		return;
+	}
+
+	$key = isset( $_GET['key'] ) ? sanitize_text_field( wp_unslash( $_GET['key'] ) ) : '';
+	// phpcs:enable WordPress.Security.NonceVerification
+
+	$order = $key ? wc_get_order( wc_get_order_id_by_order_key( $key ) ) : false;
+
+	if ( ! $order instanceof WC_Order ) {
+		return;
+	}
+
+	if ( 0 !== strpos( (string) $order->get_payment_method(), 'cawl' ) ) {
+		return;
+	}
+
+	if ( '' === (string) $order->get_meta( '_wlop_transaction_id' ) ) {
+		return;
+	}
+
+	remove_all_actions( 'wlop_order_received_page' );
+}
+
 add_action( 'template_redirect', 'gacct_conf_handle_action', 5 );
 
 function gacct_conf_handle_action() {
