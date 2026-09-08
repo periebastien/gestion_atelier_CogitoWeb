@@ -1081,3 +1081,16 @@
 		margin: -6px 0 12px;
 	}
 }
+
+/* Champs sellette / secours (08/09/2026) : masqués tant qu'aucun Contrôle
+   complet Équipement ni pliage de secours n'est coché. La règle `.gacct-v2
+   .jet-form-builder-row { display: … }` ci-dessus écrasait l'attribut
+   `hidden` posé par demande-v2.js : on le rend prioritaire. */
+.gacct-v2 .jet-form-builder-row[hidden],
+.gacct-v2 .gacct-v2-equip-titre[hidden] {
+	display: none !important;
+}
+.gacct-v2 .gacct-v2-equip-titre {
+	margin: 18px 0 6px;
+	font-weight: 800;
+}
