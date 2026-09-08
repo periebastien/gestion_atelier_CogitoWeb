@@ -262,6 +262,104 @@ function gacct_op_trim_admin_bar( $wp_admin_bar ) {
 }
 add_action( 'admin_bar_menu', 'gacct_op_trim_admin_bar', 999 );
 
+/* =============================================================================
+ *  MODE TABLETTE (08/09/2026) : un opérateur pur ne voit QUE la console.
+ *  Décision Bastien : les opérateurs travaillent chacun sur une tablette,
+ *  rien de WordPress ne doit les distraire (avis des plugins, onglets « Aide »
+ *  et « Options de l'écran », pied de page, menu latéral déplié).
+ * ============================================================================= */
+
+/**
+ * Aucun avis d'administration (mises à jour, plugins, WooCommerce…) pour le
+ * rôle atelier : la console a ses propres zones de retour.
+ */
+function gacct_op_tablet_silence_notices() {
+	if ( ! gacct_op_is_pure_operator() ) {
+		return;
+	}
+
+	foreach ( array( 'admin_notices', 'all_admin_notices', 'user_admin_notices', 'network_admin_notices' ) as $hook ) {
+		remove_all_actions( $hook );
+	}
+}
+add_action( 'admin_head', 'gacct_op_tablet_silence_notices', 0 );
+add_action( 'in_admin_header', 'gacct_op_tablet_silence_notices', 0 );
+
+/**
+ * Pas d'onglets « Aide » ni « Options de l'écran », pas de pied de page WordPress.
+ */
+add_filter( 'screen_options_show_screen', function ( $show ) {
+	return gacct_op_is_pure_operator() ? false : $show;
+} );
+
+add_action( 'current_screen', function ( $screen ) {
+	if ( gacct_op_is_pure_operator() && $screen instanceof WP_Screen ) {
+		$screen->remove_help_tabs();
+	}
+}, 999 );
+
+add_filter( 'admin_footer_text', function ( $text ) {
+	return gacct_op_is_pure_operator() ? '' : $text;
+}, 999 );
+
+add_filter( 'update_footer', function ( $text ) {
+	return gacct_op_is_pure_operator() ? '' : $text;
+}, 999 );
+
+/**
+ * Menu latéral replié (icône seule) : la console occupe toute la largeur de
+ * la tablette, la navigation se fait par la barre d'onglets de la console.
+ */
+add_filter( 'admin_body_class', function ( $classes ) {
+	return gacct_op_is_pure_operator() ? $classes . ' folded gacct-op-tablet' : $classes;
+} );
+
+/**
+ * Barre d'admin réduite au strict nécessaire : nom du site (retour au site)
+ * et menu du compte (mot de passe, déconnexion).
+ */
+add_action( 'admin_bar_menu', function ( $wp_admin_bar ) {
+	if ( ! gacct_op_is_pure_operator() ) {
+		return;
+	}
+	foreach ( array( 'view-site', 'archive', 'my-sites', 'user-info' ) as $node ) {
+		$wp_admin_bar->remove_node( $node );
+	}
+}, 1000 );
+
+/**
+ * Session longue sur la tablette de l'opérateur : 30 jours (au lieu de 2 jours,
+ * 14 avec « Se souvenir de moi »), pour ne pas ressaisir le mot de passe chaque
+ * matin. La tablette est individuelle (décision du 08/09/2026).
+ */
+add_filter( 'auth_cookie_expiration', function ( $length, $user_id, $remember ) {
+	$user = get_user_by( 'id', $user_id );
+
+	if ( $user && gacct_op_is_pure_operator( $user ) ) {
+		return (int) apply_filters( 'gacct_op_session_days', 30 ) * DAY_IN_SECONDS;
+	}
+
+	return $length;
+}, 10, 3 );
+
+/**
+ * Sur la tablette, l'onglet du navigateur porte le nom de la console et la
+ * couleur d'interface, pour l'épingler sur l'écran d'accueil.
+ */
+add_action( 'admin_head', function () {
+	if ( ! gacct_op_is_pure_operator() ) {
+		return;
+	}
+	echo '<meta name="theme-color" content="#1d2327">' . "\n";
+	echo '<meta name="apple-mobile-web-app-capable" content="yes">' . "\n";
+	echo '<meta name="apple-mobile-web-app-title" content="' . esc_attr__( 'Console atelier', 'gestion-atelier-cct' ) . '">' . "\n";
+	echo '<meta name="mobile-web-app-capable" content="yes">' . "\n";
+} );
+
+add_filter( 'admin_title', function ( $admin_title, $title ) {
+	return gacct_op_is_pure_operator() ? $title . ' · ' . __( 'Console atelier', 'gestion-atelier-cct' ) : $admin_title;
+}, 10, 2 );
+
 /**
  * Assets de la console (uniquement sur son écran).
  */
