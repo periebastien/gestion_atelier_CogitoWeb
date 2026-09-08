@@ -32,7 +32,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Version du schéma : incrémentée à chaque évolution de la table.
  */
 function gacct_historique_db_version() {
-	return 3;
+	return 4;
 }
 
 function gacct_historique_table() {
@@ -75,6 +75,10 @@ function gacct_historique_maybe_install() {
 			cree_le DATETIME NOT NULL,
 			revision_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
 			type_materiel VARCHAR(20) NOT NULL DEFAULT '',
+			avec_secours TINYINT(1) NOT NULL DEFAULT 0,
+			secours_marque VARCHAR(100) NOT NULL DEFAULT '',
+			secours_modele VARCHAR(150) NOT NULL DEFAULT '',
+			secours_taille VARCHAR(50) NOT NULL DEFAULT '',
 			PRIMARY KEY  (id),
 			UNIQUE KEY ancien_id (ancien_id),
 			KEY user_id (user_id),
@@ -82,7 +86,8 @@ function gacct_historique_maybe_install() {
 			KEY marque_modele (marque, modele),
 			KEY ancien_client_id (ancien_client_id),
 			KEY revision_id (revision_id),
-			KEY type_materiel (type_materiel)
+			KEY type_materiel (type_materiel),
+			KEY avec_secours (avec_secours)
 		) {$charset};"
 	);
 
@@ -217,7 +222,7 @@ function gacct_historique_client( $user_id = 0, $recherche = '', $type = '' ) {
 	// Type de materiel (09/09/2026) : 'voile' ('' = non classe, traite comme
 	// une voile) ou 'secours'.
 	if ( 'secours' === $type ) {
-		$sql .= " AND type_materiel = 'secours'";
+		$sql .= " AND (type_materiel = 'secours' OR avec_secours = 1)";
 	} elseif ( 'voile' === $type ) {
 		$sql .= " AND type_materiel <> 'secours'";
 	}
@@ -237,9 +242,9 @@ function gacct_historique_client( $user_id = 0, $recherche = '', $type = '' ) {
  * son secours a la place de la voile). Expressions insensibles a la casse,
  * appliquees a « marque modele ». Filtrable pour completer sans toucher au code.
  *
- * ATTENTION aux homonymes : Gin « Yeti 3/4/5/6 » (voile legere, surface en m2)
- * n'est pas le secours Gin « Yeti UL / Cross / Light » ; Supair « Start » est aussi
- * un nom de sellette. Les motifs sont donc volontairement etroits.
+ * ATTENTION aux homonymes : Supair « Start » est aussi un nom de sellette, les
+ * motifs restent etroits. Gin « Yeti » : Bastien confirme (09/09/2026) que tous
+ * les Yeti passes par l'atelier sont des secours.
  *
  * @return string[] Motifs PCRE sans delimiteurs.
  */
@@ -249,7 +254,7 @@ function gacct_historique_motifs_secours() {
 		// Supair.
 		'\\bshine\\b', '\\bfluid\\b', 'xtralite', 'x-?tra ?lite', 'secours start',
 		// Gin (secours uniquement).
-		'yeti ?(ul|cross|light)', 'yeti ?[0-9]{2,3}\\b',
+		'y[eé]ti', // tous les Yeti passes par l atelier sont des secours (Bastien, 09/09/2026)
 		// Advance, Companion.
 		'\\bsqr\\b', 'sqr ?light', 'sqr ?[0-9]{2,3}', '\\bcompanion\\b',
 		// Adventure.
@@ -260,6 +265,163 @@ function gacct_historique_motifs_secours() {
 		'\\bangel\\b', 'octagon', 'pentagon', 'cures\\b', '\\bsecure\\b', 'protect\\b', 'ultra ?cross', 'annular',
 		'diamond ?cross', 'revolution', '\\bclou\\b', 'beamer', 'pepper ?cross', 'kuik', 'escape\\b', 'rogallo',
 	) );
+}
+
+/**
+ * Modeles de secours reconnaissables dans un texte libre (commentaire d'un
+ * dossier voile + pliage) : motif => [marque, modele]. Filtrable.
+ *
+ * @return array<string,array{0:string,1:string}>
+ */
+function gacct_historique_modeles_secours() {
+	return (array) apply_filters( 'gacct_historique_modeles_secours', array(
+		'yeti ?(ul|cross|light|rescue)?' => array( 'Gin', 'Yeti' ),
+		'\\bshine\\b'                   => array( 'Supair', 'Shine' ),
+		'\\bfluid\\b'                   => array( 'Supair', 'Fluid' ),
+		'x-?tra ?lite'                    => array( 'Supair', 'Xtralite' ),
+		'\\bsqr\\b'                     => array( 'Companion', 'SQR' ),
+		'companion|compagnon|compagnion'  => array( 'Companion', 'SQR' ),
+		'flex[- ]?one'                    => array( 'Adventure', 'Flex-One' ),
+		'mayday'                          => array( 'Apco', 'Mayday' ),
+		'octagon|octogon'                 => array( 'Niviuk', 'Octagon' ),
+		'\\bcires\\b'                   => array( 'Niviuk', 'Cires' ),
+		'pentagon'                        => array( 'Nova', 'Pentagon' ),
+		'beamer'                          => array( 'High Adventure', 'Beamer' ),
+		'pepper ?cross'                   => array( 'Skywalk', 'Pepper Cross' ),
+		'annular'                         => array( 'Independence', 'Annular' ),
+		'\\bangel\\b'                   => array( 'Ozone', 'Angel' ),
+		'diamond ?cross'                  => array( 'Charly', 'Diamond Cross' ),
+		'\\bplum'                         => array( 'Nervures', 'Plum' ),
+		'sky ?syst[eè]me? ?[0-9]?'        => array( 'Sky Paragliders', 'Sky System' ),
+		'\\bkrisis'                       => array( 'Kortel', 'Krisis' ),
+		'\\bnrg\\b'                     => array( 'Apco', 'NRG' ),
+		'\\bmdul\\b'                    => array( 'Apco', 'MDUL' ),
+		'lift ?ez'                        => array( 'Apco', 'Lift EZ' ),
+		'protect'                         => array( 'Swing', 'Protect' ),
+		'back ?up x'                      => array( 'U-Turn', 'Backup X' ),
+		'revolution'                      => array( 'Paramania', 'Revolution' ),
+	) );
+}
+
+/**
+ * Le parachute de secours cite dans un dossier VOILE (voile revisee + secours
+ * plie dans la meme commande de l'ancien site). Signal : le commentaire parle de
+ * pliage / secours. Le modele est nomme quand un motif connu apparait dans le
+ * commentaire, sinon marque et modele restent vides (secours « non precise »).
+ *
+ * @param array $row Ligne (commentaire).
+ * @return array{avec_secours:int,secours_marque:string,secours_modele:string,secours_taille:string}
+ */
+function gacct_historique_detecter_secours_associe( array $row ) {
+	$vide = array( 'avec_secours' => 0, 'secours_marque' => '', 'secours_modele' => '', 'secours_taille' => '' );
+	$c    = remove_accents( strtolower( (string) ( $row['commentaire'] ?? '' ) ) );
+
+	if ( '' === $c || ! preg_match( '/\\b(secours?|pliage|repliage|parachute|rescue)\\b/u', $c ) ) {
+		return $vide;
+	}
+
+	// « pas de secours », « sans secours », « secours neuf, pas besoin » : on ne
+	// compte pas ; « pas de pliage » non plus.
+	if ( preg_match( '/\\b(pas de|sans|aucun|pas besoin|ne pas plier|pas de pliage)\\b[^.]{0,25}\\b(secours|pliage|parachute)/u', $c ) ) {
+		return $vide;
+	}
+
+	$out = $vide;
+	$out['avec_secours'] = 1;
+
+	foreach ( gacct_historique_modeles_secours() as $motif => $mm ) {
+		if ( @preg_match( '/' . $motif . '/u', $c, $m ) ) {
+			$out['secours_marque'] = $mm[0];
+			$out['secours_modele'] = $mm[1];
+			// Complement de modele colle au motif (« Yeti Cross », « SQR 120 », « Shine M »).
+			if ( preg_match( '/' . $motif . '[ -]*((?:ul|cross|light|evo|lite|bi|[0-9]{2,3}|[sml]|xs|xl)\\b)?/u', $c, $m2 ) && ! empty( $m2[ count( $m2 ) - 1 ] ) ) {
+				$suffixe = strtoupper( trim( $m2[ count( $m2 ) - 1 ] ) );
+				if ( false === stripos( $out['secours_modele'], $suffixe ) ) {
+					$out['secours_modele'] .= ' ' . $suffixe;
+				}
+			}
+			break;
+		}
+	}
+
+	return $out;
+}
+
+/**
+ * Decisions manuelles (Bastien / atelier), fichier CSV « ; » :
+ * ancien_id;type;secours_marque;secours_modele;secours_taille
+ *  - type : voile | secours | mixte (mixte = voile + secours plie, les colonnes
+ *    secours_* decrivent le secours). Une ligne vide dans type est ignoree.
+ * Appliquees en dernier par gacct_historique_classer() et par l'import :
+ * elles survivent au rejeu. Chemin filtrable.
+ *
+ * @return array<int,array<string,string>> ancien_id => decision.
+ */
+function gacct_historique_decisions() {
+	static $cache = null;
+	if ( null !== $cache ) {
+		return $cache;
+	}
+	$cache  = array();
+	$chemin = (string) apply_filters( 'gacct_historique_decisions_csv', dirname( ABSPATH ) . '/donnees-claude/analyse-rapports/secours-decisions.csv' );
+	if ( ! $chemin || ! is_readable( $chemin ) ) {
+		return $cache;
+	}
+	$f = fopen( $chemin, 'r' );
+	if ( ! $f ) {
+		return $cache;
+	}
+	$entete = fgetcsv( $f, 0, ';' );
+	if ( ! $entete ) {
+		fclose( $f );
+		return $cache;
+	}
+	$entete = array_map( static function ( $v ) { return strtolower( trim( (string) $v ) ); }, $entete );
+	$idx    = array_flip( $entete );
+	while ( ( $l = fgetcsv( $f, 0, ';' ) ) !== false ) {
+		$id   = isset( $idx['ancien_id'] ) ? (int) ( $l[ $idx['ancien_id'] ] ?? 0 ) : 0;
+		$type = isset( $idx['type'] ) ? strtolower( trim( (string) ( $l[ $idx['type'] ] ?? '' ) ) ) : '';
+		if ( ! $id || ! in_array( $type, array( 'voile', 'secours', 'mixte' ), true ) ) {
+			continue;
+		}
+		$cache[ $id ] = array(
+			'type'           => $type,
+			'secours_marque' => isset( $idx['secours_marque'] ) ? trim( (string) ( $l[ $idx['secours_marque'] ] ?? '' ) ) : '',
+			'secours_modele' => isset( $idx['secours_modele'] ) ? trim( (string) ( $l[ $idx['secours_modele'] ] ?? '' ) ) : '',
+			'secours_taille' => isset( $idx['secours_taille'] ) ? trim( (string) ( $l[ $idx['secours_taille'] ] ?? '' ) ) : '',
+		);
+	}
+	fclose( $f );
+	return $cache;
+}
+
+/**
+ * Classement complet d'une ligne : type + secours associe, decisions manuelles
+ * appliquees en dernier. Utilise par gacct_historique_classer() et l'import.
+ *
+ * @param array $row Ligne (ancien_id, marque, modele, commentaire, montant).
+ * @return array{type_materiel:string,avec_secours:int,secours_marque:string,secours_modele:string,secours_taille:string}
+ */
+function gacct_historique_classer_ligne( array $row ) {
+	$type = gacct_historique_detecter_type( $row );
+	$sec  = 'voile' === $type ? gacct_historique_detecter_secours_associe( $row ) : array( 'avec_secours' => 0, 'secours_marque' => '', 'secours_modele' => '', 'secours_taille' => '' );
+
+	$decisions = gacct_historique_decisions();
+	$ancien_id = (int) ( $row['ancien_id'] ?? 0 );
+	if ( $ancien_id && isset( $decisions[ $ancien_id ] ) ) {
+		$d    = $decisions[ $ancien_id ];
+		$type = 'mixte' === $d['type'] ? 'voile' : $d['type'];
+		$sec  = array(
+			'avec_secours'   => 'mixte' === $d['type'] ? 1 : 0,
+			'secours_marque' => 'mixte' === $d['type'] ? $d['secours_marque'] : '',
+			'secours_modele' => 'mixte' === $d['type'] ? $d['secours_modele'] : '',
+			'secours_taille' => 'mixte' === $d['type'] ? $d['secours_taille'] : '',
+		);
+		// Une decision « secours » peut aussi corriger marque / modele du secours lui-meme :
+		// portee par les colonnes marque / modele de la ligne, hors de ce module (import).
+	}
+
+	return array_merge( array( 'type_materiel' => $type ), $sec );
 }
 
 /**
@@ -301,7 +463,7 @@ function gacct_historique_detecter_type( array $row ) {
  * Relancable sans risque.
  *
  * @param bool $tout Reclasser aussi les lignes deja classees.
- * @return array{lues:int,voile:int,secours:int}
+ * @return array{lues:int,voile:int,secours:int,mixte:int,decisions:int}
  */
 function gacct_historique_classer( $tout = true ) {
 	global $wpdb;
@@ -314,14 +476,25 @@ function gacct_historique_classer( $tout = true ) {
 
 	$table = gacct_historique_table();
 	$where = $tout ? '1=1' : "type_materiel = ''";
-	$rows  = $wpdb->get_results( "SELECT id, marque, modele, commentaire, montant, type_materiel FROM {$table} WHERE {$where}", ARRAY_A );
+	$rows  = $wpdb->get_results( "SELECT id, ancien_id, marque, modele, commentaire, montant, type_materiel, avec_secours, secours_marque, secours_modele, secours_taille FROM {$table} WHERE {$where}", ARRAY_A );
+	$stats['mixte'] = 0;
+	$stats['decisions'] = count( gacct_historique_decisions() );
 
 	foreach ( (array) $rows as $row ) {
-		$type = gacct_historique_detecter_type( $row );
+		$c = gacct_historique_classer_ligne( $row );
 		$stats['lues']++;
-		$stats[ $type ]++;
-		if ( $type !== (string) $row['type_materiel'] ) {
-			$wpdb->update( $table, array( 'type_materiel' => $type ), array( 'id' => (int) $row['id'] ) );
+		$stats[ $c['type_materiel'] ]++;
+		if ( $c['avec_secours'] ) {
+			$stats['mixte']++;
+		}
+		$diff = false;
+		foreach ( $c as $k => $v ) {
+			if ( (string) $v !== (string) $row[ $k ] ) {
+				$diff = true;
+			}
+		}
+		if ( $diff ) {
+			$wpdb->update( $table, $c, array( 'id' => (int) $row['id'] ) );
 		}
 	}
 
@@ -340,18 +513,28 @@ function gacct_historique_secours_client( $user_id = 0 ) {
 	$vus     = array();
 
 	foreach ( gacct_historique_client( $user_id, '', 'secours' ) as $row ) {
-		$cle = gacct_historique_signature_voile( $row['marque'] ?? '', $row['modele'] ?? '', $row['taille'] ?? '', $row['numero_serie'] ?? '' );
-		if ( '' === $cle || isset( $vus[ $cle ] ) ) {
+		$mixte = 'secours' !== (string) ( $row['type_materiel'] ?? '' );
+		$marque = $mixte ? (string) ( $row['secours_marque'] ?? '' ) : (string) ( $row['marque'] ?? '' );
+		$modele = $mixte ? (string) ( $row['secours_modele'] ?? '' ) : (string) ( $row['modele'] ?? '' );
+		$taille = $mixte ? (string) ( $row['secours_taille'] ?? '' ) : (string) ( $row['taille'] ?? '' );
+		$serie  = $mixte ? '' : (string) ( $row['numero_serie'] ?? '' );
+		$cle    = gacct_historique_signature_voile( $marque, $modele, $taille, $serie );
+		if ( '' === $cle ) {
+			$cle = 'np:' . (int) $row['user_id']; // secours non precise : un seul par client
+		}
+		if ( isset( $vus[ $cle ] ) ) {
 			continue;
 		}
 		$vus[ $cle ] = true;
 		$secours[]   = array(
 			'historique_id'  => (int) ( $row['id'] ?? 0 ),
-			'marque'         => (string) ( $row['marque'] ?? '' ),
-			'modele'         => (string) ( $row['modele'] ?? '' ),
-			'taille'         => (string) ( $row['taille'] ?? '' ),
-			'numero_serie'   => (string) ( $row['numero_serie'] ?? '' ),
+			'marque'         => $marque,
+			'modele'         => $modele,
+			'taille'         => $taille,
+			'numero_serie'   => $serie,
 			'dernier_pliage' => (string) ( $row['date_revision'] ?? '' ),
+			'precise'        => '' !== $marque || '' !== $modele,
+			'avec_voile'     => $mixte,
 		);
 	}
 

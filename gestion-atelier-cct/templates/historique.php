@@ -85,14 +85,19 @@ if ( empty( $data['total'] ) ) : ?>
 					? date_i18n( 'j M Y', strtotime( $l['date_revision'] ) )
 					: '';
 				$type     = 'secours' === ( $l['type_materiel'] ?? '' ) ? 'secours' : 'voile';
+				$mixte    = 'voile' === $type && ! empty( $l['avec_secours'] );
+				$sec_lib  = $mixte ? trim( ( $l['secours_marque'] ?? '' ) . ' ' . ( $l['secours_modele'] ?? '' ) . ' ' . ( $l['secours_taille'] ?? '' ) ) : '';
 				?>
-				<tr data-type="<?php echo esc_attr( $type ); ?>" data-recherche="<?php echo esc_attr( strtolower( $materiel . ' ' . $couleur . ' ' . $l['numero_serie'] . ' ' . $date_fr ) ); ?>">
+				<tr data-type="<?php echo esc_attr( $type ); ?>" data-secours="<?php echo $type === 'secours' || $mixte ? '1' : '0'; ?>" data-recherche="<?php echo esc_attr( strtolower( $materiel . ' ' . $couleur . ' ' . $l['numero_serie'] . ' ' . $date_fr ) ); ?>">
 					<td data-label="<?php echo esc_attr( $texts['col_date'] ); ?>">
 						<time datetime="<?php echo esc_attr( (string) $l['date_revision'] ); ?>"><?php echo esc_html( $date_fr ); ?></time>
 					</td>
 					<td data-label="<?php echo esc_attr( $texts['col_materiel'] ); ?>">
 						<span class="gacct-hist-materiel-bloc">
-							<span class="gacct-hist-materiel"><?php echo esc_html( $materiel ); ?><?php if ( 'secours' === $type ) : ?> <span class="gacct-hist-badge-secours"><?php echo esc_html( $texts['badge_secours'] ); ?></span><?php endif; ?></span>
+							<span class="gacct-hist-materiel"><?php echo esc_html( $materiel ); ?><?php if ( 'secours' === $type ) : ?> <span class="gacct-hist-badge-secours"><?php echo esc_html( $texts['badge_secours'] ); ?></span><?php elseif ( $mixte ) : ?> <span class="gacct-hist-badge-secours is-mixte"><?php echo esc_html( $texts['badge_mixte'] ); ?></span><?php endif; ?></span>
+							<?php if ( $mixte ) : ?>
+								<span class="gacct-hist-secours-lib"><?php echo esc_html( '' !== $sec_lib ? $sec_lib : $texts['secours_np'] ); ?></span>
+							<?php endif; ?>
 							<?php if ( ! empty( $l['numero_serie'] ) ) : ?>
 								<span class="gacct-hist-serie"><?php echo esc_html( $l['numero_serie'] ); ?></span>
 							<?php endif; ?>
@@ -154,7 +159,7 @@ if ( empty( $data['total'] ) ) : ?>
 			var visibles = 0;
 
 			lignes.forEach( function ( tr ) {
-				var ok = ( ! q || tr.dataset.recherche.indexOf( q ) !== -1 ) && ( ! type || tr.dataset.type === type );
+				var ok = ( ! q || tr.dataset.recherche.indexOf( q ) !== -1 ) && ( ! type || ( 'secours' === type ? tr.dataset.secours === '1' : tr.dataset.type === type ) );
 				tr.hidden = ! ok;
 				if ( ok ) { visibles++; }
 			} );

@@ -79,6 +79,8 @@ function gacct_historique_texts() {
 			'filtre_voiles'  => __( 'Parapentes', 'gestion-atelier-cct' ),
 			'filtre_secours' => __( 'Parachutes de secours', 'gestion-atelier-cct' ),
 			'badge_secours'  => __( 'Secours', 'gestion-atelier-cct' ),
+			'badge_mixte'    => __( '+ secours plié', 'gestion-atelier-cct' ),
+			'secours_np'     => __( 'Parachute de secours (modèle non précisé)', 'gestion-atelier-cct' ),
 		)
 	);
 }
@@ -104,7 +106,7 @@ function gacct_historique_page_data( $user_id = 0 ) {
 	foreach ( $lignes as $l ) {
 		$cle = strtolower( trim( $l['marque'] . '|' . $l['modele'] . '|' . $l['taille'] ) );
 		$materiels[ $cle ] = true;
-		if ( 'secours' === ( $l['type_materiel'] ?? '' ) ) {
+		if ( 'secours' === ( $l['type_materiel'] ?? '' ) || ! empty( $l['avec_secours'] ) ) {
 			$secours++;
 		}
 
@@ -119,7 +121,7 @@ function gacct_historique_page_data( $user_id = 0 ) {
 		'total'     => count( $lignes ),
 		'materiels' => count( $materiels ),
 		'secours'   => $secours,
-		'voiles'    => count( $lignes ) - $secours,
+		'voiles'    => count( array_filter( $lignes, static function ( $l ) { return 'secours' !== ( $l['type_materiel'] ?? '' ); } ) ),
 		'annee_min' => $annees ? min( $annees ) : 0,
 		'annee_max' => $annees ? max( $annees ) : 0,
 	);
