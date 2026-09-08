@@ -1711,43 +1711,107 @@
 			return rows;
 		}
 
-		function majEquipement() {
-			var equipCoche = fieldInputs( 'revisions_controle' ).some( function ( el ) {
-				return el.type === 'checkbox' && el.checked && equipIds.indexOf( String( el.value ) ) > -1;
-			} );
-			var secoursCoche = fieldInputs( 'pliages_secours' ).some( function ( el ) {
-				return el.type === 'checkbox' && el.checked;
-			} );
+		/* Le bloc se glisse SOUS la carte cochée (option retenue par Bastien le
+		   08/09/2026 au soir) : sous « Contrôle complet Équipement » avec les deux
+		   groupes, sous un pliage de secours avec le groupe secours seul. Les
+		   lignes du formulaire sont déplacées dans le bloc (mêmes inputs, JFB les
+		   retrouve par leur nom), les libellés perdent leur préfixe au profit
+		   d'un sous-titre par groupe. */
+		var equipBloc = null;
 
-			equipRows( equipChamps.sellette ).forEach( function ( r ) {
-				r.row.hidden = ! equipCoche;
-				if ( ! equipCoche ) { r.input.value = ''; }
-			} );
-			equipRows( equipChamps.secours ).forEach( function ( r ) {
-				var show = equipCoche || secoursCoche;
-				r.row.hidden = ! show;
-				if ( ! show ) { r.input.value = ''; }
-			} );
-
-			var titre = form.querySelector( '.gacct-v2-equip-titre' );
-			if ( titre ) {
-				titre.hidden = ! ( equipCoche || secoursCoche );
-				titre.textContent = equipCoche
-					? ( v2i18n.equipTitre || 'Votre sellette et votre parachute de secours' )
-					: ( v2i18n.secoursTitre || 'Votre parachute de secours' );
+		function equipConstruire() {
+			if ( equipBloc ) {
+				return equipBloc;
 			}
+			var rowsS = equipRows( equipChamps.sellette );
+			var rowsP = equipRows( equipChamps.secours );
+			if ( ! rowsS.length && ! rowsP.length ) {
+				return null;
+			}
+			equipBloc = document.createElement( 'div' );
+			equipBloc.className = 'gacct-v2-equip-bloc';
+			equipBloc.hidden = true;
+
+			var intro = document.createElement( 'p' );
+			intro.className = 'gacct-v2-equip-intro';
+			intro.textContent = v2i18n.equipIntro || 'Décrivez le matériel concerné : nous préparons votre rapport avec ces informations.';
+			equipBloc.appendChild( intro );
+
+			[ [ 'sellette', rowsS, v2i18n.equipSellette || 'Votre sellette', /^Sellette\s*:\s*/i ],
+			  [ 'secours', rowsP, v2i18n.equipSecours || 'Votre parachute de secours', /^Parachute de secours\s*:\s*/i ] ].forEach( function ( g ) {
+				if ( ! g[ 1 ].length ) {
+					return;
+				}
+				var groupe = document.createElement( 'div' );
+				groupe.className = 'gacct-v2-equip-groupe gacct-v2-equip-groupe-' + g[ 0 ];
+				var titre = document.createElement( 'p' );
+				titre.className = 'gacct-v2-equip-titre';
+				titre.textContent = g[ 2 ];
+				groupe.appendChild( titre );
+				var grille = document.createElement( 'div' );
+				grille.className = 'gacct-v2-equip-grille';
+				g[ 1 ].forEach( function ( r ) {
+					var label = r.row.querySelector( '.jet-form-builder__label-text' ) || r.row.querySelector( 'label' );
+					if ( label && ! label.dataset.gacctCourt ) {
+						label.textContent = label.textContent.replace( g[ 3 ], '' );
+						label.dataset.gacctCourt = '1';
+					}
+					grille.appendChild( r.row );
+				} );
+				groupe.appendChild( grille );
+				equipBloc.appendChild( groupe );
+			} );
+			return equipBloc;
 		}
 
-		// Titre de bloc devant le premier champ équipement.
-		( function () {
-			var premiers = equipRows( equipChamps.sellette ).concat( equipRows( equipChamps.secours ) );
-			if ( premiers.length && ! form.querySelector( '.gacct-v2-equip-titre' ) ) {
-				var h = document.createElement( 'p' );
-				h.className = 'gacct-v2-equip-titre gacct-v2-sous-titre';
-				h.hidden = true;
-				premiers[ 0 ].row.parentNode.insertBefore( h, premiers[ 0 ].row );
+		function equipCarte( input ) {
+			return input ? input.closest( '.jet-form-builder__field-wrap' ) : null;
+		}
+
+		function majEquipement() {
+			var bloc = equipConstruire();
+			if ( ! bloc ) {
+				return;
 			}
-		} )();
+			var carteEquip = null;
+			fieldInputs( 'revisions_controle' ).forEach( function ( el ) {
+				if ( el.type === 'checkbox' && el.checked && equipIds.indexOf( String( el.value ) ) > -1 ) {
+					carteEquip = equipCarte( el );
+				}
+			} );
+			var cartePliage = null;
+			fieldInputs( 'pliages_secours' ).forEach( function ( el ) {
+				if ( el.type === 'checkbox' && el.checked ) {
+					cartePliage = equipCarte( el );
+				}
+			} );
+
+			var cible = carteEquip || cartePliage;
+			var groupeS = bloc.querySelector( '.gacct-v2-equip-groupe-sellette' );
+			var groupeP = bloc.querySelector( '.gacct-v2-equip-groupe-secours' );
+
+			if ( groupeS ) {
+				groupeS.hidden = ! carteEquip;
+				if ( ! carteEquip ) {
+					groupeS.querySelectorAll( 'input' ).forEach( function ( i ) { i.value = ''; } );
+				}
+			}
+			if ( groupeP ) {
+				groupeP.hidden = ! cible;
+				if ( ! cible ) {
+					groupeP.querySelectorAll( 'input' ).forEach( function ( i ) { i.value = ''; } );
+				}
+			}
+
+			if ( cible ) {
+				if ( bloc.previousElementSibling !== cible ) {
+					cible.parentNode.insertBefore( bloc, cible.nextSibling );
+				}
+				bloc.hidden = false;
+			} else {
+				bloc.hidden = true;
+			}
+		}
 
 		form.addEventListener( 'change', function ( e ) {
 			var t = e.target;
@@ -1758,6 +1822,9 @@
 				}
 			}
 		} );
+		// Le clic sur une carte est aussi géré par le template Crocoblock (cocher
+		// sans passer par un vrai « change ») : on resynchronise après coup.
+		form.addEventListener( 'click', function () { setTimeout( majEquipement, 0 ); } );
 		setTimeout( majEquipement, 0 );
 
 		/* --- Choix unique décochable : une case cochée décoche ses sœurs.

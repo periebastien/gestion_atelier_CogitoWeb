@@ -1094,3 +1094,67 @@
 	margin: 18px 0 6px;
 	font-weight: 800;
 }
+
+/* Bloc sellette / secours sous la carte cochée (08/09/2026). */
+.gacct-v2 .gacct-v2-equip-bloc {
+	margin: 2px 0 14px 38px;
+	padding: 14px 16px 4px;
+	border-left: 3px solid var(--v2-teal);
+	border-radius: 0 10px 10px 0;
+	background: #fff;
+}
+.gacct-v2 .gacct-v2-equip-intro {
+	margin: 0 0 10px;
+	font-size: 14px;
+	color: var(--v2-ink2);
+}
+.gacct-v2 .gacct-v2-equip-groupe[hidden] {
+	display: none !important;
+}
+.gacct-v2 .gacct-v2-equip-titre {
+	margin: 6px 0 8px;
+	font-size: 15px;
+	font-weight: 800;
+	color: var(--v2-ink);
+}
+.gacct-v2 .gacct-v2-equip-grille {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0 12px;
+}
+.gacct-v2 .gacct-v2-equip-grille .jet-form-builder-row {
+	margin-bottom: 12px;
+}
+@media (max-width: 600px) {
+	.gacct-v2 .gacct-v2-equip-bloc {
+		margin-left: 0;
+		padding: 12px 12px 2px;
+	}
+	.gacct-v2 .gacct-v2-equip-grille {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* Frais de retour (08/09/2026, retour Bastien) : espace entre la pastille et
+   le libellé, prix centré verticalement sur le libellé. La pastille dessinée
+   fait 24 px alors que le widget check-mark n'en réserve que 18. */
+.gacct-v2 .jet-form-builder-row:has( input[data-field-name="frais_de_ports"] ) .jet-fb-check-mark {
+	flex: 0 0 24px;
+	width: 24px;
+	margin-right: 12px;
+}
+.gacct-v2 .jet-form-builder-row:has( input[data-field-name="frais_de_ports"] ) .jet-fb-check-mark span {
+	display: block;
+	width: 24px;
+	height: 24px;
+}
+.gacct-v2 .jet-form-builder-row:has( input[data-field-name="frais_de_ports"] ) .jet-form-builder__field-template .e-con.e-parent,
+.gacct-v2 .jet-form-builder-row:has( input[data-field-name="frais_de_ports"] ) .jet-form-builder__field-template .e-con.e-parent > .e-con {
+	align-items: center !important;
+	align-content: center !important;
+}
+.gacct-v2 .jet-form-builder-row:has( input[data-field-name="frais_de_ports"] ) .service-item-price .elementor-heading-title,
+.gacct-v2 .jet-form-builder-row:has( input[data-field-name="frais_de_ports"] ) .service-item-name .elementor-heading-title {
+	margin: 0;
+	line-height: 1.25;
+}

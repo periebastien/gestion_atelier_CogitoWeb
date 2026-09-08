@@ -409,3 +409,7 @@ body.woocommerce-checkout .woocommerce-notices-wrapper > *::before{content:none}
 body.woocommerce-cart .woocommerce-notices-wrapper .button,
 body.woocommerce-checkout .woocommerce-notices-wrapper .button{display:inline-flex;align-items:center;height:40px;padding:0 18px;border:none;
   border-radius:999px;background:#1a1a1a;color:#fff!important;font-size:13.5px;font-weight:700;text-decoration:none;line-height:40px}
+
+/* Bouton « Commander · total » (08/09/2026) : le cadenas se calait sur la ligne de base du texte, un cran trop bas. Tous les enfants du bouton partagent la même hauteur de ligne et l icone devient un bloc flex. */
+.at-co-submit > *{line-height:1}
+.at-co-submit .at-i{display:block;flex:none}
