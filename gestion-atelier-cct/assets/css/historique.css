@@ -53,6 +53,65 @@
 	text-transform: lowercase;
 }
 
+/* ---------- filtre voiles / secours (09/09/2026) ---------- */
+
+.gacct-hist-filtre {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 18px;
+}
+
+.gacct-hist-filtre-btn {
+	appearance: none;
+	border: 1px solid var(--line);
+	background: #fff;
+	color: var(--ink-2, var(--ink));
+	border-radius: 999px;
+	padding: 7px 14px;
+	font: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.2;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.gacct-hist-filtre-btn span {
+	font-weight: 500;
+	color: var(--ink-3);
+	background: var(--bg-2, #f3f5f7);
+	border-radius: 999px;
+	padding: 1px 7px;
+	font-size: 12px;
+}
+
+.gacct-hist-filtre-btn.is-active {
+	background: var(--brand, #4fc3c3);
+	border-color: var(--brand, #4fc3c3);
+	color: #fff;
+}
+
+.gacct-hist-filtre-btn.is-active span {
+	background: rgba(255, 255, 255, 0.25);
+	color: #fff;
+}
+
+.gacct-hist-badge-secours {
+	display: inline-block;
+	vertical-align: middle;
+	margin-left: 6px;
+	padding: 1px 7px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.5;
+	background: #fff3e0;
+	color: #b45309;
+}
+
 /* ---------- recherche ---------- */
 
 .gacct-hist-search {

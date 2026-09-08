@@ -32,7 +32,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Version du schéma : incrémentée à chaque évolution de la table.
  */
 function gacct_historique_db_version() {
-	return 2;
+	return 3;
 }
 
 function gacct_historique_table() {
@@ -74,17 +74,25 @@ function gacct_historique_maybe_install() {
 			commentaire TEXT NULL,
 			cree_le DATETIME NOT NULL,
 			revision_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
+			type_materiel VARCHAR(20) NOT NULL DEFAULT '',
 			PRIMARY KEY  (id),
 			UNIQUE KEY ancien_id (ancien_id),
 			KEY user_id (user_id),
 			KEY date_revision (date_revision),
 			KEY marque_modele (marque, modele),
 			KEY ancien_client_id (ancien_client_id),
-			KEY revision_id (revision_id)
+			KEY revision_id (revision_id),
+			KEY type_materiel (type_materiel)
 		) {$charset};"
 	);
 
 	update_option( 'gacct_historique_db_version', gacct_historique_db_version() );
+
+	// Version 3 (09/09/2026) : classement voile / parachute de secours des lignes
+	// existantes (l'import le fait desormais lui-meme pour les nouvelles).
+	if ( function_exists( 'gacct_historique_classer' ) ) {
+		gacct_historique_classer();
+	}
 }
 add_action( 'admin_init', 'gacct_historique_maybe_install' );
 
@@ -184,7 +192,7 @@ function gacct_historique_row( $id ) {
  * @param string $recherche Filtre libre sur marque / modèle (facultatif).
  * @return array<int,array<string,mixed>>
  */
-function gacct_historique_client( $user_id = 0, $recherche = '' ) {
+function gacct_historique_client( $user_id = 0, $recherche = '', $type = '' ) {
 	global $wpdb;
 
 	$user_id = $user_id ? absint( $user_id ) : get_current_user_id();
@@ -206,9 +214,148 @@ function gacct_historique_client( $user_id = 0, $recherche = '' ) {
 		$vals[] = $like;
 	}
 
+	// Type de materiel (09/09/2026) : 'voile' ('' = non classe, traite comme
+	// une voile) ou 'secours'.
+	if ( 'secours' === $type ) {
+		$sql .= " AND type_materiel = 'secours'";
+	} elseif ( 'voile' === $type ) {
+		$sql .= " AND type_materiel <> 'secours'";
+	}
+
 	$sql .= ' ORDER BY date_revision DESC, id DESC';
 
 	return $wpdb->get_results( $wpdb->prepare( $sql, $vals ), ARRAY_A );
+}
+
+/* =============================================================================
+ *  TYPE DE MATERIEL : VOILE OU PARACHUTE DE SECOURS (09/09/2026)
+ * ============================================================================= */
+
+/**
+ * Referentiel des parachutes de secours rencontres dans l'historique (l'ancien
+ * site n'avait qu'un materiel par dossier : pour un pliage, le client saisissait
+ * son secours a la place de la voile). Expressions insensibles a la casse,
+ * appliquees a « marque modele ». Filtrable pour completer sans toucher au code.
+ *
+ * ATTENTION aux homonymes : Gin « Yeti 3/4/5/6 » (voile legere, surface en m2)
+ * n'est pas le secours Gin « Yeti UL / Cross / Light » ; Supair « Start » est aussi
+ * un nom de sellette. Les motifs sont donc volontairement etroits.
+ *
+ * @return string[] Motifs PCRE sans delimiteurs.
+ */
+function gacct_historique_motifs_secours() {
+	return (array) apply_filters( 'gacct_historique_motifs_secours', array(
+		'secour', 'parachute', 'rescue', 'reserve', 'r[eé]serve',
+		// Supair.
+		'\\bshine\\b', '\\bfluid\\b', 'xtralite', 'x-?tra ?lite', 'secours start',
+		// Gin (secours uniquement).
+		'yeti ?(ul|cross|light)', 'yeti ?[0-9]{2,3}\\b',
+		// Advance, Companion.
+		'\\bsqr\\b', 'sqr ?light', 'sqr ?[0-9]{2,3}', '\\bcompanion\\b',
+		// Adventure.
+		'flex[- ]?one',
+		// Apco (la marque fait aussi des voiles : motifs par modele).
+		'mayday', '\\bnrg\\b', '\\bmdul\\b', '\\bul[- ]?2[0-9]\\b', 'lift ?ez',
+		// Ozone, Niviuk, Nova, BGD, U-Turn, Independence, Charly, High Adventure, Skywalk, Sky, Kortel, Swing.
+		'\\bangel\\b', 'octagon', 'pentagon', 'cures\\b', '\\bsecure\\b', 'protect\\b', 'ultra ?cross', 'annular',
+		'diamond ?cross', 'revolution', '\\bclou\\b', 'beamer', 'pepper ?cross', 'kuik', 'escape\\b', 'rogallo',
+	) );
+}
+
+/**
+ * Classe une ligne d'historique : 'secours' ou 'voile'.
+ *
+ * Deux signaux : le couple marque + modele (referentiel ci-dessus), sinon un
+ * commentaire qui parle de pliage ou de secours sur une petite prestation
+ * (montant <= 90 euros, le tarif d'un pliage seul) sans parler de voile.
+ *
+ * @param array $row Ligne (marque, modele, commentaire, montant).
+ * @return string
+ */
+function gacct_historique_detecter_type( array $row ) {
+	$texte = remove_accents( strtolower( trim( (string) ( $row['marque'] ?? '' ) . ' ' . (string) ( $row['modele'] ?? '' ) ) ) );
+
+	foreach ( gacct_historique_motifs_secours() as $motif ) {
+		if ( @preg_match( '/' . $motif . '/u', $texte ) ) {
+			return 'secours';
+		}
+	}
+
+	$commentaire = remove_accents( strtolower( (string) ( $row['commentaire'] ?? '' ) ) );
+	$montant     = isset( $row['montant'] ) && null !== $row['montant'] ? (float) $row['montant'] : null;
+
+	if ( '' !== $commentaire
+		&& preg_match( '/\\b(pliage|repliage|secours)\\b/u', $commentaire )
+		&& ! preg_match( '/\b(voil|aile\b|suspent|calage|porosit|contr[oô]le)/u', $commentaire )
+		&& null !== $montant && $montant >= 40 && $montant <= 90
+	) {
+		return 'secours';
+	}
+
+	return 'voile';
+}
+
+/**
+ * Passe de classement sur toute la table : ecrit `type_materiel` pour chaque
+ * ligne (toutes si $tout, sinon seulement les lignes non classees).
+ * Relancable sans risque.
+ *
+ * @param bool $tout Reclasser aussi les lignes deja classees.
+ * @return array{lues:int,voile:int,secours:int}
+ */
+function gacct_historique_classer( $tout = true ) {
+	global $wpdb;
+
+	$stats = array( 'lues' => 0, 'voile' => 0, 'secours' => 0 );
+
+	if ( ! gacct_historique_table_exists() ) {
+		return $stats;
+	}
+
+	$table = gacct_historique_table();
+	$where = $tout ? '1=1' : "type_materiel = ''";
+	$rows  = $wpdb->get_results( "SELECT id, marque, modele, commentaire, montant, type_materiel FROM {$table} WHERE {$where}", ARRAY_A );
+
+	foreach ( (array) $rows as $row ) {
+		$type = gacct_historique_detecter_type( $row );
+		$stats['lues']++;
+		$stats[ $type ]++;
+		if ( $type !== (string) $row['type_materiel'] ) {
+			$wpdb->update( $table, array( 'type_materiel' => $type ), array( 'id' => (int) $row['id'] ) );
+		}
+	}
+
+	return $stats;
+}
+
+/**
+ * Les parachutes de secours distincts de l'historique d'un client (une entree
+ * par secours, la ligne la plus recente fait foi). Aucune ecriture.
+ *
+ * @param int $user_id Client (0 = utilisateur courant).
+ * @return array<int,array<string,mixed>> marque, modele, taille, numero_serie, dernier_pliage (Y-m-d), historique_id.
+ */
+function gacct_historique_secours_client( $user_id = 0 ) {
+	$secours = array();
+	$vus     = array();
+
+	foreach ( gacct_historique_client( $user_id, '', 'secours' ) as $row ) {
+		$cle = gacct_historique_signature_voile( $row['marque'] ?? '', $row['modele'] ?? '', $row['taille'] ?? '', $row['numero_serie'] ?? '' );
+		if ( '' === $cle || isset( $vus[ $cle ] ) ) {
+			continue;
+		}
+		$vus[ $cle ] = true;
+		$secours[]   = array(
+			'historique_id'  => (int) ( $row['id'] ?? 0 ),
+			'marque'         => (string) ( $row['marque'] ?? '' ),
+			'modele'         => (string) ( $row['modele'] ?? '' ),
+			'taille'         => (string) ( $row['taille'] ?? '' ),
+			'numero_serie'   => (string) ( $row['numero_serie'] ?? '' ),
+			'dernier_pliage' => (string) ( $row['date_revision'] ?? '' ),
+		);
+	}
+
+	return $secours;
 }
 
 /**
@@ -266,7 +413,7 @@ function gacct_historique_materiels_client( $user_id = 0 ) {
 	// chaque ligne est donc identifiée par ses DEUX clés (n° de série, et
 	// marque + modèle + taille + couleur), une correspondance suffit à
 	// l'écarter. La couleur distingue deux ailes identiques d'un même club.
-	foreach ( gacct_historique_client( $user_id ) as $row ) {
+	foreach ( gacct_historique_client( $user_id, '', 'voile' ) as $row ) {
 		$cle_sn = gacct_historique_signature_voile( '', '', '', $row['numero_serie'] ?? '' );
 		$cle_mm = gacct_historique_signature_voile( $row['marque'] ?? '', $row['modele'] ?? '', $row['taille'] ?? '', '' );
 		if ( '' !== $cle_mm ) {

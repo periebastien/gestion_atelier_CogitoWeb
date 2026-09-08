@@ -73,6 +73,12 @@ function gacct_historique_texts() {
 			'stat_total'   => __( 'révisions', 'gestion-atelier-cct' ),
 			'stat_voiles'  => __( 'matériels', 'gestion-atelier-cct' ),
 			'stat_periode' => __( 'période', 'gestion-atelier-cct' ),
+			// Filtre voiles / parachutes de secours (09/09/2026).
+			'filtre_label'   => __( 'Filtrer par type de matériel', 'gestion-atelier-cct' ),
+			'filtre_tout'    => __( 'Tout', 'gestion-atelier-cct' ),
+			'filtre_voiles'  => __( 'Parapentes', 'gestion-atelier-cct' ),
+			'filtre_secours' => __( 'Parachutes de secours', 'gestion-atelier-cct' ),
+			'badge_secours'  => __( 'Secours', 'gestion-atelier-cct' ),
 		)
 	);
 }
@@ -93,10 +99,14 @@ function gacct_historique_page_data( $user_id = 0 ) {
 
 	$materiels = array();
 	$annees    = array();
+	$secours   = 0;
 
 	foreach ( $lignes as $l ) {
 		$cle = strtolower( trim( $l['marque'] . '|' . $l['modele'] . '|' . $l['taille'] ) );
 		$materiels[ $cle ] = true;
+		if ( 'secours' === ( $l['type_materiel'] ?? '' ) ) {
+			$secours++;
+		}
 
 		if ( ! empty( $l['date_revision'] ) ) {
 			$annees[] = (int) substr( $l['date_revision'], 0, 4 );
@@ -108,6 +118,8 @@ function gacct_historique_page_data( $user_id = 0 ) {
 		'lignes'    => $lignes,
 		'total'     => count( $lignes ),
 		'materiels' => count( $materiels ),
+		'secours'   => $secours,
+		'voiles'    => count( $lignes ) - $secours,
 		'annee_min' => $annees ? min( $annees ) : 0,
 		'annee_max' => $annees ? max( $annees ) : 0,
 	);
