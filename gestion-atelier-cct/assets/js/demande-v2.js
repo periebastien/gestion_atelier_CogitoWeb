@@ -580,7 +580,7 @@
 
 					// Taille / P.T.V. : ni l'un ni l'autre n'est requis seul, mais il
 					// en faut au moins un pour une voile.
-					if ( besoin.voile && ! taillePtvValide() ) {
+					if ( besoin.voile && ! voile.existante && ! taillePtvValide() ) {
 						e.preventDefault();
 						e.stopImmediatePropagation();
 						erreurEtape(
@@ -593,7 +593,7 @@
 					}
 					effaceErreur( 'taillePtv' );
 
-					if ( besoin.voile && '' === valeurChamp( champs.couleur || 'couleur_copy' ) ) {
+					if ( besoin.voile && ! voile.existante && '' === valeurChamp( champs.couleur || 'couleur_copy' ) ) {
 						e.preventDefault();
 						e.stopImmediatePropagation();
 						erreurEtape( 'couleur', wrapNext, v2i18n.erreurCouleur || 'Sélectionnez au moins une couleur de votre voile.' );
@@ -918,9 +918,13 @@
 			} );
 			majDetailsVoile();
 		}
+		voile.majDetails = function () { majDetailsVoile(); };
 
 		function majDetailsVoile() {
-			var visibles = !! ( voile.choisie || voile.manuel );
+			/* Voile déjà connue (carte « Votre matériel », y compris ancien site) :
+			   taille, P.T.V., n° de série et couleurs sont déjà remplis et
+			   masqués (09/09/2026, demande Bastien) ; « Modifier » les ré-ouvre. */
+			var visibles = !! ( voile.choisie || voile.manuel ) && ! voile.existante;
 			detailEls.forEach( function ( el ) {
 				el.classList.toggle( 'is-off', ! visibles );
 			} );
@@ -1042,6 +1046,7 @@
 			function choisir( m, mo, an ) {
 				voile.choisie = { m: m, mo: mo, an: an };
 				voile.manuel = false;
+				voile.existante = false;
 				ecrireVoile( m, mo );
 				ui.chosenNom.textContent = m + ' ' + mo;
 				ui.chosenSub.textContent = an ? ( v2i18n.sortieEn || 'Modèle sorti en %s' ).replace( '%s', an ) : '';
@@ -1058,6 +1063,7 @@
 			function basculeManuel() {
 				voile.choisie = null;
 				voile.manuel = true;
+				voile.existante = false;
 				ecrireVoile( '', '' );
 				ui.combo.style.display = 'none';
 				ui.notwrap.style.display = 'none';
@@ -1072,6 +1078,10 @@
 			function reafficherRecherche() {
 				voile.choisie = null;
 				voile.manuel = false;
+				voile.existante = false;
+				if ( voile.desactiverCartes ) {
+					voile.desactiverCartes();
+				}
 				ecrireVoile( '', '' );
 				ui.chosen.classList.remove( 'is-on' );
 				ui.manual.classList.remove( 'is-on' );
@@ -1407,6 +1417,21 @@
 				remplirChamp( champTaille, materiel.taille );
 				remplirChamp( champPtv, materiel.ptv );
 				appliquerCouleur( materiel.couleur );
+
+				// Voile déjà connue : les détails sont masqués, la carte de
+				// confirmation les résume ; « Modifier » ré-ouvre la saisie.
+				voile.existante = true;
+				if ( voile.ui && voile.ui.chosenSub ) {
+					var resume = [];
+					if ( materiel.taille ) { resume.push( sprintf1( i18n.tailleAbr || v2i18n.tailleAbr || 'Taille %s', materiel.taille ) ); }
+					else if ( materiel.ptv ) { resume.push( sprintf1( v2i18n.ptvAbr || 'P.T.V. %s kg', materiel.ptv ) ); }
+					if ( materiel.couleur ) { resume.push( materiel.couleur ); }
+					if ( materiel.numero_serie ) { resume.push( 'n° ' + materiel.numero_serie ); }
+					voile.ui.chosenSub.textContent = resume.join( ' · ' );
+				}
+				if ( voile.majDetails ) {
+					voile.majDetails();
+				}
 			}
 
 			var bloc = document.createElement( 'div' );
@@ -1450,6 +1475,13 @@
 				} );
 				appliquerVoile( carte.materiel );
 			}
+			// « Modifier » sur la carte de confirmation : plus aucune carte active.
+			voile.desactiverCartes = function () {
+				cartes.forEach( function ( c ) {
+					c.el.classList.remove( 'is-active' );
+					c.el.setAttribute( 'aria-checked', 'false' );
+				} );
+			};
 
 			materiels.forEach( function ( materiel ) {
 				var carte = document.createElement( 'button' );
@@ -1775,7 +1807,7 @@
 				var el = form.querySelector( '[name="' + nom + '"]' );
 				if ( el ) { el.value = ''; }
 			} );
-			if ( voile ) { voile.choisie = false; }
+			if ( voile ) { voile.choisie = false; voile.existante = false; }
 		}
 
 		/* Bloc « équipement » de l'étape 2 : deux groupes (sellette, secours)
