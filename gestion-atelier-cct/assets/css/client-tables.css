@@ -1279,3 +1279,52 @@
 :is(#scroll, #scroll-materiel) .status-stack .gacct-ship-form.is-compact .gacct-ship-actions { margin: 0; flex: 0 0 auto; display: flex; }
 :is(#scroll, #scroll-materiel) .status-stack .gacct-ship-form.is-compact .gacct-ship-btn { font-family: inherit; font-size: 12.5px; font-weight: 800; padding: 8px 12px; border: 1.5px solid var(--teal-dark); border-radius: 8px; background: #fff; color: var(--teal-dark); cursor: pointer; white-space: nowrap; }
 :is(#scroll, #scroll-materiel) .status-stack .gacct-ship-form.is-compact .gacct-ship-btn:hover { background: var(--teal-soft); }
+
+/* =============================================================================
+ *  Le tableau ne doit JAMAIS élargir la colonne de contenu (08/09/2026,
+ *  retour Timothée « le slider ne fonctionne pas »).
+ *
+ *  Cause : la table impose min-width 1000 px ; ses ancêtres sont des
+ *  conteneurs flex Elementor dont le min-width vaut « auto », donc la colonne
+ *  de contenu (100 % à côté de la barre latérale de 280 px) grossit jusqu'à
+ *  1000 px au lieu de laisser le wrapper défiler. Sous 1300 px de large, les
+ *  cartes de stats et les dernières colonnes sortaient de l'écran sans qu'aucun
+ *  défilement ne soit possible. Remède : autoriser le rétrécissement sur toute
+ *  la chaîne, le wrapper (overflow-x: auto) fait alors son travail.
+ * ============================================================================= */
+
+#scroll,
+#scroll-materiel {
+	min-width: 0;
+	width: 100%;
+	max-width: 100%;
+}
+
+#scroll .jet-dynamic-table-wrapper,
+#scroll-materiel .jet-dynamic-table-wrapper {
+	width: 100%;
+	min-width: 0;
+	flex: 1 1 0%;
+}
+
+#scroll > .elementor-element,
+#scroll-materiel > .elementor-element,
+.e-con:has(#scroll),
+.e-con:has(#scroll-materiel),
+.e-con:has(.gacct-tb),
+.elementor-widget-jet-engine-profile-content,
+.elementor-widget-jet-engine-profile-content > .elementor-widget-container {
+	min-width: 0;
+	max-width: 100%;
+}
+
+.gacct-tb,
+.gacct-tb-stats,
+.gacct-tb-stat {
+	min-width: 0;
+}
+
+.gacct-tb-stat-label,
+.gacct-tb-stat-num {
+	overflow-wrap: anywhere;
+}
