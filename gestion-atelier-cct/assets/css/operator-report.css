@@ -213,6 +213,7 @@
 .gacct-rf-badge.is-reforme { background: #fee2e2; color: #991b1b; }
 .gacct-rf-badge.is-limite { background: #ffedd5; color: #9a3412; }
 .gacct-rf-badge.is-acceptable { background: #fef9c3; color: #854d0e; }
+.gacct-rf-badge.is-assezbon { background: #ecfccb; color: #3f6212; }
 .gacct-rf-badge.is-bon { background: #dcfce7; color: #166534; }
 .gacct-rf-badge.is-tresbon { background: #d1fae5; color: #065f46; }
 .gacct-rf-badge.is-neuf { background: #cffafe; color: #155e75; }
@@ -327,3 +328,7 @@
 .gacct-rf-upload {
 	margin-top: 14px;
 }
+
+/* Origine des seuils (08/09/2026) */
+.gacct-rf-grid-source { margin-top: 8px; }
+.gacct-rf-field-check { grid-column: 1 / -1; }

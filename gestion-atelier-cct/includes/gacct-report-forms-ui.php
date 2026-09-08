@@ -82,7 +82,13 @@ function gacct_rf_common_header( array $revision, $order, $with_type = false ) {
 	foreach ( $choices as $uid => $name ) {
 		$authors[ (string) $uid ] = $name;
 	}
-	gacct_rf_select( 'author_id', __( 'Auteur / réalisé par', 'gestion-atelier-cct' ), $authors, (string) get_current_user_id() );
+	// « Réalisé par » = l'opérateur choisi sur la fiche d'intervention
+	// (champ CCT operateur_id), sinon l'utilisateur connecté (Timothée, 08/09/2026).
+	$default_author = absint( $revision['operateur_id'] ?? 0 );
+	if ( ! $default_author || ! isset( $authors[ (string) $default_author ] ) ) {
+		$default_author = get_current_user_id();
+	}
+	gacct_rf_select( 'author_id', __( 'Auteur / réalisé par', 'gestion-atelier-cct' ), $authors, (string) $default_author );
 
 	echo '</div>';
 	echo '<p class="gacct-op-muted">' . esc_html__( 'Numéro laissé vide = numérotation automatique, figée à la première génération du PDF. Édité le : date du jour de génération.', 'gestion-atelier-cct' ) . '</p>';

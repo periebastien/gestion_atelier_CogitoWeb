@@ -215,32 +215,88 @@ function gacct_paracheck_porosity_display( $value, $decimals = 1 ) {
  *
  * @return array { rates: array<float|null>, average: float|null, result: string }
  */
-function gacct_report_calc_porosity( array $values ) {
+function gacct_report_calc_porosity( array $values, $source = 'pma', $seuil = 0 ) {
 	$config = gacct_report_calc_config();
+	$scale  = gacct_paracheck_porosity_scale( $source, $seuil );
 	$rates  = array();
 	$nums   = array();
+	$zones  = array();
 
 	foreach ( $values as $v ) {
 		if ( '' === trim( (string) $v ) || ! is_numeric( $v ) ) {
 			$rates[] = null;
+			$zones[] = 'NON RÉALISÉ';
 			continue;
 		}
 		$v       = (float) $v;
 		$nums[]  = $v;
 		$rates[] = $v > 0 ? $config['porosity_factor'] / $v : 0.0;
+		$zones[] = gacct_report_scale_result( $v, $scale );
 	}
 
 	if ( empty( $nums ) ) {
-		return array( 'rates' => $rates, 'average' => null, 'result' => 'NON RÉALISÉ' );
+		return array( 'rates' => $rates, 'zones' => $zones, 'average' => null, 'result' => 'NON RÉALISÉ', 'source' => $source, 'seuil' => (float) $seuil );
 	}
 
 	$average = array_sum( $nums ) / count( $nums );
 
 	return array(
 		'rates'   => $rates,
+		'zones'   => $zones,
 		'average' => $average,
-		'result'  => gacct_report_scale_result( $average, $config['porosity_scale'] ),
+		// Charte V5 §1.2 : l'aile est réformée sur la mesure de chaque zone,
+		// plus sur la moyenne → résultat = pire des zones (la moyenne reste
+		// affichée et sert au seuil de déchirure).
+		'result'  => gacct_report_worst( $zones ),
+		'source'  => $source,
+		'seuil'   => (float) $seuil,
 	);
+}
+
+/**
+ * Barème de porosité selon l'origine du seuil de réforme : PMA (barème
+ * ParachecK tel quel) ou Constructeur (seuil de réforme fourni, en secondes :
+ * la borne RÉFORME est remplacée, les bornes suivantes ne descendent jamais
+ * sous ce seuil).
+ *
+ * @return array
+ */
+function gacct_paracheck_porosity_scale( $source = 'pma', $seuil = 0 ) {
+	$scale = gacct_report_calc_config()['porosity_scale'];
+	$seuil = (float) $seuil;
+
+	if ( 'constructeur' !== $source || $seuil <= 0 ) {
+		return $scale;
+	}
+
+	foreach ( $scale as $i => &$band ) {
+		if ( null === $band['max'] ) {
+			continue;
+		}
+		$band['max'] = 0 === $i ? $seuil : max( (float) $band['max'], $seuil );
+	}
+	unset( $band );
+
+	return $scale;
+}
+
+/**
+ * Origine du seuil de porosité d'un brouillon ('pma' par défaut).
+ */
+function gacct_paracheck_porosity_source( array $data ) {
+	$source = isset( $data['porosity_source'] ) ? (string) $data['porosity_source'] : 'pma';
+
+	return 'constructeur' === $source ? 'constructeur' : 'pma';
+}
+
+/**
+ * Libellé lisible de l'origine d'un seuil (PDF, formulaire).
+ */
+function gacct_paracheck_source_label( $source, $kind = 'rupture' ) {
+	$config = gacct_report_calc_config();
+	$list   = 'porosity' === $kind ? $config['porosity_sources'] : $config['rupture_sources'];
+
+	return isset( $list[ $source ] ) ? $list[ $source ] : $list['pma'];
 }
 
 /**
@@ -288,9 +344,22 @@ function gacct_report_calc_rupture( array $lines ) {
 		$material = isset( $line['material'] ) ? strtolower( (string) $line['material'] ) : '';
 		$coef     = isset( $config['rupture_materials'][ $material ] ) ? $config['rupture_materials'][ $material ]['coef'] : 0.0;
 
-		// Seuil : VR personnalisé (calcul réforme suspente) sinon nominal × coef matériau.
+		// Charte V5 §2.2 : sans donnée constructeur, nominal = matière brute × 1,05.
+		$brut = ! empty( $line['brut'] );
+		if ( $brut && $nominal > 0 ) {
+			$nominal = round( $nominal * (float) ( $config['rupture_raw_factor'] ?? 1.05 ), 2 );
+		}
+
+		// Origine du seuil de réforme (08/09/2026) : PMA = nominal × coef ;
+		// Constructeur / Atelier = valeur saisie (l'Atelier reporte le VR du
+		// « Calcul réforme suspente »). Rétrocompat : un brouillon d'avant
+		// cette date qui portait un seuil saisi est traité comme « atelier ».
 		$custom = isset( $line['seuil'] ) && '' !== trim( (string) $line['seuil'] ) && is_numeric( $line['seuil'] ) ? (float) $line['seuil'] : 0.0;
-		$seuil  = $custom > 0 ? $custom : $nominal * $coef;
+		$source = isset( $line['source'] ) && isset( $config['rupture_sources'][ $line['source'] ] ) ? (string) $line['source'] : ( $custom > 0 ? 'atelier' : 'pma' );
+		$seuil  = ( 'pma' !== $source && $custom > 0 ) ? $custom : $nominal * $coef;
+		if ( 'pma' !== $source && $custom <= 0 ) {
+			$source = 'pma'; // seuil forcé absent : on retombe sur la PMA
+		}
 
 		$margin = null;
 		$result = 'NR*';
@@ -302,12 +371,15 @@ function gacct_report_calc_rupture( array $lines ) {
 		}
 
 		$out[] = array(
-			'ref'      => isset( $line['ref'] ) ? sanitize_text_field( (string) $line['ref'] ) : '',
+			// Nom de suspente toujours en majuscules (Timothée, 08/09/2026).
+			'ref'      => isset( $line['ref'] ) ? mb_strtoupper( sanitize_text_field( (string) $line['ref'] ) ) : '',
 			'nominal'  => $nominal,
+			'brut'     => $brut,
 			'material' => $material,
 			'measure'  => $measure,
 			'seuil'    => $seuil,
-			'custom'   => $custom > 0,
+			'source'   => $source,
+			'custom'   => 'pma' !== $source,
 			'margin'   => $margin,
 			'result'   => $result,
 		);
@@ -366,7 +438,11 @@ function gacct_report_calc_voile( array $data ) {
 	}
 	$visual_global = gacct_report_worst( $vresults );
 
-	$porosity = gacct_report_calc_porosity( gacct_paracheck_porosity_values( $data ) );
+	$porosity = gacct_report_calc_porosity(
+		gacct_paracheck_porosity_values( $data ),
+		gacct_paracheck_porosity_source( $data ),
+		isset( $data['porosity_seuil'] ) && is_numeric( $data['porosity_seuil'] ) ? (float) $data['porosity_seuil'] : 0
+	);
 
 	$tear = gacct_report_calc_tear(
 		isset( $data['tear'] ) && is_array( $data['tear'] ) ? $data['tear'] : array(),
@@ -399,10 +475,13 @@ function gacct_report_calc_voile( array $data ) {
 			) );
 			if ( '' === $general || 'NON RÉALISÉ' === $general ) {
 				$general = 'NON RÉALISÉ';
-			} elseif ( 'TRÈS BON ÉTAT' === $general ) {
-				// « NEUF » n'est atteignable que si les 4 résultats sont au max —
-				// dans le barème réel, TBE est le plafond des tests : on le garde.
-				$general = 'TRÈS BON ÉTAT';
+			}
+			// NEUF (6ᵉ échelon, rétabli le 08/09/2026) : les tests mécaniques
+			// plafonnent à TRÈS BON ÉTAT, donc l'état général n'est NEUF que si
+			// l'inspection visuelle est NEUF et que tous les tests sont au plafond.
+			// Le worst-of ci-dessus donne alors TRÈS BON ÉTAT : on le relève.
+			if ( 'NEUF' === $visual_global && 'TRÈS BON ÉTAT' === $general ) {
+				$general = 'NEUF';
 			}
 		}
 	}

@@ -1,0 +1,111 @@
+/**
+ * Console atelier — écran « Mon profil » (08/09/2026).
+ * Palette admin WP comme le reste de la console.
+ */
+
+.gacct-op-profil .gacct-op-profil-card {
+	max-width: 720px;
+	padding: 22px 24px;
+}
+
+.gacct-op-profil-photo {
+	display: flex;
+	align-items: center;
+	gap: 22px;
+	padding-bottom: 18px;
+	margin-bottom: 18px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.gacct-op-profil-avatar {
+	flex: 0 0 auto;
+	width: 112px;
+	height: 112px;
+	border-radius: 50%;
+	overflow: hidden;
+	background: var(--gacct-accent, #20c4c3);
+	color: #fff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 38px;
+	font-weight: 700;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.gacct-op-profil-avatar img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.gacct-op-profil-photo-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	align-items: flex-start;
+}
+.gacct-op-profil-photo-actions p {
+	margin: 0;
+}
+.gacct-op-profil-file {
+	cursor: pointer;
+}
+.gacct-op-profil-remove {
+	color: #b32d2e;
+	border-color: #b32d2e;
+}
+
+.gacct-op-profil-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 14px 16px;
+}
+.gacct-op-profil-field {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	font-weight: 600;
+	font-size: 13px;
+}
+.gacct-op-profil-field--wide {
+	grid-column: 1 / -1;
+}
+.gacct-op-profil-field input {
+	width: 100%;
+	min-height: 40px;
+	font-weight: 400;
+	font-size: 15px;
+}
+.gacct-op-profil-field small {
+	font-weight: 400;
+}
+
+.gacct-op-profil-actions {
+	display: flex;
+	justify-content: space-between;
+	gap: 10px;
+	margin-top: 20px;
+	flex-wrap: wrap;
+}
+.gacct-op-profil-actions .button {
+	min-height: 40px;
+	line-height: 38px;
+}
+
+@media (max-width: 600px) {
+	.gacct-op-profil-photo {
+		flex-direction: column;
+		text-align: center;
+	}
+	.gacct-op-profil-photo-actions {
+		align-items: center;
+	}
+	.gacct-op-profil-grid {
+		grid-template-columns: 1fr;
+	}
+	.gacct-op-profil-actions .button {
+		width: 100%;
+		text-align: center;
+	}
+}

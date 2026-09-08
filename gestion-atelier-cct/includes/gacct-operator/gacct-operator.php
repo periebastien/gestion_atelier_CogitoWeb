@@ -27,6 +27,7 @@ require_once __DIR__ . '/screen-list.php';
 require_once __DIR__ . '/screen-fiche.php';
 require_once __DIR__ . '/screen-reception.php';
 require_once __DIR__ . '/screen-planning.php';
+require_once __DIR__ . '/screen-profil.php';
 
 /**
  * Création du rôle + distribution de la capacité + champ CCT operateur_id.
@@ -99,7 +100,7 @@ function gacct_op_current_view() {
 
 	$view = isset( $_GET['view'] ) ? sanitize_key( wp_unslash( $_GET['view'] ) ) : '';
 
-	return in_array( $view, array( 'list', 'reception', 'planning' ), true ) ? $view : 'today';
+	return in_array( $view, array( 'list', 'reception', 'planning', 'profil' ), true ) ? $view : 'today';
 }
 
 /**
@@ -119,6 +120,17 @@ function gacct_op_render_console_nav( $active ) {
 		$class = 'nav-tab' . ( $key === $active ? ' nav-tab-active' : '' );
 		echo '<a class="' . esc_attr( $class ) . '" href="' . esc_url( $tab[0] ) . '">' . esc_html( $tab[1] ) . '</a>';
 	}
+
+	// « Mon profil » (08/09/2026) : photo et nom de l'opérateur, comme dans l'espace client.
+	$me       = wp_get_current_user();
+	$me_photo = function_exists( 'gacct_profile_avatar_id' ) && gacct_profile_avatar_id( $me->ID ) && function_exists( 'gacct_dash_avatar_url' ) ? gacct_dash_avatar_url( $me->ID, 64 ) : '';
+	echo '<a class="nav-tab gacct-op-nav-me' . ( 'profil' === $active ? ' nav-tab-active' : '' ) . '" href="' . esc_url( gacct_op_console_url( 0, array( 'view' => 'profil' ) ) ) . '" title="' . esc_attr__( 'Mon profil', 'gestion-atelier-cct' ) . '">';
+	if ( $me_photo ) {
+		echo '<img src="' . esc_url( $me_photo ) . '" alt="" class="gacct-op-nav-avatar">';
+	} else {
+		echo '<span class="gacct-op-nav-avatar gacct-op-nav-avatar-ini">' . esc_html( function_exists( 'gacct_dash_initials' ) ? gacct_dash_initials( $me->ID ) : mb_strtoupper( mb_substr( $me->display_name, 0, 1 ) ) ) . '</span>';
+	}
+	echo '<span class="gacct-op-nav-me-name">' . esc_html( $me->display_name ) . '</span></a>';
 
 	echo '<form method="get" action="' . esc_url( admin_url( 'admin.php' ) ) . '" class="gacct-op-nav-scan">';
 	echo '<input type="hidden" name="page" value="' . esc_attr( GACCT_OP_MENU_SLUG ) . '">';
@@ -153,6 +165,9 @@ function gacct_op_render_console() {
 			break;
 		case 'reception':
 			gacct_op_render_reception_screen();
+			break;
+		case 'profil':
+			gacct_op_render_profil_screen();
 			break;
 		case 'planning':
 			gacct_op_render_planning_screen();
@@ -382,6 +397,7 @@ function gacct_op_enqueue_assets( $hook_suffix ) {
 		'list'      => 'operator-list.css',
 		'reception' => 'operator-reception.css',
 		'planning'  => 'operator-planning.css',
+		'profil'    => 'operator-profil.css',
 		'today'     => 'operator-today.css',
 	);
 	$screen_css = $screen_css_map[ gacct_op_current_view() ];

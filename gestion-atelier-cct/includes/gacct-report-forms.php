@@ -206,6 +206,10 @@ function gacct_report_state_colors() {
 		'TRÈS BON ÉTAT' => array( '#d3f2e2', '#0d6b46', '#5fcda0' ),
 		'BON ÉTAT'      => array( '#e1f7d9', '#2d6b1c', '#94dd7c' ),
 		'CALAGE BON'    => array( '#e1f7d9', '#2d6b1c', '#94dd7c' ),
+		// Charte ParachecK V5 (juin 2025) : « ASSEZ BON ÉTAT » remplace « ACCEPTABLE »
+		// pour les composants et l'état général, en vert (« ACCEPTABLE » reste le
+		// terme des items visuels).
+		'ASSEZ BON ÉTAT' => array( '#eef8d6', '#4d6b14', '#b9dd6e' ),
 		'ACCEPTABLE'    => array( '#fdf6cf', '#7d6410', '#f0d264' ),
 		'LIMITE'        => array( '#ffe8cf', '#8d4a12', '#f5b56b' ),
 		'RÉFORME'       => array( '#fddede', '#8f1d1d', '#f28b8b' ),

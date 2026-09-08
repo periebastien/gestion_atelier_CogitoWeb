@@ -68,23 +68,25 @@ function gacct_report_calc_config() {
 				'note'  => '',
 			),
 		),
-		// Valeurs saisissables par item + poids de la moyenne (Excel : ACC.=10, B.E.=44, NEUF=75).
+		// Valeurs saisissables par item + poids de la moyenne : charte FFVL
+		// ParachecK 2025 (RÉFORME 0, ACCEPTABLE 10, BON ÉTAT 75, NEUF 100),
+		// alignement décidé avec Timothée le 08/09/2026 (l'Excel V8 pondérait
+		// 0 / 10 / 44 / 75). « ACCEPTABLE » reste le terme des ITEMS visuels
+		// (charte V5 §3, NB), « ASSEZ BON ÉTAT » celui des résultats.
 		'visual_values'  => array(
 			'REF'  => array( 'label' => 'RÉF.', 'weight' => 0 ),
 			'ACC'  => array( 'label' => 'ACC.', 'weight' => 10 ),
-			'BE'   => array( 'label' => 'B.E.', 'weight' => 44 ),
-			// Clé conservée : les rapports déjà enregistrés portent la valeur « NEUF ».
-			// Seul le libellé change, une voile révisée n'étant jamais neuve
-			// (Timothée, 18/08/2026). Abrégé comme ses voisins RÉF. / ACC. / B.E.
-			'NEUF' => array( 'label' => 'T.B.E.', 'weight' => 75 ),
+			'BE'   => array( 'label' => 'B.E.', 'weight' => 75 ),
+			'NEUF' => array( 'label' => 'NEUF', 'weight' => 100 ),
 		),
-		// Interprétation d'un groupe selon sa moyenne (feuille de saisie B54).
+		// Interprétation d'un groupe selon sa moyenne (charte : bascule à 43).
 		'visual_scale'   => array(
 			array( 'max' => 0,   'eq' => true,  'result' => 'RÉFORME' ),
 			array( 'max' => 10,  'eq' => false, 'result' => 'LIMITE' ),
-			array( 'max' => 44,  'eq' => false, 'result' => 'ACCEPTABLE' ),
+			array( 'max' => 43,  'eq' => false, 'result' => 'ASSEZ BON ÉTAT' ),
 			array( 'max' => 75,  'eq' => false, 'result' => 'BON ÉTAT' ),
-			array( 'max' => null, 'eq' => false, 'result' => 'TRÈS BON ÉTAT' ),
+			array( 'max' => 100, 'eq' => false, 'result' => 'TRÈS BON ÉTAT' ),
+			array( 'max' => null, 'eq' => false, 'result' => 'NEUF' ),
 		),
 		// Présélection du rapport d'après la commande (réunion du 06/08/2026) :
 		// produit commandé → modèle(s) suggéré(s) et type du rapport voile.
@@ -103,10 +105,17 @@ function gacct_report_calc_config() {
 		// Plafond du porosimètre : au-delà, la mesure est affichée « 600+ »
 		// (la valeur saisie reste utilisée telle quelle dans les calculs).
 		'porosity_ceiling' => 600,
+		// Charte V5 (juin 2025) : l'aile est réformée sur la mesure de CHAQUE
+		// zone, plus sur la moyenne (§1.2) ; le seuil de réforme peut venir
+		// du constructeur au lieu de la PMA (demande Timothée du 08/09/2026).
+		'porosity_sources' => array(
+			'pma'          => __( 'PMA (barème ParachecK)', 'gestion-atelier-cct' ),
+			'constructeur' => __( 'Constructeur', 'gestion-atelier-cct' ),
+		),
 		'porosity_scale'  => array(
 			array( 'max' => 10,   'result' => 'RÉFORME' ),
 			array( 'max' => 11,   'result' => 'LIMITE' ),
-			array( 'max' => 20,   'result' => 'ACCEPTABLE' ),
+			array( 'max' => 20,   'result' => 'ASSEZ BON ÉTAT' ),
 			array( 'max' => 200,  'result' => 'BON ÉTAT' ),
 			array( 'max' => null, 'result' => 'TRÈS BON ÉTAT' ),
 		),
@@ -120,25 +129,36 @@ function gacct_report_calc_config() {
 		'tear_scale'     => array(
 			array( 'max' => 0.6,  'result' => 'RÉFORME' ),
 			array( 'max' => 0.63, 'result' => 'LIMITE' ),
-			array( 'max' => 0.9,  'result' => 'ACCEPTABLE' ),
+			array( 'max' => 0.9,  'result' => 'ASSEZ BON ÉTAT' ),
 			array( 'max' => 1.17, 'result' => 'BON ÉTAT' ),
 			array( 'max' => null, 'result' => 'TRÈS BON ÉTAT' ),
 		),
-		// §2.5 — Rupture des suspentes. Le seuil est la PMA : nominal × coef.
-		// Les coefficients portaient un facteur 0,9 de plus que la règle de
-		// l'atelier ; Timothée l'a corrigé le 18/08/2026 : PMA Aramide =
-		// nominal × 0,45, PMA Dyneema = nominal × 0,65.
+		// §2.5 — Rupture des suspentes, charte FFVL ParachecK V5 (1er juin 2025,
+		// annexe 3.4) : seuil de réforme = nominal × coefficient du matériau
+		// (Aramide / Technora / Vectran 0,45, Dyneema 0,65) ; sans donnée
+		// constructeur, nominal = matière brute × 1,05 ; marge < 0 RÉFORME,
+		// < 5 LIMITE, < 15 ASSEZ BON ÉTAT, < 70 BON ÉTAT, ≥ 70 TRÈS BON ÉTAT.
+		// L'origine du seuil est choisie par ligne (demande Timothée 08/09/2026) :
+		// PMA (calcul ci-dessus), Constructeur (valeur fournie) ou Atelier
+		// (VR du « Calcul réforme suspente »).
 		'rupture_max_lines' => 5,
 		'rupture_materials' => array(
-			'dyneema' => array( 'label' => 'Dyneema', 'coef' => 0.65 ),
-			'aramide' => array( 'label' => 'Aramide', 'coef' => 0.45 ),
-			'vectran' => array( 'label' => 'Vectran', 'coef' => 0.45 ),
+			'dyneema'  => array( 'label' => 'Dyneema', 'coef' => 0.65 ),
+			'aramide'  => array( 'label' => 'Aramide', 'coef' => 0.45 ),
+			'technora' => array( 'label' => 'Technora', 'coef' => 0.45 ),
+			'vectran'  => array( 'label' => 'Vectran', 'coef' => 0.45 ),
+		),
+		'rupture_raw_factor' => 1.05,
+		'rupture_sources' => array(
+			'pma'          => __( 'PMA (nominal × coefficient)', 'gestion-atelier-cct' ),
+			'constructeur' => __( 'Constructeur', 'gestion-atelier-cct' ),
+			'atelier'      => __( 'Atelier (VR)', 'gestion-atelier-cct' ),
 		),
 		'rupture_scale'  => array(
-			array( 'max' => 0,   'eq' => true,  'result' => 'RÉFORME' ),
-			array( 'max' => 10,  'eq' => false, 'result' => 'LIMITE' ),
-			array( 'max' => 25,  'eq' => false, 'result' => 'ACCEPTABLE' ),
-			array( 'max' => 75,  'eq' => false, 'result' => 'BON ÉTAT' ),
+			array( 'max' => 0,   'eq' => false, 'result' => 'RÉFORME' ),
+			array( 'max' => 5,   'eq' => false, 'result' => 'LIMITE' ),
+			array( 'max' => 15,  'eq' => false, 'result' => 'ASSEZ BON ÉTAT' ),
+			array( 'max' => 70,  'eq' => false, 'result' => 'BON ÉTAT' ),
 			array( 'max' => null, 'eq' => false, 'result' => 'TRÈS BON ÉTAT' ),
 		),
 		// §1.8 — Calage / freins.
@@ -162,9 +182,11 @@ function gacct_report_calc_config() {
 			'Paramania', 'Phi', 'Skyparagliders', 'Skywalk', 'Supair', 'Swing',
 			'Triple Seven', 'Up', 'Windtech',
 		),
-		// Ordre du pire au meilleur, pour les agrégats « worst-of ».
-		// Plus d'échelon NEUF : le meilleur état atteignable est « très bon état ».
-		'severity'       => array( 'RÉFORME', 'LIMITE', 'ACCEPTABLE', 'BON ÉTAT', 'TRÈS BON ÉTAT' ),
+		// Ordre du pire au meilleur, pour les agrégats « worst-of ». Les 6
+		// échelons de la charte, NEUF compris (rétabli le 08/09/2026 : il avait
+		// été retiré fin août par erreur ; il n'est atteignable que par
+		// l'inspection visuelle et, en cascade, par l'état général).
+		'severity'       => array( 'RÉFORME', 'LIMITE', 'ASSEZ BON ÉTAT', 'BON ÉTAT', 'TRÈS BON ÉTAT', 'NEUF' ),
 	);
 
 	return apply_filters( 'gacct_report_calc_config', $config );
@@ -191,10 +213,10 @@ function gacct_report_voile_texts( $type ) {
 			'rupture_intro' => 'Réalisé avec un dynamomètre DFW-03BT. Les valeurs sont exprimées en DaN. La première lettre indique la ligne d\'élévateur. Le chiffre indique le numéro de suspente en partant du centre de la voile. La troisième lettre indique l\'étage de suspente concerné. La dernière lettre indique le côté de la voile, dans le sens de vol.',
 			'comment_default' => '',
 			'legends'      => array(
-				'visual'   => array( 'RÉFORME' => 'moyenne = 0', 'LIMITE' => '0 – 10', 'ACCEPTABLE' => '10 – 44', 'BON ÉTAT' => '44 – 75', 'TRÈS BON ÉTAT' => '> 75' ),
-				'porosity' => array( 'RÉFORME' => '< 10 s', 'LIMITE' => '10 – 11 s', 'ACCEPTABLE' => '11 – 20 s', 'BON ÉTAT' => '20 – 200 s', 'TRÈS BON ÉTAT' => '> 200 s' ),
-				'tear'     => array( 'RÉFORME' => '< 0,6', 'LIMITE' => '0,6 – 0,63', 'ACCEPTABLE' => '0,63 – 0,9', 'BON ÉTAT' => '0,9 – 1,17', 'TRÈS BON ÉTAT' => '≥ 1,17' ),
-				'rupture'  => array( 'RÉFORME' => '≤ 0 %', 'LIMITE' => '< 10 %', 'ACCEPTABLE' => '< 25 %', 'BON ÉTAT' => '< 75 %', 'TRÈS BON ÉTAT' => '≥ 75 %' ),
+				'visual'   => array( 'RÉFORME' => 'moyenne = 0', 'LIMITE' => '0 – 10', 'ASSEZ BON ÉTAT' => '10 – 43', 'BON ÉTAT' => '43 – 75', 'TRÈS BON ÉTAT' => '75 – 100', 'NEUF' => '= 100' ),
+				'porosity' => array( 'RÉFORME' => '< 10 s', 'LIMITE' => '10 – 11 s', 'ASSEZ BON ÉTAT' => '11 – 20 s', 'BON ÉTAT' => '20 – 200 s', 'TRÈS BON ÉTAT' => '> 200 s' ),
+				'tear'     => array( 'RÉFORME' => '< 0,6', 'LIMITE' => '0,6 – 0,63', 'ASSEZ BON ÉTAT' => '0,63 – 0,9', 'BON ÉTAT' => '0,9 – 1,17', 'TRÈS BON ÉTAT' => '≥ 1,17' ),
+				'rupture'  => array( 'RÉFORME' => '< 0 %', 'LIMITE' => '< 5 %', 'ASSEZ BON ÉTAT' => '< 15 %', 'BON ÉTAT' => '< 70 %', 'TRÈS BON ÉTAT' => '≥ 70 %' ),
 			),
 			'show_general' => true,
 			'show_results_summary' => false,
@@ -214,10 +236,10 @@ function gacct_report_voile_texts( $type ) {
 				// Les barèmes sont communs aux deux modèles : ces légendes décrivaient
 				// d'anciennes bornes et ne correspondaient plus au calcul appliqué.
 				// Elles sont réalignées sur celles du modèle périodique.
-				'visual'   => array( 'RÉFORME' => 'moyenne = 0', 'LIMITE' => '0 – 10', 'ACCEPTABLE' => '10 – 44', 'BON ÉTAT' => '44 – 75', 'TRÈS BON ÉTAT' => '> 75' ),
-				'porosity' => array( 'RÉFORME' => '< 10 s', 'LIMITE' => '10 – 11 s', 'ACCEPTABLE' => '11 – 20 s', 'BON ÉTAT' => '20 – 200 s', 'TRÈS BON ÉTAT' => '> 200 s' ),
-				'tear'     => array( 'RÉFORME' => '< 0,6', 'LIMITE' => '0,6 – 0,63', 'ACCEPTABLE' => '0,63 – 0,9', 'BON ÉTAT' => '0,9 – 1,17', 'TRÈS BON ÉTAT' => '≥ 1,17' ),
-				'rupture'  => array( 'RÉFORME' => '≤ 0 %', 'LIMITE' => '< 10 %', 'ACCEPTABLE' => '< 25 %', 'BON ÉTAT' => '< 75 %', 'TRÈS BON ÉTAT' => '≥ 75 %' ),
+				'visual'   => array( 'RÉFORME' => 'moyenne = 0', 'LIMITE' => '0 – 10', 'ASSEZ BON ÉTAT' => '10 – 43', 'BON ÉTAT' => '43 – 75', 'TRÈS BON ÉTAT' => '75 – 100', 'NEUF' => '= 100' ),
+				'porosity' => array( 'RÉFORME' => '< 10 s', 'LIMITE' => '10 – 11 s', 'ASSEZ BON ÉTAT' => '11 – 20 s', 'BON ÉTAT' => '20 – 200 s', 'TRÈS BON ÉTAT' => '> 200 s' ),
+				'tear'     => array( 'RÉFORME' => '< 0,6', 'LIMITE' => '0,6 – 0,63', 'ASSEZ BON ÉTAT' => '0,63 – 0,9', 'BON ÉTAT' => '0,9 – 1,17', 'TRÈS BON ÉTAT' => '≥ 1,17' ),
+				'rupture'  => array( 'RÉFORME' => '< 0 %', 'LIMITE' => '< 5 %', 'ASSEZ BON ÉTAT' => '< 15 %', 'BON ÉTAT' => '< 70 %', 'TRÈS BON ÉTAT' => '≥ 70 %' ),
 			),
 			'show_general' => false,
 			'show_results_summary' => true,

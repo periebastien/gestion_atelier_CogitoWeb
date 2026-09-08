@@ -73,6 +73,7 @@
 		'RÉFORME':       'is-reforme',
 		'LIMITE':        'is-limite',
 		'ACCEPTABLE':    'is-acceptable',
+		'ASSEZ BON ÉTAT': 'is-assezbon',
 		'BON ÉTAT':      'is-bon',
 		'TRÈS BON ÉTAT': 'is-tresbon',
 		'NEUF':          'is-neuf',
@@ -142,7 +143,7 @@
 			linesWrap.querySelectorAll( '.gacct-rf-rupture-line' ).forEach( function ( row ) {
 				var line = {};
 				row.querySelectorAll( '[data-rl]' ).forEach( function ( field ) {
-					line[ field.getAttribute( 'data-rl' ) ] = field.value;
+					line[ field.getAttribute( 'data-rl' ) ] = ( 'checkbox' === field.type ) ? ( field.checked ? '1' : '' ) : field.value;
 				} );
 				data.rupture.push( line );
 			} );
@@ -172,7 +173,11 @@
 			node.querySelectorAll( '[data-rl]' ).forEach( function ( field ) {
 				var key = field.getAttribute( 'data-rl' );
 				if ( undefined !== prefill[ key ] && null !== prefill[ key ] ) {
-					field.value = String( prefill[ key ] );
+					if ( 'checkbox' === field.type ) {
+						field.checked = !! prefill[ key ] && '0' !== String( prefill[ key ] );
+					} else {
+						field.value = String( prefill[ key ] );
+					}
 				}
 			} );
 		}

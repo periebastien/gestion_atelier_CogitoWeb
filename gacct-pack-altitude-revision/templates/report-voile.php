@@ -155,7 +155,10 @@ echo gacct_rp2_section( esc_html__( 'INSPECTION MÉCANIQUE PARACHECK®', 'gestio
 /* — Porosité — */
 $poro = $calc['porosity'];
 echo gacct_rp2_subsection( esc_html__( 'TEST DE POROSITÉ DES TISSUS', 'gestion-atelier-cct' ), $context['author'], gacct_rp2_badge( $poro['result'] ) );
-echo '<p class="muted">' . esc_html__( 'État de vieillissement des tissus mesuré à l\'aide d\'un porosimètre de la marque JDC qui mesure le temps écoulé pour le passage au travers du tissu d\'un certain volume d\'air. Les valeurs sont exprimées en secondes et en l/m2/min.', 'gestion-atelier-cct' ) . '</p>';
+echo '<p class="muted">' . esc_html__( 'État de vieillissement des tissus mesuré à l\'aide d\'un porosimètre de la marque JDC qui mesure le temps écoulé pour le passage au travers du tissu d\'un certain volume d\'air. Les valeurs sont exprimées en secondes et en l/m2/min. Chaque zone est jugée sur sa propre mesure (charte ParachecK 2025).', 'gestion-atelier-cct' )
+	. ' <strong>' . esc_html__( 'Seuils de réforme :', 'gestion-atelier-cct' ) . ' ' . esc_html( gacct_paracheck_source_label( $poro['source'] ?? 'pma', 'porosity' ) )
+	. ( ( 'constructeur' === ( $poro['source'] ?? 'pma' ) && ! empty( $poro['seuil'] ) ) ? ' (' . esc_html( sprintf( __( 'réforme sous %s s', 'gestion-atelier-cct' ), gacct_rp2_num( $poro['seuil'], 1 ) ) ) . ')' : '' )
+	. '</strong></p>';
 
 $porosity_values = gacct_paracheck_porosity_values( $data );
 $avg_rate        = ( null !== $poro['average'] && $poro['average'] > 0 ) ? $config['porosity_factor'] / $poro['average'] : null;
@@ -178,6 +181,13 @@ foreach ( $poro['rates'] as $rate ) {
 	echo '<td style="text-align:center;">' . esc_html( null !== $rate ? gacct_rp2_num( $rate, 1 ) : '—' ) . '</td>';
 }
 echo '<td style="text-align:center; font-weight:bold;">' . esc_html( gacct_rp2_num( $avg_rate, 1 ) ) . '</td></tr>';
+if ( ! empty( $poro['zones'] ) ) {
+	echo '<tr><th>' . esc_html__( 'État', 'gestion-atelier-cct' ) . '</th>';
+	foreach ( $poro['zones'] as $zone_result ) {
+		echo '<td style="text-align:center;">' . ( 'NON RÉALISÉ' === $zone_result ? '—' : gacct_rp2_badge( $zone_result ) ) . '</td>';
+	}
+	echo '<td style="text-align:center;">' . gacct_rp2_badge( $poro['result'] ) . '</td></tr>';
+}
 echo '</table>';
 echo '</td>';
 
@@ -238,6 +248,7 @@ if ( ! empty( $rupture['lines'] ) ) {
 		'nominal'  => __( 'Valeur nominale', 'gestion-atelier-cct' ),
 		'material' => __( 'Matériau', 'gestion-atelier-cct' ),
 		'seuil'    => __( 'Seuil réforme', 'gestion-atelier-cct' ),
+		'source'   => __( 'Origine du seuil', 'gestion-atelier-cct' ),
 		'measure'  => __( 'Mesure de rupture', 'gestion-atelier-cct' ),
 		'margin'   => __( 'Marge (%)', 'gestion-atelier-cct' ),
 		'result'   => __( 'Interprétation', 'gestion-atelier-cct' ),
@@ -249,13 +260,16 @@ if ( ! empty( $rupture['lines'] ) ) {
 			echo '<td style="text-align:center;">';
 			switch ( $row_key ) {
 				case 'nominal':
-					echo esc_html( $line['nominal'] > 0 ? gacct_rp2_num( $line['nominal'], 1 ) : '—' );
+					echo esc_html( $line['nominal'] > 0 ? gacct_rp2_num( $line['nominal'], 1 ) : '—' ) . ( ! empty( $line['brut'] ) ? ' <span class="muted">' . esc_html__( '(brut × 1,05)', 'gestion-atelier-cct' ) . '</span>' : '' );
+					break;
+				case 'source':
+					echo esc_html( gacct_paracheck_source_label( $line['source'] ?? 'pma' ) );
 					break;
 				case 'material':
 					echo esc_html( isset( $config['rupture_materials'][ $line['material'] ] ) ? $config['rupture_materials'][ $line['material'] ]['label'] : '—' );
 					break;
 				case 'seuil':
-					echo esc_html( $line['seuil'] > 0 ? gacct_rp2_num( $line['seuil'], 2 ) : '—' ) . ( $line['custom'] ? ' <span class="muted">(VR)</span>' : '' );
+					echo esc_html( $line['seuil'] > 0 ? gacct_rp2_num( $line['seuil'], 2 ) : '—' );
 					break;
 				case 'measure':
 					echo esc_html( null !== $line['measure'] ? gacct_rp2_num( $line['measure'], 1 ) : '—' );
@@ -278,7 +292,7 @@ if ( ! empty( $rupture['lines'] ) ) {
 
 echo '</td>';
 echo '<td style="width:32%; vertical-align:bottom;">';
-echo '<p class="muted" style="font-size:7.4px;">' . esc_html__( '*NR = Non réalisé — test réalisé sur recommandation du constructeur. Valeur nominale de référence : PMA.', 'gestion-atelier-cct' ) . '</p>';
+echo '<p class="muted" style="font-size:7.4px;">' . esc_html__( '*NR = Non réalisé — test réalisé sur recommandation du constructeur. Seuil de réforme PMA = valeur nominale × coefficient du matériau (Aramide, Technora, Vectran 0,45 ; Dyneema 0,65), sauf origine Constructeur ou Atelier indiquée. Barème charte FFVL ParachecK 2025.', 'gestion-atelier-cct' ) . '</p>';
 echo '</td>';
 echo '<td style="width:22%; vertical-align:top; padding-left:4px;">';
 echo gacct_rp2_scale_legend( $texts['legends']['rupture'], 'marge' );

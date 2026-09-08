@@ -33,17 +33,42 @@
 		return { average: average, result: U.scaleResult( average, cfg.visual_scale ) };
 	}
 
-	function calcPorosity( values, U ) {
-		var nums = values.filter( function ( v ) { return '' !== v && ! isNaN( parseFloat( v ) ); } )
-			.map( parseFloat );
+	/** Barème porosité selon l'origine du seuil (miroir de gacct_paracheck_porosity_scale). */
+	function porosityScale( source, seuil ) {
+		seuil = parseFloat( seuil ) || 0;
+		if ( 'constructeur' !== source || seuil <= 0 ) {
+			return cfg.porosity_scale;
+		}
+		return cfg.porosity_scale.map( function ( band, i ) {
+			if ( null === band.max ) {
+				return band;
+			}
+			return { max: 0 === i ? seuil : Math.max( band.max, seuil ), eq: band.eq, result: band.result };
+		} );
+	}
+
+	function calcPorosity( values, source, seuil, U ) {
+		var scale = porosityScale( source, seuil );
+		var nums  = [];
+		var zones = [];
+
+		values.forEach( function ( v ) {
+			if ( '' === v || isNaN( parseFloat( v ) ) ) {
+				zones.push( 'NON RÉALISÉ' );
+				return;
+			}
+			nums.push( parseFloat( v ) );
+			zones.push( U.scaleResult( parseFloat( v ), scale ) );
+		} );
 
 		if ( ! nums.length ) {
-			return { average: null, result: 'NON RÉALISÉ' };
+			return { average: null, zones: zones, result: 'NON RÉALISÉ' };
 		}
 
 		var average = nums.reduce( function ( a, b ) { return a + b; }, 0 ) / nums.length;
 
-		return { average: average, result: U.scaleResult( average, cfg.porosity_scale ) };
+		// Charte 2025 : réforme par zone, le résultat est le pire des zones.
+		return { average: average, zones: zones, result: U.worst( zones ) };
 	}
 
 	function calcTear( values, porosityAverage, U ) {
@@ -63,18 +88,25 @@
 
 	function calcRuptureLine( line, U ) {
 		var nominal = parseFloat( line.nominal ) || 0;
+		if ( line.brut && nominal > 0 ) {
+			nominal = Math.round( nominal * ( cfg.rupture_raw_factor || 1.05 ) * 100 ) / 100;
+		}
 		var measure = ( '' === line.measure || undefined === line.measure ) ? null : parseFloat( line.measure );
 		var coef    = cfg.rupture_materials[ line.material ] ? cfg.rupture_materials[ line.material ].coef : 0;
 		var custom  = parseFloat( line.seuil ) || 0;
-		var seuil   = custom > 0 ? custom : nominal * coef;
+		var source  = ( line.source && cfg.rupture_sources && cfg.rupture_sources[ line.source ] ) ? line.source : ( custom > 0 ? 'atelier' : 'pma' );
+		var seuil   = ( 'pma' !== source && custom > 0 ) ? custom : nominal * coef;
+		if ( 'pma' !== source && custom <= 0 ) {
+			source = 'pma';
+		}
 
 		if ( null === measure || isNaN( measure ) || nominal <= 0 || nominal === seuil ) {
-			return { seuil: seuil, margin: null, result: 'NR*' };
+			return { seuil: seuil, source: source, nominal: nominal, margin: null, result: 'NR*' };
 		}
 
 		var margin = Math.floor( ( measure - seuil ) / ( nominal - seuil ) * 100 );
 
-		return { seuil: seuil, margin: margin, result: U.scaleResult( margin, cfg.rupture_scale ) };
+		return { seuil: seuil, source: source, nominal: nominal, margin: margin, result: U.scaleResult( margin, cfg.rupture_scale ) };
 	}
 
 	function calcGeometry( calage, freins ) {
@@ -138,7 +170,13 @@
 		for ( var p = 0; p < poroCount; p++ ) {
 			poroValues.push( ( data.porosity && data.porosity[ p ] ) || '' );
 		}
-		var poro = calcPorosity( poroValues, U );
+		var poro = calcPorosity( poroValues, data.porosity_source || 'pma', data.porosity_seuil, U );
+
+		// Champ « seuil constructeur » visible seulement pour cette origine.
+		var poroSeuilField = form.querySelector( '[data-rf-poro-seuil]' );
+		if ( poroSeuilField && poroSeuilField.closest( '.gacct-rf-field' ) ) {
+			poroSeuilField.closest( '.gacct-rf-field' ).hidden = 'constructeur' !== ( data.porosity_source || 'pma' );
+		}
 		U.setBadge( form, 'porosity', poro.result );
 		var poroInfo = form.querySelector( '[data-rf-computed="porosity"]' );
 		if ( poroInfo ) {
@@ -148,7 +186,7 @@
 				: U.fmt( poro.average, 1 );
 			poroInfo.textContent = null === poro.average
 				? '—'
-				: 'Moyenne : ' + poroAvgTxt + ' s — ' + ( poro.average > 0 ? U.fmt( cfg.porosity_factor / poro.average, 1 ) : '0' ) + ' l/m²/min → ' + poro.result;
+				: 'Moyenne : ' + poroAvgTxt + ' s — ' + ( poro.average > 0 ? U.fmt( cfg.porosity_factor / poro.average, 1 ) : '0' ) + ' l/m²/min · zones : ' + poro.zones.map( function ( z ) { return 'NON RÉALISÉ' === z ? '—' : z; } ).join( ' / ' ) + ' → ' + poro.result;
 		}
 
 		// Auto-remplissage déchirure (réunion du 06/08/2026) : la valeur attendue
@@ -197,14 +235,27 @@
 			linesWrap.querySelectorAll( '.gacct-rf-rupture-line' ).forEach( function ( row ) {
 				var line = {};
 				row.querySelectorAll( '[data-rl]' ).forEach( function ( field ) {
+					if ( 'checkbox' === field.type ) {
+						line[ field.getAttribute( 'data-rl' ) ] = field.checked ? '1' : '';
+						return;
+					}
+					// Nom de suspente toujours en majuscules (Timothée, 08/09/2026).
+					if ( 'ref' === field.getAttribute( 'data-rl' ) && field.value !== field.value.toUpperCase() ) {
+						field.value = field.value.toUpperCase();
+					}
 					line[ field.getAttribute( 'data-rl' ) ] = field.value;
 				} );
 				var res     = calcRuptureLine( line, U );
 				var display = row.querySelector( '[data-rl-result]' );
+				var seuilField = row.querySelector( '[data-rl-seuil-field]' );
+				if ( seuilField ) {
+					seuilField.hidden = 'pma' === ( line.source || 'pma' );
+				}
+				var sourceLabel = ( cfg.rupture_sources && cfg.rupture_sources[ res.source ] ) ? cfg.rupture_sources[ res.source ] : res.source;
 				if ( display ) {
 					display.textContent = 'NR*' === res.result
-						? 'Seuil : ' + U.fmt( res.seuil, 2 ) + ' DaN — en attente de mesure'
-						: 'Seuil : ' + U.fmt( res.seuil, 2 ) + ' DaN · marge ' + res.margin + ' % → ' + res.result;
+						? 'Seuil : ' + U.fmt( res.seuil, 2 ) + ' DaN (' + sourceLabel + ') — en attente de mesure'
+						: 'Seuil : ' + U.fmt( res.seuil, 2 ) + ' DaN (' + sourceLabel + ') · marge ' + res.margin + ' % → ' + res.result;
 				}
 				if ( 'NR*' !== res.result ) {
 					ruptureResults.push( res.result );
@@ -244,6 +295,10 @@
 				general = 'RÉFORME';
 			} else {
 				general = U.worst( [ visualGlobal, poro.result, tear.result, rupture.replace( '*', '' ) ] );
+				// NEUF : visuel NEUF et tous les tests au plafond (miroir PHP).
+				if ( 'NEUF' === visualGlobal && 'TRÈS BON ÉTAT' === general ) {
+					general = 'NEUF';
+				}
 			}
 			if ( generalBadge ) {
 				generalBadge.hidden = false;
@@ -317,6 +372,11 @@
 			var input = wrap ? wrap.querySelector( '[data-rl="seuil"]' ) : null;
 			if ( input && ctx.form ) {
 				input.value = ( Math.round( vr * 100 ) / 100 );
+				var row    = button.closest( '.gacct-rf-rupture-line' );
+				var source = row ? row.querySelector( '[data-rl="source"]' ) : null;
+				if ( source ) {
+					source.value = 'atelier';
+				}
 				ctx.recompute( ctx.form );
 			}
 		}

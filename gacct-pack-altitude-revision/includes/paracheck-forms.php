@@ -72,11 +72,16 @@ function gacct_rf_render_voile_form( array $revision, $order ) {
 
 	// ------------------------------------------------ Porosité.
 	gacct_rf_section_open( __( 'Test de porosité des tissus', 'gestion-atelier-cct' ), false, 'porosity' );
-	echo '<p class="gacct-op-muted">' . esc_html__( 'Porosimètre JDC — temps en secondes ; le débit (l/m²/min) et l\'interprétation se calculent seuls.', 'gestion-atelier-cct' ) . '</p>';
+	echo '<p class="gacct-op-muted">' . esc_html__( 'Porosimètre JDC — temps en secondes ; le débit (l/m²/min) et l\'interprétation se calculent seuls. Charte 2025 : chaque zone est jugée sur sa propre mesure, le résultat est celui de la moins bonne.', 'gestion-atelier-cct' ) . '</p>';
 	echo '<div class="gacct-rf-grid gacct-rf-grid-poro">';
 	foreach ( $config['porosity_points'] as $i => $point ) {
 		gacct_rf_input( 'porosity.' . $i, $point . ' (s)', '', 'number', 'step="0.1" min="0" inputmode="decimal"' );
 	}
+	echo '</div>';
+	// Origine du seuil de réforme (08/09/2026) : PMA par défaut, ou constructeur.
+	echo '<div class="gacct-rf-grid gacct-rf-grid-source">';
+	gacct_rf_select( 'porosity_source', __( 'Seuils de réforme', 'gestion-atelier-cct' ), $config['porosity_sources'], 'pma' );
+	gacct_rf_input( 'porosity_seuil', __( 'Seuil constructeur : réforme sous (s)', 'gestion-atelier-cct' ), '', 'number', 'step="0.1" min="0" inputmode="decimal" data-rf-poro-seuil' );
 	echo '</div>';
 	echo '<p class="gacct-rf-computed" data-rf-computed="porosity">—</p>';
 	gacct_rf_section_close();
@@ -94,7 +99,7 @@ function gacct_rf_render_voile_form( array $revision, $order ) {
 
 	// ------------------------------------------------ Rupture des suspentes.
 	gacct_rf_section_open( __( 'Test de rupture des suspentes', 'gestion-atelier-cct' ), false, 'rupture' );
-	echo '<p class="gacct-op-muted">' . esc_html__( 'Sur recommandation du constructeur (0 à 5 suspentes). Seuil de réforme = valeur nominale × coefficient matériau, ou VR du « Calcul réforme suspente » si renseigné.', 'gestion-atelier-cct' ) . '</p>';
+	echo '<p class="gacct-op-muted">' . esc_html__( 'Sur recommandation du constructeur (0 à 5 suspentes). Seuil de réforme selon l\'origine choisie par ligne : PMA = valeur nominale × coefficient du matériau (Aramide, Technora, Vectran 0,45 ; Dyneema 0,65), Constructeur = valeur fournie, Atelier = VR du « Calcul réforme suspente ». Sans donnée constructeur, cochez « matière brute » : nominale × 1,05 (charte 2025).', 'gestion-atelier-cct' ) . '</p>';
 	echo '<p class="gacct-rf-vr-hint" data-rf-vr-hint hidden></p>';
 	echo '<div data-rf-rupture-lines data-rf-max="' . esc_attr( $config['rupture_max_lines'] ) . '"></div>';
 	echo '<button type="button" class="button button-small" data-rf-action="add-rupture">+ ' . esc_html__( 'Ajouter une suspente testée', 'gestion-atelier-cct' ) . '</button>';
@@ -108,7 +113,7 @@ function gacct_rf_render_voile_form( array $revision, $order ) {
 	echo '<template data-rf-rupture-template>';
 	echo '<div class="gacct-rf-rupture-line">';
 	echo '<div class="gacct-rf-grid gacct-rf-grid-rupture">';
-	echo '<label class="gacct-rf-field"><span class="gacct-rf-label">' . esc_html__( 'Suspente testée', 'gestion-atelier-cct' ) . '</span><input type="text" data-rl="ref" placeholder="A1G"></label>';
+	echo '<label class="gacct-rf-field"><span class="gacct-rf-label">' . esc_html__( 'Suspente testée', 'gestion-atelier-cct' ) . '</span><input type="text" data-rl="ref" placeholder="A1G" style="text-transform:uppercase" autocapitalize="characters"></label>';
 	echo '<label class="gacct-rf-field"><span class="gacct-rf-label">' . esc_html__( 'Valeur nominale (DaN)', 'gestion-atelier-cct' ) . '</span><input type="number" step="0.1" min="0" data-rl="nominal"></label>';
 	echo '<label class="gacct-rf-field"><span class="gacct-rf-label">' . esc_html__( 'Matériau', 'gestion-atelier-cct' ) . '</span><select data-rl="material">';
 	foreach ( $materials as $key => $label ) {
@@ -116,7 +121,13 @@ function gacct_rf_render_voile_form( array $revision, $order ) {
 	}
 	echo '</select></label>';
 	echo '<label class="gacct-rf-field"><span class="gacct-rf-label">' . esc_html__( 'Mesure de rupture (DaN)', 'gestion-atelier-cct' ) . '</span><input type="number" step="0.1" min="0" data-rl="measure"></label>';
-	echo '<label class="gacct-rf-field"><span class="gacct-rf-label">' . esc_html__( 'Seuil réforme (DaN, vide = auto)', 'gestion-atelier-cct' ) . '</span><span class="gacct-rf-seuil-wrap"><input type="number" step="0.01" min="0" data-rl="seuil"><button type="button" class="button button-small" data-rf-action="apply-vr" hidden>VR</button></span></label>';
+	echo '<label class="gacct-rf-field"><span class="gacct-rf-label">' . esc_html__( 'Origine du seuil de réforme', 'gestion-atelier-cct' ) . '</span><select data-rl="source">';
+	foreach ( $config['rupture_sources'] as $key => $label ) {
+		echo '<option value="' . esc_attr( $key ) . '">' . esc_html( $label ) . '</option>';
+	}
+	echo '</select></label>';
+	echo '<label class="gacct-rf-field" data-rl-seuil-field><span class="gacct-rf-label">' . esc_html__( 'Seuil de réforme forcé (DaN)', 'gestion-atelier-cct' ) . '</span><span class="gacct-rf-seuil-wrap"><input type="number" step="0.01" min="0" data-rl="seuil"><button type="button" class="button button-small" data-rf-action="apply-vr" hidden>VR</button></span></label>';
+	echo '<label class="gacct-op-check gacct-rf-field-check"><input type="checkbox" data-rl="brut" value="1"> ' . esc_html__( 'Nominale = matière brute × 1,05 (pas de donnée constructeur)', 'gestion-atelier-cct' ) . '</label>';
 	echo '</div>';
 	echo '<p class="gacct-rf-rupture-result"><span data-rl-result>—</span> <button type="button" class="gacct-rf-line-del" data-rf-action="del-rupture" aria-label="' . esc_attr__( 'Retirer cette suspente', 'gestion-atelier-cct' ) . '">×</button></p>';
 	echo '</div>';
