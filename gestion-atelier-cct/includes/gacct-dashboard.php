@@ -1015,7 +1015,9 @@ function gacct_dash_action_expedition( $order, array $conf, array $row = array()
 		: '';
 
 	if ( '' === $ship_html ) {
-		if ( $ship ) {
+		if ( $ship && ! empty( $ship['depot'] ) ) {
+			$text .= ' <span class="hl">' . esc_html( $ship['label'] ) . '</span>.';
+		} elseif ( $ship ) {
 			$text .= ' ' . sprintf(
 				gacct_dash_text( 'expedition_track_done' ),
 				'<span class="hl">' . esc_html( $ship['carrier_label'] ) . '</span>',
@@ -1905,8 +1907,11 @@ function gacct_dash_render_tracker_compact( $revision_id ) {
 	}
 
 	// Suivi colis déclaré, voile pas encore reçue : état d'affichage dérivé.
-	if ( 1 === $etat && function_exists( 'gacct_ship_in_transit' ) && gacct_ship_in_transit( $row ) ) {
-		$tracker['label'] = gacct_ship_texts()['in_transit'];
+	if ( 1 === $etat && function_exists( 'gacct_ship_in_transit' ) ) {
+		$transit = gacct_ship_in_transit( $row );
+		if ( $transit ) {
+			$tracker['label'] = ! empty( $transit['status_label'] ) ? $transit['status_label'] : gacct_ship_texts()['in_transit'];
+		}
 	}
 
 	// Dossier mis en pause par l'atelier : le libellé d'état l'annonce en clair
@@ -2040,6 +2045,12 @@ function gacct_dash_render_document( $revision_id ) {
 	$row = gacct_dash_revision_row( $revision_id );
 
 	if ( ! $row || empty( $row['rapport_pdf'] ) ) {
+		return '';
+	}
+
+	// Le rapport n'est remis au client qu'à partir de l'état 7 (solde réglé),
+	// comme sur le détail de commande et l'endpoint du coffre-fort (08/09/2026).
+	if ( (int) ( $row['etat_de_la_commande'] ?? 0 ) < 7 ) {
 		return '';
 	}
 

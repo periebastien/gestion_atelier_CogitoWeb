@@ -42,8 +42,24 @@ function gacct_ship_carriers() {
 				'label' => 'Chronopost',
 				'url'   => 'https://www.chronopost.fr/tracking-no-cms/suivi-page?listeNumerosLT=%s',
 			),
+			// Dépôt en main propre à la boutique (Timothée, 08/09/2026) : pas de
+			// n° de suivi, la « référence » est la date du dépôt (AAAA-MM-JJ).
+			// Un dépôt déclaré vaut colis en route : le créneau n'est PAS libéré
+			// automatiquement la veille au soir (gacct_lc_process_no_show exclut
+			// déjà tout suivi déclaré via gacct_ship_in_transit).
+			'depot'      => array(
+				'label' => __( 'Dépôt à la boutique', 'gestion-atelier-cct' ),
+				'url'   => '',
+			),
 		)
 	);
+}
+
+/**
+ * Ce « transporteur » est-il le dépôt en main propre ?
+ */
+function gacct_ship_is_depot( $carrier ) {
+	return 'depot' === sanitize_key( (string) $carrier );
 }
 
 /**
@@ -94,6 +110,12 @@ function gacct_ship_texts() {
 		'in_transit_tip' => __( '<strong>Info :</strong> votre colis %1$s n° %2$s est en route vers l’atelier. Nous vous confirmerons sa réception.', 'gestion-atelier-cct' ),
 		/* translators: 1: transporteur, 2: numéro de suivi */
 		'current'        => __( 'Colis %1$s n° %2$s', 'gestion-atelier-cct' ),
+		/* translators: %s: date du dépôt */
+		'current_depot'  => __( 'Matériel déposé à la boutique le %s', 'gestion-atelier-cct' ),
+		'in_transit_depot' => __( 'Déposé à la boutique, en attente de prise en charge par l’atelier', 'gestion-atelier-cct' ),
+		'label_date'     => __( 'Date du dépôt', 'gestion-atelier-cct' ),
+		'depot_hint'     => __( 'Vous déposez votre matériel vous-même ? Choisissez « Dépôt à la boutique » et indiquez la date : votre créneau reste réservé, même si le dépôt a lieu la veille ou le week-end.', 'gestion-atelier-cct' ),
+		'err_date'       => __( 'Indiquez la date de votre dépôt à la boutique.', 'gestion-atelier-cct' ),
 		'ok_saved'       => __( 'Merci, votre numéro de suivi est enregistré.', 'gestion-atelier-cct' ),
 		'err_carrier'    => __( 'Choisissez un transporteur dans la liste.', 'gestion-atelier-cct' ),
 		'err_number'     => __( 'Le numéro de suivi doit comporter de 4 à 40 caractères (lettres, chiffres, tirets, espaces).', 'gestion-atelier-cct' ),
@@ -187,13 +209,44 @@ function gacct_ship_info( $revision ) {
 	}
 
 	$carriers = gacct_ship_carriers();
+	$depot    = gacct_ship_is_depot( $carrier );
+	$label    = isset( $carriers[ $carrier ]['label'] ) ? (string) $carriers[ $carrier ]['label'] : ucfirst( $carrier );
+
+	if ( $depot ) {
+		$ts      = strtotime( $number . ' 12:00:00' );
+		$display = $ts ? wp_date( get_option( 'date_format' ), $ts ) : $number;
+		$line    = sprintf( gacct_ship_text( 'current_depot' ), $display );
+	} else {
+		$display = $number;
+		$line    = sprintf( gacct_ship_text( 'current' ), $label, $number );
+	}
 
 	return array(
-		'carrier'       => $carrier,
-		'carrier_label' => isset( $carriers[ $carrier ]['label'] ) ? (string) $carriers[ $carrier ]['label'] : ucfirst( $carrier ),
-		'number'        => $number,
-		'url'           => gacct_ship_tracking_url( $carrier, $number ),
+		'carrier'        => $carrier,
+		'carrier_label'  => $label,
+		'number'         => $number,
+		'number_display' => $display,
+		'depot'          => $depot,
+		'label'          => $line,                                                     // « Colis X n° Y » / « Matériel déposé le … »
+		'status_label'   => gacct_ship_text( $depot ? 'in_transit_depot' : 'in_transit' ), // libellé d'état dérivé
+		'url'            => gacct_ship_tracking_url( $carrier, $number ),
 	);
+}
+
+/**
+ * Normalise une date de dépôt saisie (AAAA-MM-JJ ou JJ/MM/AAAA) en AAAA-MM-JJ, '' si invalide.
+ */
+function gacct_ship_clean_date( $raw ) {
+	$raw = trim( (string) $raw );
+
+	if ( preg_match( '/^(\d{4})-(\d{2})-(\d{2})$/', $raw, $m ) && checkdate( (int) $m[2], (int) $m[3], (int) $m[1] ) ) {
+		return $raw;
+	}
+	if ( preg_match( '#^(\d{1,2})/(\d{1,2})/(\d{4})$#', $raw, $m ) && checkdate( (int) $m[2], (int) $m[1], (int) $m[3] ) ) {
+		return sprintf( '%04d-%02d-%02d', $m[3], $m[2], $m[1] );
+	}
+
+	return '';
 }
 
 /**
@@ -271,10 +324,16 @@ function gacct_ship_save( $order, $carrier, $number ) {
 		return new WP_Error( 'carrier', gacct_ship_text( 'err_carrier' ) );
 	}
 
-	$number = gacct_ship_clean_number( $number );
-
-	if ( '' === $number ) {
-		return new WP_Error( 'number', gacct_ship_text( 'err_number' ) );
+	if ( gacct_ship_is_depot( $carrier ) ) {
+		$number = gacct_ship_clean_date( $number );
+		if ( '' === $number ) {
+			return new WP_Error( 'date', gacct_ship_text( 'err_date' ) );
+		}
+	} else {
+		$number = gacct_ship_clean_number( $number );
+		if ( '' === $number ) {
+			return new WP_Error( 'number', gacct_ship_text( 'err_number' ) );
+		}
 	}
 
 	$row = gacct_ship_resolve_revision( $order );
@@ -314,21 +373,20 @@ function gacct_ship_save( $order, $carrier, $number ) {
 
 	$label = (string) $carriers[ $carrier ]['label'];
 
+	$current = gacct_ship_info( array( 'envoi_transporteur' => $carrier, 'envoi_suivi' => $number ) );
+
 	if ( $previous ) {
 		$order->add_order_note( sprintf(
-			/* translators: 1: transporteur, 2: nouveau n°, 3: ancien transporteur, 4: ancien n° */
-			__( 'Le client a modifié son n° de suivi : %1$s n° %2$s (précédemment %3$s n° %4$s).', 'gestion-atelier-cct' ),
-			$label,
-			$number,
-			$previous['carrier_label'],
-			$previous['number']
+			/* translators: 1: nouvelle déclaration, 2: ancienne déclaration */
+			__( 'Le client a modifié sa déclaration d’envoi : %1$s (précédemment : %2$s).', 'gestion-atelier-cct' ),
+			$current['label'],
+			$previous['label']
 		) );
 	} else {
 		$order->add_order_note( sprintf(
-			/* translators: 1: transporteur, 2: n° de suivi */
-			__( 'Le client a déclaré l’expédition : %1$s n° %2$s.', 'gestion-atelier-cct' ),
-			$label,
-			$number
+			/* translators: %s: déclaration */
+			__( 'Le client a déclaré : %s.', 'gestion-atelier-cct' ),
+			$current['label']
 		) );
 	}
 
@@ -529,11 +587,7 @@ function gacct_ship_render_form( $order, $args = array() ) {
 
 	if ( $info ) {
 		$html .= '<p class="gacct-ship-current">';
-		$html .= sprintf(
-			esc_html( gacct_ship_text( 'current' ) ),
-			'<strong>' . esc_html( $info['carrier_label'] ) . '</strong>',
-			'<strong>' . esc_html( $info['number'] ) . '</strong>'
-		);
+		$html .= '<strong>' . esc_html( $info['label'] ) . '</strong>';
 
 		if ( '' !== $info['url'] ) {
 			$html .= ' <a class="gacct-ship-follow" href="' . esc_url( $info['url'] ) . '" target="_blank" rel="noopener">'
@@ -591,9 +645,12 @@ function gacct_ship_form_html( $order, $info, $args = array() ) {
 	$html .= '<input type="hidden" name="gacct_ship_key" value="' . esc_attr( $order->get_order_key() ) . '">';
 	$html .= wp_nonce_field( 'gacct_ship', 'gacct_ship_nonce', true, false );
 
+	$is_depot = $info && ! empty( $info['depot'] );
+
+	$html .= '<p class="gacct-ship-hint gacct-ship-depot-hint">' . esc_html( gacct_ship_text( 'depot_hint' ) ) . '</p>';
 	$html .= '<p class="gacct-ship-field">';
 	$html .= '<label for="' . esc_attr( $uid . '-carrier' ) . '">' . esc_html( gacct_ship_text( 'label_carrier' ) ) . '</label>';
-	$html .= '<select id="' . esc_attr( $uid . '-carrier' ) . '" name="gacct_ship_carrier" required>';
+	$html .= '<select id="' . esc_attr( $uid . '-carrier' ) . '" name="gacct_ship_carrier" required data-gacct-ship-carrier>';
 	$html .= '<option value="">' . esc_html( gacct_ship_text( 'choose' ) ) . '</option>';
 
 	foreach ( $carriers as $slug => $carrier ) {
@@ -603,13 +660,27 @@ function gacct_ship_form_html( $order, $info, $args = array() ) {
 
 	$html .= '</select></p>';
 
-	$html .= '<p class="gacct-ship-field">';
-	$html .= '<label for="' . esc_attr( $uid . '-number' ) . '">' . esc_html( gacct_ship_text( 'label_number' ) ) . '</label>';
-	$html .= '<input type="text" id="' . esc_attr( $uid . '-number' ) . '" name="gacct_ship_number"'
-		. ' value="' . esc_attr( $number ) . '"'
-		. ' placeholder="' . esc_attr( gacct_ship_text( 'placeholder' ) ) . '"'
-		. ' minlength="4" maxlength="40" pattern="[A-Za-z0-9 \-]{4,40}" required>';
+	$html .= '<p class="gacct-ship-field" data-gacct-ship-number-field'
+		. ' data-label-number="' . esc_attr( gacct_ship_text( 'label_number' ) ) . '"'
+		. ' data-label-date="' . esc_attr( gacct_ship_text( 'label_date' ) ) . '"'
+		. ' data-placeholder="' . esc_attr( gacct_ship_text( 'placeholder' ) ) . '">';
+	$html .= '<label for="' . esc_attr( $uid . '-number' ) . '">' . esc_html( gacct_ship_text( $is_depot ? 'label_date' : 'label_number' ) ) . '</label>';
+	if ( $is_depot ) {
+		$html .= '<input type="date" id="' . esc_attr( $uid . '-number' ) . '" name="gacct_ship_number" value="' . esc_attr( $number ) . '" required>';
+	} else {
+		$html .= '<input type="text" id="' . esc_attr( $uid . '-number' ) . '" name="gacct_ship_number"'
+			. ' value="' . esc_attr( $number ) . '"'
+			. ' placeholder="' . esc_attr( gacct_ship_text( 'placeholder' ) ) . '"'
+			. ' minlength="4" maxlength="40" pattern="[A-Za-z0-9 \-]{4,40}" required>';
+	}
 	$html .= '</p>';
+
+	// Bascule n° de suivi ↔ date de dépôt selon le « transporteur » choisi (une fois par page).
+	static $script_done = false;
+	if ( ! $script_done ) {
+		$script_done = true;
+		$html .= '<script>(function(){document.addEventListener("change",function(e){var sel=e.target;if(!sel||!sel.matches||!sel.matches("[data-gacct-ship-carrier]"))return;var form=sel.closest("form"),field=form?form.querySelector("[data-gacct-ship-number-field]"):null,input=field?field.querySelector("input"):null,label=field?field.querySelector("label"):null;if(!input)return;var depot=sel.value==="depot";if(depot){input.type="date";input.removeAttribute("pattern");input.removeAttribute("minlength");input.removeAttribute("maxlength");input.removeAttribute("placeholder");if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(input.value)){var d=new Date();input.value=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}if(label)label.textContent=field.getAttribute("data-label-date");}else{input.type="text";input.setAttribute("pattern","[A-Za-z0-9 \\-]{4,40}");input.setAttribute("minlength","4");input.setAttribute("maxlength","40");input.setAttribute("placeholder",field.getAttribute("data-placeholder"));if(/^\\d{4}-\\d{2}-\\d{2}$/.test(input.value))input.value="";if(label)label.textContent=field.getAttribute("data-label-number");}});})();</script>';
+	}
 
 	$html .= '<p class="gacct-ship-actions"><button type="submit" class="gacct-ship-btn">'
 		. esc_html( gacct_ship_text( $info ? 'update' : ( $compact ? 'save_short' : 'submit' ) ) ) . '</button></p>';

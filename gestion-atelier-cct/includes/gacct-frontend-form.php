@@ -186,6 +186,14 @@ function gacct_demande_v2_config() {
 			// Champs explicitement facultatifs : reçoivent la pastille « Facultatif »
 			// (l'étoile des champs requis étant peu lisible pour un néophyte).
 			'facultatifs' => array( 'numero_serie' ),
+			// Contrôle complet Équipement (produit 19) : le client décrit sa sellette
+			// et son secours à la demande, le rapport équipement est prérempli
+			// (Timothée, 08/09/2026). Les pliages de secours n'ouvrent que le bloc secours.
+			'equipementIds' => array_map( 'intval', (array) apply_filters( 'gacct_demande_equipement_ids', array( 19 ) ) ),
+			'equipChamps'   => array(
+				'sellette' => array( 'sellette_marque', 'sellette_modele', 'sellette_taille' ),
+				'secours'  => array( 'secours_marque', 'secours_modele', 'secours_taille', 'secours_date' ),
+			),
 			'etapes'    => array(
 				1 => __( 'Votre matériel', 'gestion-atelier-cct' ),
 				2 => __( 'Vos prestations', 'gestion-atelier-cct' ),

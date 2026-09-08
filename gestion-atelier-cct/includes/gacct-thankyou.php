@@ -147,6 +147,15 @@ function gacct_conf_data( $order ) {
 	// 0 est un acompte valide : on ne se rabat sur le total que si la meta est absente.
 	$deposit = '' === $deposit ? (float) $order->get_total() : (float) $deposit;
 	$balance = round( max( 0, $total_initial - $deposit ), wc_get_price_decimals() );
+
+	// Solde encaissé (Kojito pose `_kojito_solde_paye` au paiement du solde) :
+	// plus rien à payer, quel que soit l'acompte (Timothée, 08/09/2026 : le
+	// détail affichait encore le montant du solde après son règlement).
+	$solde_paye = $order->get_meta( '_kojito_solde_paye' );
+	if ( '' !== (string) $solde_paye || $order->has_status( 'completed' ) ) {
+		$balance = 0.0;
+		$deposit = $total_initial;
+	}
 	$percent = $total_initial > 0 ? round( $deposit / $total_initial * 100, 1 ) : 100;
 
 	// --- Créneau atelier + matériel (CCT) ---------------------------------

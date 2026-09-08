@@ -1692,6 +1692,74 @@
 			el.dispatchEvent( new Event( 'change', { bubbles: true } ) );
 		}
 
+		/* --- Sellette et secours (08/09/2026) : les champs `gacct-v2-equip-*`
+		   du formulaire ne s'affichent que si un Contrôle complet Équipement
+		   (bloc sellette + secours) ou un pliage de secours (bloc secours) est
+		   coché. Cachés = vidés, pour ne rien enregistrer d'inutile. --- */
+		var equipIds = ( v2.equipementIds || [] ).map( String );
+		var equipChamps = v2.equipChamps || { sellette: [], secours: [] };
+
+		function equipRows( noms ) {
+			var rows = [];
+			( noms || [] ).forEach( function ( nom ) {
+				var input = form.querySelector( '[name="' + nom + '"]' );
+				var row   = input ? input.closest( '.jet-form-builder-row' ) : null;
+				if ( row ) {
+					rows.push( { row: row, input: input } );
+				}
+			} );
+			return rows;
+		}
+
+		function majEquipement() {
+			var equipCoche = fieldInputs( 'revisions_controle' ).some( function ( el ) {
+				return el.type === 'checkbox' && el.checked && equipIds.indexOf( String( el.value ) ) > -1;
+			} );
+			var secoursCoche = fieldInputs( 'pliages_secours' ).some( function ( el ) {
+				return el.type === 'checkbox' && el.checked;
+			} );
+
+			equipRows( equipChamps.sellette ).forEach( function ( r ) {
+				r.row.hidden = ! equipCoche;
+				if ( ! equipCoche ) { r.input.value = ''; }
+			} );
+			equipRows( equipChamps.secours ).forEach( function ( r ) {
+				var show = equipCoche || secoursCoche;
+				r.row.hidden = ! show;
+				if ( ! show ) { r.input.value = ''; }
+			} );
+
+			var titre = form.querySelector( '.gacct-v2-equip-titre' );
+			if ( titre ) {
+				titre.hidden = ! ( equipCoche || secoursCoche );
+				titre.textContent = equipCoche
+					? ( v2i18n.equipTitre || 'Votre sellette et votre parachute de secours' )
+					: ( v2i18n.secoursTitre || 'Votre parachute de secours' );
+			}
+		}
+
+		// Titre de bloc devant le premier champ équipement.
+		( function () {
+			var premiers = equipRows( equipChamps.sellette ).concat( equipRows( equipChamps.secours ) );
+			if ( premiers.length && ! form.querySelector( '.gacct-v2-equip-titre' ) ) {
+				var h = document.createElement( 'p' );
+				h.className = 'gacct-v2-equip-titre gacct-v2-sous-titre';
+				h.hidden = true;
+				premiers[ 0 ].row.parentNode.insertBefore( h, premiers[ 0 ].row );
+			}
+		} )();
+
+		form.addEventListener( 'change', function ( e ) {
+			var t = e.target;
+			if ( t && t.type === 'checkbox' ) {
+				var n = t.getAttribute( 'data-field-name' ) || t.name || '';
+				if ( /revisions_controle|pliages_secours/.test( n ) ) {
+					majEquipement();
+				}
+			}
+		} );
+		setTimeout( majEquipement, 0 );
+
 		/* --- Choix unique décochable : une case cochée décoche ses sœurs.
 		   (Cases à cocher natives : le re-clic décoche déjà tout seul.) --- */
 		groupesUniques.forEach( function ( name ) {

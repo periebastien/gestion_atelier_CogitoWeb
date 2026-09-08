@@ -48,7 +48,9 @@ $state_txt = null === $etat ? '' : ( isset( $labels[ $etat ] ) ? $labels[ $etat 
 
 // Suivi colis déclaré, voile pas encore reçue : état d'affichage dérivé.
 if ( ! empty( $d['in_transit'] ) && function_exists( 'gacct_ship_texts' ) ) {
-	$state_txt = gacct_ship_texts()['in_transit'];
+	$state_txt = ( is_array( $d['in_transit'] ) && ! empty( $d['in_transit']['status_label'] ) )
+		? $d['in_transit']['status_label']
+		: gacct_ship_texts()['in_transit'];
 }
 $needs_you = in_array( $etat, array( 0, 4, 6 ), true );
 
@@ -246,6 +248,9 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 			</p>
 			<?php if ( ! empty( $d['store_address'] ) ) : ?>
 				<p class="gacct-vo-address"><?php echo esc_html( implode( ' · ', $d['store_address'] ) ); ?></p>
+			<?php endif; ?>
+			<?php if ( ! empty( $d['links']['packing_guide'] ) ) : ?>
+				<a class="gacct-vo-btn is-secondary" href="<?php echo esc_url( $d['links']['packing_guide'] ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Consignes d\'emballage', 'gestion-atelier-cct' ); ?></a>
 			<?php endif; ?>
 			<?php if ( function_exists( 'gacct_conf_feature' ) && gacct_conf_feature( 'work_order' ) && ! empty( $d['links']['work_order'] ) ) : ?>
 				<?php if ( ! empty( $d['work_order_locked'] ) ) : ?>

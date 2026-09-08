@@ -192,12 +192,17 @@ function gacct_rf_render_equipement_form( array $revision, $order ) {
 	gacct_rf_pilot_fields( $order );
 	gacct_rf_section_close();
 
+	// Préremplissage depuis la demande du client (champs CCT sellette_* / secours_*, 08/09/2026).
+	$rv = static function ( $key ) use ( $revision ) {
+		return trim( (string) ( $revision[ $key ] ?? '' ) );
+	};
+
 	gacct_rf_section_open( __( 'Sellette', 'gestion-atelier-cct' ), true );
 	echo '<div class="gacct-rf-grid">';
-	gacct_rf_input( 'sellette.marque', __( 'Marque', 'gestion-atelier-cct' ) );
-	gacct_rf_input( 'sellette.modele', __( 'Modèle', 'gestion-atelier-cct' ) );
+	gacct_rf_input( 'sellette.marque', __( 'Marque', 'gestion-atelier-cct' ), $rv( 'sellette_marque' ) );
+	gacct_rf_input( 'sellette.modele', __( 'Modèle', 'gestion-atelier-cct' ), $rv( 'sellette_modele' ) );
 	gacct_rf_input( 'sellette.numero', __( 'N°', 'gestion-atelier-cct' ) );
-	gacct_rf_input( 'sellette.taille', __( 'Taille', 'gestion-atelier-cct' ) );
+	gacct_rf_input( 'sellette.taille', __( 'Taille', 'gestion-atelier-cct' ), $rv( 'sellette_taille' ) );
 	echo '</div>';
 	echo '<label class="gacct-rf-field"><span class="gacct-rf-label">' . esc_html__( 'Vérifications', 'gestion-atelier-cct' ) . '</span>';
 	echo '<textarea rows="4" data-rf="sellette.verifications" data-rf-default="' . esc_attr( "Vérification : OK\nMontage : OK" ) . '"></textarea></label>';
@@ -207,11 +212,11 @@ function gacct_rf_render_equipement_form( array $revision, $order ) {
 
 	gacct_rf_section_open( __( 'Parachute de secours', 'gestion-atelier-cct' ), true );
 	echo '<div class="gacct-rf-grid">';
-	gacct_rf_input( 'secours.marque', __( 'Marque', 'gestion-atelier-cct' ) );
-	gacct_rf_input( 'secours.modele', __( 'Modèle', 'gestion-atelier-cct' ) );
+	gacct_rf_input( 'secours.marque', __( 'Marque', 'gestion-atelier-cct' ), $rv( 'secours_marque' ) );
+	gacct_rf_input( 'secours.modele', __( 'Modèle', 'gestion-atelier-cct' ), $rv( 'secours_modele' ) );
 	gacct_rf_input( 'secours.numero', __( 'N°', 'gestion-atelier-cct' ) );
-	gacct_rf_input( 'secours.taille', __( 'Taille', 'gestion-atelier-cct' ) );
-	gacct_rf_input( 'secours.date_production', __( 'Date de production', 'gestion-atelier-cct' ) );
+	gacct_rf_input( 'secours.taille', __( 'Taille', 'gestion-atelier-cct' ), $rv( 'secours_taille' ) );
+	gacct_rf_input( 'secours.date_production', __( 'Date de production', 'gestion-atelier-cct' ), $rv( 'secours_date' ) );
 	echo '</div>';
 	echo '<label class="gacct-op-check"><input type="checkbox" data-rf="secours.aeration" value="1"> ' . esc_html__( 'Aération et pliage du parachute', 'gestion-atelier-cct' ) . '</label>';
 	echo '<label class="gacct-rf-field"><span class="gacct-rf-label">' . esc_html__( 'Remarque(s)', 'gestion-atelier-cct' ) . '</span>';
