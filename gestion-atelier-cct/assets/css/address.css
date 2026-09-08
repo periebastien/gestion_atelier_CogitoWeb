@@ -1,0 +1,159 @@
+/* =============================================================================
+ * Espace client : « Adresse de livraison » (/mon-compte/adresse-de-livraison/)
+ * — gestion-atelier-cct / includes/gacct-address.php + templates/address.php
+ *
+ * Même registre que profile.css (cartes, champs, bouton jaune) : aucune couleur
+ * en dur, variables --gacct-* du thème avec les replis « Altitude Révision ».
+ * ============================================================================= */
+
+.gacct-addr {
+	--adr-ink:         var(--gacct-text, #1a1a1a);
+	--adr-ink-3:       var(--gacct-dash-ink-3, #6b6b6b);
+	--adr-teal:        var(--gacct-accent, #20c4c3);
+	--adr-teal-dark:   var(--gacct-accent-dark, #189998);
+	--adr-yellow:      var(--gacct-cta, #ffbd20);
+	--adr-yellow-dark: var(--gacct-cta-dark, #e0a800);
+	--adr-surface:     var(--gacct-surface, #fff);
+	--adr-line-2:      var(--gacct-line-strong, rgba(0, 0, 0, 0.12));
+	--adr-green-soft:  var(--gacct-success-soft, #e6f7f1);
+	--adr-green-ink:   var(--gacct-success-ink, #047857);
+	--adr-red-soft:    var(--gacct-danger-soft, #fff5f5);
+	--adr-red-ink:     var(--gacct-danger, #c92a2a);
+	--adr-red-line:    var(--gacct-danger-line, #ffd7d7);
+	--adr-radius:      var(--gacct-dash-radius, 9px);
+	--adr-radius-lg:   var(--gacct-dash-radius-lg, 14px);
+
+	max-width: 720px;
+	color: var(--adr-ink);
+}
+
+.gacct-addr-form {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.gacct-addr-notice {
+	padding: 12px 16px;
+	border-radius: var(--adr-radius);
+	border: 1px solid transparent;
+	font-size: 14px;
+	margin-bottom: 20px;
+}
+.gacct-addr-notice--success { background: var(--adr-green-soft); border-color: rgba(4, 120, 87, 0.18); color: var(--adr-green-ink); }
+.gacct-addr-notice--error   { background: var(--adr-red-soft); border-color: var(--adr-red-line); color: var(--adr-red-ink); }
+
+.gacct-addr-card {
+	background: var(--adr-surface);
+	border: 1px solid var(--adr-line-2);
+	border-radius: var(--adr-radius-lg);
+	padding: 22px 24px;
+}
+.gacct-addr-card__title {
+	margin: 0 0 4px;
+	font-size: 17px;
+	font-weight: 800;
+}
+.gacct-addr-card__intro {
+	margin: 0 0 16px;
+	color: var(--adr-ink-3);
+	font-size: 14px;
+	line-height: 1.5;
+}
+.gacct-addr-empty {
+	margin: 0 0 14px;
+	font-size: 13px;
+	color: var(--adr-teal-dark);
+	font-weight: 700;
+}
+
+.gacct-addr-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 14px 16px;
+}
+.gacct-addr-field {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	min-width: 0;
+}
+.gacct-addr-field--company,
+.gacct-addr-field--address_1,
+.gacct-addr-field--address_2,
+.gacct-addr-field--phone {
+	grid-column: 1 / -1;
+}
+.gacct-addr-field label {
+	font-size: 13px;
+	font-weight: 700;
+}
+.gacct-addr-req {
+	color: var(--adr-red-ink);
+	margin-left: 2px;
+}
+.gacct-addr .gacct-addr-field input,
+.gacct-addr .gacct-addr-field select {
+	width: 100%;
+	min-height: 44px;
+	padding: 10px 12px;
+	border: 1px solid var(--adr-line-2);
+	border-radius: var(--adr-radius);
+	background: var(--adr-surface);
+	font: inherit;
+	font-size: 15px;
+	color: var(--adr-ink);
+}
+.gacct-addr .gacct-addr-field input:focus,
+.gacct-addr .gacct-addr-field select:focus {
+	outline: none;
+	border-color: var(--adr-teal);
+	box-shadow: 0 0 0 3px rgba(32, 196, 195, 0.18);
+}
+
+.gacct-addr-check {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0 0 14px;
+	font-size: 14px;
+	font-weight: 700;
+	cursor: pointer;
+}
+.gacct-addr-check input {
+	width: 18px;
+	height: 18px;
+	margin: 0;
+	accent-color: var(--adr-teal);
+}
+
+.gacct-addr-actions {
+	display: flex;
+	justify-content: flex-end;
+}
+.gacct-addr-btn {
+	padding: 12px 24px;
+	border: 0;
+	border-radius: var(--adr-radius);
+	background: var(--adr-yellow);
+	color: var(--adr-ink);
+	font: inherit;
+	font-weight: 800;
+	font-size: 15px;
+	cursor: pointer;
+}
+.gacct-addr-btn:hover {
+	background: var(--adr-yellow-dark);
+}
+
+@media (max-width: 600px) {
+	.gacct-addr-grid {
+		grid-template-columns: 1fr;
+	}
+	.gacct-addr-card {
+		padding: 18px 16px;
+	}
+	.gacct-addr-btn {
+		width: 100%;
+	}
+}

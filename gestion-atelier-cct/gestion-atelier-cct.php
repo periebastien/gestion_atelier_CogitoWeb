@@ -53,6 +53,7 @@ require_once __DIR__ . '/includes/gacct-billing.php';
 require_once __DIR__ . '/includes/gacct-signature.php';
 require_once __DIR__ . '/includes/gacct-vieworder.php';
 require_once __DIR__ . '/includes/gacct-orders.php';
+require_once __DIR__ . '/includes/gacct-address.php';
 require_once __DIR__ . '/includes/gacct-shipping.php';
 require_once __DIR__ . '/includes/gacct-client-tables.php';
 require_once __DIR__ . '/includes/gacct-regions.php';
