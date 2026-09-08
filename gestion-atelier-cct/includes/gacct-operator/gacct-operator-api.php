@@ -492,6 +492,24 @@ function gacct_op_ajax_planning_events() {
 	$events   = array();
 	$labels   = gacct_op_state_labels();
 
+	// Jours fériés et fermetures exceptionnelles (fond gris). Réglages :
+	// Configuration > Jours fériés & fermetures (includes/gacct-calendar.php).
+	if ( function_exists( 'gacct_cal_closures_between' ) ) {
+		$closures = gacct_cal_closures_between( $start_dt->format( 'Y-m-d' ), $end_dt->modify( '-1 day' )->format( 'Y-m-d' ) );
+
+		foreach ( $closures as $ymd => $closure ) {
+			$events[] = array(
+				'id'            => 'closed-' . $ymd,
+				'title'         => $closure['label'],
+				'start'         => $ymd,
+				'allDay'        => true,
+				'display'       => 'background',
+				'classNames'    => array( 'gacct-op-day-closed', 'gacct-op-day-closed-' . $closure['reason'] ),
+				'extendedProps' => array( 'type' => 'closure', 'reason' => $closure['reason'], 'label' => $closure['label'] ),
+			);
+		}
+	}
+
 	foreach ( gacct_op_planning_capacities( $start_ts, $end_ts ) as $row ) {
 		$available = max( 0, (float) $row['capacity_hours'] - (float) $row['occupied_hours'] );
 		$day      = wp_date( 'Y-m-d', (int) $row['day_ts'], $tz );
@@ -504,7 +522,12 @@ function gacct_op_ajax_planning_events() {
 			'allDay'        => true,
 			'display'       => 'background',
 			'classNames'    => array( $full ? 'gacct-op-day-full' : 'gacct-op-day-open' ),
-			'extendedProps' => array( 'type' => 'capacity', 'available' => $available ),
+			'extendedProps' => array(
+				'type'      => 'capacity',
+				'available' => $available,
+				'capacity'  => (float) $row['capacity_hours'],
+				'occupied'  => (float) $row['occupied_hours'],
+			),
 		);
 	}
 
@@ -556,6 +579,87 @@ function gacct_op_ajax_planning_events() {
 	wp_send_json( $events );
 }
 add_action( 'wp_ajax_gacct_op_planning_events', 'gacct_op_ajax_planning_events' );
+
+/**
+ * Ouverture / fermeture de jours depuis le planning (08/09/2026).
+ * Réservé aux administrateurs (même cap que la replanification avancée).
+ * POST : mode = open|close, start, end (AAAA-MM-JJ inclus), hours (mode open),
+ *        force = 1 pour ouvrir aussi les jours non travaillés, fériés ou fermés.
+ */
+function gacct_op_ajax_set_capacity() {
+	gacct_op_api_guard();
+
+	if ( ! current_user_can( gacct_op_reschedule_admin_cap() ) ) {
+		wp_send_json_error( array( 'message' => __( 'La modification des ouvertures est réservée aux administrateurs.', 'gestion-atelier-cct' ) ), 403 );
+	}
+
+	if ( ! function_exists( 'gacct_cal_open_days' ) ) {
+		wp_send_json_error( array( 'message' => __( 'Module calendrier indisponible.', 'gestion-atelier-cct' ) ) );
+	}
+
+	$mode  = isset( $_POST['mode'] ) ? sanitize_key( wp_unslash( $_POST['mode'] ) ) : '';
+	$start = isset( $_POST['start'] ) ? sanitize_text_field( wp_unslash( $_POST['start'] ) ) : '';
+	$end   = isset( $_POST['end'] ) && '' !== $_POST['end'] ? sanitize_text_field( wp_unslash( $_POST['end'] ) ) : $start;
+	$force = ! empty( $_POST['force'] );
+	$fmt   = get_option( 'date_format' );
+
+	if ( 'open' === $mode ) {
+		$hours  = isset( $_POST['hours'] ) ? sanitize_text_field( wp_unslash( $_POST['hours'] ) ) : '';
+		$result = gacct_cal_open_days( $start, $end, $hours, array( 'respect_closures' => ! $force ) );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		$parts = array();
+		if ( $result['inserted'] ) {
+			/* translators: %d: jours */
+			$parts[] = sprintf( _n( '%d jour ouvert', '%d jours ouverts', $result['inserted'], 'gestion-atelier-cct' ), $result['inserted'] );
+		}
+		if ( $result['updated'] ) {
+			/* translators: %d: jours */
+			$parts[] = sprintf( _n( '%d jour déjà ouvert mis à jour', '%d jours déjà ouverts mis à jour', $result['updated'], 'gestion-atelier-cct' ), $result['updated'] );
+		}
+		if ( ! empty( $result['skipped'] ) ) {
+			$list = array();
+			foreach ( $result['skipped'] as $ymd => $label ) {
+				$list[] = wp_date( $fmt, gacct_cal_day_ts( $ymd ) + 12 * HOUR_IN_SECONDS ) . ( $label ? ' (' . $label . ')' : '' );
+			}
+			$parts[] = sprintf( __( 'ignorés car fermés : %s', 'gestion-atelier-cct' ), implode( ', ', $list ) );
+		}
+
+		$hours_label = rtrim( rtrim( number_format( $result['hours'], 2, ',', ' ' ), '0' ), ',' );
+		$message     = empty( $parts )
+			? __( 'Aucun jour à ouvrir.', 'gestion-atelier-cct' )
+			: ucfirst( implode( ' · ', $parts ) ) . sprintf( __( '. %s h par jour.', 'gestion-atelier-cct' ), $hours_label );
+
+		wp_send_json_success( array( 'message' => $message, 'result' => $result ) );
+	}
+
+	if ( 'close' === $mode ) {
+		$result = gacct_cal_close_days( $start, $end );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		/* translators: %d: jours */
+		$parts = array( sprintf( _n( '%d jour fermé', '%d jours fermés', $result['closed'], 'gestion-atelier-cct' ), $result['closed'] ) );
+
+		if ( ! empty( $result['kept'] ) ) {
+			$list = array();
+			foreach ( array_keys( $result['kept'] ) as $ymd ) {
+				$list[] = wp_date( $fmt, gacct_cal_day_ts( $ymd ) + 12 * HOUR_IN_SECONDS );
+			}
+			$parts[] = sprintf( __( 'conservés car ils portent des interventions (replanifiez-les d abord) : %s', 'gestion-atelier-cct' ), implode( ', ', $list ) );
+		}
+
+		wp_send_json_success( array( 'message' => ucfirst( implode( ' · ', $parts ) ) . '.', 'result' => $result ) );
+	}
+
+	wp_send_json_error( array( 'message' => __( 'Action inconnue.', 'gestion-atelier-cct' ) ) );
+}
+add_action( 'wp_ajax_gacct_op_set_capacity', 'gacct_op_ajax_set_capacity' );
 
 /**
  * Replanification d'une occupation (drag ou sélecteur de date).

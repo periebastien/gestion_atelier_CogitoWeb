@@ -3,6 +3,8 @@
  * FullCalendar (vendored, global) + endpoints gacct_op_planning_events /
  * gacct_op_reschedule. Mini-fiche en panneau (bottom sheet mobile),
  * drag & drop avec confirmation + motif si nécessaire.
+ * Administrateurs (gacctOp.canManage) : sélection d'un jour ou d'une plage →
+ * panneau « Heures d'ouverture » (endpoint gacct_op_set_capacity, 08/09/2026).
  */
 ( function () {
 	'use strict';
@@ -102,7 +104,8 @@
 			if ( panel ) {
 				panel.hidden = true;
 			}
-			if ( overlay ) {
+			var capOpen = document.getElementById( 'gacct-op-cap-panel' );
+			if ( overlay && ( ! capOpen || capOpen.hidden ) ) {
 				overlay.hidden = true;
 			}
 			panelProps = null;
@@ -279,6 +282,246 @@
 		}
 
 		/* ------------------------------------------------------------------ */
+		/*  Heures d'ouverture (administrateurs) — panneau de capacité         */
+		/* ------------------------------------------------------------------ */
+
+		var canManage   = !! window.gacctOp.canManage;
+		var capPanel    = document.getElementById( 'gacct-op-cap-panel' );
+		var capFeedback = capPanel ? capPanel.querySelector( '[data-cap-slot="feedback"]' ) : null;
+		var capRange    = null; // { start: 'AAAA-MM-JJ', end: 'AAAA-MM-JJ' } (inclus)
+
+		if ( canManage && calendarEl.parentNode ) {
+			calendarEl.parentNode.classList.add( 'gacct-op-can-manage' );
+		}
+
+		function capSlot( name ) {
+			return capPanel ? capPanel.querySelector( '[data-cap-slot="' + name + '"]' ) : null;
+		}
+
+		function capField( name ) {
+			return capPanel ? capPanel.querySelector( '[data-cap-field="' + name + '"]' ) : null;
+		}
+
+		/** 'AAAA-MM-JJ' + n jours → 'AAAA-MM-JJ' (calcul en UTC, sans dérive de fuseau). */
+		function addDays( ymd, n ) {
+			var parts = String( ymd ).slice( 0, 10 ).split( '-' );
+			var d     = new Date( Date.UTC( +parts[ 0 ], +parts[ 1 ] - 1, +parts[ 2 ] + n ) );
+			return d.toISOString().slice( 0, 10 );
+		}
+
+		function formatHours( h ) {
+			h = Math.round( h * 100 ) / 100;
+			return String( h ).replace( '.', ',' );
+		}
+
+		function closeCapPanel() {
+			if ( capPanel ) {
+				capPanel.hidden = true;
+			}
+			if ( overlay && ( ! panel || panel.hidden ) ) {
+				overlay.hidden = true;
+			}
+			capRange = null;
+			if ( calendar ) {
+				calendar.unselect();
+			}
+		}
+
+		/**
+		 * Résume l'état des jours de la plage à partir des événements chargés
+		 * (fonds de capacité et fermetures), sans nouvel appel serveur.
+		 */
+		function capSummary( start, end ) {
+			var open = 0, closedDays = [], hoursSeen = {}, total = 0, occupied = 0, days = 0;
+
+			for ( var ymd = start; ymd <= end; ymd = addDays( ymd, 1 ) ) {
+				days++;
+				if ( days > 400 ) {
+					break;
+				}
+			}
+
+			calendar.getEvents().forEach( function ( ev ) {
+				var props = ev.extendedProps || {};
+				var ymd   = ev.startStr ? ev.startStr.slice( 0, 10 ) : '';
+				if ( ! ymd || ymd < start || ymd > end ) {
+					return;
+				}
+				if ( 'capacity' === props.type ) {
+					open++;
+					total    += props.capacity || 0;
+					occupied += props.occupied || 0;
+					hoursSeen[ formatHours( props.capacity || 0 ) ] = true;
+				} else if ( 'closure' === props.type ) {
+					closedDays.push( formatFr( ymd ) + ( props.label ? ' (' + props.label + ')' : '' ) );
+				}
+			} );
+
+			return { days: days, open: open, closed: closedDays, hours: Object.keys( hoursSeen ), total: total, occupied: occupied };
+		}
+
+		function openCapPanel( start, end ) {
+			if ( ! capPanel || ! overlay ) {
+				return;
+			}
+
+			closePanel();
+			capRange = { start: start, end: end };
+
+			var rangeEl = capSlot( 'range' );
+			if ( rangeEl ) {
+				rangeEl.textContent = start === end
+					? formatFr( start )
+					: 'Du ' + formatFr( start ) + ' au ' + formatFr( end );
+			}
+
+			var sum     = capSummary( start, end );
+			var stateEl = capSlot( 'state' );
+			if ( stateEl ) {
+				if ( 0 === sum.open ) {
+					stateEl.textContent = sum.days > 1 ? 'Aucun jour ouvert' : 'Fermé';
+				} else {
+					var txt = sum.days > 1 ? sum.open + ' jour(s) ouvert(s) sur ' + sum.days : 'Ouvert';
+					txt += ' · ' + ( sum.hours.length === 1 ? sum.hours[ 0 ] + ' h/jour' : sum.hours.join( ' / ' ) + ' h' );
+					if ( sum.occupied > 0 ) {
+						txt += ' · ' + formatHours( sum.occupied ) + ' h occupées';
+					}
+					stateEl.textContent = txt;
+				}
+			}
+
+			var closureRow = capPanel.querySelector( '[data-cap-row="closure"]' );
+			var closureEl  = capSlot( 'closure' );
+			if ( closureRow && closureEl ) {
+				closureRow.hidden     = 0 === sum.closed.length;
+				closureEl.textContent = sum.closed.slice( 0, 4 ).join( ', ' ) + ( sum.closed.length > 4 ? '…' : '' );
+			}
+
+			var hoursInput = capField( 'hours' );
+			if ( hoursInput ) {
+				hoursInput.value = 1 === sum.hours.length ? sum.hours[ 0 ].replace( ',', '.' ) : ( hoursInput.value || '' );
+			}
+			var forceInput = capField( 'force' );
+			if ( forceInput ) {
+				forceInput.checked = false;
+			}
+
+			var closeBtn = capPanel.querySelector( '[data-cap-closedays]' );
+			if ( closeBtn ) {
+				closeBtn.disabled = 0 === sum.open;
+			}
+
+			clearFeedback( capFeedback );
+			overlay.hidden  = false;
+			capPanel.hidden = false;
+
+			if ( hoursInput ) {
+				hoursInput.focus();
+			}
+		}
+
+		function setCapacity( mode, hours, force ) {
+			return post( 'gacct_op_set_capacity', {
+				mode: mode,
+				start: capRange.start,
+				end: capRange.end,
+				hours: hours || '',
+				force: force ? '1' : '0'
+			} );
+		}
+
+		if ( capPanel && overlay ) {
+			overlay.addEventListener( 'click', closeCapPanel );
+
+			var capCloseBtn = capPanel.querySelector( '[data-cap-close]' );
+			if ( capCloseBtn ) {
+				capCloseBtn.addEventListener( 'click', closeCapPanel );
+			}
+
+			document.addEventListener( 'keydown', function ( keyEvent ) {
+				if ( 'Escape' === keyEvent.key && ! capPanel.hidden ) {
+					closeCapPanel();
+				}
+			} );
+
+			var openBtn  = capPanel.querySelector( '[data-cap-open]' );
+			var closeDays = capPanel.querySelector( '[data-cap-closedays]' );
+
+			function runCap( mode, button ) {
+				if ( ! capRange ) {
+					return;
+				}
+
+				var hours = '';
+				var force = false;
+
+				if ( 'open' === mode ) {
+					var hoursInput = capField( 'hours' );
+					hours = hoursInput ? String( hoursInput.value ).trim() : '';
+					if ( ! hours || parseFloat( hours.replace( ',', '.' ) ) <= 0 ) {
+						showFeedback( capFeedback, 'error', 'Indiquez un nombre d\'heures par jour.' );
+						if ( hoursInput ) {
+							hoursInput.focus();
+						}
+						return;
+					}
+					var forceInput = capField( 'force' );
+					force = !! ( forceInput && forceInput.checked );
+				} else {
+					var sum = capSummary( capRange.start, capRange.end );
+					var q   = 'Fermer ' + ( sum.open > 1 ? 'ces ' + sum.open + ' jours ouverts' : 'ce jour' ) + ' ?';
+					if ( sum.occupied > 0 ) {
+						q += '\n\nLes jours qui portent des interventions seront conservés : replanifiez-les d\'abord.';
+					}
+					if ( ! window.confirm( q ) ) {
+						return;
+					}
+				}
+
+				button.disabled = true;
+
+				setCapacity( mode, hours, force )
+					.then( function ( json ) {
+						button.disabled = false;
+
+						if ( json && json.success ) {
+							closeCapPanel();
+							calendar.refetchEvents();
+							showFeedback( feedback, 'success', ( json.data && json.data.message ) ? json.data.message : 'Enregistré.' );
+						} else {
+							var msg = ( json && json.data && json.data.message ) ? json.data.message : ( i18n.genericError || 'Erreur.' );
+							showFeedback( capFeedback, 'error', msg );
+						}
+					} )
+					.catch( function () {
+						button.disabled = false;
+						showFeedback( capFeedback, 'error', i18n.genericError || 'Erreur.' );
+					} );
+			}
+
+			if ( openBtn ) {
+				openBtn.addEventListener( 'click', function () {
+					runCap( 'open', openBtn );
+				} );
+			}
+			if ( closeDays ) {
+				closeDays.addEventListener( 'click', function () {
+					runCap( 'close', closeDays );
+				} );
+			}
+
+			var hoursField = capField( 'hours' );
+			if ( hoursField && openBtn ) {
+				hoursField.addEventListener( 'keydown', function ( keyEvent ) {
+					if ( 'Enter' === keyEvent.key ) {
+						keyEvent.preventDefault();
+						runCap( 'open', openBtn );
+					}
+				} );
+			}
+		}
+
+		/* ------------------------------------------------------------------ */
 		/*  Calendrier                                                         */
 		/* ------------------------------------------------------------------ */
 
@@ -292,6 +535,13 @@
 			displayEventTime: false,
 			editable: true,
 			eventDurationEditable: false,
+			selectable: canManage && !! capPanel,
+			selectMirror: false,
+			unselectAuto: false,
+			select: function ( info ) {
+				// endStr est exclusif chez FullCalendar : on ramène à la borne incluse.
+				openCapPanel( info.startStr.slice( 0, 10 ), addDays( info.endStr.slice( 0, 10 ), -1 ) );
+			},
 			headerToolbar: {
 				left: 'prev,next today',
 				center: 'title',
@@ -332,6 +582,9 @@
 				var props = info.event.extendedProps || {};
 				if ( 'occupation' === props.type ) {
 					openPanel( info.event );
+				} else if ( canManage && capPanel && info.event.startStr ) {
+					var ymd = info.event.startStr.slice( 0, 10 );
+					openCapPanel( ymd, ymd );
 				}
 			},
 			eventDrop: function ( info ) {

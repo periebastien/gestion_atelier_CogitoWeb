@@ -41,7 +41,48 @@ function gacct_op_render_planning_screen() {
 
 		<div id="gacct-op-calendar" class="gacct-op-card"></div>
 
+		<?php if ( current_user_can( gacct_op_reschedule_admin_cap() ) ) : ?>
+			<p class="gacct-op-planning-hint description">
+				<?php esc_html_e( 'Administrateur : cliquez sur un jour, ou sélectionnez une plage de jours à la souris, pour ouvrir, modifier ou fermer des heures d ouverture. Les jours fériés et fermetures apparaissent en gris (Configuration > Jours fériés & fermetures).', 'gestion-atelier-cct' ); ?>
+			</p>
+		<?php endif; ?>
+
 		<div id="gacct-op-panel-overlay" class="gacct-op-panel-overlay" hidden></div>
+
+		<?php if ( current_user_can( gacct_op_reschedule_admin_cap() ) ) : ?>
+		<div id="gacct-op-cap-panel" class="gacct-op-panel gacct-op-cap-panel" role="dialog" aria-modal="true" aria-labelledby="gacct-op-cap-title" hidden>
+			<button type="button" class="gacct-op-panel-close" data-cap-close aria-label="<?php esc_attr_e( 'Fermer', 'gestion-atelier-cct' ); ?>">&#10005;</button>
+
+			<h2 id="gacct-op-cap-title" class="gacct-op-panel-ref"><?php esc_html_e( 'Heures d ouverture', 'gestion-atelier-cct' ); ?></h2>
+			<p class="gacct-op-panel-client" data-cap-slot="range"></p>
+
+			<dl class="gacct-op-panel-rows">
+				<div class="gacct-op-panel-row" data-cap-row="state">
+					<dt><?php esc_html_e( 'Actuellement', 'gestion-atelier-cct' ); ?></dt>
+					<dd data-cap-slot="state"></dd>
+				</div>
+				<div class="gacct-op-panel-row" data-cap-row="closure" hidden>
+					<dt><?php esc_html_e( 'Jour fermé', 'gestion-atelier-cct' ); ?></dt>
+					<dd data-cap-slot="closure"></dd>
+				</div>
+			</dl>
+
+			<label class="gacct-op-panel-label" for="gacct-op-cap-hours"><?php esc_html_e( 'Heures ouvertes par jour', 'gestion-atelier-cct' ); ?></label>
+			<input type="number" id="gacct-op-cap-hours" data-cap-field="hours" min="0.25" max="24" step="0.25" inputmode="decimal">
+
+			<label class="gacct-op-panel-check">
+				<input type="checkbox" data-cap-field="force">
+				<span><?php esc_html_e( 'Ouvrir aussi les jours non travaillés, fériés ou fermés', 'gestion-atelier-cct' ); ?></span>
+			</label>
+
+			<div class="gacct-op-feedback" data-cap-slot="feedback" role="status"></div>
+
+			<div class="gacct-op-cap-actions">
+				<button type="button" class="button button-primary" data-cap-open><?php esc_html_e( 'Ouvrir / modifier', 'gestion-atelier-cct' ); ?></button>
+				<button type="button" class="button gacct-op-cap-close-days" data-cap-closedays><?php esc_html_e( 'Fermer ces jours', 'gestion-atelier-cct' ); ?></button>
+			</div>
+		</div>
+		<?php endif; ?>
 
 		<div id="gacct-op-panel" class="gacct-op-panel" role="dialog" aria-modal="true" aria-labelledby="gacct-op-panel-ref" hidden>
 			<button type="button" class="gacct-op-panel-close" data-op-close aria-label="<?php esc_attr_e( 'Fermer', 'gestion-atelier-cct' ); ?>">&#10005;</button>

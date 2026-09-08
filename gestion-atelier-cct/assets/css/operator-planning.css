@@ -321,3 +321,53 @@
 	justify-content: space-between;
 	gap: 10px;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Jours fériés / fermetures (08/09/2026) + panneau d'ouverture       */
+/* ------------------------------------------------------------------ */
+
+.gacct-op-planning .fc .fc-bg-event.gacct-op-day-closed {
+	background: repeating-linear-gradient(135deg, rgba(100, 105, 112, 0.10) 0 6px, rgba(100, 105, 112, 0.18) 6px 12px);
+	opacity: 1;
+}
+.gacct-op-planning .fc .fc-bg-event.gacct-op-day-closed .fc-event-title {
+	color: #50575e;
+	font-weight: 600;
+}
+
+/* Sélection de plage (admin) */
+.gacct-op-planning .fc .fc-highlight {
+	background: rgba(34, 113, 177, 0.18);
+}
+.gacct-op-planning.gacct-op-can-manage .fc .fc-daygrid-day {
+	cursor: pointer;
+}
+
+.gacct-op-planning .gacct-op-planning-hint {
+	margin: 0 0 10px;
+}
+
+.gacct-op-cap-panel input[type="number"] {
+	width: 100%;
+	min-height: 40px;
+	margin-bottom: 12px;
+}
+.gacct-op-cap-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+.gacct-op-cap-actions .button {
+	display: block;
+	width: 100%;
+	text-align: center;
+}
+.gacct-op-cap-actions .gacct-op-cap-close-days {
+	color: #b32d2e;
+	border-color: #b32d2e;
+}
+.gacct-op-cap-actions .gacct-op-cap-close-days:hover {
+	background: #fcf0f1;
+	color: #b32d2e;
+	border-color: #b32d2e;
+}

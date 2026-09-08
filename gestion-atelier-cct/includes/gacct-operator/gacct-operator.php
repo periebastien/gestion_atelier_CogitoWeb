@@ -376,6 +376,7 @@ function gacct_op_enqueue_assets( $hook_suffix ) {
 			'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
 			'nonce'      => wp_create_nonce( GACCT_OP_NONCE ),
 			'consoleUrl' => gacct_op_console_url(),
+			'canManage'  => current_user_can( gacct_op_reschedule_admin_cap() ),
 			'i18n'       => array(
 				'confirmCancel'  => __( 'Annuler définitivement ce dossier ? Le créneau sera libéré et le client prévenu par email.', 'gestion-atelier-cct' ),
 				'reasonRequired' => __( 'Un motif est obligatoire pour cette action.', 'gestion-atelier-cct' ),

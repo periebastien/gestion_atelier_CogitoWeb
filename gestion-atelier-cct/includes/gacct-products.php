@@ -154,3 +154,82 @@ add_action( 'woocommerce_process_product_meta', function ( $post_id ) {
 	}
 	update_post_meta( $post_id, '_gacct_supplement_biplace', $v );
 } );
+
+/* =============================================================================
+ *  Colonne « Durée » dans la liste des produits (08/09/2026)
+ *  Lit la meta `duree_presta` (heures décimales, même source que le formulaire
+ *  de demande et que la durée totale de l'occupation atelier). Triable.
+ * ============================================================================= */
+
+/**
+ * 2.5 → « 2 h 30 », 0.25 → « 15 min », 0 ou vide → « — » (tiret court).
+ */
+function gacct_products_format_duree( $raw ) {
+	$hours = function_exists( 'gacct_demande_parse_duree' ) ? gacct_demande_parse_duree( $raw ) : (float) str_replace( ',', '.', (string) $raw );
+
+	if ( $hours <= 0 ) {
+		return '–';
+	}
+
+	$minutes = (int) round( $hours * 60 );
+	$h       = intdiv( $minutes, 60 );
+	$m       = $minutes % 60;
+
+	if ( 0 === $h ) {
+		return sprintf( '%d min', $m );
+	}
+
+	return $m ? sprintf( '%d h %02d', $h, $m ) : sprintf( '%d h', $h );
+}
+
+add_filter( 'manage_edit-product_columns', function ( $columns ) {
+	$out = array();
+
+	foreach ( $columns as $key => $label ) {
+		$out[ $key ] = $label;
+		if ( 'price' === $key ) {
+			$out['gacct_duree'] = __( 'Durée', 'gestion-atelier-cct' );
+		}
+	}
+
+	if ( ! isset( $out['gacct_duree'] ) ) {
+		$out['gacct_duree'] = __( 'Durée', 'gestion-atelier-cct' );
+	}
+
+	return $out;
+}, 20 );
+
+add_action( 'manage_product_posts_custom_column', function ( $column, $post_id ) {
+	if ( 'gacct_duree' !== $column ) {
+		return;
+	}
+
+	$raw = get_post_meta( $post_id, 'duree_presta', true );
+
+	echo '<span class="gacct-duree" title="' . esc_attr( '' === $raw ? __( 'Durée non renseignée', 'gestion-atelier-cct' ) : sprintf( '%s h', $raw ) ) . '">' . esc_html( gacct_products_format_duree( $raw ) ) . '</span>';
+}, 10, 2 );
+
+add_filter( 'manage_edit-product_sortable_columns', function ( $columns ) {
+	$columns['gacct_duree'] = 'gacct_duree';
+	return $columns;
+} );
+
+add_action( 'pre_get_posts', function ( $query ) {
+	if ( ! is_admin() || ! $query->is_main_query() || 'gacct_duree' !== $query->get( 'orderby' ) ) {
+		return;
+	}
+
+	// Produits sans durée (frais de port, suppléments) classés comme 0.
+	$query->set( 'meta_query', array(
+		'relation' => 'OR',
+		array( 'key' => 'duree_presta', 'compare' => 'EXISTS' ),
+		array( 'key' => 'duree_presta', 'compare' => 'NOT EXISTS' ),
+	) );
+	$query->set( 'orderby', 'meta_value_num' );
+} );
+
+add_action( 'admin_head-edit.php', function () {
+	if ( 'product' === get_current_screen()->post_type ) {
+		echo '<style>.column-gacct_duree{width:7%}.gacct-duree{white-space:nowrap}</style>';
+	}
+} );

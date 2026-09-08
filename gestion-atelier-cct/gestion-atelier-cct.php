@@ -28,6 +28,7 @@ function gacct_asset_version( $relative ) {
 }
 
 require_once __DIR__ . '/includes/gacct-checkout.php';
+require_once __DIR__ . '/includes/gacct-calendar.php';
 require_once __DIR__ . '/includes/gacct-products.php';
 require_once __DIR__ . '/includes/gacct-payments.php';
 require_once __DIR__ . '/includes/gacct-lifecycle.php';
@@ -395,7 +396,7 @@ final class GACCT_Plugin {
 							</th>
 							<td>
 								<input type="number" id="gacct_hours" name="hours_per_day" min="0.25" max="24" step="0.25" required>
-								<p class="description"><?php esc_html_e( 'Exemple : 5 ouvre 5 heures de capacite, 7.5 ouvre 7 h 30.', 'gestion-atelier-cct' ); ?></p>
+								<p class="description"><?php esc_html_e( 'Exemple : 5 ouvre 5 heures de capacite, 7.5 ouvre 7 h 30. Un jour deja ouvert est mis a jour a cette valeur. Les jours non travailles, feries et fermes (onglet Jours feries & fermetures) sont ignores.', 'gestion-atelier-cct' ); ?></p>
 							</td>
 						</tr>
 					</tbody>
@@ -456,7 +457,7 @@ final class GACCT_Plugin {
 										</label>
 									<?php endforeach; ?>
 								</div>
-								<p class="description"><?php esc_html_e( 'Le generateur d ouvertures ne creera des disponibilites que sur les jours coches.', 'gestion-atelier-cct' ); ?></p>
+								<p class="description"><?php esc_html_e( 'Le generateur d ouvertures et le planning ne creeront des disponibilites que sur les jours coches (hors jours feries et fermetures).', 'gestion-atelier-cct' ); ?></p>
 							</td>
 						</tr>
 						<tr>
@@ -635,87 +636,20 @@ final class GACCT_Plugin {
 			return new WP_Error( 'gacct_bad_hours', __( 'Le nombre d heures doit etre superieur a 0 et inferieur ou egal a 24.', 'gestion-atelier-cct' ) );
 		}
 
-		$timezone = wp_timezone();
+		// Depuis le 08/09/2026 : convention minuit UTC, jours feries et fermetures,
+		// mise a jour des jours deja ouverts (includes/gacct-calendar.php).
+		$result = gacct_cal_open_days( $start_date, $end_date, $hours_per_day );
 
-		try {
-			$start = new DateTimeImmutable( $start_date . ' 00:00:00', $timezone );
-			$end   = new DateTimeImmutable( $end_date . ' 00:00:00', $timezone );
-		} catch ( Exception $exception ) {
-			return new WP_Error( 'gacct_bad_datetime', __( 'Impossible d interpreter les dates avec la timezone du site.', 'gestion-atelier-cct' ) );
-		}
-
-		if ( $end < $start ) {
-			return new WP_Error( 'gacct_date_order', __( 'La date de fin doit etre posterieure ou egale a la date de debut.', 'gestion-atelier-cct' ) );
-		}
-
-		global $wpdb;
-
-		$table = $this->table_name( 'calendrier_dispo' );
-
-		if ( ! $this->table_exists( $table ) ) {
-			return new WP_Error(
-				'gacct_missing_table',
-				sprintf(
-					/* translators: %s: table name */
-					__( 'La table %s est introuvable.', 'gestion-atelier-cct' ),
-					$table
-				)
-			);
-		}
-
-		if ( ! $this->table_can_store_decimal_hours( $table, 'heures_totales_dispo' ) && ! $this->is_whole_number( $hours_per_day ) ) {
-			return new WP_Error(
-				'gacct_decimal_column_required',
-				__( 'Le champ heures_totales_dispo du CCT calendrier_dispo doit etre en DECIMAL, FLOAT, DOUBLE ou TEXT pour accepter des heures decimales. Actuellement, la base arrondirait la valeur.', 'gestion-atelier-cct' )
-			);
-		}
-
-		$created  = current_time( 'mysql' );
-		$inserted = 0;
-		$failed   = 0;
-		$skipped  = 0;
-		$working_days = $this->working_days();
-
-		for ( $day = $start; $day <= $end; $day = $day->modify( '+1 day' ) ) {
-			if ( ! in_array( (int) $day->format( 'N' ), $working_days, true ) ) {
-				$skipped++;
-				continue;
-			}
-
-			$data = array(
-				'cct_status'               => 'publish',
-				'cct_author_id'            => get_current_user_id(),
-				'cct_created'              => $created,
-				'cct_modified'             => $created,
-				'date_jour'                => $day->getTimestamp(),
-				'heures_totales_dispo'     => $hours_per_day,
-			);
-
-			$data = apply_filters( 'gacct_generator_availability_insert_data', $data, $day, $hours_per_day );
-			$data = $this->filter_data_by_table_columns( $table, $data );
-
-			if ( empty( $data['date_jour'] ) || ! isset( $data['heures_totales_dispo'] ) ) {
-				$failed++;
-				continue;
-			}
-
-			$formats = $this->insert_formats_for_data( $data );
-
-			$result = $wpdb->insert( $table, $data, $formats );
-
-			if ( false === $result ) {
-				$failed++;
-				continue;
-			}
-
-			$inserted++;
+		if ( is_wp_error( $result ) ) {
+			return $result;
 		}
 
 		return array(
-			'inserted' => $inserted,
-			'failed'   => $failed,
-			'skipped'  => $skipped,
-			'hours'    => $hours_per_day,
+			'inserted' => $result['inserted'],
+			'updated'  => $result['updated'],
+			'failed'   => 0,
+			'skipped'  => count( $result['skipped'] ),
+			'hours'    => $result['hours'],
 		);
 	}
 
@@ -740,12 +674,13 @@ final class GACCT_Plugin {
 				<?php
 					echo esc_html(
 					sprintf(
-						/* translators: 1: inserted count, 2: failed count, 3: skipped count, 4: hours */
-						__( '%1$d disponibilite(s) creee(s), %2$d echec(s), %3$d jour(s) non ouvre(s) ignore(s). Heures ouvertes par jour : %4$s.', 'gestion-atelier-cct' ),
+						/* translators: 1: inserted count, 2: failed count, 3: skipped count, 4: hours, 5: updated count */
+						__( '%1$d disponibilite(s) creee(s), %5$d jour(s) deja ouvert(s) mis a jour, %2$d echec(s), %3$d jour(s) fermes ignore(s) (non travailles, feries, fermetures). Heures ouvertes par jour : %4$s.', 'gestion-atelier-cct' ),
 						absint( $result['inserted'] ),
 						absint( $result['failed'] ),
 						absint( $result['skipped'] ),
-						$this->format_hours( $result['hours'] )
+						$this->format_hours( $result['hours'] ),
+						absint( $result['updated'] ?? 0 )
 					)
 				);
 				?>
