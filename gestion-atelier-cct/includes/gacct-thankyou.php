@@ -276,7 +276,7 @@ function gacct_conf_links( $order ) {
 		'account'        => wc_get_page_permalink( 'myaccount' ),
 		'view_order'     => $order->get_view_order_url(),        // détail de la commande dans l'espace client.
 		'new_request'    => home_url( '/demande-intervention/' ),
-		'packing_guide'  => home_url( '/controles/' ),           // consignes d'emballage (section expédition).
+		'packing_guide'  => home_url( '/consignes-demballage/' ), // consignes d'emballage, page 2104 rédigée par Timothée (08/09/2026).
 		'contact'        => home_url( '/contact/' ),
 		'work_order'     => gacct_wo_print_url( $order ),        // bon d'intervention imprimable (gacct-workorder.php).
 		'receipt'        => '#',                                 // TODO : reçu de l'acompte (PDF).

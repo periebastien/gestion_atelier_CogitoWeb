@@ -997,3 +997,55 @@
 .gacct-rib-modal .rib-copy { flex: none; border: 1px solid #20c4c3; color: #0f766e; background: #fff; border-radius: 8px; padding: 6px 12px; cursor: pointer; font-weight: 600; }
 .gacct-rib-modal .rib-copy:hover { background: #e9fbfa; }
 .gacct-rib-modal .rib-note { font-size: 13px; color: #6b7280; margin: 12px 0 0; }
+
+/* ── Suivi colis dans la carte « Matériel à expédier » (08/09/2026) ─────── */
+.action-card .gacct-dash-ship { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--dash-line-2); }
+.gacct-dash-ship .gacct-ship,
+.gacct-instr-modal .gacct-ship { font-size: 13px; color: var(--dash-ink-2); }
+.gacct-dash-ship .gacct-ship-hint,
+.gacct-instr-modal .gacct-ship-hint { margin: 0 0 8px; font-weight: 700; color: var(--dash-ink); }
+.gacct-dash-ship .gacct-ship-notice,
+.gacct-instr-modal .gacct-ship-notice { margin: 0 0 8px; font-weight: 700; }
+.gacct-dash-ship .gacct-ship-notice.is-success,
+.gacct-instr-modal .gacct-ship-notice.is-success { color: var(--dash-green-ink); }
+.gacct-dash-ship .gacct-ship-notice.is-error,
+.gacct-instr-modal .gacct-ship-notice.is-error { color: var(--dash-red); }
+.gacct-dash-ship .gacct-ship-current,
+.gacct-instr-modal .gacct-ship-current { margin: 0; color: var(--dash-ink); }
+.gacct-dash-ship .gacct-ship-follow,
+.gacct-instr-modal .gacct-ship-follow { color: var(--dash-teal-dark); font-weight: 700; text-decoration: underline; margin-left: 6px; }
+.gacct-dash-ship .gacct-ship-edit,
+.gacct-instr-modal .gacct-ship-edit { margin-top: 6px; }
+.gacct-dash-ship .gacct-ship-edit summary,
+.gacct-instr-modal .gacct-ship-edit summary { cursor: pointer; font-weight: 700; color: var(--dash-ink-3); }
+.gacct-ship-form.is-compact { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin-top: 8px; }
+.gacct-ship-form.is-compact .gacct-ship-field { display: flex; flex-direction: column; margin: 0; flex: 1 1 160px; }
+.gacct-ship-form.is-compact .gacct-ship-field label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.gacct-ship-form.is-compact select,
+.gacct-ship-form.is-compact input { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 13.5px; color: var(--dash-ink); padding: 9px 11px; border: 1.5px solid var(--dash-line-2); border-radius: var(--dash-radius); background: var(--dash-surface); }
+.gacct-ship-form.is-compact select:focus,
+.gacct-ship-form.is-compact input:focus { outline: none; border-color: var(--dash-teal); }
+.gacct-ship-form.is-compact .gacct-ship-actions { margin: 0; flex: 0 0 auto; display: flex; }
+.gacct-ship-form.is-compact .gacct-ship-btn { font-family: inherit; font-size: 12.5px; font-weight: 800; color: var(--dash-ink); padding: 9px 14px; border: 1.5px solid var(--dash-teal); border-radius: var(--dash-radius); background: var(--dash-surface); cursor: pointer; transition: background 150ms; white-space: nowrap; }
+.gacct-ship-form.is-compact .gacct-ship-btn:hover { background: var(--dash-teal-soft); }
+@media (max-width: 640px) {
+	.gacct-ship-form.is-compact { flex-direction: column; }
+	.gacct-ship-form.is-compact .gacct-ship-actions,
+	.gacct-ship-form.is-compact .gacct-ship-btn { width: 100%; justify-content: center; }
+}
+
+/* ── Fenêtre « Instructions d'envoi » ──────────────────────────────────── */
+.gacct-instr-modal { max-width: min(640px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto; }
+.gacct-instr-modal .instr-intro { margin: 0 0 14px; font-size: 14px; color: var(--dash-ink-2); }
+.gacct-instr-modal .instr-steps { list-style: none; counter-reset: instr; margin: 0 0 14px; padding: 0; display: grid; gap: 10px; }
+.gacct-instr-modal .instr-steps li { counter-increment: instr; position: relative; padding-left: 40px; font-size: 13.5px; line-height: 1.45; color: var(--dash-ink-2); }
+.gacct-instr-modal .instr-steps li::before { content: counter(instr); position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--dash-teal-soft); color: var(--dash-teal-dark); font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+.gacct-instr-modal .instr-steps strong { display: block; color: var(--dash-ink); margin-bottom: 2px; }
+.gacct-instr-modal .instr-address { font-weight: 600; line-height: 1.4; word-break: normal; }
+.gacct-instr-modal .instr-deadline { display: flex; align-items: center; gap: 6px; margin: 12px 0 0; font-size: 13.5px; color: var(--dash-ink-2); }
+.gacct-instr-modal .instr-deadline svg { width: 14px; height: 14px; color: var(--dash-orange-ink); flex: none; }
+.gacct-instr-modal .instr-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin: 14px 0 0; }
+.gacct-instr-modal .action-btn.is-disabled { opacity: .55; cursor: not-allowed; }
+.gacct-instr-modal .instr-guide { font-size: 13px; font-weight: 700; color: var(--dash-teal-dark); text-decoration: underline; }
+.gacct-instr-modal .instr-tracking { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--dash-line-2); }
+.gacct-instr-modal .instr-tracking h4 { margin: 0 0 6px; font-size: 14px; }

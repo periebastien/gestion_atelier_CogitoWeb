@@ -827,12 +827,30 @@ function jwcct_render_order_status_tracker( $value, $order_id = 0 ) {
         }
     }
 
+    // Suivi colis aller (08/09/2026) : le client peut déclarer ou modifier son
+    // numéro de suivi depuis « Mes demandes », sans ouvrir le détail de la
+    // commande. Formulaire replié derrière « Ajouter mon numéro de suivi » ;
+    // gacct_ship_render_form() ne rend rien tant que le paiement n'est pas
+    // encaissé, et passe en lecture seule dès la réception (état ≥ 2).
+    $ship_html = '';
+
+    if ( $order && $state <= 1 && function_exists( 'gacct_ship_render_form' )
+        && ! $order->has_status( array( 'cancelled', 'refunded', 'trash' ) ) ) {
+        $ship_html = gacct_ship_render_form( $order, array(
+            'intro'     => false,
+            'compact'   => true,
+            'collapsed' => true,
+            'uid'       => 'list',
+        ) );
+    }
+
     return sprintf(
         '<div class="status-stack">
             <div class="status-tip">%s</div>
             <span class="badge %s">%s</span>%s
             <div class="progress %s">%s</div>
             <div class="progress-labels">%s</div>
+            %s
             %s
         </div>',
         $s['tip'],
@@ -842,7 +860,8 @@ function jwcct_render_order_status_tracker( $value, $order_id = 0 ) {
         esc_attr( $s['progress'] ),
         $steps_html,
         $labels_html,
-        $workorder_html
+        $workorder_html,
+        $ship_html
     );
 }
 

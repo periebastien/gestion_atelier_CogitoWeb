@@ -83,8 +83,11 @@ function gacct_ship_texts() {
 		'placeholder'    => __( 'Ex. 6A12345678901', 'gestion-atelier-cct' ),
 		'choose'         => __( 'Choisir…', 'gestion-atelier-cct' ),
 		'submit'         => __( 'Enregistrer mon numéro de suivi', 'gestion-atelier-cct' ),
+		'save_short'     => __( 'Enregistrer', 'gestion-atelier-cct' ),
 		'update'         => __( 'Mettre à jour', 'gestion-atelier-cct' ),
 		'edit'           => __( 'Modifier', 'gestion-atelier-cct' ),
+		'add'            => __( 'Ajouter mon numéro de suivi', 'gestion-atelier-cct' ),
+		'compact_hint'   => __( 'Colis envoyé ? Indiquez son numéro de suivi.', 'gestion-atelier-cct' ),
 		'follow'         => __( 'Suivre mon colis', 'gestion-atelier-cct' ),
 		'in_transit'     => __( 'En cours d’acheminement vers l’atelier', 'gestion-atelier-cct' ),
 		/* translators: 1: transporteur, 2: numéro de suivi */
@@ -405,9 +408,18 @@ function gacct_ship_redirect( $code, $order ) {
 		$target = ( $order instanceof WC_Order ) ? $order->get_view_order_url() : home_url( '/' );
 	}
 
-	$target = remove_query_arg( 'gacct_ship', $target );
+	$target = remove_query_arg( array( 'gacct_ship', 'gacct_ship_order' ), $target );
 
-	wp_safe_redirect( add_query_arg( 'gacct_ship', sanitize_key( $code ), $target ) );
+	$args = array( 'gacct_ship' => sanitize_key( $code ) );
+
+	// L'id de commande cible le message : une page qui porte plusieurs blocs
+	// suivi (tableau de bord + fenêtre d'instructions, table « Mes demandes »)
+	// ne l'affiche que sur la commande concernée (08/09/2026).
+	if ( $order instanceof WC_Order ) {
+		$args['gacct_ship_order'] = $order->get_id();
+	}
+
+	wp_safe_redirect( add_query_arg( $args, $target ) );
 	exit;
 }
 
@@ -420,10 +432,19 @@ function gacct_ship_redirect( $code, $order ) {
  *
  * @return string HTML (ou '').
  */
-function gacct_ship_notice_html() {
-	$code = isset( $_GET['gacct_ship'] ) ? sanitize_key( wp_unslash( $_GET['gacct_ship'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+function gacct_ship_notice_html( $order_id = 0 ) {
+	// phpcs:disable WordPress.Security.NonceVerification.Recommended
+	$code   = isset( $_GET['gacct_ship'] ) ? sanitize_key( wp_unslash( $_GET['gacct_ship'] ) ) : '';
+	$target = isset( $_GET['gacct_ship_order'] ) ? absint( wp_unslash( $_GET['gacct_ship_order'] ) ) : 0;
+	// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 	if ( '' === $code ) {
+		return '';
+	}
+
+	// Message ciblé : si l'URL désigne une commande et que le bloc en rend une
+	// autre, silence (plusieurs blocs suivi peuvent coexister sur une page).
+	if ( $target && $order_id && $target !== absint( $order_id ) ) {
 		return '';
 	}
 
@@ -458,7 +479,15 @@ function gacct_ship_notice_html() {
  * - État ≥ 2 : info seule, lecture seule (rien si aucun suivi saisi).
  *
  * @param WC_Order $order
- * @param array    $args  {intro: bool — afficher la phrase d'intro (défaut true)}.
+ * @param array    $args  {
+ *   intro:     bool   — afficher la phrase d'intro (défaut true) ;
+ *   compact:   bool   — formulaire sur une ligne, libellés masqués (carte du
+ *                       tableau de bord, table « Mes demandes », 08/09/2026) ;
+ *   collapsed: bool   — formulaire vide replié derrière « Ajouter mon numéro
+ *                       de suivi » (details/summary, sans JS) ;
+ *   uid:       string — suffixe d'id quand la même commande a plusieurs
+ *                       formulaires sur une page (carte + fenêtre).
+ * }
  * @return string HTML (ou '').
  */
 function gacct_ship_render_form( $order, $args = array() ) {
@@ -488,9 +517,15 @@ function gacct_ship_render_form( $order, $args = array() ) {
 	}
 
 	$show_intro = ! isset( $args['intro'] ) || $args['intro'];
+	$compact    = ! empty( $args['compact'] );
+	$collapsed  = ! empty( $args['collapsed'] );
+	$form_args  = array(
+		'compact' => $compact,
+		'uid'     => isset( $args['uid'] ) ? (string) $args['uid'] : '',
+	);
 
-	$html  = '<div class="gacct-ship">';
-	$html .= gacct_ship_notice_html();
+	$html  = '<div class="gacct-ship' . ( $compact ? ' is-compact' : '' ) . '" data-order="' . (int) $order->get_id() . '">';
+	$html .= gacct_ship_notice_html( $order->get_id() );
 
 	if ( $info ) {
 		$html .= '<p class="gacct-ship-current">';
@@ -510,15 +545,24 @@ function gacct_ship_render_form( $order, $args = array() ) {
 		if ( ! $readonly ) {
 			$html .= '<details class="gacct-ship-edit">';
 			$html .= '<summary>' . esc_html( gacct_ship_text( 'edit' ) ) . '</summary>';
-			$html .= gacct_ship_form_html( $order, $info );
+			$html .= gacct_ship_form_html( $order, $info, $form_args );
 			$html .= '</details>';
 		}
 	} elseif ( ! $readonly ) {
 		if ( $show_intro ) {
 			$html .= '<p class="gacct-ship-intro">' . esc_html( gacct_ship_text( 'intro' ) ) . '</p>';
+		} elseif ( $compact && ! $collapsed ) {
+			$html .= '<p class="gacct-ship-hint">' . esc_html( gacct_ship_text( 'compact_hint' ) ) . '</p>';
 		}
 
-		$html .= gacct_ship_form_html( $order, null );
+		if ( $collapsed ) {
+			$html .= '<details class="gacct-ship-edit gacct-ship-add">';
+			$html .= '<summary>' . esc_html( gacct_ship_text( 'add' ) ) . '</summary>';
+			$html .= gacct_ship_form_html( $order, null, $form_args );
+			$html .= '</details>';
+		} else {
+			$html .= gacct_ship_form_html( $order, null, $form_args );
+		}
 	}
 
 	$html .= '</div>';
@@ -531,15 +575,17 @@ function gacct_ship_render_form( $order, $args = array() ) {
  *
  * @param WC_Order   $order
  * @param array|null $info  Suivi existant (préremplissage) ou null.
+ * @param array      $args  {compact: bool, uid: string} — cf. gacct_ship_render_form().
  * @return string
  */
-function gacct_ship_form_html( $order, $info ) {
+function gacct_ship_form_html( $order, $info, $args = array() ) {
 	$carriers = gacct_ship_carriers();
 	$current  = $info ? $info['carrier'] : '';
 	$number   = $info ? $info['number'] : '';
-	$uid      = 'gacct-ship-' . (int) $order->get_id();
+	$compact  = ! empty( $args['compact'] );
+	$uid      = 'gacct-ship-' . (int) $order->get_id() . ( ! empty( $args['uid'] ) ? '-' . sanitize_key( $args['uid'] ) : '' );
 
-	$html  = '<form class="gacct-ship-form" method="post" action="">';
+	$html  = '<form class="gacct-ship-form' . ( $compact ? ' is-compact' : '' ) . '" method="post" action="">';
 	$html .= '<input type="hidden" name="gacct_ship_submit" value="1">';
 	$html .= '<input type="hidden" name="gacct_ship_order" value="' . (int) $order->get_id() . '">';
 	$html .= '<input type="hidden" name="gacct_ship_key" value="' . esc_attr( $order->get_order_key() ) . '">';
@@ -566,7 +612,7 @@ function gacct_ship_form_html( $order, $info ) {
 	$html .= '</p>';
 
 	$html .= '<p class="gacct-ship-actions"><button type="submit" class="gacct-ship-btn">'
-		. esc_html( gacct_ship_text( $info ? 'update' : 'submit' ) ) . '</button></p>';
+		. esc_html( gacct_ship_text( $info ? 'update' : ( $compact ? 'save_short' : 'submit' ) ) ) . '</button></p>';
 
 	$html .= '</form>';
 

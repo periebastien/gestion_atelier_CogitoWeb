@@ -89,6 +89,28 @@ function gacct_dash_texts() {
 		'expedition_track_done' => __( 'Colis %1$s n° %2$s annoncé.', 'gestion-atelier-cct' ),
 		'expedition_track_follow' => __( 'Suivre', 'gestion-atelier-cct' ),
 
+		// --- Fenêtre « Instructions d'envoi » (08/09/2026) -------------------
+		// Condensé de la page « Consignes d'emballage » rédigée par Timothée
+		// (page 2104) : elle reste la référence longue, accessible par le lien
+		// `instr_guide`. Textes portés par le plugin (white-label).
+		'instr_title'      => __( 'Instructions d’envoi', 'gestion-atelier-cct' ),
+		'instr_intro'      => __( 'Quatre étapes pour que votre matériel arrive à l’atelier en bon état et soit identifié dès son arrivée.', 'gestion-atelier-cct' ),
+		'instr_step1_t'    => __( 'Joignez votre bon d’intervention', 'gestion-atelier-cct' ),
+		'instr_step1'      => __( 'Imprimez-le, découpez l’étiquette du bas et scotchez-la sur votre matériel, puis placez la partie haute dans le carton, au-dessus du matériel. Son QR code nous permet d’identifier votre colis immédiatement.', 'gestion-atelier-cct' ),
+		'instr_step2_t'    => __( 'Préparez votre matériel', 'gestion-atelier-cct' ),
+		'instr_step2'      => __( 'Retirez vos accessoires personnels (radio, variomètre, batterie, gourde, lunettes, objets de valeur). Pliez la voile normalement dans son sac de compression et décrochez-la de la sellette si vous l’envoyez aussi.', 'gestion-atelier-cct' ),
+		'instr_step3_t'    => __( 'Emballez et fermez', 'gestion-atelier-cct' ),
+		'instr_step3'      => __( 'Carton solide et bien dimensionné, matériel calé (papier kraft ou bulle) pour qu’il ne bouge pas. Fermez avec un adhésif large et renforcez les arêtes.', 'gestion-atelier-cct' ),
+		'instr_step4_t'    => __( 'Expédiez et déclarez le suivi', 'gestion-atelier-cct' ),
+		'instr_step4'      => __( 'Envoyez le colis à l’adresse ci-dessous, de préférence avec un numéro de suivi, et conservez votre preuve de dépôt. Dès l’envoi, renseignez ce numéro : nous saurons que votre colis est en route.', 'gestion-atelier-cct' ),
+		'instr_address'    => __( 'Adresse de l’atelier', 'gestion-atelier-cct' ),
+		/* translators: %s: date limite d'arrivée du colis */
+		'instr_deadline'   => __( 'Le colis doit nous parvenir au plus tard le %s, la veille de votre créneau.', 'gestion-atelier-cct' ),
+		'instr_workorder'  => __( 'Imprimer le bon d’intervention', 'gestion-atelier-cct' ),
+		'instr_workorder_locked' => __( 'Le bon d’intervention sera disponible dès la réception de votre paiement.', 'gestion-atelier-cct' ),
+		'instr_guide'      => __( 'Voir les consignes d’emballage complètes', 'gestion-atelier-cct' ),
+		'instr_tracking'   => __( 'Votre numéro de suivi', 'gestion-atelier-cct' ),
+
 		// --- Carte « créneau libéré » (no-show, CDC §2.4) -------------------
 		'noshow_title' => __( 'Créneau libéré', 'gestion-atelier-cct' ),
 		/* translators: %s: date du créneau libéré */
@@ -983,30 +1005,51 @@ function gacct_dash_action_expedition( $order, array $conf, array $row = array()
 		$text = gacct_dash_text( 'expedition_text_plain' );
 	}
 
-	// --- Suivi colis aller (gacct-shipping.php) : déjà déclaré → le refléter,
-	//     sinon inviter à le renseigner depuis le détail de la commande.
-	$ship = ( $row && function_exists( 'gacct_ship_info' ) ) ? gacct_ship_info( $row ) : null;
+	// --- Suivi colis aller (gacct-shipping.php), 08/09/2026 : le bloc suivi
+	//     (formulaire compact, ou suivi déclaré + « Modifier ») vit DANS la
+	//     carte — le client n'a plus à ouvrir le détail de la commande.
+	//     Repli texte si le module est absent.
+	$ship      = ( $row && function_exists( 'gacct_ship_info' ) ) ? gacct_ship_info( $row ) : null;
+	$ship_html = function_exists( 'gacct_ship_render_form' )
+		? gacct_ship_render_form( $order, array( 'intro' => false, 'compact' => true, 'uid' => 'card' ) )
+		: '';
 
-	if ( $ship ) {
-		$text .= ' ' . sprintf(
-			gacct_dash_text( 'expedition_track_done' ),
-			'<span class="hl">' . esc_html( $ship['carrier_label'] ) . '</span>',
-			'<span class="hl">' . esc_html( $ship['number'] ) . '</span>'
-		);
+	if ( '' === $ship_html ) {
+		if ( $ship ) {
+			$text .= ' ' . sprintf(
+				gacct_dash_text( 'expedition_track_done' ),
+				'<span class="hl">' . esc_html( $ship['carrier_label'] ) . '</span>',
+				'<span class="hl">' . esc_html( $ship['number'] ) . '</span>'
+			);
 
-		if ( '' !== $ship['url'] ) {
-			$text .= ' <a class="gacct-dash-ship-link" href="' . esc_url( $ship['url'] ) . '" target="_blank" rel="noopener">'
-				. esc_html( gacct_dash_text( 'expedition_track_follow' ) ) . '</a>';
+			if ( '' !== $ship['url'] ) {
+				$text .= ' <a class="gacct-dash-ship-link" href="' . esc_url( $ship['url'] ) . '" target="_blank" rel="noopener">'
+					. esc_html( gacct_dash_text( 'expedition_track_follow' ) ) . '</a>';
+			}
+		} else {
+			$text .= ' ' . sprintf(
+				gacct_dash_text( 'expedition_track_ask' ),
+				'<a class="gacct-dash-ship-link" href="' . esc_url( $order->get_view_order_url() ) . '">'
+					. esc_html( gacct_dash_text( 'expedition_track_ask_link' ) ) . '</a>'
+			);
 		}
-	} else {
-		$text .= ' ' . sprintf(
-			gacct_dash_text( 'expedition_track_ask' ),
-			'<a class="gacct-dash-ship-link" href="' . esc_url( $order->get_view_order_url() ) . '">'
-				. esc_html( gacct_dash_text( 'expedition_track_ask_link' ) ) . '</a>'
-		);
 	}
 
+	// Fenêtre « Instructions d'envoi » (08/09/2026) : ouverte par le CTA à la
+	// place de la page de confirmation complète, qui reste le repli sans JS.
+	$instr = array(
+		'order'            => $order,
+		'store_address'    => isset( $conf['store_address'] ) && is_array( $conf['store_address'] ) ? $conf['store_address'] : array(),
+		'parcel_label'     => isset( $conf['parcel_label'] ) ? (string) $conf['parcel_label'] : '',
+		'work_order_url'   => isset( $links['work_order'] ) ? (string) $links['work_order'] : '',
+		'work_order_on'    => function_exists( 'gacct_conf_feature' ) ? gacct_conf_feature( 'work_order' ) : true,
+		'work_order_locked' => ! empty( $conf['work_order_locked'] ),
+		'guide_url'        => isset( $links['packing_guide'] ) ? (string) $links['packing_guide'] : '',
+	);
+
 	return array(
+		'ship_html' => $ship_html,
+		'instr'     => $instr,
 		'type'      => 'expedition',
 		'title'     => gacct_dash_text( 'expedition_title' ),
 		'text_html' => $text,
@@ -1227,7 +1270,19 @@ function gacct_dash_render_actions( $value = null ) {
 			$modal_id   = 'gacct-rib-modal-' . $modal_num;
 			$modal_attr = ' data-rib-open="' . esc_attr( $modal_id ) . '"';
 			$modals    .= gacct_dash_rib_modal_html( $modal_id, $action['bank_rows'] );
+		} elseif ( 'expedition' === $action['type'] && ! empty( $action['instr'] ) ) {
+			// Carte expédition : le CTA ouvre la fenêtre « Instructions d'envoi »
+			// (même mécanique dialog que le RIB, 08/09/2026).
+			$modal_num++;
+			$modal_id   = 'gacct-rib-modal-' . $modal_num;
+			$modal_attr = ' data-rib-open="' . esc_attr( $modal_id ) . '"';
+			$modals    .= gacct_dash_instructions_modal_html( $modal_id, $action['instr'] );
 		}
+
+		// Bloc suivi colis dans la carte (expédition), sous la note.
+		$ship_block = ! empty( $action['ship_html'] )
+			? '<div class="gacct-dash-ship">' . $action['ship_html'] . '</div>'
+			: '';
 
 		$bouton = '';
 		if ( ! empty( $action['url'] ) && ! empty( $action['cta_label'] ) ) {
@@ -1251,6 +1306,7 @@ function gacct_dash_render_actions( $value = null ) {
 					. '<div class="action-title">%4$s%5$s</div>'
 					. '<div class="action-text">%6$s</div>'
 					. '%7$s'
+					. '%9$s'
 				. '</div>'
 				. '%8$s'
 			. '</div>',
@@ -1261,7 +1317,8 @@ function gacct_dash_render_actions( $value = null ) {
 			$chip,
 			$action['text_html'], // déjà échappé à la construction (seuls des <span class="hl"> sont ajoutés).
 			$note,
-			$bouton
+			$bouton,
+			$ship_block // HTML construit et échappé par gacct-shipping.php.
 		);
 	}
 
@@ -1329,6 +1386,97 @@ function gacct_dash_rib_modal_html( $modal_id, array $bank_rows ) {
 		esc_attr__( 'Fermer', 'gestion-atelier-cct' ),
 		$rows_html,
 		esc_html__( 'Indiquez bien la référence dans le libellé du virement : c’est elle qui rattache votre paiement à votre commande.', 'gestion-atelier-cct' )
+	);
+}
+
+/**
+ * Fenêtre « Instructions d'envoi » de la carte expédition (08/09/2026).
+ *
+ * Condensé des consignes d'emballage (page 2104 de Timothée, liée en bas) :
+ * 4 étapes, adresse de l'atelier (avec bouton copier), date limite d'arrivée
+ * du colis, bon d'intervention (grisé tant que le paiement n'est pas encaissé,
+ * comme partout), et le formulaire de suivi colis. La page de confirmation
+ * reste l'écran complet d'après-checkout : rien n'y change.
+ *
+ * @param string $modal_id Id HTML de la dialog.
+ * @param array  $instr    Données assemblées par gacct_dash_action_expedition().
+ * @return string HTML.
+ */
+function gacct_dash_instructions_modal_html( $modal_id, array $instr ) {
+	$order = isset( $instr['order'] ) ? $instr['order'] : null;
+
+	$steps = '';
+	for ( $i = 1; $i <= 4; $i++ ) {
+		$steps .= sprintf(
+			'<li><strong>%1$s</strong><span>%2$s</span></li>',
+			esc_html( gacct_dash_text( 'instr_step' . $i . '_t' ) ),
+			esc_html( gacct_dash_text( 'instr_step' . $i ) )
+		);
+	}
+
+	$address = '';
+	if ( ! empty( $instr['store_address'] ) ) {
+		$lines   = array_map( 'strval', (array) $instr['store_address'] );
+		$address = sprintf(
+			'<div class="rib-row hl"><div class="rib-cell"><div class="rib-lbl">%1$s</div><div class="rib-val instr-address">%2$s</div></div>'
+			. '<button type="button" class="rib-copy" data-rib-copy="%3$s">%4$s</button></div>',
+			esc_html( gacct_dash_text( 'instr_address' ) ),
+			implode( '<br>', array_map( 'esc_html', $lines ) ),
+			esc_attr( implode( ', ', $lines ) ),
+			esc_html__( 'Copier', 'gestion-atelier-cct' )
+		);
+	}
+
+	$deadline = '' !== (string) $instr['parcel_label']
+		? '<p class="instr-deadline">' . gacct_dash_icon( 'clock' ) . ' ' . sprintf(
+			esc_html( gacct_dash_text( 'instr_deadline' ) ),
+			'<strong>' . esc_html( $instr['parcel_label'] ) . '</strong>'
+		) . '</p>'
+		: '';
+
+	$workorder = '';
+	if ( ! empty( $instr['work_order_on'] ) && '' !== (string) $instr['work_order_url'] ) {
+		$workorder = ! empty( $instr['work_order_locked'] )
+			? '<span class="action-btn ghost is-disabled" aria-disabled="true" title="' . esc_attr( gacct_dash_text( 'instr_workorder_locked' ) ) . '">'
+				. esc_html( gacct_dash_text( 'instr_workorder' ) ) . '</span>'
+			: '<a class="action-btn ghost" href="' . esc_url( $instr['work_order_url'] ) . '" target="_blank" rel="noopener">'
+				. esc_html( gacct_dash_text( 'instr_workorder' ) ) . gacct_dash_icon( 'arrow' ) . '</a>';
+	}
+
+	$guide = '' !== (string) $instr['guide_url']
+		? '<a class="instr-guide" href="' . esc_url( $instr['guide_url'] ) . '" target="_blank" rel="noopener">' . esc_html( gacct_dash_text( 'instr_guide' ) ) . '</a>'
+		: '';
+
+	$ship = ( $order instanceof WC_Order && function_exists( 'gacct_ship_render_form' ) )
+		? gacct_ship_render_form( $order, array( 'intro' => false, 'compact' => true, 'uid' => 'modal' ) )
+		: '';
+
+	if ( '' !== $ship ) {
+		$ship = '<div class="instr-tracking"><h4>' . esc_html( gacct_dash_text( 'instr_tracking' ) ) . '</h4>' . $ship . '</div>';
+	}
+
+	return sprintf(
+		'<dialog class="gacct-rib-modal gacct-instr-modal" id="%1$s">'
+			. '<div class="rib-box">'
+				. '<div class="rib-head"><h3>%2$s</h3><button type="button" class="rib-close" data-rib-close aria-label="%3$s">&times;</button></div>'
+				. '<p class="instr-intro">%4$s</p>'
+				. '<ol class="instr-steps">%5$s</ol>'
+				. '%6$s'
+				. '%7$s'
+				. '<div class="instr-actions">%8$s%9$s</div>'
+				. '%10$s'
+			. '</div>'
+		. '</dialog>',
+		esc_attr( $modal_id ),
+		esc_html( gacct_dash_text( 'instr_title' ) ),
+		esc_attr__( 'Fermer', 'gestion-atelier-cct' ),
+		esc_html( gacct_dash_text( 'instr_intro' ) ),
+		$steps,
+		$address,
+		$deadline,
+		$workorder,
+		$guide,
+		$ship
 	);
 }
 

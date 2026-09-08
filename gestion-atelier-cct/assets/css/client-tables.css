@@ -1257,3 +1257,25 @@
 	color: #6b4d00;
 	cursor: help;
 }
+
+/* ── Suivi colis depuis « Mes demandes » (08/09/2026) ──────────────────── */
+:is(#scroll, #scroll-materiel) .status-stack .gacct-ship { font-size: 13px; text-align: left; width: 100%; }
+:is(#scroll, #scroll-materiel) .status-stack .gacct-ship-notice { margin: 0 0 6px; font-weight: 700; }
+:is(#scroll, #scroll-materiel) .status-stack .gacct-ship-notice.is-success { color: #047857; }
+:is(#scroll, #scroll-materiel) .status-stack .gacct-ship-notice.is-error { color: #c92a2a; }
+:is(#scroll, #scroll-materiel) .status-stack .gacct-ship-current { margin: 0; }
+:is(#scroll, #scroll-materiel) .status-stack .gacct-ship-follow { color: var(--teal-dark); font-weight: 700; text-decoration: underline; margin-left: 6px; }
+:is(#scroll, #scroll-materiel) .status-stack .gacct-ship-edit { margin-top: 4px; }
+:is(#scroll, #scroll-materiel) .status-stack .gacct-ship-edit summary { cursor: pointer; font-weight: 700; color: var(--teal-dark); list-style: none; display: inline-flex; align-items: center; gap: 6px; }
+:is(#scroll, #scroll-materiel) .status-stack .gacct-ship-edit summary::-webkit-details-marker { display: none; }
+:is(#scroll, #scroll-materiel) .status-stack .gacct-ship-add summary::before { content: "+"; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: var(--teal-soft); color: var(--teal-dark); font-weight: 800; }
+:is(#scroll, #scroll-materiel) .status-stack .gacct-ship-form.is-compact { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+:is(#scroll, #scroll-materiel) .status-stack .gacct-ship-form.is-compact .gacct-ship-field { margin: 0; flex: 1 1 140px; }
+:is(#scroll, #scroll-materiel) .status-stack .gacct-ship-form.is-compact .gacct-ship-field label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+:is(#scroll, #scroll-materiel) .status-stack .gacct-ship-form.is-compact select,
+:is(#scroll, #scroll-materiel) .status-stack .gacct-ship-form.is-compact input { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 13px; padding: 8px 10px; border: 1.5px solid #d5d8dc; border-radius: 8px; background: #fff; }
+:is(#scroll, #scroll-materiel) .status-stack .gacct-ship-form.is-compact select:focus,
+:is(#scroll, #scroll-materiel) .status-stack .gacct-ship-form.is-compact input:focus { outline: none; border-color: var(--teal-dark); }
+:is(#scroll, #scroll-materiel) .status-stack .gacct-ship-form.is-compact .gacct-ship-actions { margin: 0; flex: 0 0 auto; display: flex; }
+:is(#scroll, #scroll-materiel) .status-stack .gacct-ship-form.is-compact .gacct-ship-btn { font-family: inherit; font-size: 12.5px; font-weight: 800; padding: 8px 12px; border: 1.5px solid var(--teal-dark); border-radius: 8px; background: #fff; color: var(--teal-dark); cursor: pointer; white-space: nowrap; }
+:is(#scroll, #scroll-materiel) .status-stack .gacct-ship-form.is-compact .gacct-ship-btn:hover { background: var(--teal-soft); }
