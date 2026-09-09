@@ -1,0 +1,50 @@
+/* Connexion « l'e-mail d'abord » (shortcode [gacct_connexion]) */
+.gacct-login { margin-top: 32px; text-align: left; }
+.gacct-login-step { display: flex; flex-direction: column; gap: 0; }
+.gacct-login-label { display: block; font-weight: 700; font-size: 14px; margin: 0 0 6px; color: #1a1a1a; }
+.gacct-login-input { width: 100%; border: 1px solid #d8d8d8; border-radius: 10px; padding: 13px 14px; font: inherit; font-size: 16px; background: #fff; color: #1a1a1a; transition: border-color 150ms, box-shadow 150ms; }
+.gacct-login-input:focus { outline: none; border-color: #20c4c3; box-shadow: 0 0 0 3px rgba(32, 196, 195, 0.18); }
+.gacct-login-hint { font-size: 13px; color: #777; margin: 8px 0 0; }
+.gacct-login button.gacct-login-btn, .gacct-login button.gacct-login-btn:hover, .gacct-login button.gacct-login-btn:focus { border: 0; border-style: none; box-shadow: none; }
+.gacct-login button.gacct-login-btn { display: block; width: 100%; border: 0; border-radius: 999px; padding: 14px 26px; margin-top: 18px; font: inherit; font-weight: 800; font-size: 16px; background: #f2b134; color: #1a1a1a; cursor: pointer; transition: filter 150ms, transform 150ms; }
+.gacct-login-btn:hover { filter: brightness(0.96); }
+.gacct-login-btn:active { transform: translateY(1px); }
+.gacct-login-btn:disabled { opacity: 0.7; cursor: wait; }
+.gacct-login-btn:focus-visible, .gacct-login-link:focus-visible, .gacct-login-eye:focus-visible { outline: 3px solid rgba(32, 196, 195, 0.5); outline-offset: 2px; }
+
+.gacct-login-who { background: #f3f8f8; border-radius: 12px; padding: 14px 16px; margin: 0 0 16px; }
+.gacct-login-who-title { margin: 0; font-weight: 800; font-size: 17px; color: #1a1a1a; }
+.gacct-login-who-mail { margin: 4px 0 0; font-size: 14px; color: #444; word-break: break-all; }
+.gacct-login button.gacct-login-link, .gacct-login button.gacct-login-link:hover, .gacct-login button.gacct-login-link:focus { background: none; border: 0; border-style: none; box-shadow: none; border-radius: 0; }
+.gacct-login button.gacct-login-link { background: none; border: 0; padding: 0; font: inherit; font-size: 13px; color: #20c4c3; font-weight: 700; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.gacct-login-link:hover { color: #189998; }
+.gacct-login-link:disabled { opacity: 0.6; cursor: wait; }
+.gacct-login-intro { font-size: 14px; line-height: 1.55; color: #555; margin: 0 0 16px; }
+
+.gacct-login-pw { position: relative; }
+.gacct-login-pw .gacct-login-input { padding-right: 46px; }
+.gacct-login button.gacct-login-eye, .gacct-login button.gacct-login-eye:hover, .gacct-login button.gacct-login-eye:focus { background: none; border: 0; border-style: none; box-shadow: none; padding: 0; color: #999; }
+.gacct-login button.gacct-login-eye { position: absolute; right: 8px; top: 50%; width: 32px; height: 32px; transform: translateY(-50%); border: 0; background: none; cursor: pointer; color: #999; }
+.gacct-login-eye::before { content: ""; display: block; width: 22px; height: 22px; margin: 0 auto; background: currentColor; -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z'/><circle cx='12' cy='12' r='3'/></svg>") center / contain no-repeat; mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z'/><circle cx='12' cy='12' r='3'/></svg>") center / contain no-repeat; }
+.gacct-login button.gacct-login-eye:hover, .gacct-login button.gacct-login-eye.is-on { color: #20c4c3; }
+
+.gacct-login-remember { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #444; margin: 12px 0 0; cursor: pointer; }
+.gacct-login-remember input { width: 18px; height: 18px; accent-color: #20c4c3; margin: 0; }
+.gacct-login-forgot { margin: 14px 0 0; text-align: center; font-size: 13px; }
+.gacct-login-forgot button.gacct-login-link { color: #666; font-weight: 400; }
+.gacct-login-forgot button.gacct-login-link:hover { color: #20c4c3; }
+.gacct-login-step--password.is-imported .gacct-login-forgot button.gacct-login-link { color: #20c4c3; font-weight: 700; }
+.gacct-login-legal { font-size: 12px; line-height: 1.5; color: #777; margin: 12px 0 0; text-align: center; }
+.gacct-login-legal a { color: #555; text-decoration: underline; }
+
+.gacct-login-msg { margin: 14px 0 0; padding: 12px 16px; border-radius: 10px; font-size: 14px; line-height: 1.5; background: #f3f8f8; color: #148483; }
+.gacct-login-msg--error { background: #fdecec; color: #c0392b; }
+.gacct-login-msg--success { background: #e9f8f8; color: #148483; }
+.gacct-login-msg[hidden] { display: none; }
+
+.gacct-login-step.is-busy { opacity: 0.85; }
+.gacct-login-logged { text-align: center; }
+
+@media (prefers-reduced-motion: reduce) {
+	.gacct-login-input, .gacct-login-btn, .gacct-login-link { transition: none; }
+}

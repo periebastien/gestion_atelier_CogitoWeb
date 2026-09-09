@@ -56,6 +56,7 @@ require_once __DIR__ . '/includes/gacct-signature.php';
 require_once __DIR__ . '/includes/gacct-vieworder.php';
 require_once __DIR__ . '/includes/gacct-balance.php'; // paiement du solde côté client (09/09/2026)
 require_once __DIR__ . '/includes/gacct-login.php'; // jamais wp-login / wp-admin pour un client (09/09/2026)
+require_once __DIR__ . '/includes/gacct-login-ui.php'; // connexion « l'e-mail d'abord », shortcode [gacct_connexion] (09/09/2026)
 require_once __DIR__ . '/includes/gacct-orders.php';
 require_once __DIR__ . '/includes/gacct-address.php';
 require_once __DIR__ . '/includes/gacct-equipement.php';
