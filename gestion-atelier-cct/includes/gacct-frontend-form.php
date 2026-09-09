@@ -460,6 +460,14 @@ function gacct_demande_garde_serveur( $request, $handler ) {
 			(string) ( $request['modele'] ?? '' )
 		);
 	}
+	// Idem pour le parachute de secours (onglet Secours, 09/09/2026).
+	if ( function_exists( 'gacct_secours_journaliser_hors_liste' ) ) {
+		gacct_secours_journaliser_hors_liste(
+			(string) ( $request['secours_marque'] ?? '' ),
+			(string) ( $request['secours_modele'] ?? '' ),
+			(string) ( $request['secours_taille'] ?? '' )
+		);
+	}
 }
 
 /**
