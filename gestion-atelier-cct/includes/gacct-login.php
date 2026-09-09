@@ -206,6 +206,7 @@ function gacct_lostpassword_shortcode() {
 
 	ob_start();
 	echo '<div class="gacct-lost woocommerce">';
+	echo '<h1 class="gacct-lost-title">' . esc_html__( 'Mot de passe oublié', 'gestion-atelier-cct' ) . '</h1>';
 	wc_print_notices();
 	WC_Shortcode_My_Account::lost_password();
 	echo '<p class="gacct-lost-back"><a href="' . esc_url( home_url( '/mon-compte/' ) ) . '">' . esc_html__( 'Retour à la connexion', 'gestion-atelier-cct' ) . '</a></p>';
@@ -214,6 +215,7 @@ function gacct_lostpassword_shortcode() {
 	$css = '<style>
 .gacct-lost{max-width:520px;margin:32px auto 56px;padding:32px 28px;background:#fff;border-radius:16px;box-shadow:0 6px 30px rgba(0,0,0,.06)}
 .gacct-lost h2,.gacct-lost .woocommerce-ResetPassword p:first-child,.gacct-lost .lost_reset_password p:first-child{font-size:1.05em;color:#444}
+.gacct-lost-title{font-size:1.7em;margin:0 0 14px}
 .gacct-lost label{display:block;font-weight:700;margin:14px 0 6px}
 .gacct-lost input[type=text],.gacct-lost input[type=password]{width:100%;border:1px solid #d8d8d8;border-radius:10px;padding:12px 14px;font:inherit}
 .gacct-lost button,.gacct-lost .button{display:inline-block;border:0;border-radius:999px;padding:12px 26px;font-weight:800;background:#f2b134;color:#1a1a1a;cursor:pointer;margin-top:16px}
