@@ -446,6 +446,14 @@ function gacct_historique_detecter_type( array $row ) {
 	$commentaire = remove_accents( strtolower( (string) ( $row['commentaire'] ?? '' ) ) );
 	$montant     = isset( $row['montant'] ) && null !== $row['montant'] ? (float) $row['montant'] : null;
 
+	// Tarifs du pliage seul sur l'ancien site : 40 et 60 euros, 62 avec les frais
+	// de retour (Bastien, 09/09/2026) : un dossier a ce montant est un secours,
+	// quel que soit le texte saisi. Filtrable.
+	$tarifs_pliage = (array) apply_filters( 'gacct_historique_tarifs_pliage', array( 40.0, 60.0, 62.0 ) );
+	if ( null !== $montant && in_array( round( $montant, 2 ), $tarifs_pliage, true ) ) {
+		return 'secours';
+	}
+
 	if ( '' !== $commentaire
 		&& preg_match( '/\\b(pliage|repliage|secours)\\b/u', $commentaire )
 		&& ! preg_match( '/\b(voil|aile\b|suspent|calage|porosit|contr[oô]le)/u', $commentaire )
