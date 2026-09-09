@@ -1,0 +1,149 @@
+/* =============================================================================
+ * Espace client : « Mes parachutes de secours » (page Mon matériel)
+ * gestion-atelier-cct / includes/gacct-secours-client.php + templates/secours-client.php
+ * Même registre que address.css : variables --gacct-* du thème, replis Altitude.
+ * ============================================================================= */
+
+.gacct-sec {
+	--sec-ink:        var(--gacct-text, #1a1a1a);
+	--sec-ink-3:      var(--gacct-dash-ink-3, #6b6b6b);
+	--sec-teal:       var(--gacct-accent, #20c4c3);
+	--sec-teal-dark:  var(--gacct-accent-dark, #189998);
+	--sec-teal-soft:  var(--gacct-accent-soft, #e6f7f7);
+	--sec-yellow:     var(--gacct-cta, #ffbd20);
+	--sec-surface:    var(--gacct-surface, #fff);
+	--sec-line:       var(--gacct-line-strong, rgba(0, 0, 0, 0.12));
+	--sec-green-soft: var(--gacct-success-soft, #e6f7f1);
+	--sec-green-ink:  var(--gacct-success-ink, #047857);
+	--sec-orange-soft: #fff3e0;
+	--sec-orange-ink: #b45309;
+	--sec-red-soft:   var(--gacct-danger-soft, #fff5f5);
+	--sec-red-ink:    var(--gacct-danger, #c92a2a);
+	--sec-radius:     var(--gacct-dash-radius, 9px);
+	--sec-radius-lg:  var(--gacct-dash-radius-lg, 14px);
+
+	margin-top: 32px;
+	color: var(--sec-ink);
+}
+
+.gacct-sec-titre {
+	margin: 0 0 4px;
+	font-size: 20px;
+	font-weight: 800;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+.gacct-sec-count {
+	font-size: 12px;
+	font-weight: 700;
+	background: var(--sec-teal-soft);
+	color: var(--sec-teal-dark);
+	border-radius: 999px;
+	padding: 2px 9px;
+}
+.gacct-sec-intro,
+.gacct-sec-vide {
+	margin: 0 0 16px;
+	color: var(--sec-ink-3);
+	font-size: 14px;
+}
+
+.gacct-sec-liste {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 14px;
+}
+
+.gacct-sec-card {
+	background: var(--sec-surface);
+	border: 1px solid var(--sec-line);
+	border-radius: var(--sec-radius-lg);
+	padding: 18px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+.gacct-sec-head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 10px;
+}
+.gacct-sec-nom strong {
+	display: block;
+	font-size: 16px;
+	font-weight: 800;
+}
+.gacct-sec-tag {
+	display: inline-block;
+	margin-top: 4px;
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--sec-ink-3);
+	border: 1px solid var(--sec-line);
+	border-radius: 999px;
+	padding: 1px 8px;
+}
+.gacct-sec-statut {
+	flex: none;
+	font-size: 12px;
+	font-weight: 700;
+	border-radius: 999px;
+	padding: 4px 10px;
+	background: var(--sec-teal-soft);
+	color: var(--sec-teal-dark);
+}
+.gacct-sec-card.is-a_jour   .gacct-sec-statut { background: var(--sec-green-soft); color: var(--sec-green-ink); }
+.gacct-sec-card.is-bientot  .gacct-sec-statut { background: var(--sec-orange-soft); color: var(--sec-orange-ink); }
+.gacct-sec-card.is-a_replier .gacct-sec-statut { background: var(--sec-red-soft); color: var(--sec-red-ink); }
+.gacct-sec-card.is-inconnu  .gacct-sec-statut { background: #f3f5f7; color: var(--sec-ink-3); }
+.gacct-sec-card.is-a_replier .gacct-sec-prochain { color: var(--sec-red-ink); font-weight: 700; }
+.gacct-sec-card.is-bientot  .gacct-sec-prochain { color: var(--sec-orange-ink); font-weight: 700; }
+
+.gacct-sec-infos {
+	margin: 0;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 8px 12px;
+}
+.gacct-sec-infos div {
+	min-width: 0;
+}
+.gacct-sec-infos dt {
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--sec-ink-3);
+}
+.gacct-sec-infos dd {
+	margin: 2px 0 0;
+	font-size: 14px;
+}
+
+.gacct-sec-actions {
+	margin-top: auto;
+	display: flex;
+	gap: 8px;
+}
+.gacct-sec-btn {
+	display: inline-block;
+	padding: 10px 16px;
+	border-radius: var(--sec-radius);
+	background: var(--sec-yellow);
+	color: var(--sec-ink) !important;
+	font-size: 14px;
+	font-weight: 700;
+	text-decoration: none !important;
+}
+.gacct-sec-btn:hover {
+	filter: brightness(0.96);
+}
+
+@media (max-width: 600px) {
+	.gacct-sec { margin-top: 24px; }
+	.gacct-sec-liste { grid-template-columns: 1fr; }
+	.gacct-sec-card { padding: 16px; }
+	.gacct-sec-btn { width: 100%; text-align: center; }
+}

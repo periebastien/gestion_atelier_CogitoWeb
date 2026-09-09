@@ -1939,6 +1939,54 @@
 				'<button type="button" class="gacct-v2-c-edit">' + escapeHtml( v2i18n.modifier || 'Modifier' ) + '</button></div>';
 			groupe.insertBefore( sel, grille );
 
+			// Secours déjà connus du client (Mon matériel) : cartes à cliquer, comme les voiles.
+			var connus = v2.secoursClient || [];
+			var cartesSecours = [];
+			if ( connus.length ) {
+				var blocC = document.createElement( 'div' );
+				blocC.className = 'gacct-materiel gacct-materiel--secours';
+				var aideC = document.createElement( 'div' );
+				aideC.className = 'gacct-materiel__aide';
+				aideC.textContent = v2i18n.secoursConnus || '';
+				blocC.appendChild( aideC );
+				var listeC = document.createElement( 'div' );
+				listeC.className = 'gacct-materiel__liste';
+				listeC.setAttribute( 'role', 'radiogroup' );
+				blocC.appendChild( listeC );
+				connus.forEach( function ( c ) {
+					var b = document.createElement( 'button' );
+					b.type = 'button';
+					b.className = 'gacct-materiel__carte';
+					b.setAttribute( 'role', 'radio' );
+					b.setAttribute( 'aria-checked', 'false' );
+					b.innerHTML = '<span class="gacct-materiel__carte-titre">' + escapeHtml( ( c.marque + ' ' + c.modele ).trim() ) + '</span>' +
+						'<span class="gacct-materiel__carte-detail">' + escapeHtml( c.taille || '' ) + ( c.ancien ? ' <span class="gacct-materiel__carte-badge">' + escapeHtml( v2i18n.secoursAncienSite || 'Ancien site' ) + '</span>' : '' ) + '</span>';
+					b.addEventListener( 'click', function () { secoursChoisirConnu( c, b ); } );
+					cartesSecours.push( b );
+					listeC.appendChild( b );
+				} );
+				var autre = document.createElement( 'button' );
+				autre.type = 'button';
+				autre.className = 'gacct-materiel__carte gacct-materiel__carte--new';
+				autre.innerHTML = '<span class="gacct-materiel__carte-titre">' + plusSvg() + ' ' + escapeHtml( v2i18n.secoursNouveau || 'Autre secours' ) + '</span>';
+				autre.addEventListener( 'click', function () { cartesActives( null ); recherche(); } );
+				listeC.appendChild( autre );
+				sel.insertBefore( blocC, sel.firstChild );
+			}
+			function cartesActives( actif ) {
+				cartesSecours.forEach( function ( b ) { b.classList.toggle( 'is-active', b === actif ); b.setAttribute( 'aria-checked', b === actif ? 'true' : 'false' ); } );
+			}
+			function secoursChoisirConnu( c, b ) {
+				cartesActives( b );
+				secoursEcrire( inMarque, c.marque );
+				secoursEcrire( inModele, c.modele );
+				if ( inTaille ) { secoursEcrire( inTaille, c.taille || '' ); }
+				var inDate = form.querySelector( '[name="secours_date"]' );
+				if ( inDate && c.date ) { secoursEcrire( inDate, c.date ); }
+				// Retrouve le modèle dans le référentiel (carte + tailles), sinon carte simple.
+				if ( secours.pret ) { secoursRetrouver( true ); } else { secours.attenteConnu = true; }
+			}
+
 			var ui = {
 				combo: sel.querySelector( '.gacct-v2-combo' ),
 				input: sel.querySelector( '#gacctV2SecoursSearch' ),
@@ -2053,6 +2101,7 @@
 				inMarque.focus();
 			}
 			function recherche() {
+				cartesActives( null );
 				secours.choisi = null;
 				secours.manuel = false;
 				secoursEcrire( inMarque, '' );
@@ -2084,16 +2133,33 @@
 						return { i: i, m: t[ 0 ], mo: t[ 1 ], f: t[ 2 ] || '', t: t[ 3 ] || [], k: norm( t[ 0 ] + ' ' + t[ 1 ] ) };
 					} );
 					secours.pret = true;
-					secoursRetrouver();
+					secoursRetrouver( !! secours.attenteConnu );
+					secours.attenteConnu = false;
 				} )
 				.catch( function () { manuel(); } );
 
-			function secoursRetrouver() {
+			function secoursRetrouver( depuisCarte ) {
 				var m = norm( inMarque.value ), mo = norm( inModele.value );
 				if ( ! m && ! mo ) { return; }
 				var trouve = null;
 				secours.liste.forEach( function ( s ) { if ( ! trouve && norm( s.m ) === m && norm( s.mo ) === mo ) { trouve = s; } } );
-				if ( trouve ) { choisir( trouve ); } else { montrer( 'manuel' ); secours.manuel = true; }
+				if ( trouve ) {
+					var taille = inTaille ? inTaille.value : '';
+					choisir( trouve );
+					if ( inTaille && taille ) { secoursEcrire( inTaille, taille ); if ( ui.tailleSelect ) { ui.tailleSelect.value = trouve.t.indexOf( taille ) > -1 ? taille : '__autre__'; if ( ui.tailleSelect.value === '__autre__' ) { ui.tailleSelect.hidden = true; inTaille.hidden = false; } } }
+				} else if ( depuisCarte ) {
+					// Secours connu du client mais absent du référentiel : carte de confirmation simple.
+					secours.choisi = { m: inMarque.value, mo: inModele.value, f: '', t: [] };
+					secours.manuel = false;
+					ui.chosenNom.textContent = ( inMarque.value + ' ' + inModele.value ).trim();
+					ui.chosenSub.textContent = '';
+					effaceErreur( 'secours' );
+					montrer( 'choisi' );
+				} else { montrer( 'manuel' ); secours.manuel = true; }
+			}
+			// Présélection depuis « Demander un pliage » (Mon matériel, ?secours=<index>).
+			if ( v2.secoursPreselect >= 0 && cartesSecours.length ) {
+				connus.forEach( function ( c, i ) { if ( Number( c.id ) === Number( v2.secoursPreselect ) && cartesSecours[ i ] ) { secoursChoisirConnu( c, cartesSecours[ i ] ); } } );
 			}
 			secours.retrouver = secoursRetrouver;
 		}

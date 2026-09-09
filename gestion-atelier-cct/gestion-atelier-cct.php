@@ -56,6 +56,7 @@ require_once __DIR__ . '/includes/gacct-orders.php';
 require_once __DIR__ . '/includes/gacct-address.php';
 require_once __DIR__ . '/includes/gacct-equipement.php';
 require_once __DIR__ . '/includes/gacct-secours.php'; // referentiel des parachutes de secours (09/09/2026)
+require_once __DIR__ . '/includes/gacct-secours-client.php'; // secours suivis du client : Mon materiel, cartes du formulaire (09/09/2026)
 require_once __DIR__ . '/includes/gacct-shipping.php';
 require_once __DIR__ . '/includes/gacct-client-tables.php';
 require_once __DIR__ . '/includes/gacct-regions.php';
