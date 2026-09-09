@@ -191,6 +191,7 @@
   <a href="#matin">Le point du matin</a>
   <a href="#cas">Cas particuliers</a>
   <a href="#anciennes-revisions">Anciennes révisions</a>
+  <a href="#secours">Parachutes de secours</a>
   <a href="#emails">Qui reçoit quoi</a>
   <a href="#reglages">Où se règle quoi</a>
   <a href="#faq">Questions fréquentes</a>
@@ -201,6 +202,7 @@
   <h2>Le principe</h2>
   <div class="prose">
     <p>Un client réserve sa révision en ligne : il choisit ses prestations, une date d'intervention, et paie un <strong>acompte</strong> qui réserve son créneau à l'atelier. Il expédie ensuite son matériel, l'atelier réalise l'intervention, le client règle le <strong>solde</strong>, récupère son <strong>rapport de contrôle</strong>, et le matériel repart.</p>
+    <p>Le formulaire de demande procède en deux temps : le client coche d'abord ses <strong>prestations</strong>, puis décrit <strong>le matériel qu'elles concernent</strong>, un matériel à la fois : parapente, parachute de secours ou sellette. Ce que chaque prestation attend se règle sur sa fiche produit (voir <a href="#reglages">Où se règle quoi</a>) : un pliage attend un secours, un contrôle complet équipement attend les trois.</p>
     <p>Chaque demande crée <strong>un dossier</strong>, visible des deux côtés : dans l'espace client (avec une frise d'avancement) et dans la console atelier (menu « Gestion Atelier »). Le dossier avance à travers des <strong>états numérotés de 0 à 9</strong> : certains passages sont à faire à la main depuis la console, d'autres se font tout seuls (paiements, relances, bascules). Le fil conducteur du guide : <strong>à chaque état, quelqu'un a la main</strong>, et si cette personne ne fait rien, la plateforme relance, puis alerte l'atelier. Aucun dossier ne doit pouvoir dormir sans que quelqu'un soit prévenu.</p>
   </div>
 </section>
@@ -395,7 +397,7 @@
     <h3><span class="etat-num">6</span> Solde à payer <span class="who client">le client agit</span></h3>
     <dl>
       <dt>Ce qui s'est passé</dt><dd>Le client a reçu « C'est prêt ! » avec le lien de paiement du solde (même commande, montant ajusté automatiquement, devis compris).</dd>
-      <dt>Tout seul</dt><dd>Relances du solde à J+2 et J+5. Au-delà, le dossier apparaît dans le point du matin (« soldes en souffrance »). Dès le paiement : passage automatique à l'état 7. Si le solde est nul, le dossier saute directement à 7.</dd>
+      <dt>Tout seul</dt><dd>Relances du solde à J+3 et J+10. Au-delà, le dossier apparaît dans le point du matin (« soldes en souffrance »). Dès le paiement : passage automatique à l'état 7. Si le solde est nul, le dossier saute directement à 7.</dd>
       <dt>L'atelier fait</dt><dd>Rien tant que le client n'a pas payé : le matériel reste à l'atelier. Paiement reçu autrement (chèque, espèces) : <strong>« Forcer le paiement du solde »</strong> avec motif. Des suppléments de dernière minute peuvent encore être ajoutés via la carte « Facturation ».</dd>
     </dl>
   </div>
@@ -462,7 +464,7 @@
         <tr>
           <td>Solde pas réglé</td>
           <td>Relances avec le lien de paiement, puis signalement au point du matin. Le matériel ne repart pas tant que le solde n'est pas réglé</td>
-          <td>J+2 et J+5 après la demande</td>
+          <td>J+3 et J+10 après la demande</td>
         </tr>
         <tr>
           <td>Dossier encore en pause quand la demande de solde part</td>
@@ -474,6 +476,7 @@
           <td>Le créneau est libéré automatiquement</td>
           <td>Immédiat</td>
         </tr>
+        <tr><td>Parachute de secours à replier (un pliage par an)</td><td>Rappel au client avec le lien de demande, puis une relance si rien n'est demandé. Rien pendant un pliage en cours, un seul rappel par secours et par an. Le client peut couper ces rappels. <strong>Inactif tant que les deux modèles ne sont pas activés</strong> (voir <a href="#secours">Parachutes de secours</a>)</td><td>Un mois avant l'échéance, relance un mois après ; passage tous les jours à 9 h</td></tr>
       </tbody>
     </table>
   </div>
@@ -530,33 +533,111 @@
       <li><strong>Le solde</strong> : ces dossiers n'ont pas de commande dans le nouveau site, aucun paiement en ligne n'est possible et aucune demande de solde ne part. Encaissez comme vous l'avez toujours fait pour ces clients, puis passez à l'état 7 avec <strong>« Forcer le paiement du solde »</strong> (motif obligatoire, par exemple « réglé à l'atelier »). Le client reçoit alors son rapport de contrôle et le retrouve dans son espace.</li>
       <li><strong>Réexpédier</strong> avec « Matériel réexpédié » et le numéro de suivi, comme d'habitude. Le dossier est clos.</li>
     </ol>
+    <p>Dans « Mes anciennes révisions », le client dispose d'un filtre <strong>Parapentes / Parachutes de secours</strong> : les pliages de l'ancien site (où le secours était saisi à la place de la voile) sont reconnus et marqués « Secours », et un dossier voile qui comportait aussi un pliage porte la mention « + secours plié ». Ce classement est automatique ; il n'y a rien à faire côté atelier.</p>
     <p>Bon à savoir : la voile basculée apparaît dans « Mon matériel » de l'espace client dès la bascule, donc le client pourra la recommander en un clic la prochaine fois. Le dossier de l'ancien site, lui, reste consultable dans Historique atelier et dans « Mes anciennes révisions », avec son rapport d'origine s'il en avait un.</p>
     <p>Dossier « non rattaché » : l'ancien site n'avait pas d'adresse e-mail valide pour ce client. Il faut d'abord un compte client sur le nouveau site (le client s'inscrit, ou vous le créez dans Utilisateurs), puis demander à CogitoWeb de rattacher le dossier à ce compte ; sans compte, la bascule est refusée car la révision n'aurait personne à qui être livrée.</p>
   </div>
 </section>
 
-<section id="emails">
+<section id="secours">
   <span class="secnum">7</span>
+  <h2>Parachutes de secours</h2>
+  <div class="prose">
+    <p>Depuis septembre 2026, le parachute de secours est un matériel suivi au même titre que la voile : le client le décrit à la demande, le retrouve dans son espace, et la plateforme lui rappelle le pliage annuel.</p>
+
+    <h3>À la demande</h3>
+    <p>Quand une prestation attend un secours (pliage, contrôle complet équipement), le formulaire propose une <strong>recherche par quelques lettres</strong> dans le référentiel des secours (marque, modèle, forme, tailles homologuées), puis la <strong>taille</strong> dans une liste et la date de production. Un client qui a déjà un secours connu chez nous le retrouve en carte à cliquer. S'il ne trouve pas son modèle, « Mon secours n'est pas dans la liste » lui laisse la saisie libre. La sellette, elle, se décrit en texte libre : marque, modèle, taille, sans référentiel ni suivi.</p>
+
+    <h3>Le référentiel et ses oublis</h3>
+    <p>Le référentiel de départ vient des bases d'homologation (Air Turquoise, DHV) depuis 2012, complété par les sites des fabricants : 150 modèles, 46 marques, Advance pour les Companion. Il s'entretient dans <strong>Gestion Atelier &gt; Configuration &gt; Secours</strong>, sur le modèle de l'onglet Voiles :</p>
+    <ul>
+      <li><strong>Saisies hors liste à traiter</strong> : chaque secours saisi en texte libre par un client remonte ici. Corrigez l'orthographe, choisissez la forme, indiquez les tailles (« S, M, L » ou « 100 120 140 ») et cliquez « Ajouter à la liste » : la recherche du formulaire le propose aussitôt. « Ignorer » écarte une saisie fantaisiste.</li>
+      <li><strong>Liste des parachutes de secours</strong> : recherche, ajout direct, « Modifier » pour compléter les tailles d'une ligne, suppression.</li>
+    </ul>
+
+    <h3>Dans l'espace client</h3>
+    <p>La page « Mon matériel » se lit en deux blocs : <strong>Mes voiles</strong>, puis <strong>Mes parachutes de secours</strong>. Pour chaque secours : taille, date de fabrication, <strong>dernier pliage</strong> (date du créneau de la dernière intervention terminée qui comportait un pliage, ou date de révision de l'ancien site), <strong>prochain pliage conseillé</strong> (douze mois plus tard) et un statut : À jour, À replier bientôt (moins de deux mois), Pliage à prévoir (dépassé), Pliage en cours, ou Date inconnue. Le bouton « Demander un pliage » ouvre la demande avec le secours présélectionné. Une case « Me rappeler par e-mail un mois avant l'échéance » permet au client de couper les rappels.</p>
+
+    <h3>Le rappel annuel</h3>
+    <p>Tous les jours à 9 h, la plateforme passe en revue les clients ayant un secours connu. <strong>Un mois avant l'échéance</strong>, le client reçoit « Votre parachute de secours est à replier » avec la liste de ses secours concernés et le lien de demande. <strong>Un mois après l'échéance</strong>, s'il n'a rien demandé, une relance part, puis plus rien pour ce cycle. Aucun e-mail tant qu'un pliage est en cours, aucun doublon : un rappel et une relance au plus par secours et par an. Les deux modèles se modifient dans Paiements &amp; relances.</p>
+    <p><strong>À la mise en production, les deux modèles sont livrés inactifs</strong> : il faut cocher « Envoyer cet email » sur « Rappel annuel : pliage du parachute de secours » et sur « Rappel annuel : relance » pour démarrer les envois. Les secours de l'ancien site dont l'échéance est dépassée depuis plus d'un mois ne sont pas rappelés automatiquement (ils restent marqués « Pliage à prévoir » dans l'espace client) : une campagne d'e-mailing dédiée est le bon outil pour cet arriéré. L'onglet Secours affiche le dernier passage et le nombre d'e-mails partis.</p>
+  </div>
+</section>
+
+<section id="emails">
+  <span class="secnum">8</span>
   <h2>Qui reçoit quoi</h2>
   <div class="prose">
-    <p><strong>Le client</strong> reçoit un e-mail à chaque étape qui le concerne : confirmation de commande et coordonnées de virement, « paiement reçu » avec les consignes d'expédition et son bon d'intervention, confirmation de réception, devis et ses relances, confirmation de sa décision, demande de solde et ses relances, rapport de contrôle, avis de réexpédition avec le suivi, les avis de mise en pause (avec le motif saisi par l'atelier) et de reprise du dossier, et les avis d'annulation ou de classement sans suite. Tous ces textes sont modifiables (voir ci-dessous).</p>
-    <p><strong>Les adresses admin</strong> (l'atelier, plus l'agence en copie) reçoivent : une copie de chaque notification d'étape et de chaque relance ou bascule automatique, les e-mails WooCommerce de nouvelle commande, d'annulation et d'échec de paiement, et le point du matin. Plusieurs adresses peuvent être servies : elles se saisissent séparées par des virgules.</p>
+    <p>Tous les e-mails que la plateforme envoie, dans l'ordre d'un dossier. Trois familles : les e-mails <strong>WooCommerce</strong> (commande, compte), les <strong>notifications d'étape</strong> (Configuration &gt; Notifications) et les <strong>relances et automatismes</strong> (Paiements &amp; relances, modèles modifiables). « Admin » désigne les adresses admin de la Configuration (l'atelier, plus l'agence en copie) ; plusieurs adresses se saisissent séparées par des virgules.</p>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Moment</th><th>E-mail</th><th>Client</th><th>Admin</th><th>Famille et réglage</th></tr></thead>
+      <tbody>
+        <tr><td colspan="5"><strong>Compte</strong></td></tr>
+        <tr><td>Création de compte, mot de passe oublié, confirmation d'adresse</td><td>Nouveau compte, Réinitialisation du mot de passe, Confirmer l'adresse e-mail</td><td>oui</td><td>non</td><td>WooCommerce &gt; E-mails</td></tr>
+        <tr><td>Changement d'adresse e-mail depuis Mon profil</td><td>Confirmation de la nouvelle adresse</td><td>oui</td><td>non</td><td>Espace client, texte fixe</td></tr>
+        <tr><td colspan="5"><strong>Commande et paiement de l'acompte (état 0)</strong></td></tr>
+        <tr><td>Commande validée, paiement en ligne réussi</td><td>« Votre commande a été reçue » (commande en cours)</td><td>oui</td><td>« Nouvelle commande »</td><td>WooCommerce &gt; E-mails</td></tr>
+        <tr><td>Commande validée, paiement par virement</td><td>« Votre commande a été reçue » (commande en attente) avec les coordonnées bancaires et la référence</td><td>oui</td><td>« Nouvelle commande »</td><td>WooCommerce &gt; E-mails ; RIB dans Paiements &gt; Virement bancaire</td></tr>
+        <tr><td>Virement pas reçu à J+2</td><td>Relance paiement par virement</td><td>oui</td><td>copie</td><td>Paiements &amp; relances</td></tr>
+        <tr><td>Virement pas reçu à J+3</td><td>Annulation : virement non reçu (commande annulée, créneau libéré)</td><td>oui</td><td>copie + « Commande annulée » WooCommerce</td><td>Paiements &amp; relances</td></tr>
+        <tr><td>Paiement en ligne échoué</td><td>« Votre commande n'a pas abouti »</td><td>oui</td><td>« Commande échouée »</td><td>WooCommerce &gt; E-mails</td></tr>
+        <tr><td>Demande jamais finalisée (H+1)</td><td>Demande non finalisée, avec le lien de reprise</td><td>oui</td><td>copie</td><td>Paiements &amp; relances</td></tr>
+        <tr><td>Commande passée mais jamais payée (suppression au premier minuit après 6 h)</td><td>Paiement non abouti, puis Annulation : commande non payée</td><td>oui</td><td>copie</td><td>Paiements &amp; relances</td></tr>
+        <tr><td>Depuis la page de confirmation, bouton « Me renvoyer … »</td><td>Renvoi des coordonnées bancaires ou du bon d'intervention</td><td>oui</td><td>non</td><td>Paiements &amp; relances (mêmes modèles)</td></tr>
+        <tr><td colspan="5"><strong>Expédition du matériel (état 1)</strong></td></tr>
+        <tr><td>Acompte encaissé (paiement en ligne ou « Acompte encaissé » dans la console)</td><td>Paiement reçu : consignes d'expédition, adresse de l'atelier, bon d'intervention avec QR code</td><td>oui</td><td>copie</td><td>Paiements &amp; relances</td></tr>
+        <tr><td>Rien d'expédié à J-7 puis J-2 avant le créneau</td><td>Rappel avant créneau : matériel pas encore reçu</td><td>oui</td><td>copie</td><td>Paiements &amp; relances</td></tr>
+        <tr><td>Créneau replanifié depuis le Planning</td><td>Créneau replanifié (nouvelle date)</td><td>oui</td><td>copie</td><td>Paiements &amp; relances</td></tr>
+        <tr><td>Rien d'arrivé la veille du créneau à 18 h (aucun suivi déclaré)</td><td>Créneau libéré : matériel jamais reçu, acompte conservé (état 9)</td><td>oui</td><td>copie</td><td>Paiements &amp; relances</td></tr>
+        <tr><td colspan="5"><strong>À l'atelier (états 2 à 5)</strong></td></tr>
+        <tr><td>Colis pointé (état 2)</td><td>« Votre matériel est bien arrivé à l'atelier », avec la date d'intervention</td><td>oui</td><td>copie</td><td>Configuration &gt; Notifications</td></tr>
+        <tr><td>Il manque des éléments dans le colis</td><td>Réception partielle : éléments manquants (liste saisie par l'atelier)</td><td>oui</td><td>copie</td><td>Paiements &amp; relances</td></tr>
+        <tr><td>Intervention démarrée (état 3)</td><td>Alerte interne</td><td>non</td><td>oui</td><td>Configuration &gt; Notifications</td></tr>
+        <tr><td>Mise en pause / reprise du dossier</td><td>Dossier mis en attente (avec le motif saisi), Dossier repris</td><td>oui</td><td>copie</td><td>Paiements &amp; relances</td></tr>
+        <tr><td>Devis complémentaire envoyé (état 4)</td><td>« Action requise : votre devis est à valider », lien sécurisé</td><td>oui</td><td>copie</td><td>Configuration &gt; Notifications</td></tr>
+        <tr><td>Devis sans réponse à J+3 puis J+8</td><td>Relance devis complémentaire sans réponse</td><td>oui</td><td>copie</td><td>Paiements &amp; relances</td></tr>
+        <tr><td>Devis accepté</td><td>Devis accepté : confirmation avec le nouveau total</td><td>oui</td><td>copie</td><td>Paiements &amp; relances</td></tr>
+        <tr><td>Devis refusé</td><td>Devis refusé : intervention sur les prestations initiales, ou retour du matériel (demande de devis seule)</td><td>oui</td><td>copie</td><td>Paiements &amp; relances</td></tr>
+        <tr><td colspan="5"><strong>Solde, rapport, retour (états 6 à 8)</strong></td></tr>
+        <tr><td>Intervention terminée, solde demandé (état 6)</td><td>« C'est prêt ! », lien de paiement du solde</td><td>oui</td><td>copie</td><td>Configuration &gt; Notifications</td></tr>
+        <tr><td>Solde pas réglé à J+3 puis J+10</td><td>Relance du solde</td><td>oui</td><td>copie</td><td>Paiements &amp; relances</td></tr>
+        <tr><td>Solde réglé (état 7)</td><td>« Votre révision est terminée ! », rapport de contrôle en pièce jointe</td><td>oui</td><td>copie</td><td>Configuration &gt; Notifications</td></tr>
+        <tr><td>Colis retour parti (état 8)</td><td>« Votre matériel est reparti ! », suivi du colis</td><td>oui</td><td>copie</td><td>Configuration &gt; Notifications</td></tr>
+        <tr><td>Commande passée « terminée » dans WooCommerce</td><td>« Votre commande est en chemin ! »</td><td>oui</td><td>non</td><td>WooCommerce &gt; E-mails</td></tr>
+        <tr><td>Note ajoutée à la commande à destination du client</td><td>Note client</td><td>oui</td><td>non</td><td>WooCommerce &gt; E-mails</td></tr>
+        <tr><td colspan="5"><strong>Après le dossier</strong></td></tr>
+        <tr><td>Un mois avant l'échéance de pliage du secours</td><td>Rappel annuel : pliage du parachute de secours</td><td>oui</td><td>non</td><td>Paiements &amp; relances, <strong>inactif par défaut</strong></td></tr>
+        <tr><td>Un mois après l'échéance, sans pliage demandé</td><td>Rappel annuel : relance</td><td>oui</td><td>non</td><td>Paiements &amp; relances, <strong>inactif par défaut</strong></td></tr>
+        <tr><td colspan="5"><strong>Pour l'atelier seulement</strong></td></tr>
+        <tr><td>Chaque matin à 8 h, s'il y a quelque chose à surveiller</td><td>Le point du matin (voir plus haut)</td><td>non</td><td>oui</td><td>Paiements &amp; relances (heure)</td></tr>
+        <tr><td>Commande remboursée</td><td>« Votre commande a été remboursée »</td><td>oui</td><td>non</td><td>WooCommerce &gt; E-mails</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="prose">
+    <p>Deux repères : chaque envoi automatique laisse une <strong>note dans la commande</strong> ; et depuis la fiche d'un dossier, le bouton <strong>« Envoi client »</strong> renvoie la notification de l'état en cours si le client dit ne pas l'avoir reçue.</p>
   </div>
 </section>
 
 <section id="reglages">
-  <span class="secnum">8</span>
+  <span class="secnum">9</span>
   <h2>Où se règle quoi</h2>
   <div class="tablewrap">
     <table>
       <thead><tr><th>Pour changer…</th><th>Aller dans…</th></tr></thead>
       <tbody>
         <tr><td>Les délais de relance et d'annulation, l'heure de bascule « Sans suite », les rappels avant créneau, les relances de solde, l'heure du point du matin, le téléphone et les horaires affichés</td><td>Gestion Atelier &gt; Configuration &gt; <strong>Paiements &amp; relances</strong></td></tr>
-        <tr><td>Le texte de chacun des 17 e-mails de relance et d'automatisme (objet et contenu, avec variables)</td><td>Gestion Atelier &gt; Configuration &gt; <strong>Paiements &amp; relances</strong>, sous les délais</td></tr>
+        <tr><td>Le texte de chacun des 19 e-mails de relance et d'automatisme (objet et contenu, avec variables), dont les deux rappels annuels de pliage</td><td>Gestion Atelier &gt; Configuration &gt; <strong>Paiements &amp; relances</strong>, sous les délais</td></tr>
         <tr><td>Les e-mails d'étape (réception, devis, solde, rapport, réexpédition) et les adresses admin</td><td>Gestion Atelier &gt; Configuration &gt; <strong>Notifications</strong></td></tr>
         <tr><td>Les jours ouverts et les heures disponibles par jour</td><td>Gestion Atelier &gt; Configuration &gt; <strong>Ouvertures</strong></td></tr>
         <tr><td>Les coordonnées bancaires affichées au client</td><td>WooCommerce &gt; Réglages &gt; Paiements &gt; <strong>Virement bancaire</strong></td></tr>
-        <tr><td>Le montant d'acompte d'une prestation</td><td>La fiche du <strong>produit</strong> WooCommerce (champ « acompte »)</td></tr>
+        <tr><td>Le montant d'acompte d'une prestation, sa durée, le supplément biplace</td><td>La fiche du <strong>produit</strong> WooCommerce</td></tr>
+        <tr><td>Le matériel qu'une prestation attend du client (parapente, parachute de secours, sellette)</td><td>La fiche du <strong>produit</strong> WooCommerce, cases « Matériel concerné » ; sans coche, parapente (ou secours pour un pliage). Colonne « Matériel » dans la liste des produits</td></tr>
+        <tr><td>La liste des voiles proposées à la recherche du formulaire, et les saisies hors liste des clients</td><td>Gestion Atelier &gt; Configuration &gt; <strong>Voiles</strong></td></tr>
+        <tr><td>La liste des parachutes de secours, leurs tailles, et les saisies hors liste des clients</td><td>Gestion Atelier &gt; Configuration &gt; <strong>Secours</strong></td></tr>
+        <tr><td>Activer les rappels annuels de pliage</td><td>Paiements &amp; relances, modèles « Rappel annuel », case « Envoyer cet email »</td></tr>
         <tr><td>Le logo et la couleur des e-mails</td><td>WooCommerce &gt; Réglages &gt; <strong>E-mails</strong></td></tr>
       </tbody>
     </table>
@@ -564,7 +645,7 @@
 </section>
 
 <section id="faq">
-  <span class="secnum">9</span>
+  <span class="secnum">10</span>
   <h2>Questions fréquentes</h2>
 
   <details class="faq">
