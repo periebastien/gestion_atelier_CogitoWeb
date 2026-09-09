@@ -420,7 +420,7 @@ function gacct_report_render_config_tab() {
 
 	echo '<tr><th scope="row">' . esc_html__( 'Pack de rapports actif', 'gestion-atelier-cct' ) . '</th><td>';
 	if ( ! $packs ) {
-		echo '<em>' . esc_html__( 'Aucun pack de rapports installé — activez un plugin de pack (ex. « Pack Altitude Révision »).', 'gestion-atelier-cct' ) . '</em>';
+		echo '<em>' . esc_html__( 'Aucun pack de rapports installé : activez un plugin de pack (ex. « Pack Altitude Révision »).', 'gestion-atelier-cct' ) . '</em>';
 	} elseif ( 1 === count( $packs ) ) {
 		echo '<strong>' . esc_html( $packs[ $active ]['label'] ) . '</strong>';
 		echo '<input type="hidden" name="report_pack" value="' . esc_attr( $active ) . '">';
@@ -855,6 +855,44 @@ function gacct_report_render_html( array $row, array $entry ) {
  *
  * @return array|WP_Error Entrée mise à jour + { url }.
  */
+/**
+ * Le rapport porte-t-il au moins un résultat de test (autre chose que vide ou
+ * « NON RÉALISÉ ») ? Les champs d'identité (pilote, voile, numéro, auteur,
+ * dates, cases de sécurité) ne comptent pas.
+ *
+ * @param array $entry Entrée de rapports_json.
+ * @return bool
+ */
+function gacct_report_has_any_result( array $entry ) {
+	$data   = isset( $entry['data'] ) && is_array( $entry['data'] ) ? $entry['data'] : array();
+	$ignore = array( 'number', 'type', 'author', 'operator', 'date', 'nom', 'prenom', 'contact', 'marque', 'modele', 'taille', 'couleur', 'serie', 'numero_de_serie', 'ptv', 'model' );
+	$found  = false;
+
+	$walk = static function ( $value, $key ) use ( &$walk, &$found, $ignore ) {
+		if ( $found ) {
+			return;
+		}
+		if ( is_array( $value ) ) {
+			foreach ( $value as $k => $v ) {
+				$walk( $v, $k );
+			}
+			return;
+		}
+		if ( in_array( (string) $key, $ignore, true ) || is_bool( $value ) ) {
+			return;
+		}
+		$v = trim( (string) $value );
+		if ( '' === $v || '0' === $v || 'NON RÉALISÉ' === $v || 'NON RÉALISÉ*' === $v || 'on' === $v ) {
+			return;
+		}
+		$found = true;
+	};
+
+	$walk( $data, '' );
+
+	return (bool) apply_filters( 'gacct_report_has_any_result', $found, $entry );
+}
+
 function gacct_report_generate( $revision_id, $report_id ) {
 	$revision_id = absint( $revision_id );
 	$row         = gacct_report_revision_row( $revision_id );
@@ -877,6 +915,12 @@ function gacct_report_generate( $revision_id, $report_id ) {
 	// obligatoires, champs indispensables… La sauvegarde du brouillon, elle,
 	// reste toujours libre.
 	$valid = apply_filters( 'gacct_report_validate_generate', true, $entry, $row );
+
+	// Garde commune à tous les modèles (recette du 09/09/2026) : un PDF où
+	// TOUT est « NON RÉALISÉ » partait au client. Le brouillon reste libre.
+	if ( ! is_wp_error( $valid ) && ! gacct_report_has_any_result( $entry ) ) {
+		$valid = new WP_Error( 'gacct_report_empty', __( 'Aucun test n’est renseigné : complétez au moins une section (inspection, porosité, résistance, suspentes, calage ou état général) avant de générer le PDF. Vous pouvez enregistrer un brouillon en attendant.', 'gestion-atelier-cct' ) );
+	}
 
 	if ( is_wp_error( $valid ) ) {
 		return $valid;

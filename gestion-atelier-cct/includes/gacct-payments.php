@@ -65,6 +65,39 @@ function gacct_pay_default_settings() {
 					. '<p>Bon à savoir : vous pouvez expédier votre matériel sans attendre que le virement arrive. Dès l’envoi, pensez à renseigner votre numéro de suivi depuis <a href="{order_url}">votre page de commande</a>.</p>'
 					. '<p>À très vite,<br><br>Bastien.</p>',
 			),
+			'atelier_cancel' => array(
+				'enabled' => true,
+				'label'   => __( 'Annulation par l’atelier', 'gestion-atelier-cct' ),
+				'subject' => __( 'Votre commande {order_number} a été annulée', 'gestion-atelier-cct' ),
+				'body'    => '<p>Bonjour {customer_name},</p>'
+					. '<p>Nous avons annulé votre commande <strong>{order_number}</strong>. Motif : {cancel_reason}</p>'
+					. '<p>Le créneau atelier qui vous était réservé a été libéré. Si un acompte avait été réglé, nous revenons vers vous pour son remboursement.</p>'
+					. '<p>Vous pouvez repasser une commande à tout moment sur les dates encore disponibles : <a href="{new_request_url}">déposer une nouvelle demande</a>.</p>'
+					. '<p>Une question ? Répondez à cet e-mail ou appelez-nous au {contact_phone}.</p>'
+					. '<p>À bientôt,<br><br>L’équipe Altitude Révision</p>',
+			),
+			'balance_bank_details' => array(
+				'enabled' => true,
+				'label'   => __( 'Solde par virement : coordonnées bancaires', 'gestion-atelier-cct' ),
+				'subject' => __( 'Votre solde de {balance_amount} par virement - commande {order_number}', 'gestion-atelier-cct' ),
+				'body'    => '<p>Bonjour {customer_name},</p>'
+					. '<p>Vous avez choisi de régler le solde de <strong>{balance_amount}</strong> de votre commande <strong>{order_number}</strong> par virement. Voici les coordonnées :</p>'
+					. '{bank_details}'
+					. '<p>Indiquez bien la référence <strong>{order_number}</strong> dans le libellé. Dès réception du virement, votre matériel repart vers vous et vous recevez le suivi du colis.</p>'
+					. '<p>Une question ? Répondez à cet e-mail ou appelez-nous au {contact_phone} ({contact_hours}).</p>'
+					. '<p>À bientôt,<br><br>L’équipe Altitude Révision</p>',
+			),
+			'bank_details' => array(
+				'enabled' => true,
+				'label'   => __( 'Coordonnées bancaires (renvoi à la demande du client)', 'gestion-atelier-cct' ),
+				'subject' => __( 'Vos coordonnées bancaires pour la commande {order_number}', 'gestion-atelier-cct' ),
+				'body'    => '<p>Bonjour {customer_name},</p>'
+					. '<p>Comme demandé, voici les coordonnées pour régler l’acompte de <strong>{deposit_amount}</strong> de votre commande <strong>{order_number}</strong> par virement, à recevoir avant le <strong>{deadline_date}</strong>.</p>'
+					. '{bank_details}'
+					. '<p>Indiquez bien la référence <strong>{order_number}</strong> dans le libellé du virement : c’est elle qui nous permet de rattacher votre paiement à votre commande.</p>'
+					. '<p>Vous pouvez expédier votre matériel sans attendre que le virement arrive. Dès l’envoi, pensez à renseigner votre numéro de suivi depuis <a href="{order_url}">votre page de commande</a>.</p>'
+					. '<p>À très vite,<br><br>L’équipe Altitude Révision</p>',
+			),
 			'bacs_cancel' => array(
 				'enabled' => true,
 				'label'   => __( 'Annulation : virement non reçu', 'gestion-atelier-cct' ),

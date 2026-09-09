@@ -103,7 +103,7 @@ function gacct_profile_texts() {
 		'identity_title'   => __( 'Mes informations', 'gestion-atelier-cct' ),
 		'identity_intro'   => __( 'Ces informations apparaissent sur vos documents et permettent à l’atelier de vous joindre.', 'gestion-atelier-cct' ),
 		'photo_label'      => __( 'Photo de profil', 'gestion-atelier-cct' ),
-		'photo_hint'       => __( 'JPG, PNG ou WebP — 4 Mo maximum.', 'gestion-atelier-cct' ),
+		'photo_hint'       => __( 'JPG, PNG ou WebP, 4 Mo maximum.', 'gestion-atelier-cct' ),
 		'photo_choose'     => __( 'Choisir une photo', 'gestion-atelier-cct' ),
 		'photo_remove'     => __( 'Retirer la photo', 'gestion-atelier-cct' ),
 		'first_name'       => __( 'Prénom', 'gestion-atelier-cct' ),
@@ -932,10 +932,10 @@ function gacct_profile_email_subject( $key ) {
 	$site = get_bloginfo( 'name' );
 
 	$subjects = array(
-		'email_confirm'    => sprintf( __( '%s — confirmez votre nouvelle adresse e-mail', 'gestion-atelier-cct' ), $site ),
-		'email_alert'      => sprintf( __( '%s — demande de changement d’adresse e-mail', 'gestion-atelier-cct' ), $site ),
-		'email_changed'    => sprintf( __( '%s — votre adresse e-mail a été modifiée', 'gestion-atelier-cct' ), $site ),
-		'password_changed' => sprintf( __( '%s — votre mot de passe a été modifié', 'gestion-atelier-cct' ), $site ),
+		'email_confirm'    => sprintf( __( '%s : confirmez votre nouvelle adresse e-mail', 'gestion-atelier-cct' ), $site ),
+		'email_alert'      => sprintf( __( '%s : demande de changement d’adresse e-mail', 'gestion-atelier-cct' ), $site ),
+		'email_changed'    => sprintf( __( '%s : votre adresse e-mail a été modifiée', 'gestion-atelier-cct' ), $site ),
+		'password_changed' => sprintf( __( '%s : votre mot de passe a été modifié', 'gestion-atelier-cct' ), $site ),
 	);
 
 	$subject = isset( $subjects[ $key ] ) ? $subjects[ $key ] : $site;

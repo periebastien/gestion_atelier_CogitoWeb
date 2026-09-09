@@ -42,7 +42,7 @@ if ( 'quote' === $q_variant ) {
 
 $q_titles = array(
 	'quote'           => __( 'Votre devis mis à jour', 'gestion-atelier-cct' ),
-	'accepted'        => __( 'Devis accepté — merci !', 'gestion-atelier-cct' ),
+	'accepted'        => __( 'Devis accepté, merci !', 'gestion-atelier-cct' ),
 	'refused_partial' => __( 'Refus bien enregistré', 'gestion-atelier-cct' ),
 	'refused_return'  => __( 'Refus bien enregistré', 'gestion-atelier-cct' ),
 	'used'            => __( 'Ce lien a déjà été utilisé', 'gestion-atelier-cct' ),

@@ -264,10 +264,10 @@ function gacct_op_change_state( $revision_id, $new_state, array $args = array() 
 	if ( $order ) {
 		$message = sprintf( '%s (état %d → %d)', $action_label, $old_state, $new_state );
 		if ( $force ) {
-			$message .= sprintf( ' — FORCÉ, motif : %s', $reason );
+			$message .= sprintf( ', FORCÉ, motif : %s', $reason );
 		}
 		if ( ! empty( $args['_unlock_note'] ) ) {
-			$message .= sprintf( ' — dossier incomplet débloqué, motif : %s', $args['_unlock_note'] );
+			$message .= sprintf( ', dossier incomplet débloqué, motif : %s', $args['_unlock_note'] );
 		}
 		gacct_op_add_signed_note( $order, $message );
 	}
@@ -315,19 +315,40 @@ function gacct_op_resend_state_email( $revision_id ) {
 }
 
 /**
+ * Nom lisible d'un opérateur : « Prénom Nom » si renseignés, sinon le nom
+ * d'affichage, jamais l'identifiant de connexion (recette du 09/09/2026 :
+ * « herve.gabet » apparaissait tel quel dans « Réalisé par »).
+ *
+ * @param WP_User $user
+ * @return string
+ */
+function gacct_op_user_label( $user ) {
+	$full = trim( (string) $user->first_name . ' ' . (string) $user->last_name );
+	if ( '' !== $full ) {
+		return $full;
+	}
+	$display = (string) $user->display_name;
+	if ( '' !== $display && $display !== $user->user_login && $display !== $user->user_email ) {
+		return $display;
+	}
+	// Identifiant de connexion : on l'humanise (« herve.gabet » → « Herve Gabet »).
+	return mb_convert_case( str_replace( array( '.', '_', '-' ), ' ', (string) $user->user_login ), MB_CASE_TITLE, 'UTF-8' );
+}
+
+/**
  * « Réalisé par » : liste des utilisateurs ayant la capacité gacct_operate.
  */
 function gacct_op_operator_choices() {
 	$users = get_users( array(
 		'capability' => GACCT_OP_CAP,
-		'fields'     => array( 'ID', 'display_name' ),
 		'orderby'    => 'display_name',
 	) );
 
 	$choices = array();
 	foreach ( $users as $user ) {
-		$choices[ (int) $user->ID ] = $user->display_name;
+		$choices[ (int) $user->ID ] = gacct_op_user_label( $user );
 	}
+	natcasesort( $choices );
 
 	return $choices;
 }
@@ -343,7 +364,7 @@ function gacct_op_operator_name( $operator_id ) {
 	}
 
 	$user = get_userdata( $operator_id );
-	$name = $user ? $user->display_name : sprintf( __( 'utilisateur #%d supprimé', 'gestion-atelier-cct' ), $operator_id );
+	$name = $user ? gacct_op_user_label( $user ) : sprintf( __( 'utilisateur #%d supprimé', 'gestion-atelier-cct' ), $operator_id );
 
 	return apply_filters( 'gacct_operator_public_name', $name, $operator_id );
 }
@@ -534,12 +555,12 @@ function gacct_op_install_operator_field() {
 		'envoi_transporteur' => array(
 			'sql'   => "VARCHAR(32) NOT NULL DEFAULT ''",
 			'type'  => 'text',
-			'title' => 'Envoi client — transporteur',
+			'title' => 'Envoi client · transporteur',
 		),
 		'envoi_suivi' => array(
 			'sql'   => "VARCHAR(64) NOT NULL DEFAULT ''",
 			'type'  => 'text',
-			'title' => 'Envoi client — n° de suivi',
+			'title' => 'Envoi client · n° de suivi',
 		),
 		'en_attente' => array(
 			'sql'   => "VARCHAR(1) NOT NULL DEFAULT ''",
@@ -763,7 +784,7 @@ function gacct_op_receive( $revision_id, array $missing = array(), $comment = ''
 
 	if ( $missing ) {
 		gacct_op_add_signed_note( $order, sprintf(
-			__( 'Réception partielle — éléments manquants : %s', 'gestion-atelier-cct' ),
+			__( 'Réception partielle, éléments manquants : %s', 'gestion-atelier-cct' ),
 			implode( ', ', $missing )
 		) );
 
@@ -984,7 +1005,7 @@ function gacct_op_hold( $revision_id, $motif ) {
 	}
 
 	gacct_op_add_signed_note( $order, sprintf(
-		__( 'Dossier mis en attente — motif : %s', 'gestion-atelier-cct' ),
+		__( 'Dossier mis en attente, motif : %s', 'gestion-atelier-cct' ),
 		$motif
 	) );
 
@@ -1084,7 +1105,7 @@ function gacct_op_resume( $revision_id, $message = '' ) {
 
 	$note = __( 'Dossier repris : mise en attente levée', 'gestion-atelier-cct' );
 	if ( '' !== $message ) {
-		$note .= sprintf( __( ' — message au client : %s', 'gestion-atelier-cct' ), $message );
+		$note .= sprintf( __( ', message au client : %s', 'gestion-atelier-cct' ), $message );
 	}
 	gacct_op_add_signed_note( $order, $note );
 

@@ -75,13 +75,13 @@ function gacct_op_render_quote_card( $revision_id, array $revision, $order, $sta
 	} elseif ( 'refused' === $decision['decision'] ) {
 		echo '<p class="gacct-op-quote-status is-refused">✗ ' . esc_html( sprintf(
 			'return' === $decision['mode']
-				? __( 'Devis REFUSÉ le %s — pure demande de devis : retourner le matériel au client.', 'gestion-atelier-cct' )
-				: __( 'Devis REFUSÉ le %s — réaliser uniquement les prestations initiales.', 'gestion-atelier-cct' ),
+				? __( 'Devis REFUSÉ le %s : pure demande de devis : retourner le matériel au client.', 'gestion-atelier-cct' )
+				: __( 'Devis REFUSÉ le %s : réaliser uniquement les prestations initiales.', 'gestion-atelier-cct' ),
 			$decision['decided_at'] ? date_i18n( get_option( 'date_format' ) . ' H:i', strtotime( $decision['decided_at'] ) ) : '?'
 		) ) . '</p>';
 	} elseif ( 4 === $state && $sent_at ) {
 		echo '<p class="gacct-op-quote-status is-pending">⏳ ' . esc_html( sprintf(
-			__( 'Devis envoyé le %s — en attente de la réponse du client.', 'gestion-atelier-cct' ),
+			__( 'Devis envoyé le %s : en attente de la réponse du client.', 'gestion-atelier-cct' ),
 			date_i18n( get_option( 'date_format' ) . ' H:i', strtotime( $sent_at ) )
 		) ) . '</p>';
 	}
@@ -241,7 +241,7 @@ function gacct_op_render_billing_card( $revision_id, array $revision, $order, $s
 	echo '<p class="gacct-op-quote-total">' . esc_html__( 'Total des lignes à ajouter :', 'gestion-atelier-cct' ) . ' <strong data-bill-total>0,00 €</strong></p>';
 
 	echo '<button type="button" class="button button-primary" data-op-action="billing-add">' . esc_html__( 'Ajouter à la facture', 'gestion-atelier-cct' ) . '</button>';
-	echo '<p class="gacct-op-muted">' . esc_html__( 'Remise : ligne libre avec un montant négatif. Aucun email n\'est envoyé au client — chaque mouvement est journalisé en note de commande. Le montant s\'ajoute (ou se retranche) au solde de fin d\'intervention.', 'gestion-atelier-cct' ) . '</p>';
+	echo '<p class="gacct-op-muted">' . esc_html__( 'Remise : ligne libre avec un montant négatif. Aucun email n\'est envoyé au client : chaque mouvement est journalisé en note de commande. Le montant s\'ajoute (ou se retranche) au solde de fin d\'intervention.', 'gestion-atelier-cct' ) . '</p>';
 
 	echo '</div>'; // .gacct-op-billing-form
 	echo '</div>'; // .gacct-op-billing-card
@@ -316,7 +316,7 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 		$missing_items = gacct_op_missing_items( $revision );
 
 		echo '<div class="gacct-op-warning gacct-op-incomplete">';
-		echo '<strong>' . esc_html__( 'Dossier incomplet', 'gestion-atelier-cct' ) . '</strong> — ' . esc_html__( 'éléments manquants :', 'gestion-atelier-cct' ) . ' ';
+		echo '<strong>' . esc_html__( 'Dossier incomplet', 'gestion-atelier-cct' ) . '</strong>, ' . esc_html__( 'éléments manquants :', 'gestion-atelier-cct' ) . ' ';
 		echo esc_html( $missing_items ? implode( ', ', $missing_items ) : __( '(liste non renseignée)', 'gestion-atelier-cct' ) );
 		echo ' <a class="gacct-op-incomplete-link" href="' . esc_url( $reception_url ) . '">' . esc_html__( 'Compléter la réception', 'gestion-atelier-cct' ) . '</a>';
 		echo '</div>';
@@ -325,7 +325,7 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 	// Bandeau « dossier en attente » (drapeau opérateur).
 	if ( $hold['active'] ) {
 		echo '<div class="gacct-op-warning gacct-op-hold-banner">';
-		echo '<strong>' . esc_html__( 'Dossier en attente', 'gestion-atelier-cct' ) . '</strong> — ' . esc_html__( 'motif :', 'gestion-atelier-cct' ) . ' ';
+		echo '<strong>' . esc_html__( 'Dossier en attente', 'gestion-atelier-cct' ) . '</strong>, ' . esc_html__( 'motif :', 'gestion-atelier-cct' ) . ' ';
 		echo esc_html( '' !== $hold['motif'] ? $hold['motif'] : __( '(non renseigné)', 'gestion-atelier-cct' ) );
 		echo '</div>';
 	}
@@ -365,7 +365,7 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 	echo '<div><dt>' . esc_html__( 'N° de série', 'gestion-atelier-cct' ) . '</dt><dd>' . esc_html( $serial ? $serial : '—' ) . '</dd></div>';
 
 	$ptv = trim( (string) ( $revision['p_t_v'] ?? '' ) );
-	echo '<div><dt>' . esc_html__( 'PTV', 'gestion-atelier-cct' ) . '</dt><dd>' . esc_html( $ptv ? $ptv : '—' ) . '</dd></div>';
+	echo '<div><dt>' . esc_html__( 'PTV', 'gestion-atelier-cct' ) . '</dt><dd>' . esc_html( $ptv ? gacct_format_ptv( $ptv ) : '—' ) . '</dd></div>';
 
 	// Envoi déclaré par le client (transporteur + n° de suivi, gacct-shipping.php).
 	$ship = function_exists( 'gacct_ship_info' ) ? gacct_ship_info( $revision ) : null;
@@ -383,7 +383,7 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 		$ts = is_numeric( $slot['date_reservee'] ) ? (int) $slot['date_reservee'] : strtotime( $slot['date_reservee'] );
 		echo esc_html( date_i18n( get_option( 'date_format' ), $ts ) );
 		if ( ! empty( $slot['duree_totale_commande'] ) ) {
-			echo ' — ' . esc_html( sprintf( __( 'durée %s', 'gestion-atelier-cct' ), $slot['duree_totale_commande'] ) );
+			echo ' · ' . esc_html( sprintf( __( 'durée %s', 'gestion-atelier-cct' ), $slot['duree_totale_commande'] ) );
 		}
 	} else {
 		echo esc_html__( 'Aucun créneau (libéré ou non planifié)', 'gestion-atelier-cct' );
@@ -692,7 +692,7 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 		}
 
 		echo '<dl class="gacct-op-facts">';
-		echo '<div><dt>' . esc_html__( 'Total commande', 'gestion-atelier-cct' ) . '</dt><dd>' . wp_kses_post( wc_price( $order->get_total(), array( 'currency' => $order->get_currency() ) ) ) . '</dd></div>';
+		echo '<div><dt>' . esc_html__( 'Acompte', 'gestion-atelier-cct' ) . '</dt><dd>' . wp_kses_post( wc_price( $order->get_total(), array( 'currency' => $order->get_currency() ) ) ) . '</dd></div>';
 		echo '<div><dt>' . esc_html__( 'Statut', 'gestion-atelier-cct' ) . '</dt><dd>' . esc_html( $status_name ) . '</dd></div>';
 		if ( $order->get_payment_method_title() ) {
 			echo '<div><dt>' . esc_html__( 'Méthode', 'gestion-atelier-cct' ) . '</dt><dd>' . esc_html( $order->get_payment_method_title() ) . '</dd></div>';

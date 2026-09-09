@@ -480,12 +480,12 @@ class Kojito_Acompte_Produit {
 		register_post_status(
 			'wc-acompte-paye',
 			[
-				'label'                     => _x( 'Acompte paye', 'Order status', 'kojito-acompte' ),
+				'label'                     => _x( 'Acompte payé', 'Order status', 'kojito-acompte' ),
 				'public'                    => true,
 				'exclude_from_search'       => false,
 				'show_in_admin_all_list'    => true,
 				'show_in_admin_status_list' => true,
-				'label_count'               => _n_noop( 'Acompte paye <span class="count">(%s)</span>', 'Acomptes payes <span class="count">(%s)</span>' ),
+				'label_count'               => _n_noop( 'Acompte payé <span class="count">(%s)</span>', 'Acomptes payés <span class="count">(%s)</span>' ),
 			]
 		);
 	}
@@ -497,7 +497,7 @@ class Kojito_Acompte_Produit {
 			$nouveaux_statuts[ $key ] = $status;
 
 			if ( 'wc-processing' === $key ) {
-				$nouveaux_statuts['wc-acompte-paye'] = _x( 'Acompte paye', 'Order status', 'kojito-acompte' );
+				$nouveaux_statuts['wc-acompte-paye'] = _x( 'Acompte payé', 'Order status', 'kojito-acompte' );
 			}
 		}
 

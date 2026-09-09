@@ -430,6 +430,39 @@ function gacct_demande_materiels_map() {
 	return $map;
 }
 
+/**
+ * Valeurs normalisées des champs de casse libre : ne renvoie que les champs
+ * présents et modifiés.
+ *
+ * @param array $request
+ * @return array
+ */
+function gacct_demande_normaliser_casse( array $request ) {
+	$out   = array();
+	$upper = array( 'marque', 'taille', 'secours_marque', 'secours_taille', 'sellette_marque', 'sellette_taille', 'numero_de_serie' );
+	$title = array( 'modele', 'secours_modele', 'sellette_modele' );
+
+	foreach ( $upper as $champ ) {
+		if ( isset( $request[ $champ ] ) && is_string( $request[ $champ ] ) ) {
+			$v = mb_strtoupper( trim( $request[ $champ ] ), 'UTF-8' );
+			if ( $v !== $request[ $champ ] ) {
+				$out[ $champ ] = $v;
+			}
+		}
+	}
+	foreach ( $title as $champ ) {
+		if ( isset( $request[ $champ ] ) && is_string( $request[ $champ ] ) ) {
+			$raw = trim( $request[ $champ ] );
+			$v   = ( '' === $raw ) ? '' : mb_strtoupper( mb_substr( $raw, 0, 1, 'UTF-8' ), 'UTF-8' ) . mb_substr( $raw, 1, null, 'UTF-8' );
+			if ( $v !== $request[ $champ ] ) {
+				$out[ $champ ] = $v;
+			}
+		}
+	}
+
+	return apply_filters( 'gacct_demande_normaliser_casse', $out, $request );
+}
+
 add_action( 'jet-form-builder/custom-action/gacct_valider_demande', 'gacct_demande_garde_serveur', 10, 2 );
 
 /**
@@ -506,6 +539,15 @@ function gacct_demande_garde_serveur( $request, $handler ) {
 
 	if ( $erreur ) {
 		throw new \Jet_Form_Builder\Exceptions\Action_Exception( $erreur );
+	}
+
+	// Casse homogène avant enregistrement (recette du 09/09/2026 : « ozone delta ml »
+	// s'affichait tel quel) : marque en capitales, modèle avec majuscule initiale,
+	// taille en capitales. Le gestionnaire JFB porte les valeurs des actions suivantes.
+	if ( is_object( $handler ) && isset( $handler->request_data ) && ( is_array( $handler->request_data ) || $handler->request_data instanceof \ArrayAccess ) ) {
+		foreach ( gacct_demande_normaliser_casse( $handler->request_data ) as $champ => $valeur ) {
+			$handler->request_data[ $champ ] = $valeur;
+		}
 	}
 
 	// Demande valide : journalise une éventuelle voile absente du référentiel
@@ -801,7 +843,7 @@ function gacct_demande_materiels_client( $user_id = 0 ) {
 			'numero_serie' => (string) $row['numero_de_serie'],
 			'taille'       => (string) $row['taille'],
 			'couleur'      => (string) $row['couleur'],
-			'ptv'          => (string) $row['p_t_v'],
+			'ptv'          => function_exists( 'gacct_format_ptv' ) ? gacct_format_ptv( $row['p_t_v'], false ) : (string) $row['p_t_v'],
 		);
 	}
 

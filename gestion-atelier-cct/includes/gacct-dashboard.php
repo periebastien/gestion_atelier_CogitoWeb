@@ -169,7 +169,7 @@ function gacct_dash_texts() {
 		/* translators: %s: taille du matériel */
 		'size_label'    => __( 'taille %s', 'gestion-atelier-cct' ),
 		/* translators: 1: matériel, 2: date */
-		'document'      => __( 'Rapport — %1$s — %2$s', 'gestion-atelier-cct' ),
+		'document'      => __( 'Rapport %1$s, %2$s', 'gestion-atelier-cct' ),
 		'report'        => __( 'Rapport de révision', 'gestion-atelier-cct' ),
 		/* translators: %s: matériel */
 		'doc_name'      => __( 'Rapport de révision · %s', 'gestion-atelier-cct' ),
@@ -428,8 +428,11 @@ function gacct_dash_data( $user_id = 0 ) {
 		$couleurs       = function_exists( 'gacct_extraire_couleurs' ) ? gacct_extraire_couleurs( (string) $row['couleur'] ) : array();
 		$gradient       = function_exists( 'gacct_degrade_couleurs' ) ? gacct_degrade_couleurs( $couleurs ) : '';
 
-		// --- Compteur « révisions en cours » (états 1 à 7 : tout sauf réexpédié) --
-		if ( $etat >= 1 && $etat <= 7 ) {
+		// --- Compteur « révisions en cours » (états 0 à 7 : même périmètre que la
+		// liste « mes révisions en cours » ci-dessous ; recette du 09/09/2026 :
+		// « 1 révision en cours » pour trois dossiers affichés, l'état 0 n'était
+		// pas compté) --
+		if ( $etat >= 0 && $etat <= 7 ) {
 			$data['counters']['revisions']++;
 		}
 

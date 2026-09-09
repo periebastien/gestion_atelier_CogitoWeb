@@ -56,6 +56,49 @@ endif;
  */
 $conf_etat = isset( $d['etat'] ) ? $d['etat'] : null;
 
+/*
+ * Règlement du SOLDE (phase Kojito « solde » / « solde_paye », 09/09/2026) :
+ * page dédiée, jamais le bandeau « matériel bien arrivé ». Virement : RIB,
+ * référence et montant exact ; carte : confirmation et suite du dossier.
+ */
+$conf_phase = function_exists( 'gacct_bal_phase' ) ? gacct_bal_phase( $order ) : '';
+if ( '' !== $conf_phase ) :
+	$conf_bacs_pending = ( 'bacs' === $order->get_payment_method() && $order->has_status( 'on-hold' ) && 'solde' === $conf_phase );
+	$conf_solde        = (float) $order->get_meta( '_kojito_solde_restant' );
+	$conf_solde_txt    = wp_strip_all_tags( wc_price( $conf_solde > 0 ? $conf_solde : (float) $order->get_total() ) );
+	$conf_bank_rows    = ( $conf_bacs_pending && function_exists( 'gacct_pay_bank_rows' ) ) ? gacct_pay_bank_rows( $order ) : array();
+	?>
+	<div class="gacct-conf"><div class="gacct-conf-wrap">
+		<div class="conf">
+			<?php if ( $conf_bacs_pending ) : ?>
+				<h1><?php '' !== $d['first_name'] ? printf( esc_html__( 'Merci %s, il ne reste plus qu’à effectuer votre virement', 'gestion-atelier-cct' ), esc_html( $d['first_name'] ) ) : esc_html_e( 'Il ne reste plus qu’à effectuer votre virement', 'gestion-atelier-cct' ); ?></h1>
+				<p class="conf-sub"><?php printf( esc_html__( 'Solde de %1$s pour la commande %2$s. Dès réception du virement, votre matériel repart vers vous et vous recevez le suivi du colis. Les coordonnées ci-dessous viennent aussi de partir par e-mail.', 'gestion-atelier-cct' ), '<strong>' . esc_html( $conf_solde_txt ) . '</strong>', '<strong>' . esc_html( $d['reference'] ) . '</strong>' ); ?></p>
+				<?php if ( $conf_bank_rows ) : ?>
+					<table class="conf-bank" style="width:100%;max-width:520px;margin:18px auto;border-collapse:collapse;text-align:left">
+						<?php foreach ( $conf_bank_rows as $row ) : ?>
+							<tr><td style="padding:8px 10px;border:1px solid #e3e3e3;font-size:.85em;color:#666;width:38%"><?php echo esc_html( $row['label'] ); ?></td><td style="padding:8px 10px;border:1px solid #e3e3e3;font-weight:700;word-break:break-all"><?php echo esc_html( $row['value'] ); ?></td></tr>
+						<?php endforeach; ?>
+					</table>
+				<?php endif; ?>
+				<p class="conf-sub"><?php printf( esc_html__( 'Indiquez bien la référence %s dans le libellé du virement.', 'gestion-atelier-cct' ), '<strong>' . esc_html( $d['reference'] ) . '</strong>' ); ?></p>
+			<?php else : ?>
+				<h1><?php '' !== $d['first_name'] ? printf( esc_html__( 'Merci %s, votre solde est réglé', 'gestion-atelier-cct' ), esc_html( $d['first_name'] ) ) : esc_html_e( 'Votre solde est réglé', 'gestion-atelier-cct' ); ?></h1>
+				<p class="conf-sub"><?php printf( esc_html__( 'Commande %s : votre rapport de contrôle est disponible dans votre espace client et votre matériel repart sous un jour ouvré. Vous recevrez le numéro de suivi par e-mail.', 'gestion-atelier-cct' ), '<strong>' . esc_html( $d['reference'] ) . '</strong>' ); ?></p>
+			<?php endif; ?>
+			<?php if ( $d['materiel'] ) : ?><p class="conf-sub"><strong><?php echo esc_html( $d['materiel'] ); ?></strong></p><?php endif; ?>
+			<p>
+				<a href="<?php echo esc_url( $d['links']['view_order'] ); ?>" class="btn-primary"><?php esc_html_e( 'Suivre mon dossier', 'gestion-atelier-cct' ); ?></a>
+				<a href="<?php echo esc_url( $d['links']['account'] ); ?>" class="btn-secondary"><?php esc_html_e( 'Mon espace client', 'gestion-atelier-cct' ); ?></a>
+			</p>
+			<?php if ( $d['contact_phone'] ) : ?>
+				<p class="conf-sub"><?php printf( esc_html__( 'Une question ? Appelez l’atelier au %1$s (%2$s).', 'gestion-atelier-cct' ), '<strong>' . esc_html( $d['contact_phone'] ) . '</strong>', esc_html( $d['contact_hours'] ) ); ?></p>
+			<?php endif; ?>
+		</div>
+	</div></div>
+	<?php
+	return;
+endif;
+
 if ( null !== $conf_etat && (int) $conf_etat >= 2 ) :
 	$etat_labels = function_exists( 'gacct_vo_state_labels' ) ? gacct_vo_state_labels() : array();
 	$etat_label  = isset( $etat_labels[ (int) $conf_etat ] ) ? $etat_labels[ (int) $conf_etat ] : '';

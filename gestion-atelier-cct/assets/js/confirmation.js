@@ -7,6 +7,13 @@
 ( function () {
 	'use strict';
 
+	/* Brouillon local du formulaire de demande (demande-v2.js) : la commande
+	   est passée, il ne doit plus revenir pré-remplir un nouveau formulaire
+	   (recette du 09/09/2026). */
+	try {
+		window.localStorage.removeItem( 'gacct_demande_v2_draft' );
+	} catch ( e ) {}
+
 	var toast = document.getElementById( 'gacct-conf-toast' );
 	var timer = null;
 

@@ -1,5 +1,28 @@
 <?php
 /**
+ * PTV lisible : la saisie « 85 105 », « 85-105 » ou « 85/105 » devient « 85 à 105 kg »,
+ * une valeur seule « 95 » devient « 95 kg » (recette du 09/09/2026 : le PTV brut
+ * « 85 105 » s'affichait partout, jusqu'à « PTV 85 105 kg »).
+ *
+ * @param string $raw      Valeur du champ CCT p_t_v.
+ * @param bool   $with_kg  Ajouter l'unité.
+ * @return string
+ */
+function gacct_format_ptv( $raw, $with_kg = true ) {
+	$raw = trim( (string) $raw );
+	if ( '' === $raw ) {
+		return '';
+	}
+	if ( preg_match( '/^\s*(\d+(?:[.,]\d+)?)\s*(?:kg)?\s*(?:[\s\-\/à]+|a)\s*(\d+(?:[.,]\d+)?)\s*(?:kg)?\s*$/iu', $raw, $m ) ) {
+		$out = $m[1] . ' à ' . $m[2];
+	} elseif ( preg_match( '/^\s*(\d+(?:[.,]\d+)?)\s*(?:kg)?\s*$/iu', $raw, $m ) ) {
+		$out = $m[1];
+	} else {
+		return preg_replace( '/\s*kg\s*$/iu', '', $raw ) . ( $with_kg ? ' kg' : '' );
+	}
+	return $with_kg ? $out . ' kg' : $out;
+}
+/**
  * Affichage front : callbacks JetEngine listing, shortcodes espace client,
  * bloc "date de revision" dans les emails WooCommerce.
  *
@@ -402,8 +425,8 @@ function jwcct_add_revision_date_to_email( $order, $sent_to_admin, $plain_text, 
 
         if ( $attend_vir ) {
             echo 'Virement à effectuer : ' . esc_html( wp_strip_all_tags( wc_price( $data['deposit'] ) ) )
-                . ' — référence ' . esc_html( $data['reference'] )
-                . ' — avant le ' . esc_html( $data['deadline_label'] ) . "\n";
+                . ' · référence ' . esc_html( $data['reference'] )
+                . ' · avant le ' . esc_html( $data['deadline_label'] ) . "\n";
             echo "Passé ce délai, la commande est annulée et le créneau remis en ligne.\n";
         }
 
@@ -449,7 +472,7 @@ function jwcct_add_revision_date_to_email( $order, $sent_to_admin, $plain_text, 
             );
 
             if ( $ship['url'] ) {
-                $suivi_html .= ' — <a href="' . esc_url( $ship['url'] ) . '">' . esc_html__( 'suivre le colis', 'gestion-atelier-cct' ) . '</a>';
+                $suivi_html .= ' · <a href="' . esc_url( $ship['url'] ) . '">' . esc_html__( 'suivre le colis', 'gestion-atelier-cct' ) . '</a>';
             }
 
             $lignes[] = [ __( 'Votre envoi', 'gestion-atelier-cct' ), $suivi_html ];

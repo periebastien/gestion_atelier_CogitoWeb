@@ -44,7 +44,7 @@ $wo_name = '' !== $wo_name ? $wo_name : __( 'Matériel confié', 'gestion-atelie
 $wo_specs = array_filter(
 	array(
 		__( 'Taille', 'gestion-atelier-cct' )      => $wo_materiel['taille'],
-		__( 'PTV', 'gestion-atelier-cct' )         => $wo_materiel['ptv'],
+		__( 'PTV', 'gestion-atelier-cct' )         => function_exists( 'gacct_format_ptv' ) ? gacct_format_ptv( $wo_materiel['ptv'] ) : $wo_materiel['ptv'],
 		__( 'N° de série', 'gestion-atelier-cct' ) => $wo_materiel['serie'],
 	),
 	function ( $v ) { return '' !== trim( (string) $v ); }

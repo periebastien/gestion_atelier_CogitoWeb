@@ -90,7 +90,7 @@ function gacct_op_reception_render_results( $ref ) {
 
 	echo '<p class="gacct-op-reception-hint">' . esc_html( sprintf(
 		/* translators: 1: nombre de résultats, 2: texte recherché */
-		__( '%1$d dossiers correspondent à « %2$s » — choisissez le bon :', 'gestion-atelier-cct' ),
+		__( '%1$d dossiers correspondent à « %2$s » : choisissez le bon :', 'gestion-atelier-cct' ),
 		count( $items ),
 		$ref
 	) ) . '</p>';
@@ -141,7 +141,7 @@ function gacct_op_reception_materiel_label( array $revision ) {
 	$serie = trim( (string) ( $revision['numero_de_serie'] ?? '' ) );
 
 	if ( '' !== $serie ) {
-		$label .= ( $label ? ' — ' : '' ) . sprintf( __( 'n° %s', 'gestion-atelier-cct' ), $serie );
+		$label .= ( $label ? ' · ' : '' ) . sprintf( __( 'n° %s', 'gestion-atelier-cct' ), $serie );
 	}
 
 	return $label;
@@ -237,7 +237,7 @@ function gacct_op_reception_render_dossier( $rev_id ) {
 	if ( 0 === $state ) {
 		echo '<div class="gacct-op-reception-banner warn">';
 		echo '<strong>' . esc_html__( 'Paiement non encaissé', 'gestion-atelier-cct' ) . '</strong> ';
-		echo esc_html__( 'Le client a pu expédier son matériel avant l\'encaissement — c\'est autorisé. Le dossier passera réceptionnable dès l\'encaissement.', 'gestion-atelier-cct' );
+		echo esc_html__( 'Le client a pu expédier son matériel avant l\'encaissement : c\'est autorisé. Le dossier passera réceptionnable dès l\'encaissement.', 'gestion-atelier-cct' );
 		echo '</div>';
 	}
 

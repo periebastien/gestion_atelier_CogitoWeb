@@ -412,11 +412,12 @@ function gacct_conf_handle_action() {
  */
 function gacct_conf_send_action_email( $action, $order ) {
 	if ( 'rib' === $action ) {
-		// Le template `bacs_reminder` porte déjà les coordonnées bancaires, la
-		// référence et l'échéance : on ne duplique pas un second contenu.
+		// Modèle dédié `bank_details` (recette du 09/09/2026 : `bacs_reminder`
+		// disait « nous n'avons pas encore reçu votre virement » une minute
+		// après la commande).
 		return (bool) gacct_pay_send_email(
 			$order->get_billing_email(),
-			'bacs_reminder',
+			'bank_details',
 			gacct_pay_email_variables( $order )
 		);
 	}

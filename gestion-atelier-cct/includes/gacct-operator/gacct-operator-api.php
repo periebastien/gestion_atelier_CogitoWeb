@@ -373,11 +373,16 @@ function gacct_op_ajax_cancel() {
 		wp_send_json_error( array( 'message' => __( 'Commande liée introuvable.', 'gestion-atelier-cct' ) ) );
 	}
 
-	gacct_op_add_signed_note( $order, sprintf( __( 'Annulation du dossier — motif : %s', 'gestion-atelier-cct' ), $reason ) );
+	gacct_op_add_signed_note( $order, sprintf( __( 'Annulation du dossier, motif : %s', 'gestion-atelier-cct' ), $reason ) );
 
-	$template = ( 'bacs' === $order->get_payment_method() ) ? 'bacs_cancel' : 'unfinished_cancel';
+	// Modèle propre à l'annulation manuelle (recette du 09/09/2026 : le client
+	// recevait « annulée : virement non reçu » quel que soit le motif).
+	add_filter( 'gacct_pay_email_variables', static function ( $vars ) use ( $reason ) {
+		$vars['{cancel_reason}'] = esc_html( $reason );
+		return $vars;
+	} );
 
-	gacct_pay_cancel_unpaid_order( $order, time(), $template, $reason );
+	gacct_pay_cancel_unpaid_order( $order, time(), 'atelier_cancel', $reason );
 
 	wp_send_json_success( array( 'redirect' => gacct_op_console_url() ) );
 }

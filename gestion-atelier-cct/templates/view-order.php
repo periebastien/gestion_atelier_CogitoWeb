@@ -60,6 +60,13 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 }
 ?>
 <div class="gacct-vo">
+	<?php $vo_notice = function_exists( 'gacct_bal_notice' ) ? gacct_bal_notice() : null; ?>
+	<?php if ( $vo_notice ) : ?>
+		<div class="gacct-vo-card gacct-vo-alert <?php echo esc_attr( $vo_notice['tone'] ); ?>">
+			<h3><?php echo esc_html( $vo_notice['title'] ); ?></h3>
+			<p><?php echo esc_html( $vo_notice['text'] ); ?></p>
+		</div>
+	<?php endif; ?>
 
 	<!-- ── En-tête ─────────────────────────────────────────────────── -->
 	<div class="gacct-vo-card gacct-vo-head">
@@ -149,7 +156,7 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 			<h3><?php esc_html_e( 'Devis validé, merci !', 'gestion-atelier-cct' ); ?></h3>
 			<p><?php esc_html_e( 'Les travaux complémentaires sont lancés. Le solde vous sera demandé à la fin de l\'intervention.', 'gestion-atelier-cct' ); ?></p>
 		</div>
-	<?php elseif ( 6 === $etat && $d['solde_du'] > 0 ) : ?>
+	<?php elseif ( 6 === $etat && $d['solde_du'] > 0 && ! ( defined( 'GACCT_BAL_META_BACS_PENDING' ) && $order->get_meta( GACCT_BAL_META_BACS_PENDING ) && $order->has_status( 'on-hold' ) ) ) : ?>
 		<div class="gacct-vo-card gacct-vo-alert">
 			<h3><?php esc_html_e( 'Votre intervention est terminée !', 'gestion-atelier-cct' ); ?></h3>
 			<p><?php echo esc_html( sprintf( __( 'Il ne reste que le solde de %s à régler pour que votre matériel reparte vers vous.', 'gestion-atelier-cct' ), $vo_fmt( $d['solde_du'] ) ) ); ?></p>
@@ -207,6 +214,19 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 			</tfoot>
 		</table>
 	</div>
+
+	<?php $vo_bal_pending = ( 6 === $etat && defined( 'GACCT_BAL_META_BACS_PENDING' ) && $order->get_meta( GACCT_BAL_META_BACS_PENDING ) && $order->has_status( 'on-hold' ) ); ?>
+	<?php if ( $vo_bal_pending && function_exists( 'gacct_pay_bank_rows' ) ) : ?>
+		<div class="gacct-vo-card gacct-vo-bank">
+			<h3><?php esc_html_e( 'Votre virement de solde est attendu', 'gestion-atelier-cct' ); ?></h3>
+			<p><?php printf( esc_html__( 'Solde de %s. Dès réception, votre matériel repart vers vous.', 'gestion-atelier-cct' ), '<strong>' . esc_html( $vo_fmt( $d['solde_du'] > 0 ? $d['solde_du'] : $order->get_total() ) ) . '</strong>' ); ?></p>
+			<table class="gacct-vo-table gacct-vo-bank-table"><tbody>
+				<?php foreach ( gacct_pay_bank_rows( $order ) as $row ) : ?>
+					<tr><td><?php echo esc_html( $row['label'] ); ?></td><td class="gacct-vo-amount"><?php echo esc_html( $row['value'] ); ?></td></tr>
+				<?php endforeach; ?>
+			</tbody></table>
+		</div>
+	<?php endif; ?>
 
 	<?php if ( $is_bacs_waiting && ! empty( $d['bank_rows'] ) ) : ?>
 		<!-- ── Virement attendu ────────────────────────────────────── -->

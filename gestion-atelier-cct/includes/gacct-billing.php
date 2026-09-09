@@ -179,7 +179,7 @@ function gacct_billing_guard( $revision_id ) {
 
 	if ( $state < 2 || $state > 6 ) {
 		return new WP_Error( 'gacct_billing_bad_state', sprintf(
-			__( 'La facturation atelier n\'est modifiable qu\'entre la réception (état 2) et la demande de solde (état 6) — état actuel : %d.', 'gestion-atelier-cct' ),
+			__( 'La facturation atelier n\'est modifiable qu\'entre la réception (état 2) et la demande de solde (état 6) : état actuel : %d.', 'gestion-atelier-cct' ),
 			$state
 		) );
 	}
@@ -221,7 +221,7 @@ function gacct_billing_refresh_balance( $order, $revision_id ) {
 	$balance = round( gacct_kojito_total_initial( $order ) - gacct_quote_deposit_paid( $order ), wc_get_price_decimals() );
 
 	gacct_op_add_signed_note( $order, sprintf(
-		__( 'Facturation atelier — solde recalculé : %s', 'gestion-atelier-cct' ),
+		__( 'Facturation atelier, solde recalculé : %s', 'gestion-atelier-cct' ),
 		wp_strip_all_tags( wc_price( max( 0, $balance ), array( 'currency' => $order->get_currency() ) ) )
 	) );
 
@@ -387,8 +387,8 @@ function gacct_billing_add_lines( $revision_id, array $lines ) {
 	foreach ( $added as $entry ) {
 		gacct_op_add_signed_note( $order, sprintf(
 			$entry['discount']
-				? __( 'Facturation atelier — remise : %s', 'gestion-atelier-cct' )
-				: __( 'Facturation atelier — ajout : %s', 'gestion-atelier-cct' ),
+				? __( 'Facturation atelier, remise : %s', 'gestion-atelier-cct' )
+				: __( 'Facturation atelier, ajout : %s', 'gestion-atelier-cct' ),
 			$entry['label']
 		) );
 	}
@@ -439,8 +439,8 @@ function gacct_billing_remove_line( $revision_id, $item_id ) {
 
 	gacct_op_add_signed_note( $order, sprintf(
 		$total < 0
-			? __( 'Facturation atelier — remise retirée : %s', 'gestion-atelier-cct' )
-			: __( 'Facturation atelier — ligne retirée : %s', 'gestion-atelier-cct' ),
+			? __( 'Facturation atelier, remise retirée : %s', 'gestion-atelier-cct' )
+			: __( 'Facturation atelier, ligne retirée : %s', 'gestion-atelier-cct' ),
 		$label
 	) );
 
