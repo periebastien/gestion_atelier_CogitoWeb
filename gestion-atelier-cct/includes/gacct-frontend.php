@@ -332,6 +332,16 @@ function jwcct_email_ids_with_revision_block() {
     ] );
 }
 
+/**
+ * Tableau des articles des e-mails WooCommerce : sans vignette produit (09/09/2026,
+ * retour Bastien : les prestations n'ont pas d'image, WooCommerce affichait son
+ * pictogramme de remplacement).
+ */
+add_filter( 'woocommerce_email_order_items_args', function ( $args ) {
+	$args['show_image'] = false;
+	return $args;
+} );
+
 function jwcct_add_revision_date_to_email( $order, $sent_to_admin, $plain_text, $email ) {
 
     // Uniquement les e-mails client, et seulement ceux de la liste blanche.
@@ -488,14 +498,17 @@ function jwcct_add_revision_date_to_email( $order, $sent_to_admin, $plain_text, 
     echo '<div style="margin-bottom:30px;padding:20px;background-color:' . esc_attr( $fond ) . ';border-left:4px solid ' . esc_attr( $accent ) . ';">';
     echo '<h2 style="color:' . esc_attr( $accent ) . ';margin:0 0 12px;font-size:18px;">'
         . esc_html__( 'Informations sur votre révision', 'gestion-atelier-cct' ) . '</h2>';
+    // Une ligne = libellé au-dessus de la valeur (09/09/2026) : les deux colonnes
+    // d'avant se repliaient mal sur mobile (libellé insécable, valeur en escalier).
     echo '<table cellspacing="0" cellpadding="0" border="0" style="width:100%;border:0;">';
 
     foreach ( $lignes as $ligne ) {
         echo '<tr>'
-            . '<td style="border:0;padding:0 12px 6px 0;font-size:14px;color:#666;vertical-align:top;white-space:nowrap;">'
-            . esc_html( $ligne[0] ) . '</td>'
-            . '<td style="border:0;padding:0 0 6px;font-size:15px;color:#333;vertical-align:top;">'
+            . '<td style="border:0;padding:0 0 10px;vertical-align:top;">'
+            . '<span style="display:block;font-size:12px;letter-spacing:0.03em;text-transform:uppercase;color:#666;margin-bottom:2px;">' . esc_html( $ligne[0] ) . '</span>'
+            . '<span style="display:block;font-size:15px;color:#333;line-height:1.45;">'
             . $ligne[1] // phpcs:ignore WordPress.Security.EscapeOutput -- contenu construit et échappé ci-dessus.
+            . '</span>'
             . '</td>'
             . '</tr>';
     }

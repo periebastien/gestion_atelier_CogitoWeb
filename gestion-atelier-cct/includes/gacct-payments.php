@@ -441,7 +441,7 @@ function gacct_pay_bank_rows( $order = null ) {
 
 	if ( $order instanceof WC_Order ) {
 		$rows[] = array(
-			'label'     => __( 'Reference a indiquer, obligatoire', 'gestion-atelier-cct' ),
+			'label'     => __( 'Référence à indiquer (obligatoire)', 'gestion-atelier-cct' ),
 			'value'     => $order->get_order_number(),
 			'copy'      => $order->get_order_number(),
 			'highlight' => true,
@@ -493,11 +493,12 @@ function gacct_pay_bank_details_html( $order = null ) {
 		return '';
 	}
 
-	$html = '<table cellpadding="6" cellspacing="0" style="border-collapse:collapse;margin:12px 0;">';
+	// Pleine largeur, libellé étroit, valeur sécable (IBAN sur mobile, 09/09/2026).
+	$html = '<table cellpadding="6" cellspacing="0" style="border-collapse:collapse;margin:12px 0;width:100%;">';
 	foreach ( $rows as $row ) {
 		$html .= '<tr>'
-			. '<td style="border:1px solid #ddd;font-size:12px;color:#666;">' . esc_html( $row['label'] ) . '</td>'
-			. '<td style="border:1px solid #ddd;font-weight:bold;">' . esc_html( $row['value'] ) . '</td>'
+			. '<td style="border:1px solid #ddd;font-size:12px;color:#666;width:28%;vertical-align:top;">' . esc_html( $row['label'] ) . '</td>'
+			. '<td style="border:1px solid #ddd;font-weight:bold;word-break:break-all;overflow-wrap:anywhere;">' . esc_html( $row['value'] ) . '</td>'
 			. '</tr>';
 	}
 	$html .= '</table>';

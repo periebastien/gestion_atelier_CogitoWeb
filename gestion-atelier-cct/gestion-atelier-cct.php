@@ -1670,7 +1670,7 @@ final class GACCT_Plugin {
 					. '{quote_lines}'
 					. '{quote_comment}'
 					. '<p>Nouveau total de votre commande : <strong>{quote_total}</strong>, soit un solde de <strong>{quote_balance}</strong> à régler à la fin de l’intervention (votre acompte déjà versé reste inchangé).</p>'
-					. '<p><a href="{validation_url}">Consulter le devis et donner ma réponse</a> — vous pourrez l’accepter ou le refuser en un clic.</p>'
+					. '<p><a href="{validation_url}">Consulter le devis et donner ma réponse</a> : vous pourrez l’accepter ou le refuser en un clic.</p>'
 					. '<p>Merci de votre réactivité,<br><br>Bastien.</p>',
 			),
 			6 => array(
