@@ -571,7 +571,35 @@
 					var besoin = prestationsCochees();
 					var wrapNext = next.closest( '.jet-form-builder__next-page-wrap' );
 
-					if ( besoin.voile && ! voileValide() ) {
+					// Sous-écrans : on valide le matériel courant ; s'il en reste un,
+					// on l'ouvre au lieu de changer de page.
+					var courant = mat.ordre[ mat.index ];
+					if ( courant && ! validerMateriel( courant, wrapNext ) ) {
+						e.preventDefault();
+						e.stopImmediatePropagation();
+						return;
+					}
+					if ( mat.index < mat.ordre.length - 1 ) {
+						e.preventDefault();
+						e.stopImmediatePropagation();
+						mat.index++;
+						matRendre();
+						matScroll();
+						return;
+					}
+					// Dernier sous-écran : les précédents ont été validés en passant, on
+					// revérifie tout de même l'ensemble (retour arrière possible).
+					for ( var mi = 0; mi < mat.ordre.length; mi++ ) {
+						if ( ! validerMateriel( mat.ordre[ mi ], wrapNext ) ) {
+							e.preventDefault();
+							e.stopImmediatePropagation();
+							mat.index = mi;
+							matRendre();
+							return;
+						}
+					}
+
+					if ( false && besoin.voile && ! voileValide() ) {
 						e.preventDefault();
 						e.stopImmediatePropagation();
 						erreurEtape( 'voile', wrapNext, v2i18n.erreurVoile || 'Indiquez votre matériel pour continuer.' );
@@ -1769,6 +1797,9 @@
 		   (bloc sellette + secours) ou un pliage de secours (bloc secours) est
 		   coché. Cachés = vidés, pour ne rien enregistrer d'inutile. --- */
 		var equipIds = ( v2.equipementIds || [] ).map( String );
+		// Carte produit => matériel (fiches produit, 09/09/2026) et défaut par champ.
+		var matParProduit = v2.materielParProduit || {};
+		var matOrdre = v2.materielOrdre || [ 'voile', 'secours', 'sellette' ];
 		var equipChamps = v2.equipChamps || { sellette: [], secours: [] };
 
 		function equipRows( noms ) {
@@ -1788,18 +1819,19 @@
 		 * (miroir PHP : gacct_demande_materiel_requis).
 		 */
 		function prestationsCochees() {
-			var voile = false, secours = false, sellette = false;
-			fieldInputs( 'revisions_controle' ).forEach( function ( el ) {
-				if ( el.type !== 'checkbox' || ! el.checked ) { return; }
-				if ( equipIds.indexOf( String( el.value ) ) > -1 ) { secours = true; sellette = true; } else { voile = true; }
+			var besoin = { voile: false, secours: false, sellette: false };
+			[ 'revisions_controle', 'pliages_secours', 'suspentes_travaux' ].forEach( function ( champ ) {
+				fieldInputs( champ ).forEach( function ( el ) {
+					if ( el.type !== 'checkbox' || ! el.checked ) { return; }
+					var types = matParProduit[ String( el.value ) ];
+					if ( ! types || ! types.length ) {
+						// Repli identique au PHP : pliage = secours, le reste = parapente.
+						types = equipIds.indexOf( String( el.value ) ) > -1 ? [ 'secours', 'sellette' ] : [ champ === 'pliages_secours' ? 'secours' : 'voile' ];
+					}
+					types.forEach( function ( t ) { if ( t in besoin ) { besoin[ t ] = true; } } );
+				} );
 			} );
-			fieldInputs( 'suspentes_travaux' ).forEach( function ( el ) {
-				if ( el.type === 'checkbox' && el.checked ) { voile = true; }
-			} );
-			fieldInputs( 'pliages_secours' ).forEach( function ( el ) {
-				if ( el.type === 'checkbox' && el.checked ) { secours = true; }
-			} );
-			return { voile: voile, secours: secours, sellette: sellette };
+			return besoin;
 		}
 
 		function viderChampsVoile() {
@@ -2078,37 +2110,200 @@
 			return out;
 		}
 
+		/* Sous-écrans de l'étape « Votre matériel » (09/09/2026, décision Bastien) :
+		   un seul matériel ouvert à la fois (parapente, secours, sellette), les
+		   précédents repliés en cartes de confirmation, compteur « Matériel 1 sur 3 »,
+		   bouton « Suivant : votre parachute de secours ». Un seul matériel concerné :
+		   écran identique à avant, sans compteur. La page JFB reste unique. */
+		var mat = { ordre: [], index: 0, done: null, compteur: null, nextLabel: '' };
+		form.gacctMat = mat; // etat expose pour les tests navigateur
+
+		function matPanneaux() {
+			var bloc = equipConstruire();
+			return {
+				voile: lignesVoile(),
+				secours: bloc ? [ bloc.querySelector( '.gacct-v2-equip-groupe-secours' ) ].filter( Boolean ) : [],
+				sellette: bloc ? [ bloc.querySelector( '.gacct-v2-equip-groupe-sellette' ) ].filter( Boolean ) : []
+			};
+		}
+
+		function matNom( t, votre ) {
+			var d = votre ? ( v2i18n.matVotre || {} ) : ( v2i18n.matNom || {} );
+			return d[ t ] || t;
+		}
+
+		/** Résumé d'un matériel rempli, pour sa carte repliée. */
+		function matResume( t ) {
+			var parts = [];
+			if ( t === 'voile' ) {
+				parts.push( ( valeurChamp( 'marque' ) + ' ' + valeurChamp( 'modele' ) ).trim() );
+				if ( valeurChamp( 'taille' ) ) { parts.push( sprintf1( v2i18n.tailleAbr || 'Taille %s', valeurChamp( 'taille' ) ) ); }
+				else if ( valeurChamp( 'ptv' ) ) { parts.push( sprintf1( v2i18n.ptvAbr || 'PTV %s kg', valeurChamp( 'ptv' ) ) ); }
+			} else {
+				parts.push( ( valeurChamp( t + '_marque' ) + ' ' + valeurChamp( t + '_modele' ) ).trim() );
+				if ( valeurChamp( t + '_taille' ) ) { parts.push( valeurChamp( t + '_taille' ) ); }
+			}
+			return parts.filter( Boolean ).join( ' · ' ) || ( v2i18n.matNonPrecise || 'non précisé' );
+		}
+
+		function matBoutons() {
+			var page2 = form.querySelector( '.jet-form-builder-page[data-page="2"]' );
+			return {
+				next: page2 ? page2.querySelector( '.jet-form-builder__next-page' ) : null,
+				prev: page2 ? page2.querySelector( '.jet-form-builder__prev-page' ) : null
+			};
+		}
+
+		function matRendre() {
+			var panneaux = matPanneaux();
+			var step = form.querySelector( '.gacct-v2-step--voile' );
+			var courant = mat.ordre[ mat.index ] || null;
+			var plusieurs = mat.ordre.length > 1;
+
+			// Panneaux : seul le matériel courant est visible.
+			[ 'voile', 'secours', 'sellette' ].forEach( function ( t ) {
+				panneaux[ t ].forEach( function ( el ) { el.hidden = t !== courant; } );
+			} );
+			var bloc = equipConstruire();
+			if ( bloc ) { bloc.hidden = ! ( courant === 'secours' || courant === 'sellette' ); }
+
+			// Cartes repliées des matériels déjà remplis.
+			if ( ! mat.done ) {
+				mat.done = document.createElement( 'div' );
+				mat.done.className = 'gacct-v2-mat-done';
+				mat.done.addEventListener( 'click', function ( e ) {
+					var b = e.target.closest( '[data-mat-index]' );
+					if ( b ) {
+						mat.index = parseInt( b.dataset.matIndex, 10 );
+						matRendre();
+						matScroll();
+					}
+				} );
+				var sousTitreRef = step ? step.querySelector( '.gacct-v2-sous-titre' ) : null;
+				if ( sousTitreRef && sousTitreRef.parentNode ) {
+					sousTitreRef.parentNode.insertBefore( mat.done, sousTitreRef.nextSibling );
+				} else if ( step ) {
+					step.insertBefore( mat.done, step.firstChild );
+				}
+			}
+			var html = '';
+			mat.ordre.forEach( function ( t, i ) {
+				if ( i >= mat.index ) { return; }
+				html += '<div class="gacct-v2-mat-card"><span class="gacct-v2-c-check" aria-hidden="true">✓</span>' +
+					'<span class="gacct-v2-c-infos"><small>' + escapeHtml( matNom( t ) ) + '</small><strong>' + escapeHtml( matResume( t ) ) + '</strong></span>' +
+					'<button type="button" class="gacct-v2-c-edit" data-mat-index="' + i + '">' + escapeHtml( v2i18n.modifier || 'Modifier' ) + '</button></div>';
+			} );
+			mat.done.innerHTML = html;
+			mat.done.hidden = '' === html;
+
+			// Compteur et sous-titre.
+			if ( ! mat.compteur && step ) {
+				mat.compteur = document.createElement( 'p' );
+				mat.compteur.className = 'gacct-v2-mat-compteur';
+				var titre = step.querySelector( '.gacct-v2-titre, h2, h3' );
+				if ( titre && titre.parentNode ) { titre.parentNode.insertBefore( mat.compteur, titre ); } else { step.insertBefore( mat.compteur, step.firstChild ); }
+			}
+			if ( mat.compteur ) {
+				mat.compteur.hidden = ! plusieurs;
+				if ( plusieurs && courant ) {
+					mat.compteur.textContent = ( v2i18n.matCompteur || 'Matériel %1$s sur %2$s' ).replace( '%1$s', String( mat.index + 1 ) ).replace( '%2$s', String( mat.ordre.length ) ) + ' : ' + matNom( courant, true );
+				}
+			}
+			var sousTitre = step ? step.querySelector( '.gacct-v2-sous-titre' ) : null;
+			if ( sousTitre ) {
+				var st = v2i18n.matSousTitre || {};
+				sousTitre.textContent = courant ? ( st[ courant ] || ( courant === 'voile' ? ( v2i18n.materielVoile || '' ) : ( v2i18n.materielEquip || '' ) ) ) : ( v2i18n.materielEquip || '' );
+			}
+
+			// Bouton suivant : « Suivant : votre secours » tant qu'il reste un matériel.
+			var btns = matBoutons();
+			if ( btns.next ) {
+				if ( ! mat.nextLabel ) { mat.nextLabel = btns.next.textContent.trim() || ( v2i18n.matContinuer || 'Continuer' ); }
+				var dernier = mat.index >= mat.ordre.length - 1;
+				btns.next.textContent = dernier ? mat.nextLabel : ( v2i18n.matSuivant || 'Suivant : %s' ).replace( '%s', matNom( mat.ordre[ mat.index + 1 ], true ) );
+				btns.next.classList.toggle( 'is-mat-suivant', ! dernier );
+			}
+		}
+
+		function matScroll() {
+			var cible = mat.compteur && ! mat.compteur.hidden ? mat.compteur : form.querySelector( '.gacct-v2-step--voile' );
+			if ( cible && cible.scrollIntoView ) {
+				cible.scrollIntoView( { behavior: 'smooth', block: 'start' } );
+			}
+		}
+
 		function majEquipement() {
 			var bloc = equipConstruire();
 			var besoin = prestationsCochees();
 
-			lignesVoile().forEach( function ( el ) { el.hidden = ! besoin.voile; } );
+			// Ordre des sous-écrans d'après les prestations cochées.
+			var ordre = matOrdre.filter( function ( t ) { return besoin[ t ]; } );
+			var change = ordre.join( ',' ) !== mat.ordre.join( ',' );
+			mat.ordre = ordre;
+			if ( change || mat.index >= ordre.length ) { mat.index = 0; }
 
 			if ( bloc ) {
 				var groupeS = bloc.querySelector( '.gacct-v2-equip-groupe-sellette' );
 				var groupeP = bloc.querySelector( '.gacct-v2-equip-groupe-secours' );
-				if ( groupeS ) {
-					groupeS.hidden = ! besoin.sellette;
-					if ( ! besoin.sellette ) { groupeS.querySelectorAll( 'input' ).forEach( function ( i ) { i.value = ''; } ); }
+				if ( groupeS && ! besoin.sellette ) { groupeS.querySelectorAll( 'input' ).forEach( function ( i ) { i.value = ''; } ); }
+				if ( groupeP && ! besoin.secours ) {
+					groupeP.querySelectorAll( 'input' ).forEach( function ( i ) { i.value = ''; } );
+					if ( secours.ui && ( secours.choisi || secours.manuel ) ) { secours.recherche(); }
 				}
-				if ( groupeP ) {
-					groupeP.hidden = ! besoin.secours;
-					if ( ! besoin.secours ) {
-						groupeP.querySelectorAll( 'input' ).forEach( function ( i ) { i.value = ''; } );
-						if ( secours.ui && ( secours.choisi || secours.manuel ) ) { secours.recherche(); }
-					}
-				}
-				bloc.hidden = ! ( besoin.secours || besoin.sellette );
 			}
 
-			// Sous-titre de l'étape 2 selon le matériel attendu.
-			var sousTitre = form.querySelector( '.gacct-v2-step--voile .gacct-v2-sous-titre' );
-			if ( sousTitre ) {
-				sousTitre.textContent = besoin.voile
-					? ( v2i18n.materielVoile || 'Tapez la marque ou le modèle de votre voile, ou choisissez « Mon matériel n’est pas dans la liste ».' )
-					: ( v2i18n.materielEquip || 'Décrivez le matériel concerné par vos prestations.' );
-			}
+			matRendre();
 		}
+
+		/** Validation d'un seul matériel (sous-écran). Retourne true si OK. */
+		function validerMateriel( t, wrapNext ) {
+			if ( t === 'voile' ) {
+				if ( ! voileValide() ) {
+					erreurEtape( 'voile', wrapNext, v2i18n.erreurVoile || 'Indiquez votre matériel pour continuer.' );
+					return false;
+				}
+				if ( ! voile.existante && ! taillePtvValide() ) {
+					erreurEtape( 'taillePtv', noteTaillePtv || wrapNext, v2i18n.erreurTaillePtv || 'Indiquez au moins la taille ou le P.T.V. de votre matériel.', !! noteTaillePtv );
+					return false;
+				}
+				effaceErreur( 'taillePtv' );
+				if ( ! voile.existante && '' === valeurChamp( champs.couleur || 'couleur_copy' ) ) {
+					erreurEtape( 'couleur', wrapNext, v2i18n.erreurCouleur || 'Sélectionnez au moins une couleur de votre voile.' );
+					return false;
+				}
+				effaceErreur( 'couleur' );
+				return true;
+			}
+			if ( t === 'secours' ) {
+				if ( '' === valeurChamp( 'secours_marque' ) || '' === valeurChamp( 'secours_modele' ) ) {
+					erreurEtape( 'secours', wrapNext, v2i18n.erreurSecours || 'Indiquez la marque et le modèle de votre parachute de secours.' );
+					return false;
+				}
+				effaceErreur( 'secours' );
+				return true;
+			}
+			if ( t === 'sellette' ) {
+				if ( '' === valeurChamp( 'sellette_marque' ) || '' === valeurChamp( 'sellette_modele' ) ) {
+					erreurEtape( 'sellette', wrapNext, v2i18n.erreurSellette || 'Indiquez la marque et le modèle de votre sellette.' );
+					return false;
+				}
+				effaceErreur( 'sellette' );
+				return true;
+			}
+			return true;
+		}
+
+		// « Retour » de l'étape 2 : revient au matériel précédent avant de quitter la page.
+		form.addEventListener( 'click', function ( e ) {
+			var prev = e.target.closest( '.jet-form-builder-page[data-page="2"] .jet-form-builder__prev-page' );
+			if ( prev && mat.index > 0 ) {
+				e.preventDefault();
+				e.stopImmediatePropagation();
+				mat.index--;
+				matRendre();
+				matScroll();
+			}
+		}, true );
 
 		form.addEventListener( 'change', function ( e ) {
 			var t = e.target;
@@ -2119,10 +2314,19 @@
 				}
 			}
 		} );
+		var matPagePrecedente = 0;
 		if ( window.jQuery ) {
-			window.jQuery( document ).on( 'jet-form-builder/switch-page', function () { setTimeout( majEquipement, 0 ); } );
+			window.jQuery( document ).on( 'jet-form-builder/switch-page', function () {
+				setTimeout( function () {
+					var p = pageCourante();
+					if ( p === 2 && matPagePrecedente === 1 ) { mat.index = 0; }
+					if ( p === 2 && matPagePrecedente === 3 ) { mat.index = Math.max( 0, mat.ordre.length - 1 ); }
+					matPagePrecedente = p;
+					majEquipement();
+				}, 0 );
+			} );
 		}
-		setTimeout( majEquipement, 0 );
+		setTimeout( function () { matPagePrecedente = pageCourante(); majEquipement(); }, 0 );
 
 		/* --- Choix unique décochable : une case cochée décoche ses sœurs.
 		   (Cases à cocher natives : le re-clic décoche déjà tout seul.) --- */

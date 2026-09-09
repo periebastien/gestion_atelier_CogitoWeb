@@ -116,6 +116,77 @@ function gacct_biplace_ligne_panier_visible( $visible, $cart_item ) {
    affiche les prix réels et non les acomptes, donc le supplément y apparaît
    à son vrai montant. Le filtre reste posé sur les lignes de COMMANDE, dont
    l'affichage n'a pas encore reçu le même traitement. */
+/* =============================================================================
+ *  Matériel concerné par une prestation (09/09/2026, décision Bastien)
+ *  Meta `_gacct_materiels` : liste parmi voile / secours / sellette. Remplace
+ *  l'identifiant de produit en dur (19) : chaque atelier coche, sur sa fiche
+ *  produit, ce que le client doit décrire et expédier. Sans coche, un défaut
+ *  est déduit de la famille de la prestation (gacct_produit_materiels()).
+ * ============================================================================= */
+
+/**
+ * Types de matériel connus, dans l'ordre des sous-écrans du formulaire.
+ *
+ * @return array<string,string> slug => libellé.
+ */
+function gacct_materiel_types() {
+	return apply_filters( 'gacct_materiel_types', array(
+		'voile'    => __( 'Parapente', 'gestion-atelier-cct' ),
+		'secours'  => __( 'Parachute de secours', 'gestion-atelier-cct' ),
+		'sellette' => __( 'Sellette', 'gestion-atelier-cct' ),
+	) );
+}
+
+/**
+ * Matériel concerné par un produit. Meta explicite, sinon défaut par famille :
+ * révisions / contrôles et travaux de suspentes = parapente, pliages = secours.
+ *
+ * @param int    $product_id Produit.
+ * @param string $champ      Champ du formulaire d'où vient le produit
+ *                           (revisions_controle | pliages_secours | suspentes_travaux), pour le défaut.
+ * @return string[] Sous-ensemble ordonné de array_keys( gacct_materiel_types() ).
+ */
+function gacct_produit_materiels( $product_id, $champ = '' ) {
+	$types = array_keys( gacct_materiel_types() );
+	$meta  = get_post_meta( (int) $product_id, '_gacct_materiels', true );
+	$meta  = is_array( $meta ) ? array_values( array_intersect( $types, $meta ) ) : array();
+
+	if ( ! $meta ) {
+		$meta = array( 'pliages_secours' === $champ ? 'secours' : 'voile' );
+	}
+
+	return (array) apply_filters( 'gacct_produit_materiels', $meta, (int) $product_id, $champ );
+}
+
+/**
+ * Cases à cocher « Matériel concerné » dans l'onglet Général de la fiche produit.
+ */
+add_action( 'woocommerce_product_options_general_product_data', function () {
+	global $post;
+
+	$coches = get_post_meta( $post->ID, '_gacct_materiels', true );
+	$coches = is_array( $coches ) ? $coches : array();
+
+	echo '<div class="options_group">';
+	echo '<fieldset class="form-field"><legend style="float:left;width:150px;padding:0;margin:0 0 0 12px">' . esc_html__( 'Matériel concerné', 'gestion-atelier-cct' ) . '</legend><ul class="wc-radios" style="margin-left:162px">';
+	foreach ( gacct_materiel_types() as $slug => $label ) {
+		echo '<li><label><input type="checkbox" name="_gacct_materiels[]" value="' . esc_attr( $slug ) . '"' . checked( in_array( $slug, $coches, true ), true, false ) . '> ' . esc_html( $label ) . '</label></li>';
+	}
+	echo '</ul><p class="description" style="margin-left:162px">' . esc_html__( 'Ce que le client doit décrire à la demande et expédier à l’atelier pour cette prestation. Sans coche : parapente pour une révision, un contrôle ou des suspentes ; parachute de secours pour un pliage.', 'gestion-atelier-cct' ) . '</p></fieldset>';
+	echo '</div>';
+}, 5 );
+
+add_action( 'woocommerce_process_product_meta', function ( $post_id ) {
+	$types  = array_keys( gacct_materiel_types() );
+	$coches = isset( $_POST['_gacct_materiels'] ) ? array_map( 'sanitize_key', (array) wp_unslash( $_POST['_gacct_materiels'] ) ) : array(); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+	$coches = array_values( array_intersect( $types, $coches ) );
+	if ( $coches ) {
+		update_post_meta( $post_id, '_gacct_materiels', $coches );
+	} else {
+		delete_post_meta( $post_id, '_gacct_materiels' );
+	}
+} );
+
 /**
  * Boutons radio dans l'onglet Général de la fiche produit.
  */
@@ -188,7 +259,8 @@ add_filter( 'manage_edit-product_columns', function ( $columns ) {
 	foreach ( $columns as $key => $label ) {
 		$out[ $key ] = $label;
 		if ( 'price' === $key ) {
-			$out['gacct_duree'] = __( 'Durée', 'gestion-atelier-cct' );
+			$out['gacct_duree']     = __( 'Durée', 'gestion-atelier-cct' );
+			$out['gacct_materiels'] = __( 'Matériel', 'gestion-atelier-cct' );
 		}
 	}
 
@@ -200,6 +272,17 @@ add_filter( 'manage_edit-product_columns', function ( $columns ) {
 }, 20 );
 
 add_action( 'manage_product_posts_custom_column', function ( $column, $post_id ) {
+	if ( 'gacct_materiels' === $column ) {
+		$meta   = get_post_meta( $post_id, '_gacct_materiels', true );
+		$types  = gacct_materiel_types();
+		$coches = is_array( $meta ) ? array_values( array_intersect( array_keys( $types ), $meta ) ) : array();
+		if ( $coches ) {
+			echo esc_html( implode( ' + ', array_map( static function ( $s ) use ( $types ) { return $types[ $s ]; }, $coches ) ) );
+		} else {
+			echo '<span style="color:#a7aaad" title="' . esc_attr__( 'Déduit de la famille de la prestation (parapente, ou secours pour un pliage)', 'gestion-atelier-cct' ) . '">' . esc_html__( 'par défaut', 'gestion-atelier-cct' ) . '</span>';
+		}
+		return;
+	}
 	if ( 'gacct_duree' !== $column ) {
 		return;
 	}

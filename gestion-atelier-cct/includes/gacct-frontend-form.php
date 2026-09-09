@@ -192,7 +192,12 @@ function gacct_demande_v2_config() {
 			// Contrôle complet Équipement (produit 19) : le client décrit sa sellette
 			// et son secours à la demande, le rapport équipement est prérempli
 			// (Timothée, 08/09/2026). Les pliages de secours n'ouvrent que le bloc secours.
-			'equipementIds' => array_map( 'intval', (array) apply_filters( 'gacct_demande_equipement_ids', array( 19 ) ) ),
+			// Depuis le 09/09/2026 la carte produit => matériel vient des fiches
+			// produit (meta _gacct_materiels, gacct_produit_materiels()) : plus
+			// d'identifiant en dur. `equipementIds` reste vide pour l'ancien JS.
+			'equipementIds' => array(),
+			'materielParProduit' => gacct_demande_materiels_map(),
+			'materielOrdre' => function_exists( 'gacct_materiel_types' ) ? array_keys( gacct_materiel_types() ) : array( 'voile', 'secours', 'sellette' ),
 			'equipChamps'   => array(
 				'sellette' => array( 'sellette_marque', 'sellette_modele', 'sellette_taille' ),
 				'secours'  => array( 'secours_marque', 'secours_modele', 'secours_taille', 'secours_date' ),
@@ -258,6 +263,26 @@ function gacct_demande_v2_config() {
 				'materielEquip'   => __( 'Décrivez le matériel concerné par vos prestations : nous préparons votre rapport avec ces informations.', 'gestion-atelier-cct' ),
 				'equipSellette'   => __( 'Votre sellette', 'gestion-atelier-cct' ),
 				'equipSecours'    => __( 'Votre parachute de secours', 'gestion-atelier-cct' ),
+				// Sous-écrans de l'étape « Votre matériel » (09/09/2026) : un matériel à la fois.
+				'matNom'          => array(
+					'voile'    => __( 'Parapente', 'gestion-atelier-cct' ),
+					'secours'  => __( 'Parachute de secours', 'gestion-atelier-cct' ),
+					'sellette' => __( 'Sellette', 'gestion-atelier-cct' ),
+				),
+				'matVotre'        => array(
+					'voile'    => __( 'votre parapente', 'gestion-atelier-cct' ),
+					'secours'  => __( 'votre parachute de secours', 'gestion-atelier-cct' ),
+					'sellette' => __( 'votre sellette', 'gestion-atelier-cct' ),
+				),
+				'matSousTitre'    => array(
+					'voile'    => __( 'Tapez la marque ou le modèle de votre voile, ou choisissez « Mon matériel n’est pas dans la liste ».', 'gestion-atelier-cct' ),
+					'secours'  => __( 'Tapez les premières lettres du modèle de votre parachute de secours, puis sa taille et, si vous la connaissez, sa date de production.', 'gestion-atelier-cct' ),
+					'sellette' => __( 'Indiquez la marque, le modèle et la taille de votre sellette : ces informations complètent le rapport.', 'gestion-atelier-cct' ),
+				),
+				'matCompteur'     => __( 'Matériel %1$s sur %2$s', 'gestion-atelier-cct' ),
+				'matSuivant'      => __( 'Suivant : %s', 'gestion-atelier-cct' ),
+				'matContinuer'    => __( 'Continuer', 'gestion-atelier-cct' ),
+				'matNonPrecise'   => __( 'non précisé', 'gestion-atelier-cct' ),
 				'secoursComboLabel' => __( 'Marque et modèle du secours', 'gestion-atelier-cct' ),
 				'secoursComboPlaceholder' => __( 'Par exemple : shine, yeti, octagon…', 'gestion-atelier-cct' ),
 				'secoursComboAide' => __( 'Tapez les premières lettres du modèle : la liste se remplit toute seule.', 'gestion-atelier-cct' ),
@@ -351,8 +376,6 @@ function gacct_demande_rendered_form_id() {
  * @return array{voile:bool,secours:bool,sellette:bool}
  */
 function gacct_demande_materiel_requis( array $request ) {
-	$equip_ids = array_map( 'intval', (array) apply_filters( 'gacct_demande_equipement_ids', array( 19 ) ) );
-
 	$liste = static function ( $v ) {
 		if ( is_string( $v ) ) {
 			$v = '' === trim( $v ) ? array() : array( $v );
@@ -360,18 +383,51 @@ function gacct_demande_materiel_requis( array $request ) {
 		return array_values( array_filter( array_map( 'intval', (array) $v ) ) );
 	};
 
-	$revisions = $liste( $request['revisions_controle'] ?? array() );
-	$pliages   = $liste( $request['pliages_secours'] ?? array() );
-	$suspentes = $liste( $request['suspentes_travaux'] ?? array() );
+	$requis = array( 'voile' => false, 'secours' => false, 'sellette' => false );
+	foreach ( array( 'revisions_controle', 'pliages_secours', 'suspentes_travaux' ) as $champ ) {
+		foreach ( $liste( $request[ $champ ] ?? array() ) as $product_id ) {
+			foreach ( gacct_produit_materiels( $product_id, $champ ) as $type ) {
+				$requis[ $type ] = true;
+			}
+		}
+	}
 
-	$equip = (bool) array_intersect( $revisions, $equip_ids );
-	$voile = (bool) array_diff( $revisions, $equip_ids ) || ! empty( $suspentes );
+	return $requis;
+}
 
-	return array(
-		'voile'    => $voile,
-		'secours'  => $equip || ! empty( $pliages ),
-		'sellette' => $equip,
-	);
+/**
+ * Carte "<product_id>" => [types de matériel] pour tous les produits des
+ * queries du formulaire (miroir JS : prestationsCochees()). Le champ d'origine
+ * donne le défaut quand la fiche produit n'a rien de coché.
+ *
+ * @return array<string,string[]>
+ */
+function gacct_demande_materiels_map() {
+	$map = array();
+
+	if ( ! class_exists( '\Jet_Engine\Query_Builder\Manager' ) || ! function_exists( 'gacct_produit_materiels' ) ) {
+		return $map;
+	}
+
+	$manager = \Jet_Engine\Query_Builder\Manager::instance();
+
+	foreach ( gacct_demande_queries_map() as $champ => $query_id ) {
+		if ( 'frais_de_ports' === $champ ) {
+			continue;
+		}
+		$query = $manager->get_query_by_id( $query_id );
+		if ( ! $query || ! method_exists( $query, 'get_items' ) ) {
+			continue;
+		}
+		foreach ( (array) $query->get_items() as $item ) {
+			$product_id = is_object( $item ) && isset( $item->ID ) ? absint( $item->ID ) : absint( $item );
+			if ( $product_id && ! isset( $map[ (string) $product_id ] ) ) {
+				$map[ (string) $product_id ] = gacct_produit_materiels( $product_id, $champ );
+			}
+		}
+	}
+
+	return $map;
 }
 
 add_action( 'jet-form-builder/custom-action/gacct_valider_demande', 'gacct_demande_garde_serveur', 10, 2 );

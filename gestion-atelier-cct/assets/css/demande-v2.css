@@ -1129,6 +1129,51 @@
 	grid-template-columns: 1fr 1fr;
 	gap: 0 12px;
 }
+/* Sous-écrans de l'étape matériel (09/09/2026). */
+.gacct-v2 .gacct-v2-mat-compteur {
+	margin: 0 0 6px;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--v2-teal);
+}
+.gacct-v2 .gacct-v2-mat-compteur[hidden],
+.gacct-v2 .gacct-v2-mat-done[hidden] {
+	display: none !important;
+}
+.gacct-v2 .gacct-v2-mat-done {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 0 0 16px;
+}
+.gacct-v2 .gacct-v2-mat-card {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	background: var(--v2-teal-soft);
+	border: 1.5px solid var(--v2-teal);
+	border-radius: 12px;
+	padding: 10px 14px;
+}
+.gacct-v2 .gacct-v2-mat-card .gacct-v2-c-infos small {
+	display: block;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--v2-teal);
+}
+.gacct-v2 .gacct-v2-mat-card .gacct-v2-c-infos strong {
+	display: block;
+	font-size: 14px;
+}
+.gacct-v2 .gacct-v2-equip-bloc[hidden],
+.gacct-v2 .gacct-v2-equip-groupe[hidden] {
+	display: none !important;
+}
+
 /* Selecteur du secours (09/09/2026) : reprend le combo de la voile. */
 .gacct-v2 .gacct-v2-secours-sel {
 	margin: 0 0 12px;
