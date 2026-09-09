@@ -418,9 +418,13 @@ function gacct_pay_format_date( $timestamp ) {
  * La commande attend-elle un virement ? (bacs + statut en attente)
  */
 function gacct_pay_order_awaits_transfer( $order ) {
+	// Phase de SOLDE Kojito : un virement de solde annoncé n'est pas un acompte
+	// attendu (recette du 09/09/2026 : le détail de commande réaffichait le RIB
+	// de l'acompte et l'échéance d'annulation).
 	return $order instanceof WC_Order
 		&& 'bacs' === $order->get_payment_method()
-		&& $order->has_status( array( 'on-hold', 'pending' ) );
+		&& $order->has_status( array( 'on-hold', 'pending' ) )
+		&& ! in_array( (string) $order->get_meta( '_kojito_phase_paiement' ), array( 'solde', 'solde_paye' ), true );
 }
 
 /**

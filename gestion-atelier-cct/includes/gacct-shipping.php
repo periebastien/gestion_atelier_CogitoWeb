@@ -676,7 +676,7 @@ function gacct_ship_form_html( $order, $info, $args = array() ) {
 		$html .= '<input type="text" id="' . esc_attr( $uid . '-number' ) . '" name="gacct_ship_number"'
 			. ' value="' . esc_attr( $number ) . '"'
 			. ' placeholder="' . esc_attr( gacct_ship_text( 'placeholder' ) ) . '"'
-			. ' minlength="4" maxlength="40" pattern="[A-Za-z0-9 \-]{4,40}" required>';
+			. ' minlength="4" maxlength="40" pattern="[-A-Za-z0-9 ]{4,40}" required>';
 	}
 	$html .= '</p>';
 
