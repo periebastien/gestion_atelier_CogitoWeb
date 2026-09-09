@@ -1860,7 +1860,210 @@
 			} else {
 				form.appendChild( equipBloc );
 			}
+			secoursInitSelecteur( equipBloc );
 			return equipBloc;
+		}
+
+		/* Selecteur du parachute de secours (09/09/2026) : meme mecanique que la
+		   recherche de voile (referentiel JSON gacct-secours.php, quelques lettres,
+		   carte de confirmation, « Mon secours n est pas dans la liste »). Les champs
+		   JFB secours_marque / secours_modele restent la source de verite : le
+		   selecteur les remplit et les masque, le mode libre les montre. La taille
+		   devient une liste quand le modele est connu. */
+		var secours = { liste: [], ui: null, choisi: null, manuel: false, pret: false };
+
+		function secoursEcrire( el, valeur ) {
+			if ( ! el ) { return; }
+			el.value = valeur;
+			el.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+			el.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+		}
+
+		function secoursInitSelecteur( bloc ) {
+			var groupe = bloc ? bloc.querySelector( '.gacct-v2-equip-groupe-secours' ) : null;
+			var grille = groupe ? groupe.querySelector( '.gacct-v2-equip-grille' ) : null;
+			var inMarque = form.querySelector( '[name="secours_marque"]' );
+			var inModele = form.querySelector( '[name="secours_modele"]' );
+			var inTaille = form.querySelector( '[name="secours_taille"]' );
+			if ( ! groupe || ! grille || ! inMarque || ! inModele || ! v2.secoursUrl ) {
+				return;
+			}
+			var rowMarque = inMarque.closest( '.jet-form-builder-row' );
+			var rowModele = inModele.closest( '.jet-form-builder-row' );
+			var rowTaille = inTaille ? inTaille.closest( '.jet-form-builder-row' ) : null;
+
+			var sel = document.createElement( 'div' );
+			sel.className = 'gacct-v2-secours-sel';
+			sel.innerHTML =
+				'<div class="gacct-v2-combo gacct-v2-secours-combo">' +
+				'<label class="gacct-v2-combo-label" for="gacctV2SecoursSearch">' + escapeHtml( v2i18n.secoursComboLabel || 'Marque et modèle du secours' ) + '</label>' +
+				'<input type="text" id="gacctV2SecoursSearch" autocomplete="off" placeholder="' + escapeHtml( v2i18n.secoursComboPlaceholder || '' ) + '">' +
+				'<div class="gacct-v2-sugg" role="listbox"></div>' +
+				'<p class="gacct-v2-aide">' + escapeHtml( v2i18n.secoursComboAide || '' ) + '</p>' +
+				'</div>' +
+				'<div class="gacct-v2-notwrap"><button type="button" class="gacct-v2-notfound">' + plusSvg() + escapeHtml( v2i18n.secoursPasDansListe || 'Mon secours n’est pas dans la liste' ) + '</button></div>' +
+				'<div class="gacct-v2-chosen"><span class="gacct-v2-c-check" aria-hidden="true">✓</span>' +
+				'<span class="gacct-v2-c-infos"><strong></strong><small></small></span>' +
+				'<button type="button" class="gacct-v2-c-edit">' + escapeHtml( v2i18n.modifier || 'Modifier' ) + '</button></div>';
+			groupe.insertBefore( sel, grille );
+
+			var ui = {
+				combo: sel.querySelector( '.gacct-v2-combo' ),
+				input: sel.querySelector( '#gacctV2SecoursSearch' ),
+				sugg: sel.querySelector( '.gacct-v2-sugg' ),
+				notwrap: sel.querySelector( '.gacct-v2-notwrap' ),
+				chosen: sel.querySelector( '.gacct-v2-chosen' ),
+				chosenNom: sel.querySelector( '.gacct-v2-c-infos strong' ),
+				chosenSub: sel.querySelector( '.gacct-v2-c-infos small' ),
+				tailleSelect: null
+			};
+			secours.ui = ui;
+
+			// Liste de tailles a la place du champ texte quand le modele est connu.
+			if ( inTaille && rowTaille ) {
+				var select = document.createElement( 'select' );
+				select.className = 'gacct-v2-secours-taille';
+				select.hidden = true;
+				select.setAttribute( 'aria-label', v2i18n.secoursTailleChoisir || 'Taille' );
+				inTaille.parentNode.insertBefore( select, inTaille.nextSibling );
+				select.addEventListener( 'change', function () {
+					if ( select.value === '__autre__' ) {
+						select.hidden = true;
+						inTaille.hidden = false;
+						inTaille.value = '';
+						inTaille.focus();
+					} else {
+						secoursEcrire( inTaille, select.value );
+					}
+				} );
+				ui.tailleSelect = select;
+			}
+
+			function montrer( mode ) {
+				// mode : 'recherche' | 'choisi' | 'manuel'
+				ui.combo.style.display = mode === 'recherche' ? '' : 'none';
+				ui.notwrap.style.display = mode === 'recherche' ? '' : 'none';
+				ui.chosen.classList.toggle( 'is-on', mode === 'choisi' );
+				if ( rowMarque ) { rowMarque.hidden = mode !== 'manuel'; }
+				if ( rowModele ) { rowModele.hidden = mode !== 'manuel'; }
+				if ( ui.tailleSelect && inTaille ) {
+					var liste = mode === 'choisi' && secours.choisi && secours.choisi.t.length;
+					ui.tailleSelect.hidden = ! liste;
+					inTaille.hidden = !! liste;
+				}
+			}
+
+			function chercher( q ) {
+				var nq = norm( q );
+				if ( nq.length < 2 ) { return []; }
+				var tokens = nq.split( ' ' );
+				var res = [];
+				secours.liste.forEach( function ( s ) {
+					for ( var i = 0; i < tokens.length; i++ ) {
+						if ( s.k.indexOf( tokens[ i ] ) === -1 ) { return; }
+					}
+					var nm = norm( s.mo ), score = 3;
+					if ( nm.indexOf( nq ) === 0 ) { score = 0; }
+					else if ( ( ' ' + nm ).indexOf( ' ' + nq ) > -1 ) { score = 1; }
+					else if ( norm( s.m ).indexOf( nq ) === 0 ) { score = 2; }
+					res.push( { s: s, score: score } );
+				} );
+				res.sort( function ( a, b ) { return a.score - b.score || a.s.mo.localeCompare( b.s.mo ); } );
+				return res.slice( 0, 12 ).map( function ( r ) { return r.s; } );
+			}
+
+			function formeLib( f ) {
+				var t = v2i18n.secoursForme || {};
+				return t[ f ] || f || '';
+			}
+
+			function renderSugg( q ) {
+				var res = chercher( q ), html = '';
+				res.forEach( function ( s, i ) {
+					html += '<button type="button" class="gacct-v2-s-item" data-i="' + s.i + '">' +
+						'<span class="gacct-v2-s-txt"><strong>' + escapeHtml( s.mo ) + '</strong><span class="gacct-v2-s-brand">' + escapeHtml( s.m ) + '</span></span>' +
+						( s.f ? '<span class="gacct-v2-s-year">' + escapeHtml( formeLib( s.f ) ) + '</span>' : '' ) + '</button>';
+				} );
+				if ( ! res.length && norm( q ).length >= 2 ) {
+					html += '<div class="gacct-v2-s-empty">' + escapeHtml( ( v2i18n.secoursComboVide || 'Aucun secours trouvé pour « %s »' ).replace( '%s', q ) ) + '</div>';
+				}
+				html += '<button type="button" class="gacct-v2-s-other">' + plusSvg() + escapeHtml( v2i18n.secoursPasDansListe || 'Mon secours n’est pas dans la liste' ) + '</button>';
+				ui.sugg.innerHTML = html;
+				ui.sugg.classList.add( 'is-open' );
+			}
+			function fermer() { ui.sugg.classList.remove( 'is-open' ); }
+
+			function choisir( s ) {
+				secours.choisi = s;
+				secours.manuel = false;
+				secoursEcrire( inMarque, s.m );
+				secoursEcrire( inModele, s.mo );
+				ui.chosenNom.textContent = s.m + ' ' + s.mo;
+				ui.chosenSub.textContent = s.f ? formeLib( s.f ) : '';
+				if ( ui.tailleSelect ) {
+					var opts = '<option value="">' + escapeHtml( v2i18n.secoursTailleChoisir || 'Choisir la taille…' ) + '</option>';
+					s.t.forEach( function ( t ) { opts += '<option value="' + escapeHtml( t ) + '">' + escapeHtml( t ) + '</option>'; } );
+					opts += '<option value="__autre__">' + escapeHtml( v2i18n.secoursTailleAutre || 'Autre taille' ) + '</option>';
+					ui.tailleSelect.innerHTML = opts;
+					if ( inTaille && s.t.indexOf( inTaille.value ) > -1 ) { ui.tailleSelect.value = inTaille.value; }
+					else if ( inTaille && inTaille.value ) { ui.tailleSelect.value = '__autre__'; }
+				}
+				fermer();
+				effaceErreur( 'secours' );
+				montrer( 'choisi' );
+				if ( ui.tailleSelect && inTaille && ui.tailleSelect.value === '__autre__' ) { ui.tailleSelect.hidden = true; inTaille.hidden = false; }
+			}
+			function manuel() {
+				secours.choisi = null;
+				secours.manuel = true;
+				fermer();
+				montrer( 'manuel' );
+				inMarque.focus();
+			}
+			function recherche() {
+				secours.choisi = null;
+				secours.manuel = false;
+				secoursEcrire( inMarque, '' );
+				secoursEcrire( inModele, '' );
+				ui.input.value = '';
+				montrer( 'recherche' );
+				ui.input.focus();
+			}
+			secours.recherche = recherche;
+
+			ui.input.addEventListener( 'input', function () { renderSugg( ui.input.value ); } );
+			ui.input.addEventListener( 'focus', function () { if ( ui.input.value.trim() ) { renderSugg( ui.input.value ); } } );
+			document.addEventListener( 'click', function ( e ) { if ( ! ui.combo.contains( e.target ) ) { fermer(); } } );
+			ui.sugg.addEventListener( 'click', function ( e ) {
+				var item = e.target.closest( '.gacct-v2-s-item' );
+				if ( item ) { choisir( secours.liste[ parseInt( item.dataset.i, 10 ) ] ); return; }
+				if ( e.target.closest( '.gacct-v2-s-other' ) ) { manuel(); }
+			} );
+			sel.querySelector( '.gacct-v2-notfound' ).addEventListener( 'click', manuel );
+			sel.querySelector( '.gacct-v2-c-edit' ).addEventListener( 'click', recherche );
+
+			// Chargement du referentiel (statique, cache navigateur). Un brouillon
+			// ou un retour arriere avec marque + modele deja saisis retrouve sa carte.
+			montrer( 'recherche' );
+			window.fetch( v2.secoursUrl )
+				.then( function ( r ) { return r.json(); } )
+				.then( function ( data ) {
+					secours.liste = ( data.secours || [] ).map( function ( t, i ) {
+						return { i: i, m: t[ 0 ], mo: t[ 1 ], f: t[ 2 ] || '', t: t[ 3 ] || [], k: norm( t[ 0 ] + ' ' + t[ 1 ] ) };
+					} );
+					secours.pret = true;
+					secoursRetrouver();
+				} )
+				.catch( function () { manuel(); } );
+
+			function secoursRetrouver() {
+				var m = norm( inMarque.value ), mo = norm( inModele.value );
+				if ( ! m && ! mo ) { return; }
+				var trouve = null;
+				secours.liste.forEach( function ( s ) { if ( ! trouve && norm( s.m ) === m && norm( s.mo ) === mo ) { trouve = s; } } );
+				if ( trouve ) { choisir( trouve ); } else { montrer( 'manuel' ); secours.manuel = true; }
+			}
+			secours.retrouver = secoursRetrouver;
 		}
 
 		/** Lignes du bloc voile (à masquer quand aucune voile n'est concernée). */
@@ -1890,7 +2093,10 @@
 				}
 				if ( groupeP ) {
 					groupeP.hidden = ! besoin.secours;
-					if ( ! besoin.secours ) { groupeP.querySelectorAll( 'input' ).forEach( function ( i ) { i.value = ''; } ); }
+					if ( ! besoin.secours ) {
+						groupeP.querySelectorAll( 'input' ).forEach( function ( i ) { i.value = ''; } );
+						if ( secours.ui && ( secours.choisi || secours.manuel ) ) { secours.recherche(); }
+					}
 				}
 				bloc.hidden = ! ( besoin.secours || besoin.sellette );
 			}

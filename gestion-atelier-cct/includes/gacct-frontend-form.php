@@ -179,6 +179,9 @@ function gacct_demande_v2_config() {
 		'gacct_demande_v2_config',
 		array(
 			'voilesUrl' => function_exists( 'gacct_voiles_json_url' ) ? gacct_voiles_json_url() : '',
+			// Referentiel des parachutes de secours (gacct-secours.php, 09/09/2026) :
+			// recherche « quelques lettres » du bloc secours de l etape 2.
+			'secoursUrl' => function_exists( 'gacct_secours_json_url' ) ? gacct_secours_json_url() : '',
 			// Suppléments biplace par groupe ('voile' / 'secours') : produit, prix, acompte.
 			'biplace'   => $biplace,
 			// Produits « demande de devis » (carte réparation, exclusive des suspentes).
@@ -255,6 +258,21 @@ function gacct_demande_v2_config() {
 				'materielEquip'   => __( 'Décrivez le matériel concerné par vos prestations : nous préparons votre rapport avec ces informations.', 'gestion-atelier-cct' ),
 				'equipSellette'   => __( 'Votre sellette', 'gestion-atelier-cct' ),
 				'equipSecours'    => __( 'Votre parachute de secours', 'gestion-atelier-cct' ),
+				'secoursComboLabel' => __( 'Marque et modèle du secours', 'gestion-atelier-cct' ),
+				'secoursComboPlaceholder' => __( 'Par exemple : shine, yeti, octagon…', 'gestion-atelier-cct' ),
+				'secoursComboAide' => __( 'Tapez les premières lettres du modèle : la liste se remplit toute seule.', 'gestion-atelier-cct' ),
+				'secoursComboVide' => __( 'Aucun secours trouvé pour « %s »', 'gestion-atelier-cct' ),
+				'secoursPasDansListe' => __( 'Mon secours n’est pas dans la liste', 'gestion-atelier-cct' ),
+				'secoursTailleChoisir' => __( 'Choisir la taille…', 'gestion-atelier-cct' ),
+				'secoursTailleAutre' => __( 'Autre taille', 'gestion-atelier-cct' ),
+				'secoursForme'    => array(
+					'rond'       => __( 'rond', 'gestion-atelier-cct' ),
+					'carré'      => __( 'carré', 'gestion-atelier-cct' ),
+					'rogallo'    => __( 'rogallo', 'gestion-atelier-cct' ),
+					'triangle'   => __( 'triangle', 'gestion-atelier-cct' ),
+					'pentagonal' => __( 'pentagonal', 'gestion-atelier-cct' ),
+					'octogonal'  => __( 'octogonal', 'gestion-atelier-cct' ),
+				),
 				'recapSellette'   => __( 'Sellette', 'gestion-atelier-cct' ),
 				'recapSecours'    => __( 'Secours', 'gestion-atelier-cct' ),
 				'erreurDate'      => __( 'Choisissez un jour disponible dans le calendrier.', 'gestion-atelier-cct' ),
