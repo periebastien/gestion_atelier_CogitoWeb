@@ -215,6 +215,10 @@ function gacct_secours_client_texts() {
 			'inconnu'   => __( 'Date de pliage inconnue', 'gestion-atelier-cct' ),
 		),
 		'demander'    => __( 'Demander un pliage', 'gestion-atelier-cct' ),
+		'rappel_case' => __( 'Me rappeler par e-mail un mois avant l’échéance de pliage', 'gestion-atelier-cct' ),
+		'rappel_off'  => __( 'Les rappels de pliage sont désactivés. Vous ne recevrez plus d’e-mail à ce sujet.', 'gestion-atelier-cct' ),
+		'rappel_on'   => __( 'Les rappels de pliage sont activés.', 'gestion-atelier-cct' ),
+		'enregistrer' => __( 'Enregistrer', 'gestion-atelier-cct' ),
 		'voir_dossier' => __( 'Voir le dossier', 'gestion-atelier-cct' ),
 	) );
 }

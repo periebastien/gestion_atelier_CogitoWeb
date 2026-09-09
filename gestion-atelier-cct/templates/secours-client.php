@@ -18,6 +18,10 @@ $fmt = static function ( $ymd ) {
 	<h3 class="gacct-sec-titre"><?php echo esc_html( $texts['titre'] ); ?><?php if ( $secours ) : ?> <span class="gacct-sec-count"><?php echo count( $secours ); ?></span><?php endif; ?></h3>
 	<p class="gacct-sec-intro"><?php echo esc_html( $texts['intro'] ); ?></p>
 
+	<?php if ( isset( $_GET['rappel'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
+		<p class="gacct-sec-notice" role="status"><?php echo esc_html( 'off' === $_GET['rappel'] ? $texts['rappel_off'] : $texts['rappel_on'] ); // phpcs:ignore ?></p>
+	<?php endif; ?>
+
 	<?php if ( ! $secours ) : ?>
 		<p class="gacct-sec-vide"><?php echo esc_html( $texts['vide'] ); ?></p>
 	<?php else : ?>
@@ -49,5 +53,14 @@ $fmt = static function ( $ymd ) {
 				</article>
 			<?php endforeach; ?>
 		</div>
+	<?php endif; ?>
+
+	<?php if ( $secours && function_exists( 'gacct_secours_rappel_actif' ) ) : ?>
+		<form method="post" class="gacct-sec-rappel">
+			<?php wp_nonce_field( 'gacct_secours_rappel', '_gacct_secours_rappel_nonce' ); ?>
+			<input type="hidden" name="gacct_secours_rappel_form" value="1">
+			<label><input type="checkbox" name="rappel_on" value="1" <?php checked( gacct_secours_rappel_actif() ); ?>> <?php echo esc_html( $texts['rappel_case'] ); ?></label>
+			<button type="submit" class="gacct-sec-btn gacct-sec-btn--ghost"><?php echo esc_html( $texts['enregistrer'] ); ?></button>
+		</form>
 	<?php endif; ?>
 </section>

@@ -148,6 +148,51 @@
 	background: var(--sec-teal-dark);
 }
 
+.gacct-sec-notice {
+	margin: 0 0 14px;
+	padding: 10px 14px;
+	border-radius: var(--sec-radius);
+	background: var(--sec-green-soft);
+	color: var(--sec-green-ink);
+	font-size: 14px;
+}
+.gacct-sec-rappel {
+	margin-top: 16px;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px 16px;
+	font-size: 14px;
+}
+.gacct-sec-rappel label {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+}
+.gacct-sec-rappel input {
+	width: 18px;
+	height: 18px;
+	margin: 0;
+	accent-color: var(--sec-teal);
+}
+/* Bouton natif : le thème stylise `button`, on force les règles utiles. */
+.gacct-sec button.gacct-sec-btn--ghost {
+	background: transparent !important;
+	border: 1.5px solid var(--sec-teal) !important;
+	border-radius: var(--sec-radius);
+	color: var(--sec-teal-dark) !important;
+	box-shadow: none;
+	padding: 8px 14px;
+	font: inherit;
+	font-size: 14px;
+	font-weight: 700;
+	cursor: pointer;
+}
+.gacct-sec button.gacct-sec-btn--ghost:hover {
+	background: var(--sec-teal-soft) !important;
+}
+
 @media (max-width: 600px) {
 	.gacct-sec { margin-top: 24px; }
 	.gacct-sec-liste { grid-template-columns: 1fr; }

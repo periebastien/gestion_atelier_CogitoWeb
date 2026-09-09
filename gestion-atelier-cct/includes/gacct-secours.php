@@ -548,6 +548,17 @@ function gacct_secours_render_config_tab() {
 			</table>
 		<?php endif; ?>
 
+		<?php $log = get_option( GACCT_SECOURS_RAPPEL_LOG_OPT, array() ); ?>
+		<p class="description" style="margin-top:12px">
+			<?php
+			if ( ! empty( $log['quand'] ) ) {
+				printf( esc_html__( 'Rappel annuel de pliage : dernier passage le %1$s, %2$d client(s) examinés, %3$d e-mail(s) envoyés dont %4$d relance(s). Modèles dans Gestion Atelier > Paiements & relances.', 'gestion-atelier-cct' ), esc_html( mysql2date( 'd/m/Y H:i', $log['quand'] ) ), (int) $log['clients'], (int) $log['emails'], (int) $log['relances'] );
+			} else {
+				esc_html_e( 'Rappel annuel de pliage : aucun passage encore (tous les jours à 9 h). Modèles dans Gestion Atelier > Paiements & relances.', 'gestion-atelier-cct' );
+			}
+			?>
+		</p>
+
 		<hr class="wp-header-end" style="margin:24px 0">
 
 		<h2><?php esc_html_e( 'Liste des parachutes de secours', 'gestion-atelier-cct' ); ?> <span class="count">(<?php echo (int) $total; ?>)</span></h2>
