@@ -234,6 +234,23 @@ function gacct_secours_client_shortcode() {
 	return (string) ob_get_clean();
 }
 
+/**
+ * Titre de section de la page « Mon matériel », même style que « Mes parachutes
+ * de secours » : `[gacct_titre_section texte="Mes voiles" compteur="voiles"]`.
+ * compteur : voiles (matériels suivis du client) | secours | rien.
+ */
+add_shortcode( 'gacct_titre_section', function ( $atts ) {
+	$a = shortcode_atts( array( 'texte' => '', 'compteur' => '' ), $atts );
+	$n = null;
+	if ( 'voiles' === $a['compteur'] && function_exists( 'gacct_demande_materiels_client' ) ) {
+		$n = count( gacct_demande_materiels_client() );
+	} elseif ( 'secours' === $a['compteur'] ) {
+		$n = count( gacct_secours_client() );
+	}
+	return '<h3 class="gacct-sec-titre gacct-sec-titre-seul">' . esc_html( $a['texte'] )
+		. ( null !== $n && $n > 0 ? ' <span class="gacct-sec-count">' . (int) $n . '</span>' : '' ) . '</h3>';
+} );
+
 add_action( 'wp_enqueue_scripts', function () {
 	if ( ! function_exists( 'gacct_dash_should_enqueue' ) || ! gacct_dash_should_enqueue() ) {
 		return;

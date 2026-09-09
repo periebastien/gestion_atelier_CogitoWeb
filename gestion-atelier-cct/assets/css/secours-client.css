@@ -4,7 +4,13 @@
  * Même registre que address.css : variables --gacct-* du thème, replis Altitude.
  * ============================================================================= */
 
-.gacct-sec {
+/* Titre de section réutilisé pour « Mes voiles » (shortcode [gacct_titre_section]). */
+.gacct-sec-titre-seul {
+	margin: 0 0 12px;
+}
+
+.gacct-sec,
+.gacct-sec-titre-seul {
 	--sec-ink:        var(--gacct-text, #1a1a1a);
 	--sec-ink-3:      var(--gacct-dash-ink-3, #6b6b6b);
 	--sec-teal:       var(--gacct-accent, #20c4c3);
@@ -127,18 +133,19 @@
 	display: flex;
 	gap: 8px;
 }
+/* Action secondaire, même registre que « Recommander une révision » du tableau des voiles. */
 .gacct-sec-btn {
 	display: inline-block;
 	padding: 10px 16px;
 	border-radius: var(--sec-radius);
-	background: var(--sec-yellow);
-	color: var(--sec-ink) !important;
+	background: var(--sec-teal);
+	color: #fff !important;
 	font-size: 14px;
 	font-weight: 700;
 	text-decoration: none !important;
 }
 .gacct-sec-btn:hover {
-	filter: brightness(0.96);
+	background: var(--sec-teal-dark);
 }
 
 @media (max-width: 600px) {
