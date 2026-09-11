@@ -215,6 +215,16 @@ function gacct_op_access_denied_redirect() {
 add_action( 'admin_page_access_denied', 'gacct_op_access_denied_redirect' );
 
 /**
+ * Écrans admin (admin.php?page=…) ouverts aux opérateurs purs : la console, plus
+ * ce que d'autres modules déclarent (filtre `gacct_op_allowed_pages`, ex. les
+ * révisions importées de gacct-import-historique, 11/09/2026).
+ */
+function gacct_op_allowed_pages() {
+	$pages = apply_filters( 'gacct_op_allowed_pages', array( GACCT_OP_MENU_SLUG ) );
+	return array_values( array_unique( array_filter( array_map( 'strval', (array) $pages ) ) ) );
+}
+
+/**
  * Menus admin réduits pour le rôle atelier : seule la console reste
  * (le menu Profil est retiré mais profile.php reste accessible pour
  * changer son mot de passe).
@@ -229,7 +239,7 @@ function gacct_op_trim_admin_menu() {
 	if ( is_array( $menu ) ) {
 		foreach ( $menu as $position => $item ) {
 			$slug = isset( $item[2] ) ? $item[2] : '';
-			if ( $slug && GACCT_OP_MENU_SLUG !== $slug && false === strpos( $slug, 'separator' ) ) {
+			if ( $slug && ! in_array( $slug, gacct_op_allowed_pages(), true ) && false === strpos( $slug, 'separator' ) ) {
 				remove_menu_page( $slug );
 			}
 		}
@@ -255,7 +265,7 @@ function gacct_op_lock_admin_screens() {
 
 	if ( 'admin.php' === $pagenow ) {
 		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
-		if ( GACCT_OP_MENU_SLUG !== $page ) {
+		if ( ! in_array( $page, gacct_op_allowed_pages(), true ) ) {
 			wp_safe_redirect( gacct_op_console_url() );
 			exit;
 		}
