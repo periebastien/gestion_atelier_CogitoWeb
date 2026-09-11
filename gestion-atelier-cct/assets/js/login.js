@@ -51,6 +51,7 @@
 		body.set('nonce', gacctLogin.nonce);
 		body.set('email', state.email);
 		body.set('redirect_to', root.dataset.redirect || '');
+		body.set('context', root.dataset.context || 'compte');
 		Object.keys(data || {}).forEach(function (k) { body.set(k, data[k]); });
 		return fetch(gacctLogin.ajax, {
 			method: 'POST',

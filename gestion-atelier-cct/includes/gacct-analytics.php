@@ -67,7 +67,7 @@ function gacct_ga_page_type() {
 		$slug = (string) get_post_field( 'post_name', get_queried_object_id() );
 		$map  = array(
 			'demande-intervention'     => 'demande',
-			'login-demande-intervention' => 'connexion',
+			'connexion'                => 'connexion',
 			'sinscrire'                => 'inscription',
 			'mot-de-passe-oublie'      => 'mot-de-passe',
 			'devis-a-valider'          => 'devis',

@@ -34,26 +34,32 @@ function gacct_login_texts() {
 	$texts = array(
 		'email_label'       => 'Adresse e-mail',
 		'email_placeholder' => 'vous@exemple.fr',
-		'email_hint'        => 'Nous vérifions si vous avez déjà un compte chez nous.',
+		'email_hint'        => 'Nous vérifions si vous avez déjà un compte.',
+		'google'            => 'Continuer avec Google',
+		'or_email'          => 'ou avec votre adresse e-mail',
+		'demande_step'      => 'Étape %1$s sur %2$s',
+		'demande_step_name' => 'Vous',
+		'demande_title'     => 'Votre demande d\'intervention',
+		'demande_intro'     => 'Commencez par vous identifier, ça prend dix secondes.',
 		'continue'          => 'Continuer',
 		'change'            => 'Modifier',
 		'hello'             => 'Bonjour %s',
 		'known_title'       => 'Content de vous revoir',
-		'known_intro'       => 'Saisissez votre mot de passe pour retrouver votre matériel et vos révisions.',
+		'known_intro'       => 'Votre mot de passe, et on retrouve votre matériel et vos anciennes révisions.',
 		'password_label'    => 'Mot de passe',
 		'remember'          => 'Se souvenir de moi',
 		'signin'            => 'Se connecter',
 		'forgot'            => 'Mot de passe oublié ?',
 		'forgot_send'       => 'Recevoir un lien pour choisir mon mot de passe',
-		'imported_intro'    => 'Votre compte a été repris de notre ancien site. Votre ancien mot de passe fonctionne ; sinon, demandez un lien pour en choisir un nouveau.',
+		'imported_intro'    => 'Votre compte vient de notre ancien site : votre ancien mot de passe fonctionne, sinon demandez un lien pour en choisir un nouveau.',
 		'link_sent'         => 'C\'est envoyé. Ouvrez l\'e-mail reçu et suivez le lien pour choisir votre mot de passe.',
 		'new_title'         => 'Bienvenue',
-		'new_intro'         => 'Aucun compte avec cette adresse. Continuez : votre compte est créé à l\'instant et vous passez directement à votre demande. Vous recevrez un e-mail pour choisir votre mot de passe, à votre rythme.',
+		'new_intro'         => 'Aucun compte avec cette adresse : on le crée à l\'instant, vous choisirez votre mot de passe plus tard par e-mail.',
 		'new_password'      => 'Choisissez un mot de passe (8 caractères minimum)',
 		'register'          => 'Continuer vers ma demande',
 		'welcome_subject'   => 'Bienvenue chez %s : choisissez votre mot de passe',
 		'welcome_body'      => "Bonjour,\n\nVotre compte %1\$s vient d'être créé avec l'adresse %2\$s.\n\nPour choisir votre mot de passe et retrouver votre espace client (vos demandes, votre matériel, vos rapports), ouvrez ce lien :\n%3\$s\n\nCe lien est valable 24 heures. Passé ce délai, utilisez « Mot de passe oublié » sur la page de connexion.\n\nÀ bientôt,\nL'équipe %1\$s",
-		'legal'             => 'En créant votre compte, vous acceptez nos <a href="%1$s">conditions générales</a> et notre <a href="%2$s">politique de confidentialité</a>.',
+		'legal'             => 'En continuant, vous acceptez nos <a href="%1$s">conditions générales</a> et notre <a href="%2$s">politique de confidentialité</a>.',
 		'err_email'         => 'Cette adresse e-mail ne semble pas valide.',
 		'err_password'      => 'Le mot de passe ne correspond pas. Réessayez, ou demandez un lien pour en choisir un nouveau.',
 		'err_short'         => 'Le mot de passe doit contenir au moins 8 caractères.',
@@ -104,7 +110,41 @@ function gacct_login_redirect_url( $redirect_to = '' ) {
 
 add_shortcode( 'gacct_connexion', 'gacct_login_ui_shortcode' );
 
-function gacct_login_ui_shortcode() {
+function gacct_login_ui_shortcode( $atts = array() ) {
+	$atts = shortcode_atts( array( 'contexte' => 'compte' ), $atts, 'gacct_connexion' );
+	return gacct_login_ui_render( $atts['contexte'] );
+}
+
+/**
+ * Bouton « Continuer avec Google » (Nextend Social Login), ou rien si le plugin est absent.
+ *
+ * @param string $redirect URL de retour après connexion Google.
+ * @return string
+ */
+function gacct_login_google_button( $redirect ) {
+	if ( ! shortcode_exists( 'nextend_social_login' ) ) {
+		return '';
+	}
+	$t   = gacct_login_texts();
+	$out = do_shortcode( sprintf(
+		'[nextend_social_login provider="google" style="fullwidth" align="center" customlabel="%s" redirect="%s"]',
+		esc_attr( $t['google'] ),
+		esc_url( $redirect )
+	) );
+	return trim( (string) $out );
+}
+
+/**
+ * L'écran d'identification.
+ *
+ * @param string $context 'compte' (page /connexion/, destination Mon compte) ou
+ *                        'demande' (rendu dans la page de demande à la place du
+ *                        formulaire : en-tête « Étape 1 sur 5 », retour sur place).
+ * @return string
+ */
+function gacct_login_ui_render( $context = 'compte' ) {
+	$context = 'demande' === $context ? 'demande' : 'compte';
+
 	if ( is_user_logged_in() ) {
 		return '<p class="gacct-login-logged"><a href="' . esc_url( home_url( '/mon-compte/' ) ) . '">Aller à mon espace client</a></p>';
 	}
@@ -115,6 +155,14 @@ function gacct_login_ui_shortcode() {
 	$redirect_to = isset( $_GET['redirect_to'] ) ? (string) wp_unslash( $_GET['redirect_to'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	$prefill     = isset( $_GET['email'] ) ? sanitize_email( wp_unslash( $_GET['email'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
+	// Contexte demande : on revient exactement ici (query string comprise, ex. ?svc=17).
+	if ( 'demande' === $context ) {
+		$redirect_to = home_url( add_query_arg( array(), $_SERVER['REQUEST_URI'] ) );
+	}
+	$google_redirect = $redirect_to ? $redirect_to : home_url( '/mon-compte/' );
+	$google          = gacct_login_google_button( $google_redirect );
+	$total_steps     = (int) apply_filters( 'gacct_login_demande_total_steps', 5 );
+
 	$cgv  = get_page_by_path( 'conditions-generales-de-vente' );
 	$conf = get_page_by_path( 'politique-de-confidentialite' );
 	$cgv  = $cgv ? get_permalink( $cgv ) : home_url( '/' );
@@ -122,7 +170,20 @@ function gacct_login_ui_shortcode() {
 
 	ob_start();
 	?>
-	<div class="gacct-login" data-redirect="<?php echo esc_attr( $redirect_to ); ?>">
+	<div class="gacct-login gacct-login--<?php echo esc_attr( $context ); ?>" data-redirect="<?php echo esc_attr( $redirect_to ); ?>" data-context="<?php echo esc_attr( $context ); ?>">
+
+		<?php if ( 'demande' === $context ) : ?>
+		<div class="gacct-login-head">
+			<p class="gacct-login-progress"><?php echo wp_kses( sprintf( $t['demande_step'], '<strong>1</strong>', $total_steps ), array( 'strong' => array() ) ); ?> · <strong><?php echo esc_html( $t['demande_step_name'] ); ?></strong></p>
+			<h2 class="gacct-login-title"><?php echo esc_html( $t['demande_title'] ); ?></h2>
+			<p class="gacct-login-intro"><?php echo esc_html( $t['demande_intro'] ); ?></p>
+		</div>
+		<?php endif; ?>
+
+		<?php if ( $google ) : ?>
+		<div class="gacct-login-google"><?php echo $google; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
+		<p class="gacct-login-or"><span><?php echo esc_html( $t['or_email'] ); ?></span></p>
+		<?php endif; ?>
 
 		<form class="gacct-login-step gacct-login-step--email" data-step="email" novalidate>
 			<label class="gacct-login-label" for="gacct-login-email"><?php echo esc_html( $t['email_label'] ); ?></label>
@@ -170,7 +231,11 @@ function gacct_login_ui_shortcode() {
 add_action( 'wp_enqueue_scripts', 'gacct_login_ui_maybe_enqueue' );
 
 function gacct_login_ui_maybe_enqueue() {
-	if ( defined( 'GACCT_LOGIN_PAGE_SLUG' ) && is_page( GACCT_LOGIN_PAGE_SLUG ) && ! is_user_logged_in() ) {
+	if ( is_user_logged_in() ) {
+		return;
+	}
+	if ( ( defined( 'GACCT_LOGIN_PAGE_SLUG' ) && is_page( GACCT_LOGIN_PAGE_SLUG ) )
+		|| ( defined( 'GACCT_GATED_PAGE_SLUG' ) && is_page( GACCT_GATED_PAGE_SLUG ) ) ) {
 		gacct_login_ui_enqueue_assets();
 	}
 }
@@ -327,9 +392,10 @@ function gacct_login_ajax_register() {
 
 	gacct_login_send_welcome( $user );
 
-	// Nouveau client : direction la demande d'intervention (sauf ticket du portier ou redirect_to).
-	$target = gacct_login_redirect_url( $redirect );
-	if ( home_url( '/mon-compte/' ) === $target ) {
+	// Nouveau client venu pour une demande : direction le formulaire (sauf ticket du portier ou redirect_to).
+	$context = isset( $_POST['context'] ) ? sanitize_key( wp_unslash( $_POST['context'] ) ) : 'compte';
+	$target  = gacct_login_redirect_url( $redirect );
+	if ( 'demande' === $context && home_url( '/mon-compte/' ) === $target ) {
 		$page   = defined( 'GACCT_GATED_PAGE_SLUG' ) ? get_page_by_path( GACCT_GATED_PAGE_SLUG ) : null;
 		$target = $page ? get_permalink( $page ) : $target;
 	}

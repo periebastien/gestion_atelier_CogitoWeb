@@ -48,3 +48,17 @@
 @media (prefers-reduced-motion: reduce) {
 	.gacct-login-input, .gacct-login-btn, .gacct-login-link { transition: none; }
 }
+
+/* Google en tête (11/09/2026) + contexte « demande » (écran rendu à la place du formulaire) */
+.gacct-login-head { margin: 0 0 18px; }
+.gacct-login-progress { font-size: 15px; font-weight: 600; color: #555; margin: 0 0 10px; }
+.gacct-login-progress strong { color: #1a1a1a; }
+.gacct-login-title { font-size: 26px; line-height: 1.2; font-weight: 800; color: #1a1a1a; margin: 0 0 8px; }
+.gacct-login-google .nsl-container { margin: 0 !important; }
+.gacct-login-google .nsl-container-block .nsl-container-buttons { display: block; }
+.gacct-login-google .nsl-container-block .nsl-container-buttons a { display: block; max-width: none; margin: 0; }
+.gacct-login-google .nsl-container-buttons a .nsl-button { width: 100%; border-radius: 999px !important; justify-content: center; }
+.gacct-login-or { display: flex; align-items: center; gap: 12px; margin: 18px 0 14px; font-size: 13px; color: #777; text-align: center; }
+.gacct-login-or::before, .gacct-login-or::after { content: ""; flex: 1; height: 1px; background: #e2e2e2; }
+.gacct-login--demande { max-width: 560px; margin: 0 auto; padding: 28px 24px; background: #fff; border: 1px solid #e8e8e8; border-radius: 16px; }
+@media (max-width: 767px) { .gacct-login--demande { padding: 20px 14px; } .gacct-login-title { font-size: 22px; } }

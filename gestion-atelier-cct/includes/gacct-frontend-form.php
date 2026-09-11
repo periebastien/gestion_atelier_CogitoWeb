@@ -204,6 +204,9 @@ function gacct_demande_v2_config() {
 			),
 			// Ordre inversé le 08/09/2026 (décision Bastien) : les prestations
 			// d'abord, puis le matériel adapté à ce qui est coché.
+			// L'identification (e-mail ou Google) est l'étape 1 depuis le 11/09/2026 :
+			// le formulaire affiche « Étape 2 sur 5 » à « Étape 5 sur 5 ».
+			'etapeOffset' => (int) apply_filters( 'gacct_demande_etape_offset', 1 ),
 			'etapes'    => array(
 				1 => __( 'Vos prestations', 'gestion-atelier-cct' ),
 				2 => __( 'Votre matériel', 'gestion-atelier-cct' ),

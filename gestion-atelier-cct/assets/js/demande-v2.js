@@ -200,13 +200,15 @@
 				return;
 			}
 			var n = pageCourante();
-			var total = pages().length || 4;
+			var offset = parseInt( ( cfg.v2 && cfg.v2.etapeOffset ) || 0, 10 ) || 0;
+			var total = ( pages().length || 4 ) + offset;
+			var shown = n + offset;
 			var etape = ( v2i18n.etapeSur || 'Étape %1$s sur %2$s' )
-				.replace( '%1$s', n )
+				.replace( '%1$s', shown )
 				.replace( '%2$s', total );
 			var nom = etapes[ n ] || '';
 			progressLabel.innerHTML =
-				etape.replace( String( n ), '<strong>' + n + '</strong>' ) +
+				etape.replace( String( shown ), '<strong>' + shown + '</strong>' ) +
 				( nom ? ' · <strong>' + escapeHtml( nom ) + '</strong>' : '' );
 
 			// Segments : page courante + pages passées en accent.

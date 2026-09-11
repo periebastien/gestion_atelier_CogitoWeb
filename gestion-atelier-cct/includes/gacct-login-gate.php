@@ -37,7 +37,7 @@ define( 'GACCT_GATED_PAGE_SLUG', 'demande-intervention' );
 /**
  * Slug de la page de connexion dediee.
  */
-define( 'GACCT_LOGIN_PAGE_SLUG', 'login-demande-intervention' );
+define( 'GACCT_LOGIN_PAGE_SLUG', 'connexion' ); // /login-demande-intervention/ jusqu'au 11/09/2026 (301 par _wp_old_slug)
 
 /**
  * Portier + retour, brancher sur template_redirect (apres que $wp->query_vars
@@ -57,12 +57,25 @@ add_action( 'template_redirect', 'gacct_login_gate_template_redirect' );
 
 function gacct_login_gate_template_redirect() {
 
+	// Ancienne URL de la page de connexion (jusqu'au 11/09/2026) : 301 explicite.
+	if ( is_404() ) {
+		$path = trim( (string) wp_parse_url( (string) $_SERVER['REQUEST_URI'], PHP_URL_PATH ), '/' );
+		if ( 'login-demande-intervention' === $path ) {
+			$page = get_page_by_path( GACCT_LOGIN_PAGE_SLUG );
+			if ( $page ) {
+				wp_safe_redirect( add_query_arg( $_GET, get_permalink( $page ) ), 301 ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				exit;
+			}
+		}
+	}
+
 	// Etape 1 : connecte + sur la page de login -> jamais y rester.
 	if ( is_page( GACCT_LOGIN_PAGE_SLUG ) && is_user_logged_in() ) {
 		$ticket = gacct_login_gate_get_ticket();
 		gacct_login_gate_clear_cookie();
 
-		$fallback = get_permalink( get_page_by_path( GACCT_GATED_PAGE_SLUG ) );
+		// Sans ticket : Mon compte (la page /connexion/ est celle de l'espace client depuis le 11/09/2026).
+		$fallback = home_url( '/mon-compte/' );
 		$target   = $ticket ? $ticket : $fallback;
 
 		if ( $target ) {
@@ -72,17 +85,14 @@ function gacct_login_gate_template_redirect() {
 		return;
 	}
 
-	// Etape 2 : non connecte + page protegee -> memoriser puis rediriger vers le login.
+	// Etape 2 : non connecte + page protegee -> depuis le 11/09/2026 on NE
+	// redirige plus : la page reste la meme et l'ecran d'identification prend
+	// la place du formulaire (gacct_login_gate_replace_form). Le ticket de
+	// retour est quand meme pose (retour de Google, ou navigation entre-temps).
 	if ( is_page( GACCT_GATED_PAGE_SLUG ) && ! is_user_logged_in() ) {
 		$requested_url = home_url( add_query_arg( array(), $_SERVER['REQUEST_URI'] ) );
 
 		gacct_login_gate_set_cookie( $requested_url );
-
-		$login_page = get_page_by_path( GACCT_LOGIN_PAGE_SLUG );
-		if ( $login_page ) {
-			wp_safe_redirect( get_permalink( $login_page ) );
-			exit;
-		}
 		return;
 	}
 
@@ -175,4 +185,26 @@ function gacct_login_gate_clear_cookie() {
 			'samesite' => 'Lax',
 		)
 	);
+}
+
+/**
+ * Page protegee, visiteur non connecte : le widget JetFormBuilder du formulaire
+ * est remplace par l'ecran d'identification (contexte « demande », Google en
+ * tete, e-mail ensuite). Le reste de la page (hero, reassurance) est conserve.
+ * Une fois connecte, la page se recharge et le formulaire apparait.
+ */
+add_filter( 'elementor/widget/render_content', 'gacct_login_gate_replace_form', 10, 2 );
+
+function gacct_login_gate_replace_form( $content, $widget ) {
+	if ( is_user_logged_in() || ! is_page( GACCT_GATED_PAGE_SLUG ) ) {
+		return $content;
+	}
+	if ( ! is_object( $widget ) || 'jet-form-builder-form' !== $widget->get_name() ) {
+		return $content;
+	}
+	if ( ! function_exists( 'gacct_login_ui_render' ) ) {
+		return $content;
+	}
+
+	return gacct_login_ui_render( 'demande' );
 }
