@@ -109,10 +109,8 @@
 	/* Étape 2b : création */
 	steps.create.addEventListener('submit', function (e) {
 		e.preventDefault();
-		var pw = steps.create.querySelector('input[name="password"]').value;
-		if (pw.length < 8) { say(T.err_short, 'error'); return; }
 		busy(steps.create, true);
-		post('gacct_login_register', { password: pw }).then(function (res) {
+		post('gacct_login_register', {}).then(function (res) {
 			if (!res || !res.success) {
 				busy(steps.create, false);
 				if (res && res.data && res.data.exists) { show('password'); }

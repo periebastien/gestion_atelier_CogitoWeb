@@ -4,7 +4,8 @@
  *
  * Un seul champ à l'entrée : l'adresse e-mail. Selon qu'elle est connue ou non,
  * le même écran se prolonge en connexion (mot de passe, lien de réinitialisation)
- * ou en création de compte (mot de passe à choisir), sans changer de page. Le
+ * ou en création de compte SANS mot de passe (11/09/2026 : compte créé sur un
+ * clic, mot de passe choisi plus tard via l'e-mail de bienvenue), sans changer de page. Le
  * client fidèle retrouve ainsi son compte et son matériel ; le nouveau client
  * n'a que deux champs à remplir, sur un écran, avant de composer sa demande.
  *
@@ -46,10 +47,12 @@ function gacct_login_texts() {
 		'forgot_send'       => 'Recevoir un lien pour choisir mon mot de passe',
 		'imported_intro'    => 'Votre compte a été repris de notre ancien site. Votre ancien mot de passe fonctionne ; sinon, demandez un lien pour en choisir un nouveau.',
 		'link_sent'         => 'C\'est envoyé. Ouvrez l\'e-mail reçu et suivez le lien pour choisir votre mot de passe.',
-		'new_title'         => 'Créez votre compte',
-		'new_intro'         => 'Aucun compte avec cette adresse. Choisissez un mot de passe : votre compte est créé et vous passez directement à votre demande.',
+		'new_title'         => 'Bienvenue',
+		'new_intro'         => 'Aucun compte avec cette adresse. Continuez : votre compte est créé à l\'instant et vous passez directement à votre demande. Vous recevrez un e-mail pour choisir votre mot de passe, à votre rythme.',
 		'new_password'      => 'Choisissez un mot de passe (8 caractères minimum)',
-		'register'          => 'Créer mon compte et continuer',
+		'register'          => 'Continuer vers ma demande',
+		'welcome_subject'   => 'Bienvenue chez %s : choisissez votre mot de passe',
+		'welcome_body'      => "Bonjour,\n\nVotre compte %1\$s vient d'être créé avec l'adresse %2\$s.\n\nPour choisir votre mot de passe et retrouver votre espace client (vos demandes, votre matériel, vos rapports), ouvrez ce lien :\n%3\$s\n\nCe lien est valable 24 heures. Passé ce délai, utilisez « Mot de passe oublié » sur la page de connexion.\n\nÀ bientôt,\nL'équipe %1\$s",
 		'legal'             => 'En créant votre compte, vous acceptez nos <a href="%1$s">conditions générales</a> et notre <a href="%2$s">politique de confidentialité</a>.',
 		'err_email'         => 'Cette adresse e-mail ne semble pas valide.',
 		'err_password'      => 'Le mot de passe ne correspond pas. Réessayez, ou demandez un lien pour en choisir un nouveau.',
@@ -150,11 +153,6 @@ function gacct_login_ui_shortcode() {
 				<p class="gacct-login-who-mail"><span data-role="email"></span> <button type="button" class="gacct-login-link" data-action="back"><?php echo esc_html( $t['change'] ); ?></button></p>
 			</div>
 			<p class="gacct-login-intro"><?php echo esc_html( $t['new_intro'] ); ?></p>
-			<label class="gacct-login-label" for="gacct-login-newpassword"><?php echo esc_html( $t['new_password'] ); ?></label>
-			<div class="gacct-login-pw">
-				<input class="gacct-login-input" type="password" id="gacct-login-newpassword" name="password" autocomplete="new-password" minlength="8" required>
-				<button type="button" class="gacct-login-eye" aria-label="Afficher le mot de passe" data-action="eye"></button>
-			</div>
 			<button type="submit" class="gacct-login-btn"><?php echo esc_html( $t['register'] ); ?></button>
 			<p class="gacct-login-legal"><?php echo wp_kses( sprintf( $t['legal'], esc_url( $cgv ), esc_url( $conf ) ), array( 'a' => array( 'href' => array() ) ) ); ?></p>
 		</form>
@@ -293,15 +291,19 @@ function gacct_login_ajax_signin() {
  */
 function gacct_login_ajax_register() {
 	$g        = gacct_login_ajax_guard();
-	$password = isset( $_POST['password'] ) ? (string) wp_unslash( $_POST['password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 	$redirect = isset( $_POST['redirect_to'] ) ? (string) wp_unslash( $_POST['redirect_to'] ) : '';
 
-	if ( mb_strlen( $password ) < 8 ) {
-		wp_send_json_error( array( 'message' => $g['texts']['err_short'] ) );
-	}
 	if ( email_exists( $g['email'] ) ) {
 		wp_send_json_error( array( 'message' => $g['texts']['err_exists'], 'exists' => true ) );
 	}
+
+	// Sans mot de passe (11/09/2026, demande Bastien) : le compte est créé avec un
+	// mot de passe aléatoire, le client passe tout de suite à sa demande et reçoit
+	// un e-mail avec le lien « choisir mon mot de passe » (valable 24 h).
+	$password = wp_generate_password( 24, true, true );
+
+	// L'e-mail WooCommerce « nouveau compte » est remplacé par le nôtre (lien de mot de passe).
+	add_filter( 'woocommerce_email_enabled_customer_new_account', '__return_false', 99 );
 
 	if ( function_exists( 'wc_create_new_customer' ) ) {
 		$user_id = wc_create_new_customer( $g['email'], '', $password );
@@ -323,7 +325,47 @@ function gacct_login_ajax_register() {
 	$user = get_user_by( 'id', $user_id );
 	do_action( 'wp_login', $user->user_login, $user );
 
-	wp_send_json_success( array( 'redirect' => gacct_login_redirect_url( $redirect ) ) );
+	gacct_login_send_welcome( $user );
+
+	// Nouveau client : direction la demande d'intervention (sauf ticket du portier ou redirect_to).
+	$target = gacct_login_redirect_url( $redirect );
+	if ( home_url( '/mon-compte/' ) === $target ) {
+		$page   = defined( 'GACCT_GATED_PAGE_SLUG' ) ? get_page_by_path( GACCT_GATED_PAGE_SLUG ) : null;
+		$target = $page ? get_permalink( $page ) : $target;
+	}
+
+	wp_send_json_success( array( 'redirect' => $target ) );
+}
+
+/**
+ * E-mail de bienvenue : lien « choisir mon mot de passe » vers la page front
+ * (mot-de-passe-oublie?key=…&login=…, cf. gacct_lostpassword_reset_cookie).
+ * Texte brut, filtrable (`gacct_login_texts` : welcome_subject / welcome_body).
+ *
+ * @param WP_User $user
+ * @return bool
+ */
+function gacct_login_send_welcome( $user ) {
+	if ( ! $user instanceof WP_User ) {
+		return false;
+	}
+
+	$key = get_password_reset_key( $user );
+	if ( is_wp_error( $key ) ) {
+		return false;
+	}
+
+	$link = function_exists( 'gacct_lostpassword_page_url' )
+		? gacct_lostpassword_page_url( array( 'key' => $key, 'login' => rawurlencode( $user->user_login ) ) )
+		: network_site_url( 'wp-login.php?action=rp&key=' . $key . '&login=' . rawurlencode( $user->user_login ), 'login' );
+
+	$t    = gacct_login_texts();
+	$site = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
+
+	$subject = sprintf( $t['welcome_subject'], $site );
+	$body    = sprintf( $t['welcome_body'], $site, $user->user_email, $link );
+
+	return (bool) wp_mail( $user->user_email, $subject, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
 }
 
 /**
