@@ -26,6 +26,7 @@ $cta_url  = (string) $common['cta_url'];
  * @param string $classes Classes ar-btn-* du wrapper.
  * @return string
  */
+if ( ! function_exists( 'gacct_region_btn' ) ) :
 function gacct_region_btn( $url, $label, $classes ) {
 	$svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"></path></svg>';
 	return sprintf(
@@ -41,6 +42,7 @@ function gacct_region_btn( $url, $label, $classes ) {
 		esc_html( $label )
 	);
 }
+endif;
 ?>
 <div class="ar-region">
 

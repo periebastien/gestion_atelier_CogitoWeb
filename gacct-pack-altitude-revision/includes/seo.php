@@ -90,7 +90,15 @@ function ar_seo_current_slug() {
 	return '';
 }
 
+/** Yoast SEO actif : il porte titres, descriptions, robots et Open Graph (valeurs reprises dans ses metas). */
+function ar_seo_yoast_active() {
+	return defined( 'WPSEO_VERSION' );
+}
+
 add_filter( 'pre_get_document_title', function ( $title ) {
+	if ( ar_seo_yoast_active() ) {
+		return $title;
+	}
 	$slug   = ar_seo_current_slug();
 	$titles = ar_seo_titles();
 	if ( '' === $slug || empty( $titles[ $slug ] ) ) {
@@ -105,7 +113,7 @@ add_filter( 'pre_get_document_title', function ( $title ) {
 
 add_action( 'wp_head', function () {
 	$slug = ar_seo_current_slug();
-	if ( '' === $slug ) {
+	if ( '' === $slug || ar_seo_yoast_active() ) {
 		return;
 	}
 	$desc = ar_seo_descriptions();
@@ -130,6 +138,9 @@ add_action( 'wp_head', function () {
 // noindex via l'API robots de WordPress (une seule balise robots dans la page).
 add_filter( 'wp_robots', function ( $robots ) {
 	$slug = ar_seo_current_slug();
+	if ( ar_seo_yoast_active() ) {
+		return $robots;
+	}
 	if ( '' !== $slug && in_array( $slug, ar_seo_noindex_slugs(), true ) ) {
 		$robots['noindex'] = true;
 		$robots['follow']  = true;
