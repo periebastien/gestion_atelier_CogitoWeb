@@ -54,6 +54,10 @@
 .gacct-login-head { margin: 0 0 18px; }
 .gacct-login-progress { font-size: 15px; font-weight: 600; color: #555; margin: 0 0 10px; }
 .gacct-login-progress strong { color: #1a1a1a; }
+/* Barre de progression identique à celle du formulaire (demande-v2.css) */
+.gacct-login-progress-bar { display: flex; gap: 6px; margin: 0 0 22px; }
+.gacct-login-progress-bar > div { flex: 1; height: 8px; border-radius: 99px; background: #e3e8ee; }
+.gacct-login-progress-bar > div.is-active { background: #20c4c3; }
 .gacct-login-title { font-size: 26px; line-height: 1.2; font-weight: 800; color: #1a1a1a; margin: 0 0 8px; }
 .gacct-login-google .nsl-container { margin: 0 !important; }
 .gacct-login-google .nsl-container-block .nsl-container-buttons { display: block; }

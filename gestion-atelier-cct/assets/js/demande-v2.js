@@ -189,6 +189,16 @@
 				form.insertBefore( progressBar, premierePage );
 			}
 
+			/* Étapes hors formulaire (identification = étape 1 depuis le 11/09/2026) :
+			   un segment « fait » par étape d'offset, devant les segments JFB. */
+			var offsetSeg = parseInt( ( cfg.v2 && cfg.v2.etapeOffset ) || 0, 10 ) || 0;
+			for ( var o = offsetSeg; o > 0; o-- ) {
+				var seg = document.createElement( 'div' );
+				seg.className = 'gacct-v2-progress-offset passed-page';
+				seg.setAttribute( 'aria-hidden', 'true' );
+				progressBar.insertBefore( seg, progressBar.firstChild );
+			}
+
 			progressLabel = document.createElement( 'p' );
 			progressLabel.className = 'gacct-v2-progress-label';
 			progressBar.parentNode.insertBefore( progressLabel, progressBar );

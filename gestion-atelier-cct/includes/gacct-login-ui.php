@@ -175,6 +175,7 @@ function gacct_login_ui_render( $context = 'compte' ) {
 		<?php if ( 'demande' === $context ) : ?>
 		<div class="gacct-login-head">
 			<p class="gacct-login-progress"><?php echo wp_kses( sprintf( $t['demande_step'], '<strong>1</strong>', $total_steps ), array( 'strong' => array() ) ); ?> · <strong><?php echo esc_html( $t['demande_step_name'] ); ?></strong></p>
+			<div class="gacct-login-progress-bar" aria-hidden="true"><?php for ( $i = 1; $i <= $total_steps; $i++ ) : ?><div class="<?php echo 1 === $i ? 'is-active' : ''; ?>"></div><?php endfor; ?></div>
 			<h2 class="gacct-login-title"><?php echo esc_html( $t['demande_title'] ); ?></h2>
 			<p class="gacct-login-intro"><?php echo esc_html( $t['demande_intro'] ); ?></p>
 		</div>
