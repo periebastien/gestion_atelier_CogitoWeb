@@ -6,9 +6,10 @@
 .gacct-login-input:focus { outline: none; border-color: #20c4c3; box-shadow: 0 0 0 3px rgba(32, 196, 195, 0.18); }
 .gacct-login-hint { font-size: 13px; color: #777; margin: 8px 0 0; }
 .gacct-login button.gacct-login-btn, .gacct-login button.gacct-login-btn:hover, .gacct-login button.gacct-login-btn:focus { border: 0; border-style: none; box-shadow: none; }
-.gacct-login button.gacct-login-btn { display: block; width: 100%; border: 0; border-radius: 999px; padding: 14px 26px; margin-top: 18px; font: inherit; font-weight: 800; font-size: 16px; background: #f2b134; color: #1a1a1a; cursor: pointer; transition: filter 150ms, transform 150ms; }
-.gacct-login-btn:hover { filter: brightness(0.96); }
-.gacct-login-btn:active { transform: translateY(1px); }
+/* Même bouton que le CTA « Demande d'intervention » du site : #ffbd20 / #1a1a1a, angles 6 px, survol inversé (11/09/2026). */
+.gacct-login button.gacct-login-btn { display: block; width: 100%; border: 0; border-radius: 6px !important; padding: 13px 22px; margin-top: 18px; font: inherit; font-weight: 800; font-size: 16px; line-height: 1.3; background: #ffbd20; color: #1a1a1a; cursor: pointer; transition: background-color 0.3s, color 0.3s; }
+.gacct-login button.gacct-login-btn:hover, .gacct-login button.gacct-login-btn:focus-visible { background: #1a1a1a; color: #fff; border-radius: 6px !important; }
+.gacct-login button.gacct-login-btn:active { transform: translateY(1px); }
 .gacct-login-btn:disabled { opacity: 0.7; cursor: wait; }
 .gacct-login-btn:focus-visible, .gacct-login-link:focus-visible, .gacct-login-eye:focus-visible { outline: 3px solid rgba(32, 196, 195, 0.5); outline-offset: 2px; }
 
@@ -57,7 +58,9 @@
 .gacct-login-google .nsl-container { margin: 0 !important; }
 .gacct-login-google .nsl-container-block .nsl-container-buttons { display: block; }
 .gacct-login-google .nsl-container-block .nsl-container-buttons a { display: block; max-width: none; margin: 0; }
-.gacct-login-google .nsl-container-buttons a .nsl-button { width: 100%; border-radius: 999px !important; justify-content: center; }
+.gacct-login-google .nsl-container-buttons a .nsl-button { width: 100%; border-radius: 6px !important; justify-content: center; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25) !important; transition: background-color 0.3s, box-shadow 0.3s; }
+.gacct-login-google .nsl-container-buttons a:hover .nsl-button, .gacct-login-google .nsl-container-buttons a:focus-visible .nsl-button { background: #f3f3f3 !important; box-shadow: inset 0 0 0 1px #1a1a1a !important; }
+.gacct-login-google .nsl-container-buttons a .nsl-button-label-container { font-weight: 700; }
 .gacct-login-or { display: flex; align-items: center; gap: 12px; margin: 18px 0 14px; font-size: 13px; color: #777; text-align: center; }
 .gacct-login-or::before, .gacct-login-or::after { content: ""; flex: 1; height: 1px; background: #e2e2e2; }
 .gacct-login--demande { max-width: 560px; margin: 0 auto; padding: 28px 24px; background: #fff; border: 1px solid #e8e8e8; border-radius: 16px; }
