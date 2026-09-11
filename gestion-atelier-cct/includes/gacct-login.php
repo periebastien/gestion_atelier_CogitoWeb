@@ -272,14 +272,14 @@ function gacct_lostpassword_shortcode() {
 		<h2 class="gacct-login-title"><?php echo esc_html( $title ); ?></h2>
 		<p class="gacct-login-intro"><?php echo esc_html( $intro ); ?></p>
 		<form method="post" class="gacct-login-step gacct-login-step--reset" novalidate>
-			<label class="gacct-login-label" for="gacct-pw1"><?php esc_html_e( 'Mot de passe (8 caractères minimum)', 'gestion-atelier-cct' ); ?></label>
-			<div class="gacct-login-pw">
-				<input class="gacct-login-input" type="password" id="gacct-pw1" name="password_1" autocomplete="new-password" minlength="8" required>
+			<div class="gacct-login-field gacct-login-pw">
+				<input class="gacct-login-input" type="password" id="gacct-pw1" name="password_1" autocomplete="new-password" minlength="8" required placeholder=" ">
+				<label class="gacct-login-flabel" for="gacct-pw1"><?php esc_html_e( 'Mot de passe (8 caractères minimum)', 'gestion-atelier-cct' ); ?></label>
 				<button type="button" class="gacct-login-eye" aria-label="<?php esc_attr_e( 'Afficher le mot de passe', 'gestion-atelier-cct' ); ?>" data-action="eye"></button>
 			</div>
-			<label class="gacct-login-label gacct-login-label--spaced" for="gacct-pw2"><?php esc_html_e( 'Confirmez le mot de passe', 'gestion-atelier-cct' ); ?></label>
-			<div class="gacct-login-pw">
-				<input class="gacct-login-input" type="password" id="gacct-pw2" name="password_2" autocomplete="new-password" minlength="8" required>
+			<div class="gacct-login-field gacct-login-pw gacct-login-field--spaced">
+				<input class="gacct-login-input" type="password" id="gacct-pw2" name="password_2" autocomplete="new-password" minlength="8" required placeholder=" ">
+				<label class="gacct-login-flabel" for="gacct-pw2"><?php esc_html_e( 'Confirmez le mot de passe', 'gestion-atelier-cct' ); ?></label>
 				<button type="button" class="gacct-login-eye" aria-label="<?php esc_attr_e( 'Afficher le mot de passe', 'gestion-atelier-cct' ); ?>" data-action="eye"></button>
 			</div>
 			<input type="hidden" name="reset_key" value="<?php echo esc_attr( $reset_key ); ?>">
@@ -328,8 +328,10 @@ function gacct_lostpassword_shortcode() {
 function gacct_lostpassword_request_form() {
 	?>
 	<form method="post" class="gacct-login-step gacct-login-step--lost" novalidate>
-		<label class="gacct-login-label" for="gacct-lost-email"><?php esc_html_e( 'Adresse e-mail', 'gestion-atelier-cct' ); ?></label>
-		<input class="gacct-login-input" type="email" id="gacct-lost-email" name="user_login" autocomplete="username email" inputmode="email" spellcheck="false" required placeholder="vous@exemple.fr">
+		<div class="gacct-login-field">
+			<input class="gacct-login-input" type="email" id="gacct-lost-email" name="user_login" autocomplete="username email" inputmode="email" spellcheck="false" required placeholder=" ">
+			<label class="gacct-login-flabel" for="gacct-lost-email"><?php esc_html_e( 'Adresse e-mail', 'gestion-atelier-cct' ); ?></label>
+		</div>
 		<input type="hidden" name="wc_reset_password" value="true">
 		<?php wp_nonce_field( 'lost_password', 'woocommerce-lost-password-nonce' ); ?>
 		<button type="submit" class="gacct-login-btn"><?php esc_html_e( 'Recevoir un lien', 'gestion-atelier-cct' ); ?></button>

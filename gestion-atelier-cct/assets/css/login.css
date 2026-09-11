@@ -91,3 +91,15 @@
 .gacct-login--lost .gacct-login-notices { margin-bottom: 20px; }
 .gacct-login--lost .gacct-login-forgot { margin-top: 18px; }
 @media (max-width: 767px) { .gacct-login--lost { margin: 24px auto 48px; padding: 0 4px; } .gacct-login--lost .gacct-login-title { font-size: 26px; } }
+
+/* Champs de la charte (mesurés sur le formulaire de contact, 11/09/2026) : 52 px, bord rgba(0,0,0,.12) 8 px,
+   survol/focus turquoise + halo, libellé flottant (repos centré 14 px, flotté 10 px capitales turquoise). */
+.gacct-login-field { position: relative; }
+.gacct-login-field .gacct-login-input { height: 52px; padding: 20px 13px 7px; border: 1px solid rgba(0, 0, 0, 0.12); border-radius: 8px; font-size: 14px; line-height: 1.4; transition: border-color 0.15s, box-shadow 0.15s; }
+.gacct-login-field .gacct-login-input:hover, .gacct-login-field .gacct-login-input:focus { border-color: #20c4c3; box-shadow: 0 0 0 3px rgba(32, 196, 195, 0.1); outline: none; }
+.gacct-login-field.gacct-login-pw .gacct-login-input { padding-right: 46px; }
+.gacct-login-flabel { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); margin: 0; font-size: 14px; font-weight: 400; color: #292728; pointer-events: none; transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; max-width: calc(100% - 26px); overflow: hidden; text-overflow: ellipsis; }
+.gacct-login-input:focus ~ .gacct-login-flabel, .gacct-login-input:not(:placeholder-shown) ~ .gacct-login-flabel { top: 8px; transform: none; font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #20c4c3; }
+.gacct-login-input:not(:placeholder-shown):not(:focus) ~ .gacct-login-flabel { color: #20c4c3; }
+.gacct-login-field--spaced { margin-top: 12px; }
+.gacct-login-hint { margin-top: 8px; }

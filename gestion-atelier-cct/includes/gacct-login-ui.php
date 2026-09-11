@@ -187,8 +187,10 @@ function gacct_login_ui_render( $context = 'compte' ) {
 		<?php endif; ?>
 
 		<form class="gacct-login-step gacct-login-step--email" data-step="email" novalidate>
-			<label class="gacct-login-label" for="gacct-login-email"><?php echo esc_html( $t['email_label'] ); ?></label>
-			<input class="gacct-login-input" type="email" id="gacct-login-email" name="email" autocomplete="username email" inputmode="email" spellcheck="false" required placeholder="<?php echo esc_attr( $t['email_placeholder'] ); ?>" value="<?php echo esc_attr( $prefill ); ?>">
+			<div class="gacct-login-field">
+				<input class="gacct-login-input" type="email" id="gacct-login-email" name="email" autocomplete="username email" inputmode="email" spellcheck="false" required placeholder=" " value="<?php echo esc_attr( $prefill ); ?>">
+				<label class="gacct-login-flabel" for="gacct-login-email"><?php echo esc_html( $t['email_label'] ); ?></label>
+			</div>
 			<p class="gacct-login-hint"><?php echo esc_html( $t['email_hint'] ); ?></p>
 			<button type="submit" class="gacct-login-btn"><?php echo esc_html( $t['continue'] ); ?></button>
 		</form>
@@ -199,9 +201,9 @@ function gacct_login_ui_render( $context = 'compte' ) {
 				<p class="gacct-login-who-mail"><span data-role="email"></span> <button type="button" class="gacct-login-link" data-action="back"><?php echo esc_html( $t['change'] ); ?></button></p>
 			</div>
 			<p class="gacct-login-intro" data-role="intro"><?php echo esc_html( $t['known_intro'] ); ?></p>
-			<label class="gacct-login-label" for="gacct-login-password"><?php echo esc_html( $t['password_label'] ); ?></label>
-			<div class="gacct-login-pw">
-				<input class="gacct-login-input" type="password" id="gacct-login-password" name="password" autocomplete="current-password" required>
+			<div class="gacct-login-field gacct-login-pw">
+				<input class="gacct-login-input" type="password" id="gacct-login-password" name="password" autocomplete="current-password" required placeholder=" ">
+				<label class="gacct-login-flabel" for="gacct-login-password"><?php echo esc_html( $t['password_label'] ); ?></label>
 				<button type="button" class="gacct-login-eye" aria-label="Afficher le mot de passe" data-action="eye"></button>
 			</div>
 			<label class="gacct-login-remember"><input type="checkbox" name="remember" value="1"> <?php echo esc_html( $t['remember'] ); ?></label>
