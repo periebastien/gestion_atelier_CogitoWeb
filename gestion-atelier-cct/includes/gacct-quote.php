@@ -519,6 +519,8 @@ function gacct_quote_mark_decision( $order, $decision, $mode = '' ) {
 	}
 
 	$order->save();
+
+	do_action( 'gacct_quote_decision_made', $order, $decision, $mode );
 }
 
 /**

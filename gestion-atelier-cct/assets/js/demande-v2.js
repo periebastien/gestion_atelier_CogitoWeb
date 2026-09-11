@@ -3030,6 +3030,7 @@
 		// Changement de page JFB (event jQuery émis par multi.step.js).
 		if ( window.jQuery ) {
 			window.jQuery( document ).on( 'jet-form-builder/switch-page', function () {
+				dlPush( { event: 'demande_etape', step: pageCourante() } );
 				updateProgressLabel();
 				scrollVersEtape();
 				if ( pageCourante() === 4 ) {
@@ -3037,6 +3038,31 @@
 				}
 			} );
 		}
+
+		// Mesure d'audience (GTM) : étapes et envoi de la demande.
+		function dlPush( data ) {
+			try { window.dataLayer = window.dataLayer || []; window.dataLayer.push( data ); } catch ( e ) {}
+		}
+		function dlPrestations() {
+			var noms = [], total = 0;
+			prestationNames.forEach( function ( name ) {
+				fieldInputs( name ).forEach( function ( input ) {
+					if ( ! input.checked ) { return; }
+					var info = prestations[ input.value ];
+					if ( ! info ) { return; }
+					var qte = qtyDe( input );
+					noms.push( ( info.nom || info.name || info.label || String( input.value ) ) + ( qte > 1 ? ' x' + qte : '' ) );
+					total += ( ( parseFloat( info.prix ) || 0 ) + suppPour( input, 'prix' ) ) * qte;
+				} );
+			} );
+			return { prestations: noms.join( ' | ' ), nb_prestations: noms.length, value: Math.round( total * 100 ) / 100, currency: 'EUR' };
+		}
+		dlPush( { event: 'demande_etape', step: 1 } );
+		form.addEventListener( 'submit', function () {
+			var d = dlPrestations();
+			d.event = 'demande_envoi';
+			dlPush( d );
+		} );
 
 		buildProgressLabel();
 		buildTotalEtape2();

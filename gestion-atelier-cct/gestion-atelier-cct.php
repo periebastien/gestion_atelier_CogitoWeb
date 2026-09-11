@@ -66,6 +66,7 @@ require_once __DIR__ . '/includes/gacct-secours-rappel.php'; // rappel annuel de
 require_once __DIR__ . '/includes/gacct-shipping.php';
 require_once __DIR__ . '/includes/gacct-client-tables.php';
 require_once __DIR__ . '/includes/gacct-regions.php';
+require_once __DIR__ . '/includes/gacct-analytics.php'; // GTM + dataLayer (11/09/2026)
 require_once __DIR__ . '/includes/gacct-operator/gacct-operator.php';
 
 final class GACCT_Plugin {
