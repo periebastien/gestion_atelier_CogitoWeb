@@ -47,11 +47,6 @@ function ar_seo_titles() {
 		'mentions-legales'                     => 'Mentions légales',
 		'conditions-generales-de-vente'        => 'Conditions générales de vente',
 		'politique-de-confidentialite'         => 'Politique de confidentialité',
-		'revision-parapente-normandie'         => 'Révision de parapente en Normandie',
-		'revision-parapente-bretagne'          => 'Révision de parapente en Bretagne',
-		'revision-parapente-pays-de-la-loire'  => 'Révision de parapente en Pays de la Loire',
-		'revision-parapente-ile-de-france'     => 'Révision de parapente en Île-de-France',
-		'revision-parapente-hauts-de-france'   => 'Révision de parapente en Hauts-de-France',
 	) );
 }
 
@@ -69,11 +64,6 @@ function ar_seo_descriptions() {
 		'consignes-demballage'                 => 'Comment préparer et expédier votre parapente ou votre secours à l\'atelier : emballage, transporteur, étiquette et suivi de votre colis.',
 		'demande-intervention'                 => 'Demandez votre révision, votre pliage de secours ou votre réparation en ligne en quelques minutes : choisissez vos prestations, votre date et suivez votre voile jusqu\'au retour.',
 		'connexion'                            => 'Accédez à votre espace client Altitude Révision : vos demandes, votre matériel, vos rapports de révision et vos commandes.',
-		'revision-parapente-normandie'         => 'Révision de parapente en Normandie par un atelier certifié F.F.V.L : dépôt à la boutique ou expédition, norme ParachecK, rapport en ligne.',
-		'revision-parapente-bretagne'          => 'Révision de parapente pour les pilotes de Bretagne : expédiez votre voile à l\'atelier Altitude Révision, contrôle ParachecK, rapport et retour suivis en ligne.',
-		'revision-parapente-pays-de-la-loire'  => 'Révision de parapente pour les pilotes des Pays de la Loire : expédition simple, contrôle ParachecK par un atelier certifié, suivi en ligne.',
-		'revision-parapente-ile-de-france'     => 'Révision de parapente pour les pilotes d\'Île-de-France : expédiez votre voile, contrôle ParachecK par un atelier certifié F.F.V.L, rapport en ligne.',
-		'revision-parapente-hauts-de-france'   => 'Révision de parapente pour les pilotes des Hauts-de-France : expédition, contrôle ParachecK par un atelier certifié, rapport et retour suivis.',
 	) );
 }
 
@@ -121,9 +111,6 @@ add_action( 'wp_head', function () {
 	$desc = ar_seo_descriptions();
 	$noindex = in_array( $slug, ar_seo_noindex_slugs(), true );
 
-	if ( $noindex ) {
-		echo '<meta name="robots" content="noindex, follow">' . "\n";
-	}
 	if ( ! empty( $desc[ $slug ] ) ) {
 		echo '<meta name="description" content="' . esc_attr( $desc[ $slug ] ) . '">' . "\n";
 	}
@@ -139,3 +126,14 @@ add_action( 'wp_head', function () {
 		echo '<meta property="og:locale" content="fr_FR">' . "\n";
 	}
 }, 2 );
+
+// noindex via l'API robots de WordPress (une seule balise robots dans la page).
+add_filter( 'wp_robots', function ( $robots ) {
+	$slug = ar_seo_current_slug();
+	if ( '' !== $slug && in_array( $slug, ar_seo_noindex_slugs(), true ) ) {
+		$robots['noindex'] = true;
+		$robots['follow']  = true;
+		unset( $robots['max-image-preview'] );
+	}
+	return $robots;
+} );
