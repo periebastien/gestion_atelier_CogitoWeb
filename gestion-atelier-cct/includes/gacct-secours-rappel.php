@@ -55,7 +55,7 @@ add_filter( 'gacct_pay_default_settings', function ( $defaults ) {
 			. '{secours_lines}'
 			. '<p><a href="{new_request_url}">Demander un pliage en ligne</a> : choisissez votre date, nous nous occupons du reste. Vous pouvez aussi déposer votre secours directement à la boutique.</p>'
 			. '<p>Si votre secours a été replié ailleurs entre-temps, ignorez simplement ce message. Une question ? Répondez à cet e-mail ou appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}).</p>'
-			. '<p>À bientôt,<br><br>Bastien.</p>'
+			. '<p>À bientôt,<br><br>L’équipe Altitude Révision</p>'
 			. '<p style="font-size:12px;color:#777">Vous ne souhaitez plus recevoir ce rappel ? <a href="{optout_url}">Ne plus me rappeler</a>.</p>',
 	);
 	$defaults['emails']['secours_reminder_2'] = array(
@@ -67,7 +67,7 @@ add_filter( 'gacct_pay_default_settings', function ( $defaults ) {
 			. '{secours_lines}'
 			. '<p>Un secours resté plié trop longtemps s’ouvre moins vite. <a href="{new_request_url}">Demander un pliage en ligne</a> ne prend que deux minutes.</p>'
 			. '<p>Si c’est déjà fait ailleurs, ignorez ce message : nous ne vous relancerons plus pour ce cycle. Une question ? Répondez à cet e-mail ou appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}).</p>'
-			. '<p>À bientôt,<br><br>Bastien.</p>'
+			. '<p>À bientôt,<br><br>L’équipe Altitude Révision</p>'
 			. '<p style="font-size:12px;color:#777">Vous ne souhaitez plus recevoir ce rappel ? <a href="{optout_url}">Ne plus me rappeler</a>.</p>',
 	);
 	return $defaults;

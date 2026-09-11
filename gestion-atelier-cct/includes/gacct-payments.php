@@ -63,7 +63,7 @@ function gacct_pay_default_settings() {
 					. '<p>Vous pouvez retrouver ces coordonnées à tout moment sur <a href="{order_url}">votre page de commande</a>.</p>'
 					. '<p>Si votre virement est déjà parti, vous n’avez rien à faire : un délai bancaire de 1 à 3 jours ouvrés est normal.</p>'
 					. '<p>Bon à savoir : vous pouvez expédier votre matériel sans attendre que le virement arrive. Dès l’envoi, pensez à renseigner votre numéro de suivi depuis <a href="{order_url}">votre page de commande</a>.</p>'
-					. '<p>À très vite,<br><br>Bastien.</p>',
+					. '<p>À très vite,<br><br>L’équipe Altitude Révision</p>',
 			),
 			'atelier_cancel' => array(
 				'enabled' => true,
@@ -107,7 +107,7 @@ function gacct_pay_default_settings() {
 					. '<p>Comme prévu, le créneau atelier qui vous était réservé a été libéré et la commande annulée.</p>'
 					. '<p>Vous pouvez bien sûr repasser une commande à tout moment sur les dates encore disponibles : <a href="{new_request_url}">déposer une nouvelle demande</a>.</p>'
 					. '<p>Si votre virement est parti tardivement et arrive chez nous après cette annulation, contactez-nous : nous trouverons une solution ensemble.</p>'
-					. '<p>À bientôt,<br><br>Bastien.</p>',
+					. '<p>À bientôt,<br><br>L’équipe Altitude Révision</p>',
 			),
 			'abandoned' => array(
 				'enabled' => true,
@@ -118,7 +118,7 @@ function gacct_pay_default_settings() {
 					. '<p>Votre sélection est toujours dans votre panier : <a href="{checkout_url}">finaliser ma commande</a>.</p>'
 					. '<p><strong>Il vous reste {time_remaining} pour la finaliser.</strong> Sans validation avant le <strong>{delete_deadline}</strong>, votre demande sera supprimée et il faudra la refaire (le créneau choisi ne sera plus garanti).</p>'
 					. '<p>Besoin d’aide ? Répondez simplement à cet e-mail.</p>'
-					. '<p>À très vite,<br><br>Bastien.</p>',
+					. '<p>À très vite,<br><br>L’équipe Altitude Révision</p>',
 			),
 			'payment_failed' => array(
 				'enabled' => true,
@@ -129,7 +129,7 @@ function gacct_pay_default_settings() {
 					. '<p>Votre créneau atelier est encore retenu : vous pouvez reprendre le paiement en un clic, sans refaire votre demande. <a href="{payment_url}">Reprendre le paiement</a>.</p>'
 					. '<p><strong>Il vous reste {time_remaining}.</strong> Sans paiement avant le <strong>{delete_deadline}</strong>, la commande sera annulée et le créneau libéré pour d’autres clients.</p>'
 					. '<p>Si vous rencontrez un souci avec votre moyen de paiement, répondez à cet e-mail ou appelez-nous : nous trouverons une solution.</p>'
-					. '<p>À très vite,<br><br>Bastien.</p>',
+					. '<p>À très vite,<br><br>L’équipe Altitude Révision</p>',
 			),
 			'noshow_release' => array(
 				'enabled' => true,
@@ -140,7 +140,7 @@ function gacct_pay_default_settings() {
 					. '<p>Comme indiqué lors de votre commande, ce créneau a été libéré. L’acompte de <strong>{deposit_amount}</strong> reste acquis à l’atelier : il couvre le créneau qui vous était réservé et qui n’a pas pu être proposé à un autre client.</p>'
 					. '<p>Votre dossier n’est pas perdu pour autant : si vous souhaitez replanifier l’intervention, contactez-nous au <strong>{contact_phone}</strong> ({contact_hours}) ou répondez à cet e-mail, nous trouverons une nouvelle date ensemble.</p>'
 					. '<p>Et si votre colis est en route avec du retard, faites-nous signe dès maintenant : nous en tiendrons compte.</p>'
-					. '<p>À bientôt,<br><br>Bastien.</p>',
+					. '<p>À bientôt,<br><br>L’équipe Altitude Révision</p>',
 			),
 			'rescheduled' => array(
 				'enabled' => true,
@@ -150,7 +150,7 @@ function gacct_pay_default_settings() {
 					. '<p>Le créneau atelier de votre commande <strong>{order_number}</strong>, initialement prévu le <strong>{old_slot_date}</strong>, a été déplacé au <strong>{new_slot_date}</strong>.</p>'
 					. '<p>Si votre matériel n’est pas encore parti, il doit désormais nous parvenir <strong>avant le {new_slot_date}</strong>.</p>'
 					. '<p>Ce nouveau créneau ne vous convient pas ? Répondez à cet e-mail ou appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}) : nous trouverons une autre date ensemble.</p>'
-					. '<p>À très vite,<br><br>Bastien.</p>',
+					. '<p>À très vite,<br><br>L’équipe Altitude Révision</p>',
 			),
 			'deposit_received' => array(
 				'enabled' => true,
@@ -169,7 +169,7 @@ function gacct_pay_default_settings() {
 					. '</ol>'
 					. '<p>Dès que le colis est parti, indiquez-nous le transporteur et le numéro de suivi depuis <a href="{shipping_url}">votre espace client</a> : nous saurons ainsi qu’il est en route et nous pourrons l’attendre.</p>'
 					. '<p>Un petit rappel, sans malice : l’acompte réserve votre créneau. Sans réception du matériel la veille au soir, le créneau est libéré et l’acompte reste acquis. Un imprévu d’expédition ? Prévenez-nous avant la date au <strong>{contact_phone}</strong> ({contact_hours}), nous en tiendrons compte.</p>'
-					. '<p>À très vite,<br><br>Bastien.</p>',
+					. '<p>À très vite,<br><br>L’équipe Altitude Révision</p>',
 			),
 			'missing_items' => array(
 				'enabled' => true,
@@ -182,7 +182,7 @@ function gacct_pay_default_settings() {
 					. '<p>Pour que nous puissions réaliser l’intervention complète, merci de nous faire parvenir ces éléments dès que possible à l’adresse suivante :</p>'
 					. '<p><strong>{workshop_address}</strong></p>'
 					. '<p>Sans ces éléments, la partie correspondante de l’intervention ne pourra pas être réalisée. Si vous préférez y renoncer ou si vous avez la moindre question, répondez simplement à cet e-mail ou appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}).</p>'
-					. '<p>À très vite,<br><br>Bastien.</p>',
+					. '<p>À très vite,<br><br>L’équipe Altitude Révision</p>',
 			),
 			'quote_reminder' => array(
 				'enabled' => true,
@@ -194,7 +194,7 @@ function gacct_pay_default_settings() {
 					. '<p>Votre matériel attend à l’atelier : tant que le devis n’est ni accepté ni refusé, l’intervention ne peut pas commencer.</p>'
 					. '<p><a href="{validation_url}">Consulter le devis et donner ma réponse</a> : un clic suffit pour l’accepter ou le refuser.</p>'
 					. '<p>Une question ? Répondez à cet e-mail ou appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}).</p>'
-					. '<p>À très vite,<br><br>Bastien.</p>',
+					. '<p>À très vite,<br><br>L’équipe Altitude Révision</p>',
 			),
 			'quote_refused_partial' => array(
 				'enabled' => true,
@@ -204,7 +204,7 @@ function gacct_pay_default_settings() {
 					. '<p>Nous avons bien enregistré votre refus du devis complémentaire pour la commande <strong>{order_number}</strong>.</p>'
 					. '<p>Aucun souci : les travaux supplémentaires proposés ne seront pas réalisés. Nous effectuons l’intervention initialement commandée, sans changement de prix.</p>'
 					. '<p>Si vous changez d’avis ou souhaitez en discuter, appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}) ou répondez à cet e-mail.</p>'
-					. '<p>À très vite,<br><br>Bastien.</p>',
+					. '<p>À très vite,<br><br>L’équipe Altitude Révision</p>',
 			),
 			'quote_refused_return' => array(
 				'enabled' => true,
@@ -214,7 +214,7 @@ function gacct_pay_default_settings() {
 					. '<p>Nous avons bien enregistré votre refus du devis établi pour la commande <strong>{order_number}</strong>.</p>'
 					. '<p>Comme convenu, aucune réparation ne sera engagée : nous préparons le retour de votre matériel à l’adresse indiquée lors de votre commande.</p>'
 					. '<p>Si vous changez d’avis avant l’expédition, appelez-nous vite au <strong>{contact_phone}</strong> ({contact_hours}) : tant que le colis n’est pas parti, tout reste possible.</p>'
-					. '<p>À bientôt,<br><br>Bastien.</p>',
+					. '<p>À bientôt,<br><br>L’équipe Altitude Révision</p>',
 			),
 			'hold_notice' => array(
 				'enabled' => true,
@@ -225,7 +225,7 @@ function gacct_pay_default_settings() {
 					. '{hold_message}'
 					. '<p>Rien à faire de votre côté : votre dossier n’est pas oublié, et <strong>nous vous préviendrons dès que l’intervention reprendra son cours</strong>.</p>'
 					. '<p>Une question entre-temps ? Répondez à cet e-mail ou appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}).</p>'
-					. '<p>À bientôt,<br><br>Bastien.</p>',
+					. '<p>À bientôt,<br><br>L’équipe Altitude Révision</p>',
 			),
 			'hold_release' => array(
 				'enabled' => true,
@@ -236,7 +236,7 @@ function gacct_pay_default_settings() {
 					. '{hold_message}'
 					. '<p>Nous continuons à vous tenir informé de chaque étape, comme d’habitude.</p>'
 					. '<p>Une question ? Répondez à cet e-mail ou appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}).</p>'
-					. '<p>À bientôt,<br><br>Bastien.</p>',
+					. '<p>À bientôt,<br><br>L’équipe Altitude Révision</p>',
 			),
 			'unfinished_cancel' => array(
 				'enabled' => true,
@@ -246,7 +246,7 @@ function gacct_pay_default_settings() {
 					. '<p>Le paiement de votre commande <strong>{order_number}</strong> n’a pas abouti dans le délai imparti.</p>'
 					. '<p>Le créneau atelier qui vous était réservé a donc été libéré et la commande annulée.</p>'
 					. '<p>Vous pouvez bien sûr en repasser une à tout moment sur les dates encore disponibles : <a href="{new_request_url}">déposer une nouvelle demande</a>.</p>'
-					. '<p>À bientôt,<br><br>Bastien.</p>',
+					. '<p>À bientôt,<br><br>L’équipe Altitude Révision</p>',
 			),
 			'pre_slot_reminder' => array(
 				'enabled' => true,
@@ -258,7 +258,7 @@ function gacct_pay_default_settings() {
 					. '<p>S’il n’est pas encore parti, il est temps de l’expédier : il doit nous parvenir <strong>avant le {parcel_deadline}</strong>, à l’adresse suivante :</p>'
 					. '<p><strong>{workshop_address}</strong></p>'
 					. '<p>Sans réception du matériel la veille au soir de votre créneau, celui-ci sera libéré et l’acompte restera acquis, comme indiqué lors de votre commande. Un imprévu ? Appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}) ou répondez à cet e-mail : nous trouverons une solution ensemble.</p>'
-					. '<p>À très vite,<br><br>Bastien.</p>',
+					. '<p>À très vite,<br><br>L’équipe Altitude Révision</p>',
 			),
 			'balance_reminder' => array(
 				'enabled' => true,
@@ -269,7 +269,7 @@ function gacct_pay_default_settings() {
 					. '<p><a href="{payment_url}">Régler le solde en un clic</a></p>'
 					. '<p>Votre matériel vous attend à l’atelier : dès le règlement reçu, votre rapport de contrôle est disponible et nous préparons la réexpédition.</p>'
 					. '<p>Une question sur le montant, un souci de paiement ? Répondez à cet e-mail ou appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}).</p>'
-					. '<p>À très vite,<br><br>Bastien.</p>',
+					. '<p>À très vite,<br><br>L’équipe Altitude Révision</p>',
 			),
 			'quote_accepted' => array(
 				'enabled' => true,
@@ -280,7 +280,7 @@ function gacct_pay_default_settings() {
 					. '{quote_lines}'
 					. '<p>Nouveau total de votre commande : <strong>{quote_total}</strong>, soit un solde de <strong>{quote_balance}</strong> à régler à la fin de l’intervention (votre acompte déjà versé reste inchangé).</p>'
 					. '<p>L’atelier reprend l’intervention avec ces travaux : nous vous prévenons dès qu’elle est terminée.</p>'
-					. '<p>Merci de votre confiance,<br><br>Bastien.</p>',
+					. '<p>Merci de votre confiance,<br><br>L’équipe Altitude Révision</p>',
 			),
 		),
 	);
