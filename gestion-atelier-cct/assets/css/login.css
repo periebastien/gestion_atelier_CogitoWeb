@@ -80,3 +80,6 @@
 .gacct-login--lost .gacct-login-forgot a.gacct-login-link { color: #666; font-weight: 400; text-decoration: underline; text-underline-offset: 2px; }
 .gacct-login--lost .gacct-login-forgot a.gacct-login-link:hover { color: #20c4c3; }
 @media (max-width: 767px) { .gacct-login--lost { padding: 20px 14px; } }
+.gacct-login-notices .woocommerce-error, .gacct-login-notices .woocommerce-message, .gacct-login-notices .woocommerce-info { border: 0 !important; padding-left: 16px !important; }
+.gacct-login-notices .woocommerce-error::before, .gacct-login-notices .woocommerce-message::before, .gacct-login-notices .woocommerce-info::before, .gacct-login-notices .woocommerce-error li::before { display: none !important; content: none !important; }
+.gacct-login-notices .woocommerce-error li { padding: 0 !important; }
