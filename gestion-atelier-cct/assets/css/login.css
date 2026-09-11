@@ -87,7 +87,7 @@
    titre 32 px / 900 centre, intro 14 px #666 centree, formulaire 32 px plus bas. */
 .gacct-login--lost { max-width: 420px; margin: 40px auto 64px; padding: 0; background: none; border: 0; border-radius: 0; }
 .gacct-login--lost .gacct-login-title { font-size: 32px; line-height: 1.15; font-weight: 900; color: #1a1a1a; text-align: center; margin: 0 0 12px; }
-.gacct-login--lost .gacct-login-intro { font-size: 14px; line-height: 1.6; color: #666; text-align: center; margin: 0 0 32px; }
+.gacct-login--lost .gacct-login-intro { font-size: 14px; line-height: 1.6; color: #666; text-align: center; margin: 0 0 64px; }
 .gacct-login--lost .gacct-login-notices { margin-bottom: 20px; }
 .gacct-login--lost .gacct-login-forgot { margin-top: 18px; }
 @media (max-width: 767px) { .gacct-login--lost { margin: 24px auto 48px; padding: 0 4px; } .gacct-login--lost .gacct-login-title { font-size: 26px; } }
