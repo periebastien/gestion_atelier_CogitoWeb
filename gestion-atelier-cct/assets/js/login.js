@@ -13,6 +13,9 @@
 		password: root.querySelector('[data-step="password"]'),
 		create: root.querySelector('[data-step="create"]')
 	};
+	if (!steps.email) {
+		return; // page « mot de passe » : même feuille de style, pas de logique e-mail d'abord
+	}
 	var msg = root.querySelector('.gacct-login-msg');
 	var emailInput = steps.email.querySelector('input[name="email"]');
 	var state = { email: '', imported: false };

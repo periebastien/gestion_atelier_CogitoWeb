@@ -423,7 +423,7 @@ function gacct_login_send_welcome( $user ) {
 	}
 
 	$link = function_exists( 'gacct_lostpassword_page_url' )
-		? gacct_lostpassword_page_url( array( 'key' => $key, 'login' => rawurlencode( $user->user_login ) ) )
+		? gacct_lostpassword_page_url( array( 'key' => $key, 'login' => rawurlencode( $user->user_login ), 'bienvenue' => '1' ) )
 		: network_site_url( 'wp-login.php?action=rp&key=' . $key . '&login=' . rawurlencode( $user->user_login ), 'login' );
 
 	$t    = gacct_login_texts();
