@@ -622,9 +622,9 @@
 @media (max-width: 1024px) {
 	body.jet-mobile-menu-visible .ar-hdr.ar-mob-pill .ar-hdr-in,
 	body.jet-mobile-menu-visible .ar-hdr.ar-mob-past .ar-hdr-in {
-		-webkit-backdrop-filter: none;
-		backdrop-filter: none;
-		transform: none;
+		-webkit-backdrop-filter: none !important;
+		backdrop-filter: none !important;
+		transform: none !important; /* header.js pose la translation en style inline */
 		transition: none;
 	}
 }
