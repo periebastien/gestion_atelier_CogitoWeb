@@ -103,3 +103,4 @@
 .gacct-login-input:not(:placeholder-shown):not(:focus) ~ .gacct-login-flabel { color: #20c4c3; }
 .gacct-login-field--spaced { margin-top: 12px; }
 .gacct-login-hint { margin-top: 8px; }
+@media (max-width: 767px) { .gacct-login--lost { padding: 0 16px; } }

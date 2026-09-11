@@ -22,6 +22,7 @@ define( 'GACCT_PACK_AR_URL', plugin_dir_url( __FILE__ ) );
 
 require_once __DIR__ . '/includes/paracheck-config.php';
 require_once __DIR__ . '/includes/paracheck-calcs.php';
+require_once __DIR__ . '/includes/seo.php'; // titres, descriptions, robots (11/09/2026)
 
 /**
  * Les formulaires utilisent les helpers gacct_rf_* du framework : chargés
