@@ -611,3 +611,20 @@
 	width: 18px;
 	height: 18px;
 }
+
+/* ── Tiroir JetMenu ouvert depuis la pilule (11/09/2026) ─────────────────
+   `backdrop-filter` et `transform` posés sur `.ar-hdr-in` en état pilule
+   font de la barre la boîte de référence du tiroir `position: fixed` de
+   JetMenu (rendu DANS `.ar-hdr-in`) : le tiroir se retrouvait enfermé dans
+   les 58 px de la pilule (constaté sur téléphone le jour de la mise en
+   ligne). Tant que le tiroir est ouvert (classe posée par JetMenu sur
+   body), on retire ces deux propriétés ; la pilule reste en place. */
+@media (max-width: 1024px) {
+	body.jet-mobile-menu-visible .ar-hdr.ar-mob-pill .ar-hdr-in,
+	body.jet-mobile-menu-visible .ar-hdr.ar-mob-past .ar-hdr-in {
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+		transform: none;
+		transition: none;
+	}
+}
