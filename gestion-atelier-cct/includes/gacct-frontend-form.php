@@ -434,10 +434,10 @@ function gacct_demande_materiels_map() {
  * Valeurs normalisées des champs de casse libre : ne renvoie que les champs
  * présents et modifiés.
  *
- * @param array $request
+ * @param array|ArrayAccess $request  Tableau ou Legacy_Request_Data de JetFormBuilder (ArrayAccess).
  * @return array
  */
-function gacct_demande_normaliser_casse( array $request ) {
+function gacct_demande_normaliser_casse( $request ) {
 	$out   = array();
 	$upper = array( 'marque', 'taille', 'secours_marque', 'secours_taille', 'sellette_marque', 'sellette_taille', 'numero_de_serie' );
 	$title = array( 'modele', 'secours_modele', 'sellette_modele' );
