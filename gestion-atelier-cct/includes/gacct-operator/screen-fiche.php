@@ -385,6 +385,14 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 		if ( ! empty( $slot['duree_totale_commande'] ) ) {
 			echo ' · ' . esc_html( sprintf( __( 'durée %s', 'gestion-atelier-cct' ), $slot['duree_totale_commande'] ) );
 		}
+		// Créneau futur, matériel à l'atelier (états 2 à 6) : l'atelier peut
+		// faire le dossier maintenant et libérer le créneau (11/09/2026).
+		$slot_state = absint( $revision['etat_de_la_commande'] ?? 0 );
+		if ( $slot_state >= 2 && $slot_state <= 6 && function_exists( 'gacct_op_future_slot' ) && gacct_op_future_slot( absint( $revision['_ID'] ) ) ) {
+			echo ' <button type="button" class="button button-small" data-op-action="advance-slot" data-slot-date="' . esc_attr( date_i18n( get_option( 'date_format' ), $ts ) ) . '">'
+				. esc_html__( 'Passer ce dossier aujourd\'hui', 'gestion-atelier-cct' ) . '</button>';
+			echo '<span class="description" style="display:block">' . esc_html__( 'Libère le créneau réservé et date l\'intervention d\'aujourd\'hui.', 'gestion-atelier-cct' ) . '</span>';
+		}
 	} else {
 		echo esc_html__( 'Aucun créneau (libéré ou non planifié)', 'gestion-atelier-cct' );
 	}

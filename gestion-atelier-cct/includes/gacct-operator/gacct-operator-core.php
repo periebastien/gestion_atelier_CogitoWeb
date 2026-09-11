@@ -272,11 +272,152 @@ function gacct_op_change_state( $revision_id, $new_state, array $args = array() 
 		gacct_op_add_signed_note( $order, $message );
 	}
 
+	// Intervention close (entrée en 6) avant la date réservée : la console
+	// propose de libérer le créneau (gacct_op_advance_slot_to_today).
+	$future = ( 6 === $new_state ) ? gacct_op_future_slot( $revision_id ) : null;
+
 	return array(
-		'old'   => $old_state,
-		'new'   => $new_state,
-		'label' => $action_label,
+		'old'         => $old_state,
+		'new'         => $new_state,
+		'label'       => $action_label,
+		'slot_future' => $future ? $future['str'] : '',
 	);
+}
+
+/**
+ * Révision réalisée en avance (demande d'Hervé, 11/09/2026) : l'occupation est
+ * DÉPLACÉE au jour courant, jamais supprimée. Le créneau futur redevient libre
+ * (dispos = capacité − occupations) et les statistiques comptent le dossier le
+ * jour où il a été fait. Aucun contrôle de capacité : le travail est fait, le
+ * jour courant peut être plein ou fermé (signalé dans la note).
+ *
+ * Ouvert aux opérateurs (on ne fait qu'avancer) pour les états 2 à 6 : le
+ * matériel est à l'atelier et le dossier n'est pas clos.
+ *
+ * @return array|WP_Error { old_ts, new_ts, old_str, new_str, over_capacity }
+ */
+function gacct_op_advance_slot_to_today( $revision_id, $reason = '' ) {
+	global $wpdb;
+
+	$revision_id = absint( $revision_id );
+	$reason      = trim( sanitize_textarea_field( (string) $reason ) );
+	$revision    = jwcct_get_cct_item( JWCCT_CCT_REVISION, $revision_id );
+
+	if ( ! $revision ) {
+		return new WP_Error( 'gacct_op_not_found', __( 'Dossier introuvable.', 'gestion-atelier-cct' ) );
+	}
+
+	$state = gacct_op_read_state( $revision_id );
+	$state = null === $state ? absint( $revision['etat_de_la_commande'] ?? 0 ) : (int) $state;
+
+	if ( $state < 2 || $state > 6 ) {
+		return new WP_Error( 'gacct_op_advance_state', __( 'Un dossier ne peut être avancé qu\'entre la réception (état 2) et la demande de solde (état 6).', 'gestion-atelier-cct' ) );
+	}
+
+	$occ_table = $wpdb->prefix . 'jet_cct_' . JWCCT_CCT_OCCUPATION;
+	$order_id  = absint( $revision['order_id'] ?? 0 );
+	$occ       = $wpdb->get_row( $wpdb->prepare(
+		"SELECT _ID, date_reservee, duree_totale_commande FROM {$occ_table}
+		 WHERE cct_status = 'publish' AND ( revision_id = %d OR ( %d > 0 AND order_id = %d ) )
+		 ORDER BY _ID DESC LIMIT 1",
+		$revision_id,
+		$order_id,
+		$order_id
+	), ARRAY_A );
+
+	if ( ! $occ ) {
+		return new WP_Error( 'gacct_op_no_slot', __( 'Ce dossier n\'a pas de créneau à libérer.', 'gestion-atelier-cct' ) );
+	}
+
+	$today_ymd = wp_date( 'Y-m-d' );
+	$today_ts  = function_exists( 'gacct_cal_day_ts' ) ? gacct_cal_day_ts( $today_ymd ) : (int) gmmktime( 0, 0, 0, (int) wp_date( 'n' ), (int) wp_date( 'j' ), (int) wp_date( 'Y' ) );
+	$old_ts    = absint( $occ['date_reservee'] );
+	$old_ymd   = function_exists( 'gacct_cal_day_ymd' ) ? gacct_cal_day_ymd( $old_ts ) : gmdate( 'Y-m-d', $old_ts );
+
+	if ( $old_ymd <= $today_ymd ) {
+		return new WP_Error( 'gacct_op_slot_not_future', __( 'Le créneau de ce dossier n\'est pas dans le futur : rien à libérer.', 'gestion-atelier-cct' ) );
+	}
+
+	if ( ! jwcct_update_cct_item( JWCCT_CCT_OCCUPATION, absint( $occ['_ID'] ), array( 'date_reservee' => $today_ts ) ) ) {
+		return new WP_Error( 'gacct_op_update_failed', __( 'La mise à jour de l\'occupation a échoué.', 'gestion-atelier-cct' ) );
+	}
+
+	// Jour courant : plein, fermé ou non ouvert ? (information, pas un blocage)
+	$over     = false;
+	$capacity = function_exists( 'gacct_op_day_capacity_row' ) ? gacct_op_day_capacity_row( $today_ymd ) : null;
+	if ( ! $capacity ) {
+		$over = true;
+	} else {
+		$occupied = (float) $wpdb->get_var( $wpdb->prepare(
+			"SELECT COALESCE(SUM(TIME_TO_SEC(duree_totale_commande) / 3600), 0) FROM {$occ_table}
+			 WHERE cct_status = 'publish' AND date_reservee = %d",
+			$today_ts
+		) );
+		$over = $occupied > (float) $capacity['capacity_hours'] + 0.001;
+	}
+
+	$date_fmt = get_option( 'date_format' );
+	$old_str  = wp_date( $date_fmt, $old_ts );
+	$new_str  = wp_date( $date_fmt, $today_ts );
+	$order    = gacct_op_get_order_for_revision( $revision );
+
+	if ( $order ) {
+		$order->delete_meta_data( '_gacct_preslot_j7_sent' );
+		$order->delete_meta_data( '_gacct_preslot_j2_sent' );
+		$order->save_meta_data();
+
+		$message = sprintf( __( 'Révision réalisée en avance : créneau du %1$s libéré, dossier daté du %2$s', 'gestion-atelier-cct' ), $old_str, $new_str );
+		if ( $over ) {
+			$message .= ' ' . __( '(jour non ouvert ou déjà plein : hors capacité)', 'gestion-atelier-cct' );
+		}
+		if ( '' !== $reason ) {
+			$message .= sprintf( __( ', motif : %s', 'gestion-atelier-cct' ), $reason );
+		}
+		gacct_op_add_signed_note( $order, $message );
+	}
+
+	return array(
+		'old_ts'        => $old_ts,
+		'new_ts'        => $today_ts,
+		'old_str'       => $old_str,
+		'new_str'       => $new_str,
+		'over_capacity' => $over,
+	);
+}
+
+/**
+ * Le créneau d'une révision est-il encore dans le futur ? (pour proposer la
+ * libération anticipée après la clôture de l'intervention).
+ *
+ * @return array|null { ts, str } ou null si pas de créneau futur.
+ */
+function gacct_op_future_slot( $revision_id ) {
+	global $wpdb;
+
+	$revision_id = absint( $revision_id );
+	$rev_table   = $wpdb->prefix . 'jet_cct_' . JWCCT_CCT_REVISION;
+	$occ_table   = $wpdb->prefix . 'jet_cct_' . JWCCT_CCT_OCCUPATION;
+	$order_id    = (int) $wpdb->get_var( $wpdb->prepare( "SELECT order_id FROM {$rev_table} WHERE _ID = %d", $revision_id ) );
+	$ts          = (int) $wpdb->get_var( $wpdb->prepare(
+		"SELECT date_reservee FROM {$occ_table}
+		 WHERE cct_status = 'publish' AND ( revision_id = %d OR ( %d > 0 AND order_id = %d ) )
+		 ORDER BY _ID DESC LIMIT 1",
+		$revision_id,
+		$order_id,
+		$order_id
+	) );
+
+	if ( ! $ts ) {
+		return null;
+	}
+
+	$ymd = function_exists( 'gacct_cal_day_ymd' ) ? gacct_cal_day_ymd( $ts ) : gmdate( 'Y-m-d', $ts );
+
+	if ( $ymd <= wp_date( 'Y-m-d' ) ) {
+		return null;
+	}
+
+	return array( 'ts' => $ts, 'str' => wp_date( get_option( 'date_format' ), $ts ) );
 }
 
 /**

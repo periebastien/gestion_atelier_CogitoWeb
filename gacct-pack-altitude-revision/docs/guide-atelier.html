@@ -398,7 +398,7 @@
     <dl>
       <dt>Ce qui s'est passé</dt><dd>Le client a reçu « C'est prêt ! » avec le lien de paiement du solde (même commande, montant ajusté automatiquement, devis compris).</dd>
       <dt>Tout seul</dt><dd>Relances du solde à J+3 et J+10. Au-delà, le dossier apparaît dans le point du matin (« soldes en souffrance »). Dès le paiement : passage automatique à l'état 7. Si le solde est nul, le dossier saute directement à 7.</dd>
-      <dt>L'atelier fait</dt><dd>Rien tant que le client n'a pas payé : le matériel reste à l'atelier. Paiement reçu autrement (chèque, espèces) : <strong>« Forcer le paiement du solde »</strong> avec motif. Des suppléments de dernière minute peuvent encore être ajoutés via la carte « Facturation ».</dd>
+      <dt>L'atelier fait</dt><dd>Rien tant que le client n'a pas payé : le matériel reste à l'atelier. Paiement reçu autrement (chèque, espèces) : <strong>« Forcer le paiement du solde »</strong> avec motif. Si l'intervention a été faite avant la date réservée, la console propose au passage de <a href="#realisee-en-avance">libérer le créneau</a>. Des suppléments de dernière minute peuvent encore être ajoutés via la carte « Facturation ».</dd>
     </dl>
   </div>
 
@@ -516,6 +516,9 @@
 
     <h3>Replanifier un créneau</h3>
     <p>Depuis la vue <strong>Planning</strong> (panneau ou glisser-déposer). Libre jusqu'à l'état 2 inclus ; à partir de l'état 3 il faut être administrateur et donner un motif. Le client peut être prévenu par e-mail (case à cocher). Les rappels « avez-vous expédié ? » repartent automatiquement pour la nouvelle date. C'est aussi la porte de sortie d'un dossier « Sans suite ».</p>
+
+    <h3 id="realisee-en-avance">Une révision faite en avance</h3>
+    <p>La voile est arrivée, l'atelier a du temps avant la date réservée : faites-la maintenant. Sur la fiche, à côté du créneau, le bouton <strong>« Passer ce dossier aujourd'hui »</strong> (disponible de l'état 2 à l'état 6) date l'intervention du jour et <strong>libère le créneau réservé</strong>, qui redevient aussitôt disponible pour un autre pilote dans le formulaire. Si vous cliquez « Intervention terminée, demander le solde » alors que la date réservée n'est pas encore passée, la console vous pose la même question. Le dossier n'est jamais supprimé du planning : il est simplement déplacé au jour réel, même si ce jour est plein ou fermé (il y apparaît alors « hors capacité »). Le client n'est pas prévenu par e-mail ; il voit la nouvelle date dans son espace, et « C'est prêt ! » arrive de toute façon avec la demande de solde. Au téléphone, vous pouvez donc dire : « réservez telle date, on essaiera de vous faire passer avant ».</p>
 
     <h3>Il manque des éléments dans le colis</h3>
     <p>À la réception, un commentaire suffit dans la plupart des cas. Les anciens dossiers marqués « incomplets » bloquent le démarrage de l'intervention tant qu'un motif de déblocage n'est pas donné.</p>

@@ -214,8 +214,33 @@
 					reason: reason,
 					unlock_reason: unlockReason,
 					tracking: tracking
-				}, function () {
+				}, function ( data ) {
+					// Intervention close avant la date réservée : proposer de
+					// libérer le créneau (révision réalisée en avance).
+					if ( data && data.slot_future ) {
+						if ( window.confirm( 'Ce dossier était prévu le ' + data.slot_future + '. Le dater d’aujourd’hui et libérer ce créneau ?' ) ) {
+							post( 'gacct_op_advance_slot', { revision_id: revisionId } )
+								.then( function () { window.location.reload(); } )
+								.catch( function () { window.location.reload(); } );
+							return;
+						}
+					}
 					window.location.reload();
+				} );
+				return;
+			}
+
+			// Révision réalisée en avance : créneau futur libéré, dossier daté d'aujourd'hui.
+			if ( 'advance-slot' === opAction ) {
+				var slotDate = button.getAttribute( 'data-slot-date' ) || '';
+
+				if ( ! window.confirm( 'Ce dossier est prévu le ' + slotDate + '. Le dater d’aujourd’hui et libérer ce créneau ? Le client n’est pas prévenu, il verra la nouvelle date dans son espace.' ) ) {
+					return;
+				}
+
+				run( button, 'gacct_op_advance_slot', { revision_id: revisionId }, function ( data ) {
+					showFeedback( 'success', 'Créneau du ' + ( data.old_str || slotDate ) + ' libéré.' + ( data.over_capacity ? ' Le jour courant est plein ou fermé : le dossier y est noté hors capacité.' : '' ) );
+					window.setTimeout( function () { window.location.reload(); }, 900 );
 				} );
 				return;
 			}

@@ -690,6 +690,26 @@ function gacct_op_ajax_reschedule() {
 add_action( 'wp_ajax_gacct_op_reschedule', 'gacct_op_ajax_reschedule' );
 
 /**
+ * Révision réalisée en avance : occupation déplacée au jour courant, créneau
+ * futur libéré (ouvert aux opérateurs, états 2 à 6).
+ */
+function gacct_op_ajax_advance_slot() {
+	gacct_op_api_guard();
+
+	$result = gacct_op_advance_slot_to_today(
+		isset( $_POST['revision_id'] ) ? absint( $_POST['revision_id'] ) : 0,
+		isset( $_POST['reason'] ) ? wp_unslash( $_POST['reason'] ) : ''
+	);
+
+	if ( is_wp_error( $result ) ) {
+		wp_send_json_error( array( 'message' => $result->get_error_message(), 'code' => $result->get_error_code() ) );
+	}
+
+	wp_send_json_success( $result );
+}
+add_action( 'wp_ajax_gacct_op_advance_slot', 'gacct_op_ajax_advance_slot' );
+
+/**
  * « Acompte encaissé » : le virement d'acompte est arrivé sur le compte.
  * Passe la commande au statut Kojito `acompte-paye` ; la bascule 0 → 1 de la
  * révision est assurée par gacct_sync_revision_state_on_payment() (hook
