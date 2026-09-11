@@ -83,3 +83,11 @@
 .gacct-login-notices .woocommerce-error, .gacct-login-notices .woocommerce-message, .gacct-login-notices .woocommerce-info { border: 0 !important; padding-left: 16px !important; }
 .gacct-login-notices .woocommerce-error::before, .gacct-login-notices .woocommerce-message::before, .gacct-login-notices .woocommerce-info::before, .gacct-login-notices .woocommerce-error li::before { display: none !important; content: none !important; }
 .gacct-login-notices .woocommerce-error li { padding: 0 !important; }
+/* Page mot de passe = mise en page exacte de /connexion/ (mesuree le 11/09/2026) : bloc 420 px centre, sans carte,
+   titre 32 px / 900 centre, intro 14 px #666 centree, formulaire 32 px plus bas. */
+.gacct-login--lost { max-width: 420px; margin: 40px auto 64px; padding: 0; background: none; border: 0; border-radius: 0; }
+.gacct-login--lost .gacct-login-title { font-size: 32px; line-height: 1.15; font-weight: 900; color: #1a1a1a; text-align: center; margin: 0 0 12px; }
+.gacct-login--lost .gacct-login-intro { font-size: 14px; line-height: 1.6; color: #666; text-align: center; margin: 0 0 32px; }
+.gacct-login--lost .gacct-login-notices { margin-bottom: 20px; }
+.gacct-login--lost .gacct-login-forgot { margin-top: 18px; }
+@media (max-width: 767px) { .gacct-login--lost { margin: 24px auto 48px; padding: 0 4px; } .gacct-login--lost .gacct-login-title { font-size: 26px; } }
