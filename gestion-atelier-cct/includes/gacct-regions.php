@@ -477,7 +477,7 @@ function gacct_region_document_title( $title ) {
 	}
 	$slug   = gacct_region_current_slug();
 	$region = $slug ? gacct_region_get( $slug ) : null;
-	return $region ? (string) $region['title'] . ' · Altitude Révision' : $title;
+	return $region ? (string) $region['title'] : $title; // regle du 13/09/2026 : jamais la marque dans le title
 }
 
 add_action( 'wp_head', 'gacct_region_meta_tags', 1 );

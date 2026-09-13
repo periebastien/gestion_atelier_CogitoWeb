@@ -104,11 +104,8 @@ add_filter( 'pre_get_document_title', function ( $title ) {
 	if ( '' === $slug || empty( $titles[ $slug ] ) ) {
 		return $title;
 	}
-	$brand = ar_seo_brand();
-	if ( 'accueil' === $slug ) {
-		return $brand . ' · ' . $titles[ $slug ];
-	}
-	return $titles[ $slug ] . ' · ' . $brand;
+	// Regle du 13/09/2026 (Bastien) : jamais la marque dans le <title>, elle est dans l'URL.
+	return $titles[ $slug ];
 }, 20 );
 
 add_action( 'wp_head', function () {
