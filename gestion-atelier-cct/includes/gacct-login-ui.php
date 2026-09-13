@@ -163,8 +163,14 @@ function gacct_login_ui_render( $context = 'compte' ) {
 	$google          = gacct_login_google_button( $google_redirect );
 	$total_steps     = (int) apply_filters( 'gacct_login_demande_total_steps', 5 );
 
-	$cgv  = get_page_by_path( 'conditions-generales-de-vente' );
-	$conf = get_page_by_path( 'politique-de-confidentialite' );
+	// Slugs des pages légales, filtrables par le pack du site (13/09/2026 :
+	// AEROTECH a « cgv » et pas de page de confidentialité distincte).
+	$legal = (array) apply_filters( 'gacct_login_legal_pages', array(
+		'cgv'  => 'conditions-generales-de-vente',
+		'conf' => 'politique-de-confidentialite',
+	) );
+	$cgv  = get_page_by_path( $legal['cgv'] );
+	$conf = get_page_by_path( $legal['conf'] );
 	$cgv  = $cgv ? get_permalink( $cgv ) : home_url( '/' );
 	$conf = $conf ? get_permalink( $conf ) : ( function_exists( 'get_privacy_policy_url' ) && get_privacy_policy_url() ? get_privacy_policy_url() : home_url( '/' ) );
 

@@ -57,7 +57,7 @@ function gacct_relance_default_settings( $defaults ) {
 			. '<p>Vous aviez préparé une demande d’intervention pour votre matériel ({order_items}), mais le paiement n’a pas abouti et la commande {order_number} a été annulée.</p>'
 			. '<p>Il reste des créneaux à l’atelier : <a href="{relance_url}">refaire ma demande en deux minutes</a>. Vos informations sont déjà connues, il n’y a que la date et le paiement à valider.</p>'
 			. '<p>Un souci avec votre carte, une question sur les tarifs ou les délais ? Répondez simplement à cet e-mail ou appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}) : nous trouverons une solution ensemble.</p>'
-			. '<p>À très vite,<br><br>L’équipe Altitude Révision</p>',
+			. '<p>À très vite,<br><br>' . gacct_team_signature() . '</p>',
 	);
 	$defaults['emails']['abandon_relance_2'] = array(
 		'enabled' => true,
@@ -67,7 +67,7 @@ function gacct_relance_default_settings( $defaults ) {
 			. '<p>Un dernier mot au sujet de votre demande de révision ({order_items}) restée sans paiement.</p>'
 			. '<p>Si votre matériel a toujours besoin de passer à l’atelier, les prochaines dates disponibles sont en ligne : <a href="{relance_url}">choisir mon créneau</a>.</p>'
 			. '<p>Si vous avez changé d’avis ou trouvé une autre solution, aucun problème : nous ne vous écrirons plus à ce sujet.</p>'
-			. '<p>À bientôt,<br><br>L’équipe Altitude Révision</p>',
+			. '<p>À bientôt,<br><br>' . gacct_team_signature() . '</p>',
 	);
 	return $defaults;
 }

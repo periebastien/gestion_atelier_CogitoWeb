@@ -42,6 +42,8 @@
 .gacct-login-msg--error { background: #fdecec; color: #c0392b; }
 .gacct-login-msg--success { background: #e9f8f8; color: #148483; }
 .gacct-login-msg[hidden] { display: none; }
+/* Les étapes masquées le restent quel que soit le thème (13/09/2026, AEROTECH : les trois écrans s'empilaient, le display de .gacct-login-step battait l'attribut hidden). */
+.gacct-login .gacct-login-step[hidden] { display: none !important; }
 
 .gacct-login-step.is-busy { opacity: 0.85; }
 .gacct-login-logged { text-align: center; }

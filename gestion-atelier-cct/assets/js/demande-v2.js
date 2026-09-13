@@ -700,6 +700,11 @@
 		if ( inputDate ) {
 			var demain = new Date();
 			demain.setDate( demain.getDate() + 1 );
+			// Minuit, pas l'heure courante (13/09/2026, recette AEROTECH) : avec l'heure,
+			// flatpickr refusait la sélection du jour même de minDate (comparaison
+			// non « timeless » dans setSelectedDate), donc le premier créneau ouvert
+			// à J+1 s'affichait disponible mais restait incliquable.
+			demain.setHours( 0, 0, 0, 0 );
 
 			instanceFp = window.flatpickr( inputDate, {
 				locale: 'fr',

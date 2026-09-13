@@ -142,22 +142,49 @@ add_action( 'wp_enqueue_scripts', function () {
 
 /** Signature apposée au bas des e-mails clients. */
 const GACCT_AERO_MAIL_SIGNATURE = 'L\'équipe AEROTECH.';
+/**
+ * Signature d'équipe du framework (gacct_team_signature(), 13/09/2026) :
+ * « L’équipe Aerotech » d'après le nom du site devient « L'équipe AEROTECH »
+ * partout (notifications d'état, paiements, relances, rappels de pliage).
+ */
+add_filter( 'gacct_team_signature', function () {
+	return rtrim( GACCT_AERO_MAIL_SIGNATURE, '.' );
+} );
 
 add_filter( 'gacct_pay_default_settings', function ( $defauts ) {
 	$defauts['contact_phone'] = '06 20 89 91 31';
 	$defauts['contact_hours'] = 'du mardi au vendredi de 9 h à 12 h et de 14 h à 18 h, le samedi de 9 h à 17 h';
 
+	// Depuis le 13/09/2026 le framework signe « L’équipe <nom du site> »
+	// (gacct_team_signature()) : on l'aligne sur la casse de la marque.
+	$equipe = function_exists( 'gacct_team_signature' ) ? gacct_team_signature() : 'L’équipe Aerotech';
+
 	foreach ( $defauts['emails'] as $cle => $mail ) {
 		if ( ! empty( $mail['body'] ) ) {
 			$defauts['emails'][ $cle ]['body'] = str_replace(
-				'Bastien.',
-				GACCT_AERO_MAIL_SIGNATURE,
+				array( 'Bastien.', $equipe . '.', $equipe ),
+				array( GACCT_AERO_MAIL_SIGNATURE, GACCT_AERO_MAIL_SIGNATURE, rtrim( GACCT_AERO_MAIL_SIGNATURE, '.' ) ),
 				$mail['body']
 			);
 		}
 	}
 
 	return $defauts;
+}, 99 );
+
+/*
+ * =====================================================================
+ * ÉCRAN DE CONNEXION (gacct-login-ui.php) : pages légales du site
+ * =====================================================================
+ * La ligne « En continuant, vous acceptez… » pointe par défaut vers les
+ * slugs du site de référence. Ici : CGV sur /cgv/, et faute de page de
+ * confidentialité distincte, les mentions légales (à remplacer par une
+ * vraie politique de confidentialité quand le client en fournira une).
+ */
+add_filter( 'gacct_login_legal_pages', function ( $pages ) {
+	$pages['cgv']  = 'cgv';
+	$pages['conf'] = 'mentions-legales';
+	return $pages;
 } );
 /*
  * =====================================================================
@@ -263,4 +290,19 @@ add_shortcode( 'gacct_aero_myaccount_content', function () {
 	echo '</div>';
 
 	return ob_get_clean();
+} );
+
+/*
+ * =====================================================================
+ * TUNNEL ATELIER /commander/ (page 374) = un checkout WooCommerce
+ * =====================================================================
+ * Le formulaire de demande redirige vers la page 374 (Elementor, shortcode
+ * [woocommerce_checkout]) et non vers la page « Commande » (288) déclarée
+ * dans WooCommerce, réservée à la boutique. Sans ce filtre, is_checkout()
+ * est faux sur /commander/ : le thème n'y chargeait ni at-checkout.css ni
+ * les scripts du tunnel (constat de la recette du 13/09/2026, page rendue
+ * sans habillage).
+ */
+add_filter( 'woocommerce_is_checkout', function ( $is ) {
+	return $is || is_page( 'commander' );
 } );
