@@ -3063,7 +3063,7 @@
 					var info = prestations[ input.value ];
 					if ( ! info ) { return; }
 					var qte = qtyDe( input );
-					noms.push( ( info.nom || info.name || info.label || String( input.value ) ) + ( qte > 1 ? ' x' + qte : '' ) );
+					noms.push( ( info.titre || info.nom || info.name || String( input.value ) ) + ( qte > 1 ? ' x' + qte : '' ) );
 					total += ( ( parseFloat( info.prix ) || 0 ) + suppPour( input, 'prix' ) ) * qte;
 				} );
 			} );
