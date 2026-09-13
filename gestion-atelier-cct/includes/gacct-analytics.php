@@ -207,9 +207,29 @@ function gacct_ga_purchase_data() {
 	if ( ! $order || $order->get_meta( GACCT_GA_PURCHASE_META ) ) {
 		return null;
 	}
-	if ( ! $order->is_paid() && ! in_array( $order->get_status(), array( 'on-hold', 'processing', 'completed' ), true ) ) {
+	if ( ! gacct_ga_order_paid( $order ) ) {
 		return null; // paiement non abouti : rien à compter
 	}
+	$items = gacct_ga_order_items( $order );
+	$order->update_meta_data( GACCT_GA_PURCHASE_META, current_time( 'mysql' ) );
+	$order->save();
+
+	return gacct_ga_purchase_payload( $order, $items );
+}
+
+/**
+ * Commande payée au sens du plugin (inclut le statut Kojito « acompte-paye »,
+ * que WooCommerce ne considère pas comme payé : c'est ce qui a fait manquer
+ * les achats des 11 et 12 septembre 2026).
+ */
+function gacct_ga_order_paid( $order ) {
+	if ( function_exists( 'gacct_order_payment_received' ) ) {
+		return (bool) gacct_order_payment_received( $order );
+	}
+	return $order->is_paid() || in_array( $order->get_status(), array( 'on-hold', 'processing', 'completed', 'acompte-paye' ), true );
+}
+
+function gacct_ga_order_items( $order ) {
 	$items = array();
 	foreach ( $order->get_items() as $item ) {
 		$product = $item->get_product();
@@ -220,9 +240,10 @@ function gacct_ga_purchase_data() {
 			'price'     => $product ? (float) wc_get_price_including_tax( $product ) : (float) $item->get_total(),
 		);
 	}
-	$order->update_meta_data( GACCT_GA_PURCHASE_META, current_time( 'mysql' ) );
-	$order->save();
+	return $items;
+}
 
+function gacct_ga_purchase_payload( $order, array $items ) {
 	return array(
 		'event'          => 'purchase',
 		'transaction_id' => (string) $order->get_id(),
@@ -234,6 +255,32 @@ function gacct_ga_purchase_data() {
 		'items'          => $items,
 	);
 }
+
+/**
+ * Dès que la commande est payée (carte, acompte ou virement confirmé), l'achat est
+ * mis en file pour le client connecté : il part à sa prochaine page, même s'il ne
+ * repasse pas par la confirmation. Garde : meta GACCT_GA_PURCHASE_META.
+ */
+function gacct_ga_queue_purchase( $order ) {
+	$order = $order instanceof WC_Order ? $order : wc_get_order( $order );
+	if ( ! $order || $order->get_meta( GACCT_GA_PURCHASE_META ) || ! gacct_ga_order_paid( $order ) ) {
+		return false;
+	}
+	$customer_id = $order->get_customer_id();
+	if ( ! $customer_id ) {
+		return false; // invité : la page de confirmation s'en charge
+	}
+	gacct_ga_queue( $customer_id, 'purchase', gacct_ga_purchase_payload( $order, gacct_ga_order_items( $order ) ) );
+	$order->update_meta_data( GACCT_GA_PURCHASE_META, current_time( 'mysql' ) . ' (file)' );
+	$order->save();
+	return true;
+}
+add_action( 'woocommerce_order_status_changed', function ( $order_id ) {
+	gacct_ga_queue_purchase( $order_id );
+}, 30 );
+add_action( 'woocommerce_payment_complete', function ( $order_id ) {
+	gacct_ga_queue_purchase( $order_id );
+}, 30 );
 
 /* -------------------------------------------------------------------------
  * Sortie HTML
