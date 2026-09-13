@@ -914,6 +914,10 @@ function gacct_profile_hash_token( $token ) {
 function gacct_profile_send_email( $to, $subject, $body ) {
 	$message = function_exists( 'gacct_render_email_html' ) ? gacct_render_email_html( $subject, $body ) : $body;
 
+	if ( function_exists( 'gacct_ga_email_campaign' ) ) {
+		gacct_ga_email_campaign( 'profil' );
+	}
+
 	return (bool) wp_mail(
 		$to,
 		wp_strip_all_tags( $subject ),

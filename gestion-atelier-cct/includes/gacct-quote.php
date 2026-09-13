@@ -483,6 +483,8 @@ function gacct_quote_send( $revision_id, array $lines, $comment = '' ) {
 
 	gacct_op_add_signed_note( $order, $message );
 
+	do_action( 'gacct_quote_sent', $order, $revision_id, gacct_quote_extras_total( $order ) );
+
 	return array(
 		'added'  => $added,
 		'resent' => 4 === $state,

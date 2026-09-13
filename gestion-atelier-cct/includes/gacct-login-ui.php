@@ -434,6 +434,10 @@ function gacct_login_send_welcome( $user ) {
 	$subject = sprintf( $t['welcome_subject'], $site );
 	$body    = sprintf( $t['welcome_body'], $site, $user->user_email, $link );
 
+	if ( function_exists( 'gacct_ga_email_campaign' ) ) {
+		gacct_ga_email_campaign( 'bienvenue' );
+	}
+
 	return (bool) wp_mail( $user->user_email, $subject, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
 }
 

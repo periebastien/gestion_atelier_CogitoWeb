@@ -68,6 +68,7 @@ require_once __DIR__ . '/includes/gacct-client-tables.php';
 require_once __DIR__ . '/includes/gacct-regions.php';
 require_once __DIR__ . '/includes/gacct-analytics.php'; // GTM + dataLayer (11/09/2026)
 require_once __DIR__ . '/includes/gacct-client-badge.php'; // nouveau / fidele dans les commandes (13/09/2026)
+require_once __DIR__ . '/includes/gacct-relance.php'; // relance mesuree apres annulation faute de paiement (13/09/2026)
 require_once __DIR__ . '/includes/gacct-operator/gacct-operator.php';
 
 final class GACCT_Plugin {
@@ -1586,6 +1587,9 @@ final class GACCT_Plugin {
 			$client_email = $this->order_customer_email( $order );
 
 			if ( is_email( $client_email ) ) {
+				if ( function_exists( 'gacct_ga_email_campaign' ) ) {
+					gacct_ga_email_campaign( 'etat-' . (int) $state );
+				}
 				$sent = $this->send_notification_email( $client_email, $subject, $body, $attachments );
 
 				if ( $sent ) {

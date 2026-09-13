@@ -444,6 +444,10 @@ function gacct_conf_send_action_email( $action, $order ) {
 
 	$body = apply_filters( 'gacct_conf_work_order_email_body', $body, $order );
 
+	if ( function_exists( 'gacct_ga_email_campaign' ) ) {
+		gacct_ga_email_campaign( 'bon-intervention' );
+	}
+
 	return (bool) wp_mail(
 		$order->get_billing_email(),
 		wp_strip_all_tags( $subject ),

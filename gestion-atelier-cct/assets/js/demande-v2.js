@@ -280,6 +280,7 @@
 			erreurs[ cle ].textContent = message;
 			erreurs[ cle ].classList.add( 'is-on' );
 			erreurs[ cle ].scrollIntoView( { behavior: 'smooth', block: 'center' } );
+			dlPush( { event: 'formulaire_erreur', step: pageCourante(), champ: cle, message: String( message ).slice( 0, 100 ) } );
 		}
 
 		function effaceErreur( cle ) {

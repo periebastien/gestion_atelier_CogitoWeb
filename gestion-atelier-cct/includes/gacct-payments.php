@@ -636,6 +636,10 @@ function gacct_pay_send_email( $to, $template_key, array $variables, $copy_admin
 	$body    = strtr( (string) $email['body'], $variables );
 	$message = gacct_render_email_html( $subject, $body );
 
+	if ( function_exists( 'gacct_ga_email_campaign' ) ) {
+		gacct_ga_email_campaign( str_replace( '_', '-', $template_key ) ); // utm_campaign des liens
+	}
+
 	$headers = array( 'Content-Type: text/html; charset=UTF-8' );
 
 	$sent = wp_mail( $to, wp_strip_all_tags( $subject ), $message, $headers );
@@ -904,6 +908,8 @@ function gacct_pay_hourly_tick() {
 	gacct_pay_process_bacs_orders();
 	gacct_pay_process_unpaid_orders();
 	gacct_pay_process_abandoned_carts();
+
+	do_action( 'gacct_pay_hourly_tick_after' );
 }
 
 /**
@@ -1095,6 +1101,8 @@ function gacct_pay_cancel_unpaid_order( $order, $deadline_ts, $template_key = 'b
 			$reason ? $reason : __( 'paiement non recu', 'gestion-atelier-cct' )
 		)
 	);
+
+	do_action( 'gacct_pay_order_auto_cancelled', $order, $template_key, $reason );
 }
 
 /* =============================================================================
@@ -1470,6 +1478,8 @@ function gacct_pay_handle_admin_save() {
 		$settings['cancel_days'] = $settings['reminder_days'];
 	}
 
+	$settings = apply_filters( 'gacct_pay_settings_from_post', $settings, $defaults );
+
 	$posted_emails = isset( $_POST['emails'] ) && is_array( $_POST['emails'] ) ? wp_unslash( $_POST['emails'] ) : array();
 
 	foreach ( $defaults['emails'] as $key => $default_email ) {
@@ -1692,6 +1702,8 @@ function gacct_pay_render_admin_page() {
 				</tbody>
 			</table>
 
+			<?php do_action( 'gacct_pay_settings_sections', $settings ); ?>
+
 			<h2><?php esc_html_e( 'Coordonnees affichees au client', 'gestion-atelier-cct' ); ?></h2>
 			<table class="form-table" role="presentation">
 				<tbody>
@@ -1750,6 +1762,8 @@ function gacct_pay_render_admin_page() {
 									<code>{checkout_url}</code>
 									<code>{new_request_url}</code>
 									<code>{site_name}</code>
+									<code>{relance_url}</code> <?php esc_html_e( '(relances apres annulation : lien de reprise mesure)', 'gestion-atelier-cct' ); ?>
+									<code>{order_items}</code> <?php esc_html_e( '(prestations de la commande)', 'gestion-atelier-cct' ); ?>
 									<br>
 									<?php esc_html_e( 'Delais (a garder dans les relances) :', 'gestion-atelier-cct' ); ?>
 									<code>{deadline_date}</code> <?php esc_html_e( '(date limite du virement)', 'gestion-atelier-cct' ); ?>
