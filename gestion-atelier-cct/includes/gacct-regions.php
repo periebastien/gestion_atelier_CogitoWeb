@@ -96,7 +96,7 @@ function gacct_regions_data() {
 		/* ---- 1 · NORMANDIE --------------------------------------------- */
 		'normandie' => array(
 			'name'     => 'Normandie',
-			'title'    => 'Révision de parapente en Normandie — Atelier à Clécy | Altitude Révision',
+			'title'    => 'Révision de parapente en Normandie, atelier à Clécy',
 			'meta'     => 'Atelier de révision et contrôle PARACHECK à Clécy, en Suisse Normande. Voile de parapente ou de paramoteur : déposez-la sur place ou expédiez-la, retour suivi.',
 			'h1'       => 'Révision de parapente en Normandie',
 			'h1_html'  => 'Révision de parapente <em>en Normandie</em>',
@@ -147,7 +147,7 @@ function gacct_regions_data() {
 		/* ---- 2 · BRETAGNE ---------------------------------------------- */
 		'bretagne' => array(
 			'name'     => 'Bretagne',
-			'title'    => 'Révision de parapente en Bretagne — Envoi et retour suivis | Altitude Révision',
+			'title'    => 'Révision de parapente en Bretagne, envoi et retour suivis',
 			'meta'     => 'Pilote breton ? Expédiez votre voile à notre atelier PARACHECK : créneau réservé à l’avance, rapport de contrôle détaillé, retour en colis protégé.',
 			'h1'       => 'Révision de parapente en Bretagne',
 			'h1_html'  => 'Révision de parapente <em>en Bretagne</em>',
@@ -198,7 +198,7 @@ function gacct_regions_data() {
 		/* ---- 3 · PAYS DE LA LOIRE -------------------------------------- */
 		'pays-de-la-loire' => array(
 			'name'     => 'Pays de la Loire',
-			'title'    => 'Révision de parapente en Pays de la Loire | Altitude Révision',
+			'title'    => 'Révision de parapente en Pays de la Loire',
 			'meta'     => 'Vol au treuil en Vendée ou en Loire-Atlantique ? Expédiez votre voile à notre atelier PARACHECK : rapport détaillé, retour suivi, créneau réservé à l’avance.',
 			'h1'       => 'Révision de parapente en Pays de la Loire',
 			'h1_html'  => 'Révision de parapente <em>en Pays de la Loire</em>',
@@ -248,7 +248,7 @@ function gacct_regions_data() {
 		/* ---- 4 · ÎLE-DE-FRANCE ----------------------------------------- */
 		'ile-de-france' => array(
 			'name'     => 'Île-de-France',
-			'title'    => 'Révision de parapente en Île-de-France — Envoi simple | Altitude Révision',
+			'title'    => 'Révision de parapente en Île-de-France, envoi simple',
 			'meta'     => 'Pilote francilien ? Expédiez votre voile à notre atelier PARACHECK, ou déposez-la sur la route de la Normandie. Rapport détaillé et retour en colis suivi.',
 			'h1'       => 'Révision de parapente en Île-de-France',
 			'h1_html'  => 'Révision de parapente <em>en Île-de-France</em>',
@@ -298,7 +298,7 @@ function gacct_regions_data() {
 		/* ---- 5 · HAUTS-DE-FRANCE --------------------------------------- */
 		'hauts-de-france' => array(
 			'name'     => 'Hauts-de-France',
-			'title'    => 'Révision de parapente en Hauts-de-France | Altitude Révision',
+			'title'    => 'Révision de parapente en Hauts-de-France',
 			'meta'     => 'Côte d’Opale, terrils, treuil : faites réviser votre voile hors saison. Atelier PARACHECK, créneau réservé à l’avance, retour en colis suivi.',
 			'h1'       => 'Révision de parapente en Hauts-de-France',
 			'h1_html'  => 'Révision de parapente <em>en Hauts-de-France</em>',
@@ -472,9 +472,12 @@ add_filter( 'pre_get_document_title', 'gacct_region_document_title', 20 );
  * @return string
  */
 function gacct_region_document_title( $title ) {
+	if ( defined( 'WPSEO_VERSION' ) ) {
+		return $title; // Yoast fait foi (titres repris dans ses metas le 13/09/2026)
+	}
 	$slug   = gacct_region_current_slug();
 	$region = $slug ? gacct_region_get( $slug ) : null;
-	return $region ? (string) $region['title'] : $title;
+	return $region ? (string) $region['title'] . ' · Altitude Révision' : $title;
 }
 
 add_action( 'wp_head', 'gacct_region_meta_tags', 1 );
@@ -483,6 +486,9 @@ add_action( 'wp_head', 'gacct_region_meta_tags', 1 );
  * Meta description + canonical sur les pages régionales.
  */
 function gacct_region_meta_tags() {
+	if ( defined( 'WPSEO_VERSION' ) ) {
+		return; // description portee par Yoast
+	}
 	$slug   = gacct_region_current_slug();
 	$region = $slug ? gacct_region_get( $slug ) : null;
 	if ( ! $region ) {
