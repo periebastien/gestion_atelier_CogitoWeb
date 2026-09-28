@@ -14,7 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Créneau (occupation_atelier) lié à une révision — 1 ligne max.
  *
- * @return array|null { date_reservee, duree_totale_commande }
+ * Renvoie aussi _ID et cct_status (28/09/2026, replanification depuis la
+ * fiche) : une occupation en brouillon (dossier « Sans suite ») est trouvée,
+ * l'occupation publiée est préférée s'il y en a plusieurs.
+ *
+ * @return array|null { _ID, cct_status, date_reservee, duree_totale_commande }
  */
 function gacct_op_fiche_get_slot( array $revision ) {
 	global $wpdb;
@@ -24,8 +28,9 @@ function gacct_op_fiche_get_slot( array $revision ) {
 	$order_id = absint( $revision['order_id'] ?? 0 );
 
 	$row = $wpdb->get_row( $wpdb->prepare(
-		"SELECT date_reservee, duree_totale_commande FROM {$table}
+		"SELECT _ID, cct_status, date_reservee, duree_totale_commande FROM {$table}
 		 WHERE revision_id = %d OR ( %d > 0 AND order_id = %d )
+		 ORDER BY ( cct_status = 'publish' ) DESC, _ID DESC
 		 LIMIT 1",
 		$rev_id,
 		$order_id,
@@ -307,8 +312,10 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 	}
 	echo '</div>';
 
+	// Dossier sans commande (repris de l'ancien site) : rapports, clôture et
+	// réexpédition restent possibles (retour Hervé du 23/09, 28/09/2026).
 	if ( ! $order ) {
-		echo '<div class="gacct-op-warning">' . esc_html__( 'Aucune commande liée à ce dossier : les actions sont désactivées (lecture seule).', 'gestion-atelier-cct' ) . '</div>';
+		echo '<div class="gacct-op-warning">' . esc_html__( 'Aucune commande liée à ce dossier (intervention reprise de l\'ancien site) : pas d\'e-mail client ni de facturation ; rapports, clôture et réexpédition restent possibles.', 'gestion-atelier-cct' ) . '</div>';
 	}
 
 	// Bandeau « dossier incomplet » (CDC §4.4).
@@ -350,6 +357,35 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 
 		echo '<div><dt>' . esc_html__( 'Email', 'gestion-atelier-cct' ) . '</dt><dd>';
 		echo $email ? '<a href="' . esc_url( 'mailto:' . $email ) . '">' . esc_html( $email ) . '</a>' : '—';
+		echo '</dd></div>';
+
+		// Adresses de la commande (demande de Cyrille, compta ; retour Hervé du
+		// 08/09, 28/09/2026). Produit « Retrait atelier » : badge à la place de
+		// l'adresse de livraison. IDs filtrables : gacct_pickup_product_ids.
+		$billing_addr  = (string) $order->get_formatted_billing_address();
+		$shipping_addr = (string) $order->get_formatted_shipping_address();
+		$pickup_ids    = array_map( 'absint', (array) apply_filters( 'gacct_pickup_product_ids', array( 20 ) ) );
+		$is_pickup     = false;
+
+		foreach ( $order->get_items() as $item ) {
+			if ( in_array( (int) $item->get_product_id(), $pickup_ids, true )
+				|| in_array( (int) $item->get_variation_id(), $pickup_ids, true )
+				|| false !== stripos( (string) $item->get_name(), 'retrait atelier' ) ) {
+				$is_pickup = true;
+				break;
+			}
+		}
+
+		echo '<div><dt>' . esc_html__( 'Adresse de facturation', 'gestion-atelier-cct' ) . '</dt><dd>' . ( '' !== $billing_addr ? wp_kses_post( $billing_addr ) : '–' ) . '</dd></div>';
+
+		echo '<div><dt>' . esc_html__( 'Adresse de livraison', 'gestion-atelier-cct' ) . '</dt><dd>';
+		if ( $is_pickup ) {
+			echo '<span class="gacct-op-badge gacct-op-badge-pickup">' . esc_html__( 'Retrait à l\'atelier', 'gestion-atelier-cct' ) . '</span>';
+		} elseif ( '' !== $shipping_addr ) {
+			echo wp_kses_post( $shipping_addr );
+		} else {
+			echo '<span class="gacct-op-muted">' . esc_html__( 'identique à la facturation', 'gestion-atelier-cct' ) . '</span>';
+		}
 		echo '</dd></div>';
 	}
 
@@ -393,8 +429,35 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 				. esc_html__( 'Passer ce dossier aujourd\'hui', 'gestion-atelier-cct' ) . '</button>';
 			echo '<span class="description" style="display:block">' . esc_html__( 'Libère le créneau réservé et date l\'intervention d\'aujourd\'hui.', 'gestion-atelier-cct' ) . '</span>';
 		}
+		if ( 'publish' !== (string) ( $slot['cct_status'] ?? 'publish' ) ) {
+			echo ' <span class="gacct-op-muted">' . esc_html__( '(créneau libéré)', 'gestion-atelier-cct' ) . '</span>';
+		}
 	} else {
 		echo esc_html__( 'Aucun créneau (libéré ou non planifié)', 'gestion-atelier-cct' );
+	}
+
+	// Replanifier depuis la fiche (retour Hervé du 15/09, 28/09/2026) : états
+	// 0 à 2, et 9 « Sans suite » (occupation en brouillon, invisible du
+	// Planning : la fiche est la seule porte de reprise pour l'atelier).
+	// À partir de 3 : replanification réservée à l'admin, via le Planning.
+	$can_reschedule = $slot && ! empty( $slot['_ID'] ) && ! $is_cancelled
+		&& ( $state <= 2 || ( defined( 'GACCT_STATE_SANS_SUITE' ) && GACCT_STATE_SANS_SUITE === (int) $state ) );
+
+	if ( $can_reschedule ) {
+		$is_state9 = defined( 'GACCT_STATE_SANS_SUITE' ) && GACCT_STATE_SANS_SUITE === (int) $state;
+
+		echo '<div class="gacct-op-reschedule-form" data-occupation-id="' . esc_attr( absint( $slot['_ID'] ) ) . '">';
+		echo '<label class="gacct-op-label" for="gacct-op-reschedule-date">' . esc_html( $is_state9 ? __( 'Reprendre le dossier : nouvelle date', 'gestion-atelier-cct' ) : __( 'Replanifier : nouvelle date', 'gestion-atelier-cct' ) ) . '</label>';
+		echo '<span class="gacct-op-reschedule-row">';
+		echo '<input type="date" id="gacct-op-reschedule-date" data-op-field="reschedule-date" min="' . esc_attr( wp_date( 'Y-m-d' ) ) . '">';
+		echo '<button type="button" class="button button-small" data-op-action="reschedule-slot">' . esc_html__( 'Replanifier', 'gestion-atelier-cct' ) . '</button>';
+		echo '</span>';
+		echo '<label class="gacct-op-check"><input type="checkbox" data-op-field="reschedule-notify"' . checked( ! $is_state9, true, false ) . '> ' . esc_html__( 'Prévenir le client par e-mail', 'gestion-atelier-cct' ) . '</label>';
+		if ( $is_state9 ) {
+			echo '<span class="description" style="display:block">' . esc_html__( 'Le dossier reviendra en « En attente de réception » sur la nouvelle date (le jour même est accepté si le colis est arrivé).', 'gestion-atelier-cct' ) . '</span>';
+		}
+		echo '<span class="gacct-op-feedback gacct-op-slot-feedback" aria-live="polite"></span>';
+		echo '</div>';
 	}
 	echo '</dd></div>';
 
@@ -416,6 +479,41 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 	echo '</dd></div>';
 
 	echo '</dl>';
+
+	// Outils de l'en-tête (28/09/2026) : bon d'intervention imprimable depuis
+	// la fiche (retour Hervé du 08/09 : l'atelier l'imprime quand le client ne
+	// l'a pas fait) et modification du matériel (retour du 15/09).
+	echo '<div class="gacct-op-head-tools">';
+	if ( $order && ! $is_cancelled && function_exists( 'gacct_wo_print_url' ) ) {
+		echo '<a class="button" href="' . esc_url( gacct_wo_print_url( $order ) ) . '" target="_blank" rel="noopener">' . esc_html__( 'Imprimer le bon d\'intervention', 'gestion-atelier-cct' ) . '</a>';
+		if ( function_exists( 'gacct_wo_pdf_url' ) ) {
+			echo '<a class="button" href="' . esc_url( gacct_wo_pdf_url( $order ) ) . '" target="_blank" rel="noopener">' . esc_html__( 'Télécharger (PDF)', 'gestion-atelier-cct' ) . '</a>';
+		}
+	}
+	echo '<button type="button" class="button" data-op-action="toggle-materiel" aria-expanded="false">' . esc_html__( 'Modifier le matériel', 'gestion-atelier-cct' ) . '</button>';
+	echo '</div>';
+
+	$materiel_fields = array(
+		'marque'          => __( 'Marque', 'gestion-atelier-cct' ),
+		'modele'          => __( 'Modèle', 'gestion-atelier-cct' ),
+		'taille'          => __( 'Taille', 'gestion-atelier-cct' ),
+		'couleur'         => __( 'Couleur', 'gestion-atelier-cct' ),
+		'p_t_v'           => __( 'PTV', 'gestion-atelier-cct' ),
+		'numero_de_serie' => __( 'N° de série', 'gestion-atelier-cct' ),
+	);
+
+	echo '<div class="gacct-op-materiel-form" hidden>';
+	echo '<div class="gacct-op-materiel-grid">';
+	foreach ( $materiel_fields as $key => $label ) {
+		echo '<label class="gacct-op-materiel-field"><span class="gacct-op-label">' . esc_html( $label ) . '</span>';
+		echo '<input type="text" data-materiel-field="' . esc_attr( $key ) . '" value="' . esc_attr( trim( (string) ( $revision[ $key ] ?? '' ) ) ) . '"></label>';
+	}
+	echo '</div>';
+	echo '<p class="gacct-op-muted">' . esc_html__( 'Marque, taille et n° de série sont enregistrés en capitales. Les changements sont journalisés dans la commande.', 'gestion-atelier-cct' ) . '</p>';
+	echo '<button type="button" class="button button-primary" data-op-action="save-materiel">' . esc_html__( 'Enregistrer', 'gestion-atelier-cct' ) . '</button>';
+	echo '<div class="gacct-op-feedback gacct-op-materiel-feedback" aria-live="polite"></div>';
+	echo '</div>';
+
 	echo '</div>'; // .gacct-op-head
 
 	// ---------------------------------------------------------------- Frise 0→8.
@@ -425,7 +523,7 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 
 	if ( defined( 'GACCT_STATE_SANS_SUITE' ) && GACCT_STATE_SANS_SUITE === (int) $state ) {
 		echo '<p><span class="gacct-op-badge etat-9">' . esc_html__( 'Sans suite', 'gestion-atelier-cct' ) . '</span></p>';
-		echo '<p class="description">' . esc_html__( 'Matériel jamais reçu : le créneau a été libéré, l’acompte reste acquis, la commande n’est ni annulée ni remboursée. Pour reprendre ce dossier, replanifiez-le depuis le Planning : il reviendra en « En attente de réception » sur la nouvelle date.', 'gestion-atelier-cct' ) . '</p>';
+		echo '<p class="description">' . esc_html__( 'Matériel jamais reçu : le créneau a été libéré, l’acompte reste acquis, la commande n’est ni annulée ni remboursée. Pour reprendre ce dossier, replanifiez-le ci-dessus (bloc Créneau) : il reviendra en « En attente de réception » sur la nouvelle date.', 'gestion-atelier-cct' ) . '</p>';
 	} else {
 		echo '<ol class="gacct-op-steps">';
 		foreach ( $labels as $i => $label ) {
@@ -453,12 +551,24 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 	echo '<h2>' . esc_html__( 'Actions', 'gestion-atelier-cct' ) . '</h2>';
 	echo '<div class="gacct-op-feedback" aria-live="polite"></div>';
 
+	// Sans commande (28/09/2026, retour Hervé du 23/09) : plus de verrou
+	// global. Seules la clôture 3→7 et la réexpédition 7→8 sont proposées ;
+	// devis, facturation, forçages, attente et annulation exigent une commande.
 	if ( ! $order ) {
-		echo '<p class="gacct-op-muted">' . esc_html__( 'Aucune commande liée : les changements d\'état sont désactivés.', 'gestion-atelier-cct' ) . '</p>';
-	} else {
-		$allowed   = gacct_op_allowed_transitions();
-		$forceable = gacct_op_forceable_transitions();
+		echo '<p class="gacct-op-muted">' . esc_html__( 'Aucune commande liée : pas d\'e-mail au client, actions limitées à la clôture du dossier et à la réexpédition.', 'gestion-atelier-cct' ) . '</p>';
+	}
+
+	{
+		$allowed   = $order ? gacct_op_allowed_transitions() : array();
+		$forceable = $order ? gacct_op_forceable_transitions() : array();
 		$has_action = false;
+
+		// Sans commande, état 3 : clôture directe (rapport déposé obligatoire,
+		// contrôlé par gacct_op_change_state).
+		if ( ! $order && 3 === $state ) {
+			$has_action = true;
+			echo '<button type="button" class="button button-primary" data-op-action="change-state" data-state="7" data-confirm-text="' . esc_attr__( 'Clore ce dossier ? Le rapport doit avoir été déposé dans la carte « Rapports de contrôle ».', 'gestion-atelier-cct' ) . '">' . esc_html__( 'Clore le dossier (rapport disponible)', 'gestion-atelier-cct' ) . '</button>';
+		}
 
 		if ( ! empty( $allowed[ $state ] ) ) {
 			foreach ( $allowed[ $state ] as $target => $action_label ) {
@@ -499,12 +609,20 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 			echo '<label class="gacct-op-label" for="gacct-op-tracking">' . esc_html__( 'Suivi transporteur (numéro ou lien, obligatoire)', 'gestion-atelier-cct' ) . '</label>';
 			echo '<input type="text" id="gacct-op-tracking" data-op-field="tracking" value="' . esc_attr( $suivi_pre ) . '" placeholder="' . esc_attr__( 'Ex. : 6A12345678901 ou https://…', 'gestion-atelier-cct' ) . '">';
 			echo '<button type="button" class="button button-primary" data-op-action="change-state" data-state="8" data-tracking="1">' . esc_html__( 'Matériel réexpédié', 'gestion-atelier-cct' ) . '</button>';
-			echo '<p class="gacct-op-muted">' . esc_html__( 'Le client reçoit un email avec le lien de suivi.', 'gestion-atelier-cct' ) . '</p>';
+			echo '<p class="gacct-op-muted">' . esc_html( $order ? __( 'Le client reçoit un email avec le lien de suivi.', 'gestion-atelier-cct' ) : __( 'Aucune commande liée : aucun e-mail n\'est envoyé.', 'gestion-atelier-cct' ) ) . '</p>';
+
+			// Retrait à la boutique (retour Hervé du 16/09, 28/09/2026) : passe en 8
+			// avec le marqueur en guise de suivi ; e-mail « matériel remis » à la place
+			// de l'e-mail de suivi colis.
+			if ( function_exists( 'gacct_op_pickup_marker' ) ) {
+				echo '<p class="gacct-op-pickup-row"><span class="gacct-op-muted">' . esc_html__( 'ou', 'gestion-atelier-cct' ) . '</span> ';
+				echo '<button type="button" class="button" data-op-action="change-state" data-state="8" data-tracking-value="' . esc_attr( gacct_op_pickup_marker() ) . '" data-confirm-text="' . esc_attr__( 'Confirmer la remise en main propre à la boutique ? Le dossier passe en « Matériel réexpédié » sans suivi colis ; le client reçoit un e-mail de remise.', 'gestion-atelier-cct' ) . '">' . esc_html__( 'Remis en main propre à la boutique', 'gestion-atelier-cct' ) . '</button></p>';
+			}
 			echo '</div>';
 		}
 
 		// Renvoi d'email (états 4 et 6).
-		if ( array_key_exists( $state, gacct_op_resendable_states() ) ) {
+		if ( $order && array_key_exists( $state, gacct_op_resendable_states() ) ) {
 			$has_action = true;
 			echo '<button type="button" class="button" data-op-action="resend-email">' . esc_html__( 'Renvoyer l\'email au client', 'gestion-atelier-cct' ) . '</button>';
 		}
@@ -606,7 +724,7 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 		}
 
 		// Mise en attente / reprise (drapeau, pas un état) — réunion du 06/08/2026.
-		if ( ! $is_cancelled ) {
+		if ( $order && ! $is_cancelled ) {
 			if ( $hold['active'] ) {
 				echo '<div class="gacct-op-force gacct-op-hold-zone">';
 				echo '<button type="button" class="button" data-op-action="toggle-force" aria-expanded="false">' . esc_html__( 'Reprendre le dossier', 'gestion-atelier-cct' ) . '…</button>';
@@ -629,7 +747,7 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 		}
 
 		// Annulation du dossier (séparée), masquée si annulée ou dossier clos.
-		if ( ! $is_cancelled && $state < 7 ) {
+		if ( $order && ! $is_cancelled && $state < 7 ) {
 			echo '<div class="gacct-op-cancel-zone">';
 			echo '<button type="button" class="button-link button-link-delete" data-op-action="cancel">' . esc_html__( 'Annuler le dossier', 'gestion-atelier-cct' ) . '</button>';
 			echo '</div>';
@@ -744,12 +862,31 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 	echo '<div class="gacct-op-card">';
 	echo '<h2>' . esc_html__( 'Expédition retour', 'gestion-atelier-cct' ) . '</h2>';
 	$suivi = trim( (string) ( $revision['suivi_transporteur'] ?? '' ) );
-	if ( $suivi && preg_match( '#^https?://#i', $suivi ) ) {
+	if ( $suivi && function_exists( 'gacct_op_is_pickup_tracking' ) && gacct_op_is_pickup_tracking( $suivi ) ) {
+		echo '<p><span class="gacct-op-badge gacct-op-badge-pickup">' . esc_html( $suivi ) . '</span></p>';
+	} elseif ( $suivi && preg_match( '#^https?://#i', $suivi ) ) {
 		echo '<p><a class="button" href="' . esc_url( $suivi ) . '" target="_blank" rel="noopener">' . esc_html__( 'Suivre le colis', 'gestion-atelier-cct' ) . '</a></p>';
 	} elseif ( $suivi ) {
 		echo '<p>' . esc_html( $suivi ) . '</p>';
 	} else {
 		echo '<p class="gacct-op-muted">—</p>';
+	}
+
+	// État 8 : correction du suivi sans e-mail (retour Hervé du 16/09,
+	// 28/09/2026). Bouton « Retrait à la boutique » : préremplit le marqueur.
+	if ( 8 === $state ) {
+		echo '<div class="gacct-op-tracking-form">';
+		echo '<label class="gacct-op-label" for="gacct-op-tracking-edit">' . esc_html__( 'Modifier le suivi (numéro, lien ou mention)', 'gestion-atelier-cct' ) . '</label>';
+		echo '<input type="text" id="gacct-op-tracking-edit" data-op-field="tracking-edit" value="' . esc_attr( $suivi ) . '">';
+		echo '<p class="gacct-op-tracking-buttons">';
+		if ( function_exists( 'gacct_op_pickup_marker' ) ) {
+			echo '<button type="button" class="button button-small" data-op-action="tracking-pickup" data-tracking-value="' . esc_attr( gacct_op_pickup_marker() ) . '">' . esc_html__( 'Retrait à la boutique', 'gestion-atelier-cct' ) . '</button> ';
+		}
+		echo '<button type="button" class="button button-primary button-small" data-op-action="update-tracking">' . esc_html__( 'Mettre à jour le suivi', 'gestion-atelier-cct' ) . '</button>';
+		echo '</p>';
+		echo '<p class="gacct-op-muted">' . esc_html__( 'Aucun e-mail n\'est envoyé au client ; la modification est journalisée.', 'gestion-atelier-cct' ) . '</p>';
+		echo '<div class="gacct-op-feedback gacct-op-tracking-feedback" aria-live="polite"></div>';
+		echo '</div>';
 	}
 	echo '</div>';
 

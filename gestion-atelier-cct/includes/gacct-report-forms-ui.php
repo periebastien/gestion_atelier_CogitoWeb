@@ -118,6 +118,9 @@ function gacct_rf_footer_buttons( $final = false ) {
 	echo '<button type="button" class="button button-primary" data-rf-action="generate">' . esc_html__( 'Générer le PDF', 'gestion-atelier-cct' ) . '</button>';
 	echo '<button type="button" class="button" data-rf-action="close-form">' . esc_html__( 'Fermer', 'gestion-atelier-cct' ) . '</button>';
 	echo '</div>';
+	// 28/09/2026, retour Hervé du 15/09 : retour discret de l'enregistrement
+	// automatique (rempli par operator-report.js).
+	echo '<p class="gacct-op-muted gacct-rf-autosave" aria-live="polite"></p>';
 	echo '<p class="gacct-op-muted">' . esc_html__( 'Le PDF est écrit dans le coffre-fort et ajouté au dossier ; régénérer un rapport remplace son PDF sans toucher aux autres.', 'gestion-atelier-cct' ) . '</p>';
 }
 

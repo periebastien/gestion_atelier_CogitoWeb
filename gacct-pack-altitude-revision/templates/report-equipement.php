@@ -64,6 +64,8 @@ $gacct_rpdf_gear_row( $secours );
 echo '<table class="rpdf-data">';
 echo '<tr><th style="width:30%;">' . esc_html__( 'Date de production', 'gestion-atelier-cct' ) . '</th><td>' . esc_html( ! empty( $secours['date_production'] ) ? $secours['date_production'] : '—' ) . '</td></tr>';
 echo '<tr><th>' . esc_html__( 'Aération et pliage du parachute', 'gestion-atelier-cct' ) . '</th><td style="font-size:11px;">' . ( ! empty( $secours['aeration'] ) ? '✔' : '✘' ) . '</td></tr>';
+// 28/09/2026, retour Hervé du 23/09 : remplacement des élastiques de lovage.
+echo '<tr><th>' . esc_html__( 'Remplacement des élastiques de lovage', 'gestion-atelier-cct' ) . '</th><td style="font-size:11px;">' . ( ! empty( $secours['elastiques'] ) ? '✔' : '✘' ) . '</td></tr>';
 echo '</table>';
 
 if ( ! empty( $secours['remarques'] ) ) {

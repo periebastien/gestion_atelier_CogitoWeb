@@ -186,6 +186,10 @@ function gacct_demande_v2_config() {
 			'biplace'   => $biplace,
 			// Produits « demande de devis » (carte réparation, exclusive des suspentes).
 			'devisIds'  => function_exists( 'gacct_quote_devis_product_ids' ) ? gacct_quote_devis_product_ids() : array(),
+			// 28/09/2026 (retour Hervé du 16/09) : produits cochables EN PLUS du choix
+			// unique de leur groupe (ex. montage sur sellette avec un pliage de secours).
+			// Liste fournie par l'atelier via le filtre `gacct_demande_cumulables_ids`.
+			'cumulablesIds' => array_values( array_map( 'absint', (array) apply_filters( 'gacct_demande_cumulables_ids', array() ) ) ),
 			// Champs explicitement facultatifs : reçoivent la pastille « Facultatif »
 			// (l'étoile des champs requis étant peu lisible pour un néophyte).
 			'facultatifs' => array( 'numero_serie' ),

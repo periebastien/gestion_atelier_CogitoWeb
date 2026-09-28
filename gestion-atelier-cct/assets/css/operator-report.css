@@ -329,6 +329,19 @@
 	margin-top: 14px;
 }
 
+/* Enregistrement automatique (28/09/2026) */
+.gacct-rf-autosave {
+	min-height: 1.2em;
+	margin: 0 0 6px;
+	font-size: 12px;
+}
+.gacct-rf-autosave:empty {
+	display: none;
+}
+.gacct-rf-autosave.is-error {
+	color: #b32d2e;
+}
+
 /* Origine des seuils (08/09/2026) */
 .gacct-rf-grid-source { margin-top: 8px; }
 .gacct-rf-field-check { grid-column: 1 / -1; }

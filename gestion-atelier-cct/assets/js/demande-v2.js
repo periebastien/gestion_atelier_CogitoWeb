@@ -1785,6 +1785,14 @@
 		var qtys = {}; // product_id (string) → quantité (suspentes cochées)
 		var suspentesName = 'suspentes_travaux';
 		var groupesUniques = [ 'revisions_controle', 'pliages_secours' ];
+		/* 28/09/2026 (retour Hervé du 16/09) : produits « cumulables », cochables
+		   EN PLUS du choix unique de leur groupe (ex. montage sur sellette avec un
+		   pliage de secours). Liste fournie par PHP (filtre gacct_demande_cumulables_ids). */
+		var cumulablesIds = ( v2.cumulablesIds || [] ).map( String );
+
+		function estCumulable( input ) {
+			return input && cumulablesIds.indexOf( String( input.value ) ) > -1;
+		}
 
 		function estDevis( input ) {
 			return devisIds.indexOf( String( input.value ) ) > -1;
@@ -2413,15 +2421,17 @@
 		setTimeout( function () { matPagePrecedente = pageCourante(); majEquipement(); }, 0 );
 
 		/* --- Choix unique décochable : une case cochée décoche ses sœurs.
-		   (Cases à cocher natives : le re-clic décoche déjà tout seul.) --- */
+		   (Cases à cocher natives : le re-clic décoche déjà tout seul.)
+		   28/09/2026 (retour Hervé du 16/09) : un produit cumulable ne décoche
+		   rien et n'est jamais décoché par une sœur. --- */
 		groupesUniques.forEach( function ( name ) {
 			form.addEventListener( 'change', function ( e ) {
 				var t = e.target;
-				if ( ! t || t.type !== 'checkbox' || ( t.getAttribute( 'data-field-name' ) || '' ) !== name || ! t.checked ) {
+				if ( ! t || t.type !== 'checkbox' || ( t.getAttribute( 'data-field-name' ) || '' ) !== name || ! t.checked || estCumulable( t ) ) {
 					return;
 				}
 				fieldInputs( name ).forEach( function ( el ) {
-					if ( el !== t && el.checked ) {
+					if ( el !== t && el.checked && ! estCumulable( el ) ) {
 						el.checked = false;
 						el.dispatchEvent( new Event( 'change', { bubbles: true } ) );
 					}
@@ -2591,9 +2601,11 @@
 		 * seuls ces deux groupes ouvrent le droit de les commander.
 		 */
 		function interventionChoisie() {
+			// 28/09/2026 : un produit cumulable seul (montage sur sellette) n'est
+			// pas une intervention, il n'ouvre pas les suspentes ni le devis.
 			return groupesUniques.some( function ( nom ) {
 				return fieldInputs( nom ).some( function ( el ) {
-					return 'checkbox' === el.type && el.checked;
+					return 'checkbox' === el.type && el.checked && ! estCumulable( el );
 				} );
 			} );
 		}

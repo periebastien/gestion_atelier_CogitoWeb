@@ -147,6 +147,15 @@
 
 .gacct-vo-alert.is-neutral h3 { color: var(--gacct-vo-ink); }
 
+/* Paiement non abouti (28/09/2026) : ton alerte, bouton plein. */
+.gacct-vo-alert.is-danger {
+	background: #fff5f5;
+	border-color: #ffd7d7;
+	border-left-color: var(--gacct-vo-danger);
+}
+
+.gacct-vo-alert.is-danger h3 { color: var(--gacct-vo-danger); }
+
 /* ── Tableaux (reset Elementor d'abord !) ───────────────────────────── */
 
 .gacct-vo table.gacct-vo-table,

@@ -190,10 +190,20 @@
 					}
 				}
 
+				// Confirmation libre portée par le bouton (clôture sans commande, retrait boutique).
+				var confirmText = button.getAttribute( 'data-confirm-text' );
+
+				if ( confirmText && ! window.confirm( confirmText ) ) {
+					return;
+				}
+
 				// Réexpédition (7→8) : suivi transporteur obligatoire.
 				var tracking = '';
 
-				if ( '1' === button.getAttribute( 'data-tracking' ) ) {
+				// Retrait à la boutique (28/09/2026) : le bouton porte le suivi (marqueur).
+				if ( button.getAttribute( 'data-tracking-value' ) ) {
+					tracking = button.getAttribute( 'data-tracking-value' );
+				} else if ( '1' === button.getAttribute( 'data-tracking' ) ) {
 					var trackWrap  = button.closest( '.gacct-op-ship-form' ) || fiche;
 					var trackField = trackWrap.querySelector( '[data-op-field="tracking"]' );
 					tracking = trackField ? trackField.value.trim() : '';
@@ -227,6 +237,174 @@
 					}
 					window.location.reload();
 				} );
+				return;
+			}
+
+			// ── Retours Hervé de septembre 2026 (28/09/2026) ──────────────────
+
+			// Replanifier depuis la fiche (états 0-2 et 9) : endpoint existant.
+			if ( 'reschedule-slot' === opAction ) {
+				var rsWrap   = button.closest( '.gacct-op-reschedule-form' );
+				var rsDate   = rsWrap ? rsWrap.querySelector( '[data-op-field="reschedule-date"]' ) : null;
+				var rsNotify = rsWrap ? rsWrap.querySelector( '[data-op-field="reschedule-notify"]' ) : null;
+				var rsFeed   = rsWrap ? rsWrap.querySelector( '.gacct-op-slot-feedback' ) : null;
+				var occId    = rsWrap ? rsWrap.getAttribute( 'data-occupation-id' ) : '';
+
+				function rsShow( type, message ) {
+					if ( rsFeed ) {
+						rsFeed.className   = 'gacct-op-feedback gacct-op-slot-feedback ' + type;
+						rsFeed.textContent = message;
+					} else {
+						showFeedback( type, message );
+					}
+				}
+
+				if ( ! occId ) {
+					return;
+				}
+
+				if ( ! rsDate || '' === rsDate.value ) {
+					rsShow( 'error', 'Choisissez une date.' );
+					if ( rsDate ) {
+						rsDate.focus();
+					}
+					return;
+				}
+
+				var notify = rsNotify && rsNotify.checked ? 1 : 0;
+
+				if ( ! window.confirm( 'Replanifier ce dossier au ' + rsDate.value.split( '-' ).reverse().join( '/' ) + ' ?' + ( notify ? ' Le client sera prévenu par e-mail.' : ' Le client ne sera pas prévenu.' ) ) ) {
+					return;
+				}
+
+				button.disabled = true;
+				post( 'gacct_op_reschedule', {
+					occupation_id: occId,
+					date: rsDate.value,
+					reason: '',
+					notify: notify
+				} )
+					.then( function ( json ) {
+						if ( json && json.success ) {
+							rsShow( 'success', 'Créneau replanifié.' );
+							window.setTimeout( function () { window.location.reload(); }, 600 );
+						} else {
+							rsShow( 'error', ( json && json.data && json.data.message ) || window.gacctOp.i18n.genericError );
+							button.disabled = false;
+						}
+					} )
+					.catch( function () {
+						rsShow( 'error', window.gacctOp.i18n.genericError );
+						button.disabled = false;
+					} );
+				return;
+			}
+
+			// Modifier le matériel : dépliage du formulaire de l'en-tête.
+			if ( 'toggle-materiel' === opAction ) {
+				var matForm = fiche.querySelector( '.gacct-op-materiel-form' );
+				if ( matForm ) {
+					matForm.hidden = ! matForm.hidden;
+					button.setAttribute( 'aria-expanded', matForm.hidden ? 'false' : 'true' );
+					if ( ! matForm.hidden ) {
+						var firstField = matForm.querySelector( 'input' );
+						if ( firstField ) {
+							firstField.focus();
+						}
+					}
+				}
+				return;
+			}
+
+			// Enregistrer le matériel (marque, modèle, taille, couleur, PTV, n° de série).
+			if ( 'save-materiel' === opAction ) {
+				var matWrap = fiche.querySelector( '.gacct-op-materiel-form' );
+				var matFeed = matWrap ? matWrap.querySelector( '.gacct-op-materiel-feedback' ) : null;
+				var matData = { revision_id: revisionId };
+
+				if ( ! matWrap ) {
+					return;
+				}
+
+				matWrap.querySelectorAll( '[data-materiel-field]' ).forEach( function ( input ) {
+					matData[ input.getAttribute( 'data-materiel-field' ) ] = input.value.trim();
+				} );
+
+				button.disabled = true;
+				post( 'gacct_op_update_materiel', matData )
+					.then( function ( json ) {
+						if ( json && json.success ) {
+							if ( matFeed ) {
+								matFeed.className   = 'gacct-op-feedback gacct-op-materiel-feedback success';
+								matFeed.textContent = json.data && json.data.unchanged ? 'Aucun changement.' : 'Matériel enregistré.';
+							}
+							window.setTimeout( function () { window.location.reload(); }, 500 );
+						} else {
+							if ( matFeed ) {
+								matFeed.className   = 'gacct-op-feedback gacct-op-materiel-feedback error';
+								matFeed.textContent = ( json && json.data && json.data.message ) || window.gacctOp.i18n.genericError;
+							} else {
+								showFeedback( 'error', ( json && json.data && json.data.message ) || window.gacctOp.i18n.genericError );
+							}
+							button.disabled = false;
+						}
+					} )
+					.catch( function () {
+						showFeedback( 'error', window.gacctOp.i18n.genericError );
+						button.disabled = false;
+					} );
+				return;
+			}
+
+			// État 8 : préremplir le champ de suivi avec le marqueur « retrait boutique ».
+			if ( 'tracking-pickup' === opAction ) {
+				var pickField = fiche.querySelector( '[data-op-field="tracking-edit"]' );
+				if ( pickField ) {
+					pickField.value = button.getAttribute( 'data-tracking-value' ) || '';
+					pickField.focus();
+				}
+				return;
+			}
+
+			// État 8 : mise à jour du suivi transporteur, sans e-mail.
+			if ( 'update-tracking' === opAction ) {
+				var trWrap  = button.closest( '.gacct-op-tracking-form' );
+				var trField = trWrap ? trWrap.querySelector( '[data-op-field="tracking-edit"]' ) : null;
+				var trFeed  = trWrap ? trWrap.querySelector( '.gacct-op-tracking-feedback' ) : null;
+				var trValue = trField ? trField.value.trim() : '';
+
+				function trShow( type, message ) {
+					if ( trFeed ) {
+						trFeed.className   = 'gacct-op-feedback gacct-op-tracking-feedback ' + type;
+						trFeed.textContent = message;
+					} else {
+						showFeedback( type, message );
+					}
+				}
+
+				if ( '' === trValue ) {
+					trShow( 'error', 'Le suivi ne peut pas être vide.' );
+					if ( trField ) {
+						trField.focus();
+					}
+					return;
+				}
+
+				button.disabled = true;
+				post( 'gacct_op_update_tracking', { revision_id: revisionId, tracking: trValue } )
+					.then( function ( json ) {
+						if ( json && json.success ) {
+							trShow( 'success', json.data && json.data.unchanged ? 'Aucun changement.' : 'Suivi mis à jour.' );
+							window.setTimeout( function () { window.location.reload(); }, 500 );
+						} else {
+							trShow( 'error', ( json && json.data && json.data.message ) || window.gacctOp.i18n.genericError );
+							button.disabled = false;
+						}
+					} )
+					.catch( function () {
+						trShow( 'error', window.gacctOp.i18n.genericError );
+						button.disabled = false;
+					} );
 				return;
 			}
 

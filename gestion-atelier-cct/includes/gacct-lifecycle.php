@@ -46,6 +46,7 @@ define( 'GACCT_LC_META_BALANCE_REF', '_gacct_balance_ref_ts' );
 define( 'GACCT_LC_META_BALANCE_REM1', '_gacct_balance_rem1_sent' );
 define( 'GACCT_LC_META_BALANCE_REM2', '_gacct_balance_rem2_sent' );
 define( 'GACCT_LC_RECAP_LAST_OPT', 'gacct_lc_recap_last' );
+define( 'GACCT_LC_META_READY_TO_SHIP', '_gacct_ready_to_ship_sent' ); // e-mail atelier « prêt à expédier » (28/09/2026)
 
 /* =============================================================================
  *  GARDE-FOUS TRANSVERSAUX
@@ -652,6 +653,7 @@ function gacct_lc_recap_sections() {
 	$balance_overdue   = array();
 	$quote_overdue     = array();
 	$bacs_expiring     = array();
+	$ready_to_ship     = array();
 
 	// --- Bascules du soir + dossiers épargnés (suivi déclaré). ----------------
 	$limit = strtotime( current_time( 'Y-m-d' ) . ' 00:00:00 +0000' ) + 2 * DAY_IN_SECONDS;
@@ -776,7 +778,35 @@ function gacct_lc_recap_sections() {
 		}
 	}
 
+	// --- À réexpédier : solde réglé, rapport disponible, pas de suivi saisi. ---
+	// 28/09/2026 (retour Hervé du 23/09) : récap journalier des révisions payées
+	// en attente d'envoi.
+	$rows = $wpdb->get_results(
+		"SELECT _ID AS revision_id, order_id FROM {$rev_table}
+		 WHERE cct_status = 'publish'
+		   AND CAST(etat_de_la_commande AS UNSIGNED) = 7
+		   AND order_id > 0
+		   AND ( suivi_transporteur IS NULL OR TRIM(suivi_transporteur) = '' )
+		 ORDER BY cct_modified ASC",
+		ARRAY_A
+	);
+
+	foreach ( (array) $rows as $row ) {
+		$order = wc_get_order( (int) $row['order_id'] );
+
+		if ( ! $order instanceof WC_Order || $order->has_status( array( 'cancelled', 'refunded', 'trash' ) ) ) {
+			continue;
+		}
+
+		$ready_to_ship[] = gacct_lc_recap_line( $order, (int) $row['revision_id'], __( 'à préparer et expédier', 'gestion-atelier-cct' ) );
+	}
+
 	return apply_filters( 'gacct_lc_recap_sections', array(
+		array(
+			'title' => __( 'À réexpédier (solde réglé)', 'gestion-atelier-cct' ),
+			'hint'  => __( 'Le solde est réglé et le rapport disponible : le colis peut partir (ou être remis au comptoir).', 'gestion-atelier-cct' ),
+			'items' => $ready_to_ship,
+		),
 		array(
 			'title' => sprintf(
 				/* translators: %d: heure de bascule */
@@ -807,6 +837,94 @@ function gacct_lc_recap_sections() {
 			'items' => $bacs_expiring,
 		),
 	) );
+}
+
+/* =============================================================================
+ *  E-MAIL ATELIER « PRÊT À EXPÉDIER » (entrée en état 7)
+ * ============================================================================= */
+
+/**
+ * 28/09/2026 (retour Hervé du 23/09) : dès qu'un dossier passe en état 7
+ * (solde réglé, rapport disponible), l'atelier reçoit un e-mail immédiat
+ * « prêt à expédier » aux adresses des notifications admin. Une seule fois par
+ * commande (meta GACCT_LC_META_READY_TO_SHIP), quelle que soit la voie qui a
+ * produit la transition (paiement du solde, bouton console, édition CCT).
+ */
+add_action( 'jet-engine/custom-content-types/updated-item/revision', 'gacct_lc_on_state7_entry', 30, 3 );
+
+function gacct_lc_on_state7_entry( $item, $prev, $handler = null ) {
+	$item = is_object( $item ) ? (array) $item : $item;
+	$prev = is_object( $prev ) ? (array) $prev : $prev;
+
+	$new_state = isset( $item['etat_de_la_commande'] ) ? (int) $item['etat_de_la_commande'] : -1;
+
+	if ( 7 !== $new_state ) {
+		return;
+	}
+
+	$old_state = ( is_array( $prev ) && isset( $prev['etat_de_la_commande'] ) ) ? (int) $prev['etat_de_la_commande'] : -1;
+
+	if ( 7 === $old_state ) {
+		return;
+	}
+
+	$revision_id = isset( $item['_ID'] ) ? absint( $item['_ID'] ) : 0;
+	$order_id    = isset( $item['order_id'] ) ? absint( $item['order_id'] ) : 0;
+	$order       = $order_id ? wc_get_order( $order_id ) : false;
+
+	if ( ! $order instanceof WC_Order ) {
+		return;
+	}
+
+	// Colis déjà parti (suivi saisi) : rien à préparer.
+	if ( '' !== trim( (string) ( $item['suivi_transporteur'] ?? '' ) ) ) {
+		return;
+	}
+
+	// Idempotence : un seul e-mail par commande.
+	if ( '' !== (string) $order->get_meta( GACCT_LC_META_READY_TO_SHIP ) ) {
+		return;
+	}
+
+	if ( ! function_exists( 'gacct_pay_send_email' ) || ! function_exists( 'gacct_pay_email_variables' ) ) {
+		return;
+	}
+
+	$materiel = '';
+	if ( function_exists( 'gacct_conf_data' ) ) {
+		$data     = gacct_conf_data( $order );
+		$materiel = isset( $data['materiel'] ) ? (string) $data['materiel'] : '';
+	}
+
+	$items = function_exists( 'gacct_relance_order_items_label' ) ? gacct_relance_order_items_label( $order ) : '';
+
+	$address = $order->get_formatted_shipping_address();
+	if ( ! $address ) {
+		$address = $order->get_formatted_billing_address();
+	}
+
+	$variables = gacct_pay_email_variables( $order, array(
+		'{materiel}'         => esc_html( $materiel ),
+		'{order_items}'      => esc_html( $items ),
+		'{customer_email}'   => esc_html( $order->get_billing_email() ),
+		'{customer_phone}'   => esc_html( $order->get_billing_phone() ),
+		'{shipping_address}' => wp_kses( (string) $address, array( 'br' => array() ) ),
+		'{console_url}'      => esc_url( $revision_id ? admin_url( 'admin.php?page=gacct-console&revision=' . $revision_id ) : $order->get_edit_order_url() ),
+	) );
+
+	$sent = false;
+
+	foreach ( gacct_pay_admin_emails() as $admin ) {
+		if ( gacct_pay_send_email( $admin, 'ready_to_ship', $variables ) ) {
+			$sent = true;
+		}
+	}
+
+	if ( $sent ) {
+		$order->update_meta_data( GACCT_LC_META_READY_TO_SHIP, current_time( 'mysql' ) );
+		$order->save_meta_data();
+		jwcct_log( "lifecycle : e-mail atelier « prêt à expédier » envoyé pour la commande $order_id (révision $revision_id)." );
+	}
 }
 
 /**

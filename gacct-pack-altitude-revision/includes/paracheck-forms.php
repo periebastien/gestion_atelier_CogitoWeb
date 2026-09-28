@@ -78,6 +78,9 @@ function gacct_rf_render_voile_form( array $revision, $order ) {
 		gacct_rf_input( 'porosity.' . $i, $point . ' (s)', '', 'number', 'step="0.1" min="0" inputmode="decimal"' );
 	}
 	echo '</div>';
+	// 28/09/2026, retour Hervé du 15/09 : toute sauvegarde porte le drapeau de l'ordre
+	// P1..P4 (les entrées antérieures sont réordonnées par la mise à niveau du pack).
+	echo '<input type="hidden" data-rf="porosity_order" value="p1234">';
 	// Origine du seuil de réforme (08/09/2026) : PMA par défaut, ou constructeur.
 	echo '<div class="gacct-rf-grid gacct-rf-grid-source">';
 	gacct_rf_select( 'porosity_source', __( 'Seuils de réforme', 'gestion-atelier-cct' ), $config['porosity_sources'], 'pma' );
@@ -219,6 +222,9 @@ function gacct_rf_render_equipement_form( array $revision, $order ) {
 	gacct_rf_input( 'secours.date_production', __( 'Date de production', 'gestion-atelier-cct' ), $rv( 'secours_date' ) );
 	echo '</div>';
 	echo '<label class="gacct-op-check"><input type="checkbox" data-rf="secours.aeration" value="1"> ' . esc_html__( 'Aération et pliage du parachute', 'gestion-atelier-cct' ) . '</label>';
+	// 28/09/2026, retour Hervé du 23/09 : élastiques de lovage, cochés par défaut sur un
+	// nouveau rapport (data-rf-default-checked respecté par resetForm du framework).
+	echo '<label class="gacct-op-check"><input type="checkbox" data-rf="secours.elastiques" value="1" checked data-rf-default-checked="1"> ' . esc_html__( 'Remplacement des élastiques de lovage', 'gestion-atelier-cct' ) . '</label>';
 	echo '<label class="gacct-rf-field"><span class="gacct-rf-label">' . esc_html__( 'Remarque(s)', 'gestion-atelier-cct' ) . '</span>';
 	echo '<textarea rows="3" data-rf="secours.remarques"></textarea></label>';
 	gacct_rf_section_close();

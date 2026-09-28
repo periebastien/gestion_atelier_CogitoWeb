@@ -217,3 +217,28 @@
 	background: #fae1c8;
 	color: #9a4d00;
 }
+
+/* ---------- Mobile (retour Hervé du 15/09/2026, corrigé le 28/09/2026) ----------
+   Le cœur WP pose le libellé de colonne (attr data-colname) en ::before absolu
+   sur TOUTES les cellules, colonne primaire comprise : sur tablette/téléphone,
+   « Référence » se superposait à la référence du dossier. On coupe ce libellé
+   sur la primaire et on redonne de l'air aux cellules dépliées. */
+@media screen and (max-width: 782px) {
+	.gacct-op .gacct-op-list-table tr:not(.inline-edit-row):not(.no-items) td.column-primary::before {
+		content: none;
+	}
+	.gacct-op .gacct-op-list-table td.column-primary {
+		padding-left: 10px;
+	}
+	.gacct-op .gacct-op-list-table td.column-primary .row-actions {
+		position: static;
+		margin-top: 4px;
+	}
+	/* Les onglets d'état (subsubsub) sont remplacés par une liste déroulante. */
+	.gacct-op.gacct-op-list .subsubsub { display: none; }
+	.gacct-op.gacct-op-list .gacct-op-state-select { display: block; margin: 0 0 12px; }
+	.gacct-op.gacct-op-list .gacct-op-state-select select { width: 100%; max-width: 100%; }
+}
+@media screen and (min-width: 783px) {
+	.gacct-op.gacct-op-list .gacct-op-state-select { display: none; }
+}

@@ -140,6 +140,12 @@ function gacct_vo_data( $order ) {
 			: null,
 		'pay_url'       => $order->get_checkout_payment_url(),
 		'solde_du'      => (float) $order->get_meta( '_kojito_solde_restant' ),
+		// Acompte CB non abouti (pending/failed hors virement, hors phase solde) :
+		// le détail propose de réessayer (28/09/2026, retour Hervé du 23/09).
+		'pay_retry'     => ( null === $etat || 0 === $etat )
+			&& 'bacs' !== $order->get_payment_method()
+			&& $order->needs_payment()
+			&& ! in_array( (string) $order->get_meta( '_kojito_phase_paiement' ), array( 'solde', 'solde_paye' ), true ),
 	) ), $order );
 }
 

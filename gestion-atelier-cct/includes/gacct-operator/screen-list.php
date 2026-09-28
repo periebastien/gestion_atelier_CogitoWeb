@@ -255,7 +255,7 @@ function gacct_op_render_list_screen() {
 	echo '<input type="hidden" name="order" value="' . esc_attr( $current['order'] ) . '">';
 	echo '<p class="search-box">';
 	echo '<label class="screen-reader-text" for="gacct-op-search">' . esc_html__( 'Rechercher une intervention', 'gestion-atelier-cct' ) . '</label>';
-	echo '<input type="search" id="gacct-op-search" name="s" value="' . esc_attr( $current['search'] ) . '" placeholder="' . esc_attr__( 'Référence, client, marque, n° de série…', 'gestion-atelier-cct' ) . '">';
+	echo '<input type="search" id="gacct-op-search" name="s" value="' . esc_attr( $current['search'] ) . '" placeholder="' . esc_attr__( 'Référence, client, marque, n° de série, n° de rapport…', 'gestion-atelier-cct' ) . '">';
 	echo '<input type="submit" class="button" value="' . esc_attr__( 'Rechercher', 'gestion-atelier-cct' ) . '">';
 	echo '</p>';
 	echo '</form>';
@@ -289,6 +289,27 @@ function gacct_op_render_list_screen() {
 		. ( $current['hold'] ? ' class="current" aria-current="page"' : '' ) . '>'
 		. esc_html__( 'En attente', 'gestion-atelier-cct' ) . ' <span class="count">(' . esc_html( (int) $result['hold_count'] ) . ')</span></a></li>';
 	echo '</ul>';
+
+	// Mobile (retour Hervé du 15/09/2026) : les onglets d'état, centrés et
+	// repliés sur 8 lignes par le cœur WP sous 782 px, sont doublés d'une liste
+	// déroulante (CSS : l'un ou l'autre selon la largeur).
+	$select_options   = array();
+	$select_options[] = array( gacct_op_list_url( $current, array( 'etat' => null, 'attente' => null, 'acheminement' => null, 'paged' => null ) ), __( 'Tous', 'gestion-atelier-cct' ), $total_all, ( null === $current['state'] && ! $current['hold'] && ! $current['transit'] ) );
+	foreach ( $labels as $state => $label ) {
+		$select_options[] = array( gacct_op_list_url( $current, array( 'etat' => $state, 'attente' => null, 'acheminement' => null, 'paged' => null ) ), $state . ' · ' . $label, isset( $counts[ $state ] ) ? (int) $counts[ $state ] : 0, ( $current['state'] === $state && ! $current['hold'] && ! $current['transit'] ) );
+		if ( 1 === $state ) {
+			$select_options[] = array( gacct_op_list_url( $current, array( 'etat' => null, 'attente' => null, 'acheminement' => 1, 'paged' => null ) ), __( 'En acheminement', 'gestion-atelier-cct' ), (int) $result['transit_count'], (bool) $current['transit'] );
+		}
+	}
+	$select_options[] = array( gacct_op_list_url( $current, array( 'etat' => null, 'attente' => 1, 'acheminement' => null, 'paged' => null ) ), __( 'En attente', 'gestion-atelier-cct' ), (int) $result['hold_count'], (bool) $current['hold'] );
+
+	echo '<p class="gacct-op-state-select"><label class="screen-reader-text" for="gacct-op-state-select">' . esc_html__( 'Filtrer par état', 'gestion-atelier-cct' ) . '</label>';
+	echo '<select id="gacct-op-state-select" onchange="if(this.value){window.location.href=this.value;}">';
+	foreach ( $select_options as $opt ) {
+		echo '<option value="' . esc_url( $opt[0] ) . '"' . ( $opt[3] ? ' selected' : '' ) . '>' . esc_html( $opt[1] . ' (' . $opt[2] . ')' ) . '</option>';
+	}
+	echo '</select></p>';
+
 
 	// 3. Barre d'outils native (filtre « Réalisé par »).
 	$operators = gacct_op_operator_choices();

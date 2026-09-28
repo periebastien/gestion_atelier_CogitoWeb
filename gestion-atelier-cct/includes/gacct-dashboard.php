@@ -132,6 +132,13 @@ function gacct_dash_texts() {
 		'devis_note'  => __( 'Devis établi le %s.', 'gestion-atelier-cct' ),
 		'devis_cta'   => __( 'Consulter et valider le devis', 'gestion-atelier-cct' ),
 
+		// --- Carte « paiement non abouti » (28/09/2026, retour Hervé du 23/09) --
+		'paiement_title' => __( 'Paiement non abouti', 'gestion-atelier-cct' ),
+		/* translators: %s: référence de commande */
+		'paiement_text'  => __( 'Le paiement de votre acompte n’a pas abouti pour la commande %s. Réessayez pour confirmer votre créneau.', 'gestion-atelier-cct' ),
+		'paiement_note'  => __( 'Votre créneau reste retenu le temps de régulariser. Un souci avec votre moyen de paiement ? Contactez l’atelier.', 'gestion-atelier-cct' ),
+		'paiement_cta'   => __( 'Réessayer le paiement', 'gestion-atelier-cct' ),
+
 		// --- Carte « solde à payer » ----------------------------------------
 		'solde_title' => __( 'Solde à régler', 'gestion-atelier-cct' ),
 		/* translators: 1: montant du solde, 2: référence de commande */
@@ -914,12 +921,61 @@ function gacct_dash_build_action( $etat, array $row, $order, array $conf, $mater
 		return gacct_dash_action_virement( $order, $conf );
 	}
 
+	// --- Paiement CB non abouti (état 0, commande pending/failed hors virement)
+	// 28/09/2026 (retour Hervé du 23/09) : le client restait « en attente de
+	// paiement » sans aucun bouton pour réessayer.
+	if ( 0 === $etat && gacct_dash_order_needs_retry( $order ) ) {
+		return gacct_dash_action_paiement( $order, $conf );
+	}
+
 	// --- Matériel à expédier (état <= 1, colis pas encore réceptionné) -----
 	if ( $etat <= 1 && '' === (string) $order->get_meta( '_gacct_reception_date' ) ) {
 		return gacct_dash_action_expedition( $order, $conf, $row );
 	}
 
 	return null;
+}
+
+/**
+ * La commande attend-elle un NOUVEL essai de paiement en ligne ? Acompte
+ * (pas la phase de solde), moyen de paiement autre que le virement, statut
+ * pending ou failed (WC_Order::needs_payment()). 28/09/2026.
+ *
+ * @param WC_Order $order Commande.
+ * @return bool
+ */
+function gacct_dash_order_needs_retry( $order ) {
+	return $order instanceof WC_Order
+		&& 'bacs' !== $order->get_payment_method()
+		&& $order->needs_payment()
+		&& ! in_array( (string) $order->get_meta( '_kojito_phase_paiement' ), array( 'solde', 'solde_paye' ), true );
+}
+
+/**
+ * Carte « paiement non abouti » : renvoie vers la page de paiement WooCommerce
+ * de la commande (order-pay), qui garde le panier et le créneau. 28/09/2026.
+ *
+ * @param WC_Order            $order Commande pending/failed.
+ * @param array<string,mixed> $conf  Sortie de `gacct_conf_data()`.
+ * @return array<string,mixed>
+ */
+function gacct_dash_action_paiement( $order, array $conf ) {
+	return array(
+		'type'      => 'paiement',
+		'title'     => gacct_dash_text( 'paiement_title' ),
+		'text_html' => sprintf(
+			gacct_dash_text( 'paiement_text' ),
+			'<span class="hl">' . esc_html( $order->get_order_number() ) . '</span>'
+		),
+		'note'      => gacct_dash_text( 'paiement_note' ),
+		'chip'      => '',
+		'url'       => $order->get_checkout_payment_url(),
+		'cta_label' => gacct_dash_text( 'paiement_cta' ),
+		'cta_style' => 'primary',
+		'icon'      => 'card',
+		'urgent'    => gacct_dash_action_urgent( 'paiement', true, array( 'status' => $order->get_status() ) ),
+		'sort_ts'   => 0,
+	);
 }
 
 /**
@@ -1264,6 +1320,7 @@ function gacct_dash_render_actions( $value = null ) {
 		'gacct_dashboard_action_colors',
 		array(
 			'virement'   => 'orange',
+			'paiement'   => 'red', // paiement non abouti (28/09/2026)
 			'expedition' => 'blue',
 			'devis'      => 'indigo',
 			'solde'      => 'teal',

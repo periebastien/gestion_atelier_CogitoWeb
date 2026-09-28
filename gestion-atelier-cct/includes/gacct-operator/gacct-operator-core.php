@@ -116,6 +116,25 @@ function gacct_op_add_signed_note( $order, $message ) {
 }
 
 /**
+ * Marqueur de suivi « retrait à la boutique » (retour Hervé du 16/09, 28/09/2026) :
+ * à l'état 7, le matériel remis en main propre passe en 8 avec ce texte en
+ * guise de suivi transporteur. L'e-mail d'état 8 est alors remplacé par le
+ * modèle « pickup_delivered » (gacct_pay_default_settings), sans lien colis.
+ * Filtrable (pack) : gacct_op_pickup_marker.
+ */
+function gacct_op_pickup_marker() {
+	return (string) apply_filters( 'gacct_op_pickup_marker', __( 'Remis en main propre à la boutique', 'gestion-atelier-cct' ) );
+}
+
+/**
+ * Vrai si le suivi transporteur enregistré est le marqueur de retrait boutique.
+ */
+function gacct_op_is_pickup_tracking( $tracking ) {
+	return '' !== trim( (string) $tracking )
+		&& 0 === strcasecmp( trim( (string) $tracking ), trim( gacct_op_pickup_marker() ) );
+}
+
+/**
  * Commande WooCommerce liée à une révision (colonne order_id du CCT).
  */
 function gacct_op_get_order_for_revision( array $revision ) {
@@ -157,6 +176,14 @@ function gacct_op_change_state( $revision_id, $new_state, array $args = array() 
 		$old_state = absint( $prev['etat_de_la_commande'] ?? 0 );
 	}
 
+	$order = gacct_op_get_order_for_revision( $prev );
+
+	// Dossiers SANS commande (interventions reprises de l'ancien site) : la
+	// clôture directe 3→7 est autorisée (rapport déposé), le 7→8 suit le
+	// chemin ordinaire. Journal via jwcct_log faute de note de commande.
+	// Retour Hervé du 23/09, 28/09/2026.
+	$no_order_direct = ( ! $order && ! $force && 3 === $old_state && 7 === $new_state );
+
 	if ( $force ) {
 		$map = gacct_op_forceable_transitions();
 		if ( empty( $map[ $old_state ][ $new_state ] ) ) {
@@ -166,6 +193,18 @@ function gacct_op_change_state( $revision_id, $new_state, array $args = array() 
 			return new WP_Error( 'gacct_op_reason_required', __( 'Un motif est obligatoire pour forcer une transition.', 'gestion-atelier-cct' ) );
 		}
 		$action_label = $map[ $old_state ][ $new_state ];
+	} elseif ( $no_order_direct ) {
+		$action_label = __( 'Clore le dossier (rapport disponible)', 'gestion-atelier-cct' );
+
+		$rapport = $extra['rapport_pdf'] ?? ( $prev['rapport_pdf'] ?? '' );
+
+		if ( empty( $rapport ) ) {
+			return new WP_Error( 'gacct_op_report_required', __( 'Déposez d\'abord le rapport d\'intervention (PDF) : il est obligatoire pour clore le dossier.', 'gestion-atelier-cct' ) );
+		}
+
+		if ( empty( $extra['operateur_id'] ) ) {
+			$extra['operateur_id'] = get_current_user_id();
+		}
 	} else {
 		$map = gacct_op_allowed_transitions();
 		if ( empty( $map[ $old_state ][ $new_state ] ) ) {
@@ -178,8 +217,6 @@ function gacct_op_change_state( $revision_id, $new_state, array $args = array() 
 		}
 		$action_label = $map[ $old_state ][ $new_state ];
 	}
-
-	$order = gacct_op_get_order_for_revision( $prev );
 
 	// Dossier incomplet : le démarrage de l'intervention (2→3) est bloqué tant
 	// que tout n'est pas arrivé — déblocage avec motif obligatoire (CDC §4.4).
@@ -251,25 +288,53 @@ function gacct_op_change_state( $revision_id, $new_state, array $args = array() 
 		$extra['suivi_transporteur'] = $tracking;
 	}
 
+	// Retrait à la boutique (retour Hervé du 16/09, 28/09/2026) : le suivi vaut
+	// le marqueur, l'e-mail d'état 8 (« voyage vers vous ») n'a pas de sens.
+	// Le modèle 8 est remplacé, le temps du workflow, par « pickup_delivered »
+	// (éditable dans Atelier > Paiements & e-mails) via un filtre sur l'option
+	// des notifications : le circuit d'envoi standard (client + copie admin,
+	// notes de commande) reste inchangé.
+	$is_pickup = ( 8 === $new_state && gacct_op_is_pickup_tracking( $extra['suivi_transporteur'] ?? '' ) );
+
 	$fields = array_merge( $extra, array( 'etat_de_la_commande' => (string) $new_state ) );
 
 	if ( ! jwcct_update_cct_item( JWCCT_CCT_REVISION, $revision_id, $fields ) ) {
 		return new WP_Error( 'gacct_op_update_failed', __( 'La mise à jour du dossier a échoué.', 'gestion-atelier-cct' ) );
 	}
 
+	if ( $is_pickup ) {
+		// default_option_ aussi : l'option n'existe pas tant que la page
+		// Notifications n'a jamais été enregistrée.
+		add_filter( 'option_gacct_notification_settings', 'gacct_op_pickup_override_state8_email' );
+		add_filter( 'default_option_gacct_notification_settings', 'gacct_op_pickup_override_state8_email' );
+	}
+
 	// Déclenche le workflow (emails, lien devis, kojito, PDF) — voir en-tête du fichier.
 	$new_item = array_merge( $prev, $fields, array( '_ID' => $revision_id ) );
 	do_action( 'jet-engine/custom-content-types/updated-item/revision', $new_item, $prev, null );
 
+	if ( $is_pickup ) {
+		remove_filter( 'option_gacct_notification_settings', 'gacct_op_pickup_override_state8_email' );
+		remove_filter( 'default_option_gacct_notification_settings', 'gacct_op_pickup_override_state8_email' );
+	}
+
+	$message = sprintf( '%s (état %d → %d)', $action_label, $old_state, $new_state );
+	if ( $force ) {
+		$message .= sprintf( ', FORCÉ, motif : %s', $reason );
+	}
+	if ( ! empty( $args['_unlock_note'] ) ) {
+		$message .= sprintf( ', dossier incomplet débloqué, motif : %s', $args['_unlock_note'] );
+	}
+	if ( $is_pickup ) {
+		$message .= ', ' . __( 'matériel remis en main propre à la boutique (pas d\'expédition)', 'gestion-atelier-cct' );
+	}
+
 	if ( $order ) {
-		$message = sprintf( '%s (état %d → %d)', $action_label, $old_state, $new_state );
-		if ( $force ) {
-			$message .= sprintf( ', FORCÉ, motif : %s', $reason );
-		}
-		if ( ! empty( $args['_unlock_note'] ) ) {
-			$message .= sprintf( ', dossier incomplet débloqué, motif : %s', $args['_unlock_note'] );
-		}
 		gacct_op_add_signed_note( $order, $message );
+	} else {
+		// Sans commande : pas de note possible, trace dans le journal du plugin.
+		$user = wp_get_current_user();
+		jwcct_log( sprintf( 'console : dossier %d sans commande, %s, par %s', $revision_id, $message, $user && $user->exists() ? $user->user_login : 'inconnu' ) );
 	}
 
 	// Intervention close (entrée en 6) avant la date réservée : la console
@@ -282,6 +347,41 @@ function gacct_op_change_state( $revision_id, $new_state, array $args = array() 
 		'label'       => $action_label,
 		'slot_future' => $future ? $future['str'] : '',
 	);
+}
+
+/**
+ * Substitue, le temps d'un workflow d'entrée en 8 « retrait boutique », le
+ * modèle d'e-mail d'état 8 par le modèle « pickup_delivered » des e-mails
+ * transactionnels (gacct_pay_settings). Posé/retiré par gacct_op_change_state.
+ * Retour Hervé du 16/09, 28/09/2026.
+ */
+function gacct_op_pickup_override_state8_email( $settings ) {
+	if ( ! function_exists( 'gacct_pay_settings' ) ) {
+		return $settings;
+	}
+
+	$pay    = gacct_pay_settings();
+	$pickup = isset( $pay['emails']['pickup_delivered'] ) ? $pay['emails']['pickup_delivered'] : null;
+
+	if ( ! $pickup ) {
+		return $settings;
+	}
+
+	if ( ! is_array( $settings ) ) {
+		$settings = array();
+	}
+	if ( empty( $settings['emails'] ) || ! is_array( $settings['emails'] ) ) {
+		$settings['emails'] = array();
+	}
+	if ( empty( $settings['emails'][8] ) || ! is_array( $settings['emails'][8] ) ) {
+		$settings['emails'][8] = array();
+	}
+
+	$settings['emails'][8]['enabled'] = ! empty( $pickup['enabled'] );
+	$settings['emails'][8]['subject'] = (string) $pickup['subject'];
+	$settings['emails'][8]['body']    = (string) $pickup['body'];
+
+	return $settings;
 }
 
 /**
@@ -564,6 +664,12 @@ function gacct_op_query_interventions( array $args = array() ) {
 		$like       = '%' . $wpdb->esc_like( $search ) . '%';
 		$search_sql = '(r.marque LIKE %s OR r.modele LIKE %s OR r.numero_de_serie LIKE %s OR r.couleur LIKE %s';
 		$search_params = array( $like, $like, $like, $like );
+
+		// Numéro de rapport (sticker collé sur la voile, ex. 20261031) : les
+		// rapports vivent dans rapports_json, liste d'objets à clé "number".
+		// Retour Hervé du 23/09, 28/09/2026.
+		$search_sql     .= ' OR r.rapports_json LIKE %s';
+		$search_params[] = '%"number":"' . $wpdb->esc_like( $search ) . '%';
 
 		// Référence AR-2026-1621, ou juste un numéro de commande.
 		if ( preg_match( '/(\d+)\s*$/', $search, $m ) ) {

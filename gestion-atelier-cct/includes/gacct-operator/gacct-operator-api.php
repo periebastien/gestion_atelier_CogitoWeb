@@ -352,6 +352,143 @@ function gacct_op_ajax_set_operator() {
 add_action( 'wp_ajax_gacct_op_set_operator', 'gacct_op_ajax_set_operator' );
 
 /**
+ * Modification du suivi transporteur à l'état 8, sans e-mail (retour Hervé du
+ * 16/09, 28/09/2026) : Cyrille corrige seul un numéro, ou remplace le suivi par
+ * le marqueur « retrait boutique » quand un proche vient chercher la voile.
+ */
+function gacct_op_ajax_update_tracking() {
+	gacct_op_api_guard();
+
+	$revision_id = isset( $_POST['revision_id'] ) ? absint( $_POST['revision_id'] ) : 0;
+	$tracking    = isset( $_POST['tracking'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['tracking'] ) ) ) : '';
+
+	if ( '' === $tracking ) {
+		wp_send_json_error( array( 'message' => __( 'Le suivi ne peut pas être vide.', 'gestion-atelier-cct' ) ) );
+	}
+
+	$revision = jwcct_get_cct_item( JWCCT_CCT_REVISION, $revision_id );
+
+	if ( ! $revision ) {
+		wp_send_json_error( array( 'message' => __( 'Dossier introuvable.', 'gestion-atelier-cct' ) ) );
+	}
+
+	$state = gacct_op_read_state( $revision_id );
+
+	if ( 8 !== $state ) {
+		wp_send_json_error( array( 'message' => __( 'Le suivi ne se modifie qu\'à l\'état 8 (matériel réexpédié).', 'gestion-atelier-cct' ) ) );
+	}
+
+	$old = trim( (string) ( $revision['suivi_transporteur'] ?? '' ) );
+
+	if ( $old === $tracking ) {
+		wp_send_json_success( array( 'tracking' => $tracking, 'unchanged' => true ) );
+	}
+
+	if ( ! jwcct_update_cct_item( JWCCT_CCT_REVISION, $revision_id, array( 'suivi_transporteur' => $tracking ) ) ) {
+		wp_send_json_error( array( 'message' => __( 'La mise à jour a échoué.', 'gestion-atelier-cct' ) ) );
+	}
+
+	$message = sprintf(
+		__( 'Suivi transporteur modifié : %1$s → %2$s', 'gestion-atelier-cct' ),
+		'' !== $old ? $old : __( '(vide)', 'gestion-atelier-cct' ),
+		$tracking
+	);
+
+	$order = gacct_op_get_order_for_revision( $revision );
+
+	if ( $order ) {
+		gacct_op_add_signed_note( $order, $message );
+	} else {
+		jwcct_log( sprintf( 'console : dossier %d sans commande, %s', $revision_id, $message ) );
+	}
+
+	wp_send_json_success( array( 'tracking' => $tracking ) );
+}
+add_action( 'wp_ajax_gacct_op_update_tracking', 'gacct_op_ajax_update_tracking' );
+
+/**
+ * Modification du matériel depuis la fiche, à tout état (retour Hervé du
+ * 15/09, 28/09/2026) : marque, modèle, taille, couleur, PTV, n° de série.
+ * Casse normalisée comme à la demande (gacct_demande_normaliser_casse),
+ * note signée listant les champs changés.
+ */
+function gacct_op_ajax_update_materiel() {
+	gacct_op_api_guard();
+
+	$revision_id = isset( $_POST['revision_id'] ) ? absint( $_POST['revision_id'] ) : 0;
+	$revision    = jwcct_get_cct_item( JWCCT_CCT_REVISION, $revision_id );
+
+	if ( ! $revision ) {
+		wp_send_json_error( array( 'message' => __( 'Dossier introuvable.', 'gestion-atelier-cct' ) ) );
+	}
+
+	$labels = array(
+		'marque'          => __( 'Marque', 'gestion-atelier-cct' ),
+		'modele'          => __( 'Modèle', 'gestion-atelier-cct' ),
+		'taille'          => __( 'Taille', 'gestion-atelier-cct' ),
+		'couleur'         => __( 'Couleur', 'gestion-atelier-cct' ),
+		'p_t_v'           => __( 'PTV', 'gestion-atelier-cct' ),
+		'numero_de_serie' => __( 'N° de série', 'gestion-atelier-cct' ),
+	);
+
+	$input = array();
+	foreach ( array_keys( $labels ) as $key ) {
+		if ( isset( $_POST[ $key ] ) ) {
+			$input[ $key ] = trim( sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) );
+		}
+	}
+
+	if ( ! $input ) {
+		wp_send_json_error( array( 'message' => __( 'Aucun champ reçu.', 'gestion-atelier-cct' ) ) );
+	}
+
+	// Même normalisation de casse que le formulaire de demande (marque, taille,
+	// n° de série en capitales ; modèle avec une majuscule initiale).
+	if ( function_exists( 'gacct_demande_normaliser_casse' ) ) {
+		$input = array_merge( $input, array_intersect_key( (array) gacct_demande_normaliser_casse( $input ), $input ) );
+	}
+
+	$fields  = array();
+	$changes = array();
+
+	foreach ( $input as $key => $value ) {
+		$old = trim( (string) ( $revision[ $key ] ?? '' ) );
+
+		if ( $old === $value ) {
+			continue;
+		}
+
+		$fields[ $key ] = $value;
+		$changes[]      = sprintf(
+			'%1$s : %2$s → %3$s',
+			$labels[ $key ],
+			'' !== $old ? $old : __( '(vide)', 'gestion-atelier-cct' ),
+			'' !== $value ? $value : __( '(vide)', 'gestion-atelier-cct' )
+		);
+	}
+
+	if ( ! $fields ) {
+		wp_send_json_success( array( 'unchanged' => true ) );
+	}
+
+	if ( ! jwcct_update_cct_item( JWCCT_CCT_REVISION, $revision_id, $fields ) ) {
+		wp_send_json_error( array( 'message' => __( 'La mise à jour a échoué.', 'gestion-atelier-cct' ) ) );
+	}
+
+	$message = sprintf( __( 'Matériel modifié : %s', 'gestion-atelier-cct' ), implode( ' ; ', $changes ) );
+	$order   = gacct_op_get_order_for_revision( $revision );
+
+	if ( $order ) {
+		gacct_op_add_signed_note( $order, $message );
+	} else {
+		jwcct_log( sprintf( 'console : dossier %d sans commande, %s', $revision_id, $message ) );
+	}
+
+	wp_send_json_success( array( 'fields' => $fields ) );
+}
+add_action( 'wp_ajax_gacct_op_update_materiel', 'gacct_op_ajax_update_materiel' );
+
+/**
  * Annulation du dossier depuis la console (mêmes effets que l'annulation auto :
  * commande annulée, CCT supprimés, créneau libéré, email client + copie admin).
  * Confirmation côté client obligatoire ; motif journalisé.

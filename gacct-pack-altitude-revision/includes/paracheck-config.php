@@ -100,7 +100,11 @@ function gacct_report_calc_config() {
 		),
 		// §2.3 — Porosité (secondes, l/m²/min = 5400 / s), barème de la feuille de saisie.
 		// 4 zones depuis la réunion du 06/08/2026 (le P5 du classeur était une erreur).
-		'porosity_points' => array( 'P4', 'P2', 'P1', 'P3' ),
+		// 28/09/2026, retour Hervé du 15/09 : ordre du schéma (P1, P2, P3, P4) au lieu
+		// de l'ordre du classeur (P4, P2, P1, P3). Les valeurs étant stockées par index,
+		// les brouillons antérieurs sont réordonnés une fois par
+		// gacct_pack_ar_upgrade_porosity_order() (drapeau data.porosity_order = p1234).
+		'porosity_points' => array( 'P1', 'P2', 'P3', 'P4' ),
 		'porosity_factor' => 5400,
 		// Plafond du porosimètre : au-delà, la mesure est affichée « 600+ »
 		// (la valeur saisie reste utilisée telle quelle dans les calculs).

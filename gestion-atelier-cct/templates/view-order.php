@@ -30,7 +30,10 @@ $vo_fmt = static function ( $amount ) {
 };
 
 $is_bacs_waiting = ( 'bacs' === $d['variant'] );
-$is_dead         = $order->has_status( array( 'cancelled', 'refunded', 'failed' ) );
+// 28/09/2026 (retour Hervé du 23/09) : une commande « failed » dont l'acompte
+// peut encore être réglé n'est pas un dossier mort, on propose de réessayer.
+$is_pay_retry    = ! empty( $d['pay_retry'] );
+$is_dead         = $order->has_status( array( 'cancelled', 'refunded' ) ) || ( $order->has_status( 'failed' ) && ! $is_pay_retry );
 $is_sans_suite   = ( defined( 'GACCT_STATE_SANS_SUITE' ) ? GACCT_STATE_SANS_SUITE : 9 ) === (int) $etat;
 
 // Barre de progression : 9 étapes avec devis, 7 sans (les états 4 et 5 sont masqués).
@@ -65,6 +68,15 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 		<div class="gacct-vo-card gacct-vo-alert <?php echo esc_attr( $vo_notice['tone'] ); ?>">
 			<h3><?php echo esc_html( $vo_notice['title'] ); ?></h3>
 			<p><?php echo esc_html( $vo_notice['text'] ); ?></p>
+		</div>
+	<?php endif; ?>
+
+	<?php if ( $is_pay_retry ) : ?>
+		<!-- ── Paiement non abouti (28/09/2026) ─────────────────────── -->
+		<div class="gacct-vo-card gacct-vo-alert is-danger">
+			<h3><?php esc_html_e( 'Paiement non abouti', 'gestion-atelier-cct' ); ?></h3>
+			<p><?php esc_html_e( 'Le paiement de votre acompte n’a pas abouti. Réessayez pour confirmer votre créneau.', 'gestion-atelier-cct' ); ?></p>
+			<a class="gacct-vo-btn" href="<?php echo esc_url( $d['pay_url'] ); ?>"><?php esc_html_e( 'Réessayer le paiement', 'gestion-atelier-cct' ); ?></a>
 		</div>
 	<?php endif; ?>
 

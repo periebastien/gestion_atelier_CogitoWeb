@@ -156,6 +156,17 @@ function gacct_pay_default_settings() {
 					. '<p>Et si votre colis est en route avec du retard, faites-nous signe dès maintenant : nous en tiendrons compte.</p>'
 					. '<p>À bientôt,<br><br>' . gacct_team_signature() . '</p>',
 			),
+			// Retrait à la boutique (retour Hervé du 16/09, 28/09/2026) : remplace
+			// l'e-mail d'état 8 quand le suivi vaut gacct_op_pickup_marker().
+			'pickup_delivered' => array(
+				'enabled' => true,
+				'label'   => __( 'Matériel remis en main propre (état 8 sans expédition)', 'gestion-atelier-cct' ),
+				'subject' => __( 'Votre matériel vous a été remis - commande {order_number}', 'gestion-atelier-cct' ),
+				'body'    => '<p>Bonjour {customer_name},</p>'
+					. '<p>Votre matériel vous a été remis en main propre à l’atelier.</p>'
+					. '<p>Votre rapport reste disponible dans votre espace client.</p>'
+					. '<p>Bons vols,<br><br>' . gacct_team_signature() . '</p>',
+			),
 			'rescheduled' => array(
 				'enabled' => true,
 				'label'   => __( 'Créneau replanifié', 'gestion-atelier-cct' ),
@@ -295,6 +306,21 @@ function gacct_pay_default_settings() {
 					. '<p>Nouveau total de votre commande : <strong>{quote_total}</strong>, soit un solde de <strong>{quote_balance}</strong> à régler à la fin de l’intervention (votre acompte déjà versé reste inchangé).</p>'
 					. '<p>L’atelier reprend l’intervention avec ces travaux : nous vous prévenons dès qu’elle est terminée.</p>'
 					. '<p>Merci de votre confiance,<br><br>' . gacct_team_signature() . '</p>',
+			),
+			// E-mail ATELIER (pas client) : dossier passé en état 7, solde réglé,
+			// rapport disponible, colis à préparer (28/09/2026, retour Hervé du 23/09).
+			// Variables propres à ce modèle : {materiel}, {order_items}, {customer_email},
+			// {customer_phone}, {shipping_address}, {console_url}.
+			'ready_to_ship' => array(
+				'enabled' => true,
+				'label'   => __( 'Atelier : dossier prêt à expédier (solde réglé, rapport disponible)', 'gestion-atelier-cct' ),
+				'subject' => __( 'Dossier {order_number} prêt à expédier', 'gestion-atelier-cct' ),
+				'body'    => '<p>Le solde de la commande <strong>{order_number}</strong> est réglé et le rapport est disponible : le colis peut partir (ou être remis au comptoir).</p>'
+					. '<p><strong>Client :</strong> {customer_name}<br>{customer_email}<br>{customer_phone}</p>'
+					. '<p><strong>Matériel :</strong> {materiel}</p>'
+					. '<p><strong>Prestations et mode de retour :</strong> {order_items}</p>'
+					. '<p><strong>Adresse de retour :</strong><br>{shipping_address}</p>'
+					. '<p><a href="{console_url}">Ouvrir la fiche dans la console</a> pour saisir le numéro de suivi une fois le colis parti.</p>',
 			),
 		),
 	);
@@ -1796,6 +1822,14 @@ function gacct_pay_render_admin_page() {
 									<code>{shipping_url}</code> <?php esc_html_e( '(espace client, déclaration du suivi)', 'gestion-atelier-cct' ); ?>
 									<code>{work_order_block}</code> <?php esc_html_e( '(bouton du bon d’intervention, déjà mis en forme ; vide si indisponible)', 'gestion-atelier-cct' ); ?>
 									<code>{work_order_url}</code> <?php esc_html_e( '(lien nu du bon)', 'gestion-atelier-cct' ); ?>
+									<br>
+									<?php esc_html_e( 'Atelier, dossier prêt à expédier (28/09/2026) :', 'gestion-atelier-cct' ); ?>
+									<code>{materiel}</code>
+									<code>{order_items}</code> <?php esc_html_e( '(prestations et mode de retour)', 'gestion-atelier-cct' ); ?>
+									<code>{customer_email}</code>
+									<code>{customer_phone}</code>
+									<code>{shipping_address}</code>
+									<code>{console_url}</code> <?php esc_html_e( '(fiche du dossier dans la console)', 'gestion-atelier-cct' ); ?>
 									<br>
 									<?php esc_html_e( 'Rappels avant créneau et relance de solde :', 'gestion-atelier-cct' ); ?>
 									<code>{days_before}</code> <?php esc_html_e( '(jours restants avant le créneau)', 'gestion-atelier-cct' ); ?>

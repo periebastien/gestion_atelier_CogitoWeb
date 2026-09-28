@@ -109,3 +109,129 @@ function gacct_pack_ar_docs( $docs ) {
 
 	return $docs;
 }
+
+/* -----------------------------------------------------------------------------
+ * Formulaire de demande : produits cumulables (28/09/2026, retour Hervé du 16/09).
+ * « Vérification et montage sur sellette » (produit 1239, catégorie Pliages
+ * secours) s'ajoute à un pliage de secours au lieu de l'exclure.
+ * -------------------------------------------------------------------------- */
+
+add_filter( 'gacct_demande_cumulables_ids', 'gacct_pack_ar_cumulables_ids' );
+
+function gacct_pack_ar_cumulables_ids( $ids ) {
+	$ids[] = 1239;
+
+	return array_values( array_unique( array_map( 'absint', (array) $ids ) ) );
+}
+
+/* -----------------------------------------------------------------------------
+ * 28/09/2026, retour Hervé du 15/09 : les points de porosité passent de l'ordre
+ * du classeur (P4, P2, P1, P3) à l'ordre du schéma (P1, P2, P3, P4). Les mesures
+ * étant stockées par INDEX dans data.porosity, les entrées enregistrées avant ce
+ * changement sont réordonnées une seule fois (option gacct_paracheck_porosity_order_v2),
+ * et reçoivent le drapeau data.porosity_order = p1234 que pose désormais le
+ * formulaire voile à chaque sauvegarde. Les PDF déjà générés ne sont pas refaits.
+ * -------------------------------------------------------------------------- */
+
+/**
+ * Réordonne les 4 mesures d'une entrée voile de l'ancien ordre vers P1..P4.
+ * Ancien index 0 = P4, 1 = P2, 2 = P1, 3 = P3, d'où [P1, P2, P3, P4] =
+ * [ancien[2], ancien[1], ancien[3], ancien[0]].
+ *
+ * @param array $entry Entrée de rapports_json.
+ * @return array|null L'entrée modifiée, ou null si rien à faire.
+ */
+function gacct_pack_ar_reorder_porosity_entry( array $entry ) {
+	if ( 'voile' !== ( $entry['model'] ?? '' ) || empty( $entry['data'] ) || ! is_array( $entry['data'] ) ) {
+		return null;
+	}
+
+	$data = $entry['data'];
+
+	if ( 'p1234' === ( $data['porosity_order'] ?? '' ) ) {
+		return null;
+	}
+
+	if ( isset( $data['porosity'] ) && is_array( $data['porosity'] ) ) {
+		$old = array_slice( array_pad( array_values( $data['porosity'] ), 4, '' ), 0, 4 );
+
+		$data['porosity'] = array( $old[2], $old[1], $old[3], $old[0] );
+	}
+
+	$data['porosity_order'] = 'p1234';
+	$entry['data']          = $data;
+
+	return $entry;
+}
+
+/**
+ * Passe unique et idempotente sur tous les dossiers ayant des rapports.
+ */
+function gacct_pack_ar_upgrade_porosity_order() {
+	global $wpdb;
+
+	if ( '1' === get_option( 'gacct_paracheck_porosity_order_v2' ) ) {
+		return;
+	}
+
+	if ( ! function_exists( 'gacct_report_entries_save' ) || ! defined( 'JWCCT_CCT_REVISION' ) ) {
+		return; // framework absent : on réessaiera au prochain chargement.
+	}
+
+	$rows = $wpdb->get_results(
+		"SELECT _ID, rapports_json FROM {$wpdb->prefix}jet_cct_revision WHERE rapports_json IS NOT NULL AND rapports_json <> '' AND rapports_json <> '[]'",
+		ARRAY_A
+	);
+
+	$upgraded = 0;
+	$dossiers = 0;
+	$failed   = 0;
+
+	foreach ( (array) $rows as $row ) {
+		$entries = json_decode( (string) $row['rapports_json'], true );
+
+		if ( ! is_array( $entries ) ) {
+			continue;
+		}
+
+		$changed = false;
+
+		foreach ( $entries as $i => $entry ) {
+			if ( ! is_array( $entry ) ) {
+				continue;
+			}
+			$new = gacct_pack_ar_reorder_porosity_entry( $entry );
+			if ( null !== $new ) {
+				$entries[ $i ] = $new;
+				$changed       = true;
+				$upgraded++;
+			}
+		}
+
+		if ( $changed ) {
+			if ( gacct_report_entries_save( (int) $row['_ID'], $entries ) ) {
+				$dossiers++;
+			} else {
+				$failed++;
+			}
+		}
+	}
+
+	$message = sprintf(
+		'Porosité P1..P4 : %d entrée(s) réordonnée(s) sur %d dossier(s), %d échec(s) d\'écriture.',
+		$upgraded,
+		$dossiers,
+		$failed
+	);
+
+	if ( function_exists( 'jwcct_log' ) ) {
+		jwcct_log( $message );
+	} else {
+		error_log( '[gacct-pack-ar] ' . $message );
+	}
+
+	if ( 0 === $failed ) {
+		update_option( 'gacct_paracheck_porosity_order_v2', '1', false );
+	}
+}
+add_action( 'admin_init', 'gacct_pack_ar_upgrade_porosity_order', 20 );

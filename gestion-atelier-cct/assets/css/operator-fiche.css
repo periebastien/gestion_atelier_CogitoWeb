@@ -309,3 +309,66 @@
 .gacct-op-fiche .gacct-op-billing-card [data-b-line-total].is-negative,
 .gacct-op-fiche .gacct-op-billing-lines li.is-discount .gacct-op-item-total { color: var(--gacct-danger); }
 .gacct-op-fiche .gacct-op-billing-lines .gacct-op-quote-del { vertical-align: middle; margin-left: 6px; }
+
+/* ── Retours Hervé de septembre 2026 (28/09/2026) ─────────────────────── */
+
+/* Badge « retrait à l'atelier » (adresse de livraison, suivi). */
+.gacct-op .gacct-op-badge-pickup {
+	background: var(--gacct-surface-alt);
+	color: var(--gacct-accent-dark);
+	border: 1px solid var(--gacct-accent);
+}
+
+/* Outils de l'en-tête : bon d'intervention, modification du matériel. */
+.gacct-op-fiche .gacct-op-head-tools {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 14px;
+}
+.gacct-op-fiche .gacct-op-materiel-form {
+	background: var(--gacct-surface-alt);
+	border: 1px solid var(--gacct-border-soft);
+	border-radius: var(--gacct-radius);
+	padding: 12px;
+	margin-top: 10px;
+}
+.gacct-op-fiche .gacct-op-materiel-grid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 10px 16px;
+}
+@media (min-width: 600px) {
+	.gacct-op-fiche .gacct-op-materiel-grid { grid-template-columns: 1fr 1fr 1fr; }
+}
+.gacct-op-fiche .gacct-op-materiel-field { display: block; }
+.gacct-op-fiche .gacct-op-materiel-field .gacct-op-label { display: block; margin-bottom: 2px; }
+.gacct-op-fiche .gacct-op-materiel-field input[type="text"] { width: 100%; }
+.gacct-op-fiche .gacct-op-materiel-form .button-primary { margin-top: 4px; }
+.gacct-op-fiche .gacct-op-materiel-feedback:empty { display: none; }
+
+/* Replanification depuis le bloc Créneau. */
+.gacct-op-fiche .gacct-op-reschedule-form { margin-top: 8px; }
+.gacct-op-fiche .gacct-op-reschedule-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin-bottom: 4px;
+}
+.gacct-op-fiche .gacct-op-reschedule-row input[type="date"] { max-width: 100%; }
+.gacct-op-fiche .gacct-op-slot-feedback { display: block; margin-top: 4px; }
+.gacct-op-fiche .gacct-op-slot-feedback:empty { display: none; }
+
+/* 7→8 : remise en main propre, à côté du formulaire d'expédition. */
+.gacct-op-fiche .gacct-op-pickup-row { margin: 6px 0 0; }
+
+/* État 8 : modification du suivi (carte latérale). */
+.gacct-op-fiche .gacct-op-tracking-form { margin-top: 10px; }
+.gacct-op-fiche .gacct-op-tracking-form input[type="text"] {
+	display: block;
+	width: 100%;
+	margin-bottom: 8px;
+}
+.gacct-op-fiche .gacct-op-tracking-buttons { margin: 0 0 6px; }
+.gacct-op-fiche .gacct-op-tracking-feedback:empty { display: none; }

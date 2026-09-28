@@ -112,6 +112,9 @@
 .action-icon.indigo svg { stroke: var(--dash-indigo); }
 .action-icon.teal { background: var(--dash-teal-soft); }
 .action-icon.teal svg { stroke: var(--dash-teal-dark); }
+/* Carte « paiement non abouti » (28/09/2026) */
+.action-icon.red { background: var(--dash-red-soft); }
+.action-icon.red svg { stroke: var(--dash-red); }
 
 .action-body {
 	flex: 1;
