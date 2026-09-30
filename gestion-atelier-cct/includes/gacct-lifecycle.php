@@ -578,6 +578,10 @@ function gacct_lc_process_daily_recap() {
 	$settings = gacct_pay_settings();
 	$today    = current_time( 'Y-m-d' );
 
+	if ( empty( $settings['recap_enabled'] ) ) {
+		return; // Décoché sur la page Paiements & relances (30/09/2026).
+	}
+
 	if ( (int) current_time( 'G' ) < (int) $settings['recap_hour'] ) {
 		return;
 	}

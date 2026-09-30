@@ -579,8 +579,23 @@ final class GACCT_Plugin {
 										<input type="checkbox" name="emails[<?php echo esc_attr( $state ); ?>][enabled]" value="1" <?php checked( ! empty( $email_settings['enabled'] ) ); ?>>
 										<?php esc_html_e( 'Envoyer cette notification', 'gestion-atelier-cct' ); ?>
 									</label>
+									<?php if ( ! in_array( 'client', $definition['recipients'], true ) ) : ?>
+										<p class="description"><?php esc_html_e( 'Alerte interne : adressee a l atelier uniquement, jamais au client.', 'gestion-atelier-cct' ); ?></p>
+									<?php endif; ?>
 								</td>
 							</tr>
+							<?php if ( in_array( 'client', $definition['recipients'], true ) ) : ?>
+							<tr>
+								<th scope="row"><?php esc_html_e( 'Copie a l atelier', 'gestion-atelier-cct' ); ?></th>
+								<td>
+									<label>
+										<input type="checkbox" name="emails[<?php echo esc_attr( $state ); ?>][copy_admin]" value="1" <?php checked( ! empty( $email_settings['copy_admin'] ) ); ?>>
+										<?php esc_html_e( 'Envoyer une copie aux adresses ci-dessus', 'gestion-atelier-cct' ); ?>
+									</label>
+									<p class="description"><?php esc_html_e( 'Decochee : le client recoit toujours sa notification, l atelier non. Tout reste consultable dans la console et les notes de commande.', 'gestion-atelier-cct' ); ?></p>
+								</td>
+							</tr>
+							<?php endif; ?>
 							<tr>
 								<th scope="row">
 									<label for="gacct_notification_subject_<?php echo esc_attr( $state ); ?>"><?php esc_html_e( 'Objet', 'gestion-atelier-cct' ); ?></label>
@@ -829,6 +844,7 @@ final class GACCT_Plugin {
 
 			$emails[ $state ] = array(
 				'enabled'    => ! empty( $posted['enabled'] ),
+				'copy_admin' => ! empty( $posted['copy_admin'] ),
 				'label'      => $definition['label'],
 				'recipients' => $definition['recipients'],
 				'subject'    => isset( $posted['subject'] ) && '' !== trim( (string) $posted['subject'] )
@@ -1614,7 +1630,13 @@ final class GACCT_Plugin {
 			}
 		}
 
-		if ( in_array( 'admin', $config['recipients'], true ) ) {
+		// Copie à l'atelier : un e-mail adressé au seul atelier (état 3) part
+		// toujours ; un e-mail client n'est copié que si la case « Copie à
+		// l'atelier » du modèle est cochée (Bastien, 30/09/2026).
+		$admin_wanted = in_array( 'admin', $config['recipients'], true )
+			&& ( ! in_array( 'client', $config['recipients'], true ) || ! empty( $config['copy_admin'] ) );
+
+		if ( $admin_wanted ) {
 			// Plusieurs adresses possibles (atelier + agence) : une copie chacune.
 			$admin_emails = function_exists( 'gacct_pay_admin_emails' )
 				? gacct_pay_admin_emails()
@@ -1661,6 +1683,7 @@ final class GACCT_Plugin {
 				'enabled'    => true,
 				'label'      => __( 'Voile réceptionnée, programmée pour intervention', 'gestion-atelier-cct' ),
 				'recipients' => array( 'client', 'admin' ),
+				'copy_admin' => false, // copie à l'atelier décochée par défaut (Bastien, 30/09/2026)
 				'subject'    => __( 'Votre matériel est bien arrivé à l’atelier - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'       => '<p>Bonjour {customer_name},</p><p>Nous vous confirmons la réception de votre matériel. L’intervention est programmée pour le <strong>{date_atelier}</strong>.</p><p>Prestations prévues : {prestations}.</p><p>À très vite,<br><br>' . gacct_team_signature() . '</p>',
 			),
@@ -1675,6 +1698,7 @@ final class GACCT_Plugin {
 				'enabled'    => true,
 				'label'      => __( 'Nouveau devis à valider', 'gestion-atelier-cct' ),
 				'recipients' => array( 'client', 'admin' ),
+				'copy_admin' => false, // copie à l'atelier décochée par défaut (Bastien, 30/09/2026)
 				'subject'    => __( 'Action requise : votre devis est à valider - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'       => '<p>Bonjour {customer_name},</p>'
 					. '<p>Suite à l’inspection de votre matériel, des travaux complémentaires sont nécessaires :</p>'
@@ -1688,6 +1712,7 @@ final class GACCT_Plugin {
 				'enabled'    => true,
 				'label'      => __( 'Intervention finie, en attente de paiement', 'gestion-atelier-cct' ),
 				'recipients' => array( 'client', 'admin' ),
+				'copy_admin' => false, // copie à l'atelier décochée par défaut (Bastien, 30/09/2026)
 				'subject'    => __( 'C’est prêt ! Le solde de votre commande {order_number} est à régler', 'gestion-atelier-cct' ),
 				'body'       => '<p>Bonjour {customer_name},</p><p>L’entretien de votre matériel est terminé ! Il ne vous reste plus qu’à régler le solde de <strong>{balance_amount}</strong> pour finaliser la commande.</p><p><a href="{payment_url}">Régler ma commande</a></p><p>À bientôt,<br><br>' . gacct_team_signature() . '</p>',
 			),
@@ -1695,6 +1720,7 @@ final class GACCT_Plugin {
 				'enabled'    => true,
 				'label'      => __( 'Révision finie, rapport disponible', 'gestion-atelier-cct' ),
 				'recipients' => array( 'client', 'admin' ),
+				'copy_admin' => false, // copie à l'atelier décochée par défaut (Bastien, 30/09/2026)
 				'subject'    => __( 'Votre révision est terminée ! Votre rapport est disponible - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'       => '<p>Bonjour {customer_name},</p><p>La révision est officiellement terminée. Vous trouverez votre rapport technique complet en pièce jointe de cet e-mail, et à tout moment dans votre espace client.</p><p>Merci de votre confiance,<br><br>' . gacct_team_signature() . '</p>',
 			),
@@ -1702,6 +1728,7 @@ final class GACCT_Plugin {
 				'enabled'    => true,
 				'label'      => __( 'Matériel réexpédié', 'gestion-atelier-cct' ),
 				'recipients' => array( 'client', 'admin' ),
+				'copy_admin' => false, // copie à l'atelier décochée par défaut (Bastien, 30/09/2026)
 				'subject'    => __( 'Votre matériel est reparti ! - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'       => '<p>Bonjour {customer_name},</p><p>Votre matériel a quitté l’atelier et voyage vers vous.</p><p>Suivi de votre colis : {tracking_link}</p><p>Bons vols,<br><br>' . gacct_team_signature() . '</p>',
 			),

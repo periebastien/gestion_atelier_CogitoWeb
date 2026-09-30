@@ -62,11 +62,13 @@ function gacct_pay_default_settings() {
 		'balance_days_1'    => 3,   // 1re relance du solde : X jours après la demande (état 6). Décision Bastien 28/08.
 		'balance_days_2'    => 10,  // 2e relance du solde : X jours après la demande.
 		'recap_hour'        => 8,   // récapitulatif admin quotidien : à partir de X heures.
+		'recap_enabled'     => true, // récapitulatif admin du matin : décochable (Bastien, 30/09/2026).
 		'contact_phone'     => '02 31 69 39 31',
 		'contact_hours'     => 'du lundi au vendredi de 9 h 30 à 17 h 30',
 		'emails'            => array(
 			'bacs_reminder' => array(
 				'enabled' => true,
+				'copy_admin' => false,
 				'label'   => __( 'Relance paiement par virement', 'gestion-atelier-cct' ),
 				'subject' => __( 'Votre virement est attendu avant le {deadline_date} - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
@@ -81,6 +83,7 @@ function gacct_pay_default_settings() {
 			),
 			'atelier_cancel' => array(
 				'enabled' => true,
+				'copy_admin' => true,
 				'label'   => __( 'Annulation par l’atelier', 'gestion-atelier-cct' ),
 				'subject' => __( 'Votre commande {order_number} a été annulée', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
@@ -92,6 +95,7 @@ function gacct_pay_default_settings() {
 			),
 			'balance_bank_details' => array(
 				'enabled' => true,
+				'copy_admin' => false,
 				'label'   => __( 'Solde par virement : coordonnées bancaires', 'gestion-atelier-cct' ),
 				'subject' => __( 'Votre solde de {balance_amount} par virement - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
@@ -103,6 +107,7 @@ function gacct_pay_default_settings() {
 			),
 			'bank_details' => array(
 				'enabled' => true,
+				'copy_admin' => false,
 				'label'   => __( 'Coordonnées bancaires (renvoi à la demande du client)', 'gestion-atelier-cct' ),
 				'subject' => __( 'Vos coordonnées bancaires pour la commande {order_number}', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
@@ -114,6 +119,7 @@ function gacct_pay_default_settings() {
 			),
 			'bacs_cancel' => array(
 				'enabled' => true,
+				'copy_admin' => true,
 				'label'   => __( 'Annulation : virement non reçu', 'gestion-atelier-cct' ),
 				'subject' => __( 'Votre commande {order_number} a été annulée : virement non reçu', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
@@ -125,6 +131,7 @@ function gacct_pay_default_settings() {
 			),
 			'abandoned' => array(
 				'enabled' => true,
+				'copy_admin' => false,
 				'label'   => __( 'Demande non finalisée (aucune commande passée)', 'gestion-atelier-cct' ),
 				'subject' => __( 'Votre demande d’intervention n’est pas finalisée', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
@@ -136,6 +143,7 @@ function gacct_pay_default_settings() {
 			),
 			'payment_failed' => array(
 				'enabled' => true,
+				'copy_admin' => true,
 				'label'   => __( 'Paiement non abouti (commande passée mais non payée)', 'gestion-atelier-cct' ),
 				'subject' => __( 'Votre paiement n’a pas abouti - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
@@ -147,6 +155,7 @@ function gacct_pay_default_settings() {
 			),
 			'noshow_release' => array(
 				'enabled' => true,
+				'copy_admin' => true,
 				'label'   => __( 'Créneau libéré : matériel jamais reçu (acompte conservé)', 'gestion-atelier-cct' ),
 				'subject' => __( 'Votre créneau du {slot_date} a dû être libéré - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
@@ -160,6 +169,7 @@ function gacct_pay_default_settings() {
 			// l'e-mail d'état 8 quand le suivi vaut gacct_op_pickup_marker().
 			'pickup_delivered' => array(
 				'enabled' => true,
+				'copy_admin' => false,
 				'label'   => __( 'Matériel remis en main propre (état 8 sans expédition)', 'gestion-atelier-cct' ),
 				'subject' => __( 'Votre matériel vous a été remis - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
@@ -169,6 +179,7 @@ function gacct_pay_default_settings() {
 			),
 			'rescheduled' => array(
 				'enabled' => true,
+				'copy_admin' => false,
 				'label'   => __( 'Créneau replanifié', 'gestion-atelier-cct' ),
 				'subject' => __( 'Votre créneau atelier a été déplacé au {new_slot_date} - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
@@ -179,6 +190,7 @@ function gacct_pay_default_settings() {
 			),
 			'deposit_received' => array(
 				'enabled' => true,
+				'copy_admin' => false,
 				'label'   => __( 'Paiement reçu : consignes d’expédition + bon d’intervention', 'gestion-atelier-cct' ),
 				'subject' => __( 'Paiement reçu ! Voici comment nous envoyer votre matériel - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
@@ -198,6 +210,7 @@ function gacct_pay_default_settings() {
 			),
 			'missing_items' => array(
 				'enabled' => true,
+				'copy_admin' => false,
 				'label'   => __( 'Réception partielle : éléments manquants', 'gestion-atelier-cct' ),
 				'subject' => __( 'Votre colis est bien arrivé, mais il manque des éléments - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
@@ -211,6 +224,7 @@ function gacct_pay_default_settings() {
 			),
 			'quote_reminder' => array(
 				'enabled' => true,
+				'copy_admin' => false,
 				'label'   => __( 'Relance devis complémentaire sans réponse', 'gestion-atelier-cct' ),
 				'subject' => __( 'Votre devis attend toujours votre réponse - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
@@ -223,6 +237,7 @@ function gacct_pay_default_settings() {
 			),
 			'quote_refused_partial' => array(
 				'enabled' => true,
+				'copy_admin' => true,
 				'label'   => __( 'Devis refusé : intervention sur les prestations initiales', 'gestion-atelier-cct' ),
 				'subject' => __( 'Devis refusé, nous réalisons les prestations prévues - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
@@ -233,6 +248,7 @@ function gacct_pay_default_settings() {
 			),
 			'quote_refused_return' => array(
 				'enabled' => true,
+				'copy_admin' => true,
 				'label'   => __( 'Devis refusé : retour du matériel (demande de devis seule)', 'gestion-atelier-cct' ),
 				'subject' => __( 'Devis refusé, nous vous retournons votre matériel - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
@@ -243,6 +259,7 @@ function gacct_pay_default_settings() {
 			),
 			'hold_notice' => array(
 				'enabled' => true,
+				'copy_admin' => false,
 				'label'   => __( 'Dossier mis en attente (message personnalisé de l\'atelier)', 'gestion-atelier-cct' ),
 				'subject' => __( 'Votre dossier est momentanément en pause - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
@@ -254,6 +271,7 @@ function gacct_pay_default_settings() {
 			),
 			'hold_release' => array(
 				'enabled' => true,
+				'copy_admin' => false,
 				'label'   => __( 'Dossier repris (fin de la mise en attente)', 'gestion-atelier-cct' ),
 				'subject' => __( 'Bonne nouvelle : votre dossier reprend son cours - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
@@ -265,6 +283,7 @@ function gacct_pay_default_settings() {
 			),
 			'unfinished_cancel' => array(
 				'enabled' => true,
+				'copy_admin' => true,
 				'label'   => __( 'Annulation : commande non payée', 'gestion-atelier-cct' ),
 				'subject' => __( 'Votre commande {order_number} a été annulée : paiement non reçu', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
@@ -275,6 +294,7 @@ function gacct_pay_default_settings() {
 			),
 			'pre_slot_reminder' => array(
 				'enabled' => true,
+				'copy_admin' => false,
 				'label'   => __( 'Rappel avant créneau : matériel pas encore reçu', 'gestion-atelier-cct' ),
 				'subject' => __( 'Votre créneau atelier approche : avez-vous expédié votre matériel ? - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
@@ -287,6 +307,7 @@ function gacct_pay_default_settings() {
 			),
 			'balance_reminder' => array(
 				'enabled' => true,
+				'copy_admin' => false,
 				'label'   => __( 'Relance du solde (intervention finie)', 'gestion-atelier-cct' ),
 				'subject' => __( 'Le solde de votre commande {order_number} attend votre règlement', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
@@ -298,6 +319,7 @@ function gacct_pay_default_settings() {
 			),
 			'quote_accepted' => array(
 				'enabled' => true,
+				'copy_admin' => true,
 				'label'   => __( 'Devis accepté : confirmation au client', 'gestion-atelier-cct' ),
 				'subject' => __( 'Devis accepté, nous poursuivons l’intervention - commande {order_number}', 'gestion-atelier-cct' ),
 				'body'    => '<p>Bonjour {customer_name},</p>'
@@ -313,6 +335,7 @@ function gacct_pay_default_settings() {
 			// {customer_phone}, {shipping_address}, {console_url}.
 			'ready_to_ship' => array(
 				'enabled' => true,
+				'admin_only' => true, // e-mail adressé à l'atelier lui-même, pas une copie
 				'label'   => __( 'Atelier : dossier prêt à expédier (solde réglé, rapport disponible)', 'gestion-atelier-cct' ),
 				'subject' => __( 'Dossier {order_number} prêt à expédier', 'gestion-atelier-cct' ),
 				'body'    => '<p>Le solde de la commande <strong>{order_number}</strong> est réglé et le rapport est disponible : le colis peut partir (ou être remis au comptoir).</p>'
@@ -359,6 +382,7 @@ function gacct_pay_settings() {
 	$settings['balance_days_1']      = max( 1, (int) $settings['balance_days_1'] );
 	$settings['balance_days_2']      = max( $settings['balance_days_1'] + 1, (int) $settings['balance_days_2'] );
 	$settings['recap_hour']          = min( 12, max( 5, (int) $settings['recap_hour'] ) );
+	$settings['recap_enabled']       = ! empty( $settings['recap_enabled'] );
 
 	// La suppression ne doit jamais precéder la relance.
 	$settings['unfinished_hours'] = max(
@@ -721,7 +745,7 @@ function gacct_render_email_html( $subject, $body ) {
 	return apply_filters( 'gacct_email_html', $html, $subject, $body );
 }
 
-function gacct_pay_send_email( $to, $template_key, array $variables, $copy_admin = false ) {
+function gacct_pay_send_email( $to, $template_key, array $variables, $copy_admin = false ) { // phpcs:ignore -- $copy_admin ignoré, voir plus bas.
 	$settings = gacct_pay_settings();
 	$email    = isset( $settings['emails'][ $template_key ] ) ? $settings['emails'][ $template_key ] : null;
 
@@ -741,7 +765,10 @@ function gacct_pay_send_email( $to, $template_key, array $variables, $copy_admin
 
 	$sent = wp_mail( $to, wp_strip_all_tags( $subject ), $message, $headers );
 
-	if ( $copy_admin ) {
+	// Copie à l'atelier : décidée par la case « Copie à l'atelier » du modèle
+	// (page Paiements & relances), plus par l'appelant (Bastien, 30/09/2026).
+	// Le paramètre $copy_admin est conservé pour la compatibilité mais ignoré.
+	if ( ! empty( $email['copy_admin'] ) && empty( $email['admin_only'] ) ) {
 		foreach ( gacct_pay_admin_emails() as $admin ) {
 			if ( $admin !== $to ) {
 				wp_mail( $admin, '[Copie admin] ' . wp_strip_all_tags( $subject ), $message, $headers );
@@ -1566,6 +1593,7 @@ function gacct_pay_handle_admin_save() {
 		'balance_days_1'    => max( 1, absint( $_POST['balance_days_1'] ?? $defaults['balance_days_1'] ) ),
 		'balance_days_2'    => max( 1, absint( $_POST['balance_days_2'] ?? $defaults['balance_days_2'] ) ),
 		'recap_hour'        => absint( $_POST['recap_hour'] ?? $defaults['recap_hour'] ),
+		'recap_enabled'     => ! empty( $_POST['recap_enabled'] ),
 		'contact_phone'     => sanitize_text_field( wp_unslash( $_POST['contact_phone'] ?? $defaults['contact_phone'] ) ),
 		'contact_hours'     => sanitize_text_field( wp_unslash( $_POST['contact_hours'] ?? $defaults['contact_hours'] ) ),
 		'emails'            => array(),
@@ -1588,6 +1616,14 @@ function gacct_pay_handle_admin_save() {
 			'subject' => sanitize_text_field( $posted['subject'] ?? $default_email['subject'] ),
 			'body'    => wp_kses_post( $posted['body'] ?? $default_email['body'] ),
 		);
+
+		// Copie à l'atelier : case par modèle (Bastien, 30/09/2026). Un e-mail
+		// adressé à l'atelier lui-même (admin_only) n'a pas de copie.
+		if ( ! empty( $default_email['admin_only'] ) ) {
+			$settings['emails'][ $key ]['admin_only'] = true;
+		} else {
+			$settings['emails'][ $key ]['copy_admin'] = ! empty( $posted['copy_admin'] );
+		}
 	}
 
 	update_option( GACCT_PAY_SETTINGS_OPT, $settings, false );
@@ -1793,6 +1829,11 @@ function gacct_pay_render_admin_page() {
 						<td>
 							<input type="number" id="gacct_recap_hour" name="recap_hour" class="small-text" min="5" max="12" value="<?php echo esc_attr( $settings['recap_hour'] ); ?>">
 							<?php esc_html_e( 'heures', 'gestion-atelier-cct' ); ?>
+							<br>
+							<label>
+								<input type="checkbox" name="recap_enabled" value="1" <?php checked( ! empty( $settings['recap_enabled'] ) ); ?>>
+								<?php esc_html_e( 'Envoyer le recapitulatif du matin', 'gestion-atelier-cct' ); ?>
+							</label>
 							<p class="description"><?php esc_html_e( 'Un e-mail par jour aux adresses admin, seulement s il y a quelque chose a signaler : bascules « Sans suite » du soir (garde-fou : une demi-journee pour pointer une reception oubliee), colis annonces non arrives, soldes et devis en souffrance, virements en echeance.', 'gestion-atelier-cct' ); ?></p>
 						</td>
 					</tr>
@@ -1828,6 +1869,18 @@ function gacct_pay_render_admin_page() {
 								</label>
 							</td>
 						</tr>
+						<?php if ( empty( $email['admin_only'] ) ) : ?>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Copie a l atelier', 'gestion-atelier-cct' ); ?></th>
+							<td>
+								<label>
+									<input type="checkbox" name="emails[<?php echo esc_attr( $key ); ?>][copy_admin]" value="1" <?php checked( ! empty( $email['copy_admin'] ) ); ?>>
+									<?php esc_html_e( 'Envoyer une copie aux adresses de l atelier (champ « Email administrateur » des Notifications)', 'gestion-atelier-cct' ); ?>
+								</label>
+								<p class="description"><?php esc_html_e( 'Decochee : le client recoit toujours son e-mail, l atelier non. Tout reste consultable dans la console et les notes de commande.', 'gestion-atelier-cct' ); ?></p>
+							</td>
+						</tr>
+						<?php endif; ?>
 						<tr>
 							<th scope="row"><label for="gacct_pay_subject_<?php echo esc_attr( $key ); ?>"><?php esc_html_e( 'Objet', 'gestion-atelier-cct' ); ?></label></th>
 							<td><input type="text" id="gacct_pay_subject_<?php echo esc_attr( $key ); ?>" name="emails[<?php echo esc_attr( $key ); ?>][subject]" class="large-text" value="<?php echo esc_attr( $email['subject'] ); ?>"></td>
