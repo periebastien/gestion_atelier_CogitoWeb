@@ -45,7 +45,7 @@ function gacct_ship_carriers() {
 			// Dépôt en main propre à la boutique (Timothée, 08/09/2026) : pas de
 			// n° de suivi, la « référence » est la date du dépôt (AAAA-MM-JJ).
 			// Un dépôt déclaré vaut colis en route : le créneau n'est PAS libéré
-			// automatiquement la veille au soir (gacct_lc_process_no_show exclut
+			// automatiquement le jour du créneau (gacct_lc_process_no_show exclut
 			// déjà tout suivi déclaré via gacct_ship_in_transit).
 			'depot'      => array(
 				'label' => __( 'Dépôt à la boutique', 'gestion-atelier-cct' ),

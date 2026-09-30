@@ -222,7 +222,6 @@ function gacct_op_render_today_screen() {
 
 	$date_format = get_option( 'date_format' );
 	$time_format = get_option( 'time_format' );
-	$today_key   = (int) wp_date( 'Ymd' );
 
 	/* ---------------------------------------------------------------------
 	 * Rendu.
@@ -244,8 +243,9 @@ function gacct_op_render_today_screen() {
 			$order_id = absint( $item['order_id'] ?? 0 );
 			$order    = $orders_by_id[ $order_id ] ?? null;
 			$slot     = absint( $item['date_reservee'] ?? 0 );
-			$deadline = $slot - DAY_IN_SECONDS;
-			$is_late  = ( (int) wp_date( 'Ymd', $slot ) <= $today_key );
+			// Limite = le jour du créneau à l'heure limite de réception (Hervé, 30/09/2026).
+			$deadline = function_exists( 'gacct_pay_parcel_deadline_ts' ) ? gacct_pay_parcel_deadline_ts( $slot ) : $slot;
+			$is_late  = ( time() > $deadline );
 
 			gacct_op_today_row_open( gacct_op_console_url( absint( $item['_ID'] ) ), $is_late ? 'is-late' : '' );
 			echo '<span class="gacct-op-row-ref">' . esc_html( gacct_op_today_reference( $order, $order_id ) ) . '</span>';
@@ -255,9 +255,9 @@ function gacct_op_render_today_screen() {
 			echo '</span>';
 			echo '<span class="gacct-op-row-meta">';
 			echo esc_html( sprintf(
-				/* translators: %s: date limite de réception (veille du créneau) */
+				/* translators: %s: date et heure limites de réception (jour du créneau) */
 				__( 'Limite : %s', 'gestion-atelier-cct' ),
-				wp_date( $date_format, $deadline )
+				wp_date( $date_format . ' G \\h', $deadline )
 			) );
 			if ( $is_late ) {
 				echo ' <span class="gacct-op-pill danger">' . esc_html__( 'en retard', 'gestion-atelier-cct' ) . '</span>';

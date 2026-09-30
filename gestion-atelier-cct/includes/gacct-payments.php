@@ -56,7 +56,7 @@ function gacct_pay_default_settings() {
 		'quote_reminder_days' => 3, // relance devis complémentaire sans réponse : X jours après l'envoi.
 		'quote_reminder_days_2' => 8, // seconde relance devis : X jours après l'envoi.
 		'quote_alert_days'  => 10,  // devis toujours sans réponse : signalé dans le récap admin à partir de X jours.
-		'noshow_hour'       => 18,  // bascule « Sans suite » : la veille du créneau, à partir de X heures.
+		'noshow_hour'       => 12,  // heure limite de réception : LE JOUR du créneau, à partir de X heures le dossier bascule « Sans suite » (Hervé, 30/09/2026).
 		'preslot_days_1'    => 7,   // 1er rappel « avez-vous expédié ? » : X jours avant le créneau.
 		'preslot_days_2'    => 2,   // 2e rappel : X jours avant le créneau.
 		'balance_days_1'    => 3,   // 1re relance du solde : X jours après la demande (état 6). Décision Bastien 28/08.
@@ -193,7 +193,7 @@ function gacct_pay_default_settings() {
 					. '<li>Votre colis doit nous parvenir <strong>avant le {parcel_deadline}</strong>.</li>'
 					. '</ol>'
 					. '<p>Dès que le colis est parti, indiquez-nous le transporteur et le numéro de suivi depuis <a href="{shipping_url}">votre espace client</a> : nous saurons ainsi qu’il est en route et nous pourrons l’attendre.</p>'
-					. '<p>Un petit rappel, sans malice : l’acompte réserve votre créneau. Sans réception du matériel la veille au soir, le créneau est libéré et l’acompte reste acquis. Un imprévu d’expédition ? Prévenez-nous avant la date au <strong>{contact_phone}</strong> ({contact_hours}), nous en tiendrons compte.</p>'
+					. '<p>Un petit rappel, sans malice : l’acompte réserve votre créneau. Si votre matériel ne nous est pas parvenu le matin de votre révision avant {deadline_hour}, votre place est libérée pour un autre pilote et l’acompte reste acquis. Un imprévu d’expédition ? Prévenez-nous avant la date au <strong>{contact_phone}</strong> ({contact_hours}), nous en tiendrons compte.</p>'
 					. '<p>À très vite,<br><br>' . gacct_team_signature() . '</p>',
 			),
 			'missing_items' => array(
@@ -282,7 +282,7 @@ function gacct_pay_default_settings() {
 					. '<p>Si votre colis est déjà parti, pensez à nous indiquer le transporteur et le numéro de suivi depuis <a href="{shipping_url}">votre espace client</a> : nous saurons qu’il est en route et nous l’attendrons.</p>'
 					. '<p>S’il n’est pas encore parti, il est temps de l’expédier : il doit nous parvenir <strong>avant le {parcel_deadline}</strong>, à l’adresse suivante :</p>'
 					. '<p><strong>{workshop_address}</strong></p>'
-					. '<p>Sans réception du matériel la veille au soir de votre créneau, celui-ci sera libéré et l’acompte restera acquis, comme indiqué lors de votre commande. Un imprévu ? Appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}) ou répondez à cet e-mail : nous trouverons une solution ensemble.</p>'
+					. '<p>Si votre matériel ne nous est pas parvenu le matin de votre révision avant {deadline_hour}, votre place sera libérée pour un autre pilote et l’acompte restera acquis, comme indiqué lors de votre commande. Un imprévu ? Appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}) ou répondez à cet e-mail : nous trouverons une solution ensemble.</p>'
 					. '<p>À très vite,<br><br>' . gacct_team_signature() . '</p>',
 			),
 			'balance_reminder' => array(
@@ -353,7 +353,7 @@ function gacct_pay_settings() {
 	$settings['quote_reminder_days'] = max( 1, (int) $settings['quote_reminder_days'] );
 	$settings['quote_reminder_days_2'] = max( $settings['quote_reminder_days'] + 1, (int) $settings['quote_reminder_days_2'] );
 	$settings['quote_alert_days']    = max( $settings['quote_reminder_days_2'], (int) $settings['quote_alert_days'] );
-	$settings['noshow_hour']         = min( 23, max( 12, (int) $settings['noshow_hour'] ) );
+	$settings['noshow_hour']         = min( 20, max( 6, (int) $settings['noshow_hour'] ) );
 	$settings['preslot_days_2']      = max( 1, (int) $settings['preslot_days_2'] );
 	$settings['preslot_days_1']      = max( $settings['preslot_days_2'] + 1, (int) $settings['preslot_days_1'] );
 	$settings['balance_days_1']      = max( 1, (int) $settings['balance_days_1'] );
@@ -584,6 +584,62 @@ function gacct_pay_bank_details_html( $order = null ) {
 }
 
 /* =============================================================================
+ *  HEURE LIMITE DE RÉCEPTION (Hervé, 30/09/2026)
+ *
+ *  Le matériel doit être à l'atelier LE JOUR du créneau, avant `noshow_hour`
+ *  (défaut 12 h). Ces helpers sont la SEULE source de la date/heure limite
+ *  annoncée au client (confirmation, dashboard, view-order, e-mails, console)
+ *  et de la bascule « Sans suite » (gacct-lifecycle.php).
+ * ============================================================================= */
+
+/**
+ * Heure limite de réception (heure pleine locale, 6–20).
+ */
+function gacct_pay_noshow_hour() {
+	$settings = gacct_pay_settings();
+	return (int) $settings['noshow_hour'];
+}
+
+/**
+ * Libellé de l'heure limite : « 12 h ».
+ */
+function gacct_pay_noshow_hour_label() {
+	/* translators: %d: heure pleine */
+	return sprintf( __( '%d h', 'gestion-atelier-cct' ), gacct_pay_noshow_hour() );
+}
+
+/**
+ * Timestamp de la limite de réception d'un créneau : le jour du créneau
+ * (date stockée à minuit UTC du jour calendaire) à `noshow_hour` locale.
+ */
+function gacct_pay_parcel_deadline_ts( $slot_ts ) {
+	$slot_ts = (int) $slot_ts;
+
+	if ( ! $slot_ts ) {
+		return 0;
+	}
+
+	$day = wp_date( 'Y-m-d', $slot_ts );
+	$dt  = date_create_immutable( sprintf( '%s %02d:00:00', $day, gacct_pay_noshow_hour() ), wp_timezone() );
+
+	return $dt ? $dt->getTimestamp() : 0;
+}
+
+/**
+ * Libellé complet de la limite : « 14 octobre 2026 à 12 h ».
+ */
+function gacct_pay_parcel_deadline_label( $slot_ts ) {
+	$ts = gacct_pay_parcel_deadline_ts( $slot_ts );
+
+	if ( ! $ts ) {
+		return '';
+	}
+
+	/* translators: 1: date, 2: heure limite */
+	return sprintf( __( '%1$s à %2$s', 'gestion-atelier-cct' ), wp_date( 'j F Y', $ts ), gacct_pay_noshow_hour_label() );
+}
+
+/* =============================================================================
  *  EMAILS
  * ============================================================================= */
 
@@ -596,6 +652,7 @@ function gacct_pay_email_variables( $order = null, array $extra = array() ) {
 		'{checkout_url}'    => esc_url( function_exists( 'wc_get_checkout_url' ) ? wc_get_checkout_url() : home_url( '/commander/' ) ),
 		'{contact_phone}'   => $settings['contact_phone'],
 		'{contact_hours}'   => $settings['contact_hours'],
+		'{deadline_hour}'   => gacct_pay_noshow_hour_label(),
 	);
 
 	if ( $order instanceof WC_Order ) {
@@ -825,7 +882,7 @@ function gacct_pay_send_deposit_received( $order, $force = false ) {
 		'deposit_received',
 		gacct_pay_email_variables( $order, array(
 			'{slot_date}'         => $data['slot_label'] ? $data['slot_label'] : __( 'la date convenue', 'gestion-atelier-cct' ),
-			'{parcel_deadline}'   => $data['parcel_label'] ? $data['parcel_label'] : __( 'la veille de votre créneau', 'gestion-atelier-cct' ),
+			'{parcel_deadline}'   => $data['parcel_label'] ? $data['parcel_label'] : sprintf( /* translators: %s: heure limite */ __( 'matin de votre révision, avant %s', 'gestion-atelier-cct' ), gacct_pay_noshow_hour_label() ),
 			'{materiel}'          => esc_html( $data['materiel'] ),
 			'{workshop_address}'  => esc_html( implode( ', ', $data['store_address'] ) ),
 			'{shipping_url}'      => esc_url( $order->get_view_order_url() ),
@@ -1333,8 +1390,8 @@ function gacct_pay_midnight_purge() {
  *  NO-SHOW : MATÉRIEL JAMAIS ARRIVÉ
  *
  *  Depuis le 27/08/2026, la mécanique vit dans includes/gacct-lifecycle.php :
- *  bascule en état terminal 9 « Sans suite » la veille du créneau au soir
- *  (heure réglable `noshow_hour`), occupation passée en `cct_status = draft`
+ *  bascule en état terminal 9 « Sans suite » LE JOUR du créneau, dès l'heure
+ *  limite de réception (réglable `noshow_hour`, défaut 12 h, Hervé 30/09/2026), occupation passée en `cct_status = draft`
  *  (jamais supprimée : le calcul de disponibilité ne compte que les publish,
  *  le créneau se rouvre, le retour arrière est immédiat), acompte acquis,
  *  dossiers avec suivi colis déclaré exclus de la bascule automatique.
@@ -1687,16 +1744,16 @@ function gacct_pay_render_admin_page() {
 
 			<h2><?php esc_html_e( 'Materiel jamais recu (bascule « Sans suite »)', 'gestion-atelier-cct' ); ?></h2>
 			<p class="description" style="max-width:46em;">
-				<?php esc_html_e( 'Commande payee mais materiel jamais arrive : le dossier passe en etat 9 « Sans suite » la veille du creneau au soir. Le creneau se libere (occupation en brouillon, jamais supprimee), l acompte reste acquis, la commande n est ni annulee ni remboursee. Un dossier dont le client a declare un numero de suivi est EXCLU de la bascule automatique et signale dans le recapitulatif du matin. Reprise : replanifier depuis le Planning.', 'gestion-atelier-cct' ); ?>
+				<?php esc_html_e( 'Commande payee mais materiel jamais arrive : le dossier passe en etat 9 « Sans suite » le jour du creneau, des l heure limite de reception (midi par defaut). Un depot au comptoir le matin doit etre pointe dans la console AVANT cette heure. Le creneau se libere (occupation en brouillon, jamais supprimee), l acompte reste acquis, la commande n est ni annulee ni remboursee. Un dossier dont le client a declare un numero de suivi est EXCLU de la bascule automatique et signale dans le recapitulatif du matin. Reprise : replanifier depuis le Planning.', 'gestion-atelier-cct' ); ?>
 			</p>
 			<table class="form-table" role="presentation">
 				<tbody>
 					<tr>
-						<th scope="row"><label for="gacct_noshow_hour"><?php esc_html_e( 'Heure de bascule', 'gestion-atelier-cct' ); ?></label></th>
+						<th scope="row"><label for="gacct_noshow_hour"><?php esc_html_e( 'Heure limite de reception', 'gestion-atelier-cct' ); ?></label></th>
 						<td>
-							<input type="number" id="gacct_noshow_hour" name="noshow_hour" class="small-text" min="12" max="23" value="<?php echo esc_attr( $settings['noshow_hour'] ); ?>">
-							<?php esc_html_e( 'heures, la veille du creneau', 'gestion-atelier-cct' ); ?>
-							<p class="description"><?php esc_html_e( 'Plus tard = plus de chances qu un colis arrive dans la journee sauve le dossier. Plus tot = le creneau se rouvre a temps pour etre repris.', 'gestion-atelier-cct' ); ?></p>
+							<input type="number" id="gacct_noshow_hour" name="noshow_hour" class="small-text" min="6" max="20" value="<?php echo esc_attr( $settings['noshow_hour'] ); ?>">
+							<?php esc_html_e( 'heures, le jour de la revision (heure pleine)', 'gestion-atelier-cct' ); ?>
+							<p class="description"><?php esc_html_e( 'Le matin de la revision, passe cette heure, le dossier passe en Sans suite et le creneau se libere. Cette heure est annoncee au client partout (confirmation, e-mails, espace client) : la changer change aussi la consigne.', 'gestion-atelier-cct' ); ?></p>
 						</td>
 					</tr>
 					<tr>
@@ -1816,7 +1873,8 @@ function gacct_pay_render_admin_page() {
 									<br>
 									<?php esc_html_e( 'Paiement reçu (consignes d’expédition) :', 'gestion-atelier-cct' ); ?>
 									<code>{slot_date}</code> <?php esc_html_e( '(prise en charge à l’atelier)', 'gestion-atelier-cct' ); ?>
-									<code>{parcel_deadline}</code> <?php esc_html_e( '(date limite d’arrivée du colis)', 'gestion-atelier-cct' ); ?>
+									<code>{parcel_deadline}</code> <?php esc_html_e( '(date et heure limites d’arrivée du matériel)', 'gestion-atelier-cct' ); ?>
+									<code>{deadline_hour}</code> <?php esc_html_e( '(heure limite de réception seule, ex. « 12 h »)', 'gestion-atelier-cct' ); ?>
 									<code>{workshop_address}</code>
 									<code>{materiel}</code> <?php esc_html_e( '(marque · modèle · taille)', 'gestion-atelier-cct' ); ?>
 									<code>{shipping_url}</code> <?php esc_html_e( '(espace client, déclaration du suivi)', 'gestion-atelier-cct' ); ?>

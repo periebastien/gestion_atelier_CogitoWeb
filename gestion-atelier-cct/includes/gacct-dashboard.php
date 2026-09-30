@@ -111,7 +111,7 @@ function gacct_dash_texts() {
 		'instr_step4'      => __( 'Envoyez le colis à l’adresse ci-dessous, de préférence avec un numéro de suivi, et conservez votre preuve de dépôt. Dès l’envoi, renseignez ce numéro : nous saurons que votre colis est en route.', 'gestion-atelier-cct' ),
 		'instr_address'    => __( 'Adresse de l’atelier', 'gestion-atelier-cct' ),
 		/* translators: %s: date limite d'arrivée du colis */
-		'instr_deadline'   => __( 'Le colis doit nous parvenir au plus tard le %s, la veille de votre créneau.', 'gestion-atelier-cct' ),
+		'instr_deadline'   => __( 'Votre matériel doit nous parvenir au plus tard le %s, le matin de votre révision.', 'gestion-atelier-cct' ),
 		'instr_workorder'  => __( 'Imprimer le bon d’intervention', 'gestion-atelier-cct' ),
 		'instr_workorder_locked' => __( 'Le bon d’intervention sera disponible dès la réception de votre paiement.', 'gestion-atelier-cct' ),
 		'instr_guide'      => __( 'Voir les consignes d’emballage complètes', 'gestion-atelier-cct' ),
@@ -1058,7 +1058,7 @@ function gacct_dash_action_expedition( $order, array $conf, array $row = array()
 	}
 
 	$slot_ts   = isset( $conf['slot_ts'] ) ? (int) $conf['slot_ts'] : 0;
-	$parcel_ts = $slot_ts ? $slot_ts - (int) apply_filters( 'gacct_conf_parcel_lead_days', 1 ) * DAY_IN_SECONDS : 0;
+	$parcel_ts = function_exists( 'gacct_pay_parcel_deadline_ts' ) ? gacct_pay_parcel_deadline_ts( $slot_ts ) : $slot_ts;
 	$days      = $parcel_ts ? (int) ceil( ( $parcel_ts - time() ) / DAY_IN_SECONDS ) : 0;
 
 	if ( ! empty( $conf['parcel_label'] ) && ! empty( $conf['slot_label'] ) ) {

@@ -329,7 +329,7 @@ function jwcct_get_wc_product_titles_from_ids( $value ) {
  *  Injecté au-dessus du tableau de commande des e-mails client. Il porte les trois
  *  informations que le client cherche en priorité :
  *    - la date de prise en charge en atelier ;
- *    - la date limite d'arrivée du colis (veille du créneau) ;
+ *    - la date et l'heure limites d'arrivée du matériel (jour du créneau, avant noshow_hour) ;
  *    - s'il reste un virement à faire : montant, référence et date limite.
  *
  *  Les dates et échéances viennent de `gacct_conf_data()`, qui alimente déjà la page
@@ -441,7 +441,7 @@ function jwcct_add_revision_date_to_email( $order, $sent_to_admin, $plain_text, 
         }
 
         if ( $date_colis && $materiel_attendu ) {
-            echo "L'acompte réserve votre créneau : sans réception du matériel la veille au soir, le créneau est libéré et l'acompte reste acquis. Un imprévu ? Prévenez-nous avant la date.\n";
+            echo "L'acompte réserve votre créneau : si votre matériel ne nous est pas parvenu le matin de votre révision avant " . gacct_pay_noshow_hour_label() . ", votre place est libérée pour un autre pilote et l'acompte reste acquis. Un imprévu ? Prévenez-nous avant la date.\n";
         }
 
         echo "\n";
@@ -546,7 +546,7 @@ function jwcct_add_revision_date_to_email( $order, $sent_to_admin, $plain_text, 
 
     if ( $date_colis && $materiel_attendu ) {
         echo '<p style="margin:12px 0 0;font-size:13px;color:#666;">'
-            . esc_html__( 'L’acompte réserve votre créneau : sans réception du matériel la veille au soir, le créneau est libéré et l’acompte reste acquis. Un imprévu d’expédition ? Prévenez-nous avant la date, nous en tiendrons compte.', 'gestion-atelier-cct' )
+            . esc_html( sprintf( /* translators: %s: heure limite */ __( 'L’acompte réserve votre créneau : si votre matériel ne nous est pas parvenu le matin de votre révision avant %s, votre place est libérée pour un autre pilote et l’acompte reste acquis. Un imprévu d’expédition ? Prévenez-nous avant la date, nous en tiendrons compte.', 'gestion-atelier-cct' ), gacct_pay_noshow_hour_label() ) )
             . '</p>';
     }
 

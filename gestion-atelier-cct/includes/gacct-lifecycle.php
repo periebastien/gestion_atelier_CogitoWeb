@@ -17,8 +17,10 @@
  * - un récapitulatif admin part le matin, avant toute bascule du soir.
  *
  * La bascule tourne au tick horaire : dès que l'heure locale atteint
- * `noshow_hour` (défaut 18 h), les créneaux du LENDEMAIN (et les créneaux passés
- * jamais traités, rattrapage) basculent. Les effets de l'entrée en état 9
+ * `noshow_hour` (heure limite de réception, défaut 12 h, Hervé 30/09/2026 :
+ * le matériel doit être là LE JOUR du créneau avant midi, un dépôt au comptoir
+ * le matin reste possible), les créneaux DU JOUR (et les créneaux passés jamais
+ * traités, rattrapage) basculent. Les effets de l'entrée en état 9
  * (occupation en draft, e-mail, metas) vivent dans UN SEUL écouteur du hook
  * JetEngine `updated-item` : la bascule automatique, le bouton console et une
  * édition directe de la CCT produisent donc exactement le même résultat.
@@ -225,8 +227,9 @@ function gacct_lc_on_state9_entry( $item, $prev ) {
 add_action( GACCT_PAY_HOURLY_EVENT, 'gacct_lc_process_no_show', 30 );
 
 /**
- * La veille du créneau, à partir de `noshow_hour` (heure locale), les dossiers
- * encore en état 0/1 dont la commande est payée basculent en état 9.
+ * Le jour du créneau, à partir de `noshow_hour` (heure limite de réception,
+ * heure locale), les dossiers encore en état 0/1 dont la commande est payée
+ * basculent en état 9.
  *
  * Exclusions :
  * - suivi colis déclaré (gacct_ship_in_transit) : le colis est peut-être en
@@ -247,10 +250,10 @@ function gacct_lc_process_no_show() {
 	$occ_table = $wpdb->prefix . 'jet_cct_occupation_atelier';
 	$rev_table = $wpdb->prefix . 'jet_cct_revision';
 
-	// Créneaux du lendemain inclus (bascule la veille au soir) + rattrapage des
-	// créneaux passés jamais traités. Dates stockées à minuit UTC du jour
-	// calendaire : borne = minuit UTC d'après-demain, calculé sur la date locale.
-	$limit = strtotime( current_time( 'Y-m-d' ) . ' 00:00:00 +0000' ) + 2 * DAY_IN_SECONDS;
+	// Créneaux du jour inclus (bascule le jour même, passé l'heure limite) +
+	// rattrapage des créneaux passés jamais traités. Dates stockées à minuit UTC
+	// du jour calendaire : borne = minuit UTC de demain, calculé sur la date locale.
+	$limit = strtotime( current_time( 'Y-m-d' ) . ' 00:00:00 +0000' ) + DAY_IN_SECONDS;
 	$limit = (int) apply_filters( 'gacct_pay_noshow_limit_ts', $limit );
 
 	$rows = $wpdb->get_results(
@@ -411,7 +414,7 @@ function gacct_lc_process_preslot_reminders() {
 			gacct_pay_email_variables( $order, array(
 				'{slot_date}'        => wp_date( get_option( 'date_format' ), $slot_ts ),
 				'{days_before}'      => (string) max( 1, (int) ceil( $delta_days ) ),
-				'{parcel_deadline}'  => ! empty( $data['parcel_label'] ) ? $data['parcel_label'] : __( 'la veille de votre créneau', 'gestion-atelier-cct' ),
+				'{parcel_deadline}'  => ! empty( $data['parcel_label'] ) ? $data['parcel_label'] : sprintf( /* translators: %s: heure limite */ __( 'matin de votre révision, avant %s', 'gestion-atelier-cct' ), gacct_pay_noshow_hour_label() ),
 				'{workshop_address}' => ! empty( $data['store_address'] ) ? esc_html( implode( ', ', (array) $data['store_address'] ) ) : '',
 				'{shipping_url}'     => esc_url( $order->get_view_order_url() ),
 			) )
@@ -561,8 +564,8 @@ add_action( GACCT_PAY_HOURLY_EVENT, 'gacct_lc_process_daily_recap', 60 );
 
 /**
  * Un e-mail admin par jour, à partir de `recap_hour` (défaut 8 h), qui agrège :
- * - les dossiers qui basculeront « Sans suite » ce soir (garde-fou : une
- *   demi-journée pour pointer une réception oubliée) ;
+ * - les dossiers qui basculeront « Sans suite » aujourd'hui à l'heure limite
+ *   (garde-fou : la matinée pour pointer une réception ou un dépôt au comptoir) ;
  * - les dossiers épargnés parce qu'un suivi colis est déclaré (à surveiller,
  *   classement manuel si le colis n'arrive pas) ;
  * - les soldes en souffrance (relances épuisées) ;
@@ -655,8 +658,8 @@ function gacct_lc_recap_sections() {
 	$bacs_expiring     = array();
 	$ready_to_ship     = array();
 
-	// --- Bascules du soir + dossiers épargnés (suivi déclaré). ----------------
-	$limit = strtotime( current_time( 'Y-m-d' ) . ' 00:00:00 +0000' ) + 2 * DAY_IN_SECONDS;
+	// --- Bascules du jour + dossiers épargnés (suivi déclaré). ----------------
+	$limit = strtotime( current_time( 'Y-m-d' ) . ' 00:00:00 +0000' ) + DAY_IN_SECONDS;
 
 	$rows = $wpdb->get_results(
 		$wpdb->prepare(
@@ -809,11 +812,11 @@ function gacct_lc_recap_sections() {
 		),
 		array(
 			'title' => sprintf(
-				/* translators: %d: heure de bascule */
-				__( 'Basculeront « Sans suite » ce soir à %d h', 'gestion-atelier-cct' ),
-				(int) $settings['noshow_hour']
+				/* translators: %s: heure limite de réception */
+				__( 'Passeront « Sans suite » aujourd’hui à %s si le matériel n’est pas pointé', 'gestion-atelier-cct' ),
+				gacct_pay_noshow_hour_label()
 			),
-			'hint'  => __( 'Matériel jamais reçu, commande payée. Un colis arrivé mais non pointé ? Confirmez la réception dans la console avant ce soir pour éviter la bascule.', 'gestion-atelier-cct' ),
+			'hint'  => __( 'Matériel pas encore reçu, commande payée. Un colis arrivé ou un dépôt au comptoir non pointé ? Confirmez la réception dans la console avant l’heure limite pour éviter la bascule.', 'gestion-atelier-cct' ),
 			'items' => $noshow_candidates,
 		),
 		array(

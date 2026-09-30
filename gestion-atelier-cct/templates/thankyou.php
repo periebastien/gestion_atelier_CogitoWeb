@@ -425,7 +425,7 @@ $notice      = gacct_conf_notice();
 									<?php
 									printf(
 										/* translators: 1: date limite */
-										esc_html__( 'Il doit nous parvenir %s, la veille de votre créneau.', 'gestion-atelier-cct' ),
+										esc_html__( 'Il doit nous parvenir %s, le matin de votre révision.', 'gestion-atelier-cct' ),
 										'<strong>' . esc_html( sprintf( /* translators: 1: date */ __( 'avant le %s', 'gestion-atelier-cct' ), $d['parcel_label'] ) ) . '</strong>'
 									);
 									?>
@@ -671,7 +671,7 @@ $notice      = gacct_conf_notice();
 											<?php esc_html_e( 'Cette étape s’ouvrira dès la réception de votre paiement : vous recevrez alors par e-mail les consignes d’expédition, l’adresse de l’atelier et votre bon d’intervention à glisser dans le colis. Vous pourrez aussi déclarer votre numéro de suivi ici même.', 'gestion-atelier-cct' ); ?>
 										</p>
 										<p class="step-txt">
-											<?php esc_html_e( 'L’acompte réserve ce créneau pour vous : si le matériel ne nous est pas parvenu la veille au soir du créneau, celui-ci est libéré et l’acompte reste acquis à l’atelier.', 'gestion-atelier-cct' ); ?>
+											<?php printf( /* translators: %s: heure limite */ esc_html__( 'L’acompte réserve ce créneau pour vous : si votre matériel ne nous est pas parvenu le matin de votre révision avant %s, votre place est libérée pour un autre pilote et l’acompte reste acquis à l’atelier.', 'gestion-atelier-cct' ), esc_html( $d['parcel_hour'] ?? '' ) ); ?>
 										</p>
 									<?php else : ?>
 									<ol class="step-txt gacct-ship-steps">
@@ -690,14 +690,14 @@ $notice      = gacct_conf_notice();
 										</li>
 										<li><?php esc_html_e( 'Emballez votre matériel en suivant les consignes d’emballage, et glissez la partie haute du bon dans le colis.', 'gestion-atelier-cct' ); ?></li>
 										<li>
-											<?php esc_html_e( 'Expédiez le colis à l’adresse de l’atelier', 'gestion-atelier-cct' ); ?><?php if ( ! empty( $d['store_address'] ) ) : ?> (<strong><?php echo esc_html( implode( ', ', $d['store_address'] ) ); ?></strong>)<?php endif; ?><?php if ( $d['parcel_label'] ) : ?><?php printf( /* translators: date */ esc_html__( ', pour qu’il nous parvienne avant le %s, la veille de votre créneau', 'gestion-atelier-cct' ), '<strong>' . esc_html( $d['parcel_label'] ) . '</strong>' ); ?><?php endif; ?>.
+											<?php esc_html_e( 'Expédiez le colis à l’adresse de l’atelier', 'gestion-atelier-cct' ); ?><?php if ( ! empty( $d['store_address'] ) ) : ?> (<strong><?php echo esc_html( implode( ', ', $d['store_address'] ) ); ?></strong>)<?php endif; ?><?php if ( $d['parcel_label'] ) : ?><?php printf( /* translators: date */ esc_html__( ', pour qu’il nous parvienne avant le %s, le matin de votre révision', 'gestion-atelier-cct' ), '<strong>' . esc_html( $d['parcel_label'] ) . '</strong>' ); ?><?php endif; ?>.
 										</li>
 										<li><?php esc_html_e( 'Dès l’envoi, renseignez votre numéro de suivi ci-dessous : nous saurons que votre colis est en route.', 'gestion-atelier-cct' ); ?></li>
 									</ol>
 									<p class="step-txt">
-										<?php esc_html_e( 'L’acompte réserve ce créneau pour vous : si le matériel ne nous est pas parvenu la veille au soir, le créneau est libéré et l’acompte reste acquis à l’atelier, car cette place ne peut plus être proposée à un autre client. Un imprévu d’expédition ? Prévenez-nous avant la date, nous en tiendrons compte.', 'gestion-atelier-cct' ); ?>
+										<?php printf( /* translators: %s: heure limite */ esc_html__( 'L’acompte réserve ce créneau pour vous : si votre matériel ne nous est pas parvenu le matin de votre révision avant %s, votre place est libérée pour un autre pilote et l’acompte reste acquis à l’atelier. Un imprévu d’expédition ? Prévenez-nous avant la date, nous en tiendrons compte.', 'gestion-atelier-cct' ), esc_html( $d['parcel_hour'] ?? '' ) ); ?>
 									</p>
-										<p class="step-txt"><?php esc_html_e( 'Vous déposez votre matériel vous-même à la boutique, même la veille ou le week-end ? Déclarez-le ci-dessous en choisissant « Dépôt à la boutique » : votre créneau reste réservé.', 'gestion-atelier-cct' ); ?></p>
+										<p class="step-txt"><?php esc_html_e( 'Vous déposez votre matériel vous-même à la boutique, même le matin de la révision, la veille ou le week-end ? Déclarez-le ci-dessous en choisissant « Dépôt à la boutique » : votre créneau reste réservé.', 'gestion-atelier-cct' ); ?></p>
 									<?php if ( function_exists( 'gacct_ship_render_form' ) ) : ?>
 										<?php echo gacct_ship_render_form( $order, array( 'intro' => false ) ); // phpcs:ignore WordPress.Security.EscapeOutput -- HTML construit et échappé par le module shipping. ?>
 									<?php endif; ?>

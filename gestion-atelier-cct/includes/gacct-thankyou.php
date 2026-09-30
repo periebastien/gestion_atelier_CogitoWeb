@@ -206,8 +206,9 @@ function gacct_conf_data( $order ) {
 		}
 	}
 
-	// Colis attendu : la veille du créneau (filtrable).
-	$parcel_ts = $slot_ts ? $slot_ts - (int) apply_filters( 'gacct_conf_parcel_lead_days', 1 ) * DAY_IN_SECONDS : 0;
+	// Matériel attendu : le jour du créneau, avant l'heure limite de réception
+	// (réglage noshow_hour, cf. gacct_pay_parcel_deadline_ts, Hervé 30/09/2026).
+	$parcel_ts = gacct_pay_parcel_deadline_ts( $slot_ts );
 
 	// --- Échéances virement ------------------------------------------------
 	$deadlines      = gacct_pay_order_deadlines( $order );
@@ -255,7 +256,8 @@ function gacct_conf_data( $order ) {
 		'deposit_date'     => $order->get_meta( '_kojito_date_acompte_paye' ) ? date_i18n( get_option( 'date_format' ), strtotime( $order->get_meta( '_kojito_date_acompte_paye' ) ) ) : wp_date( get_option( 'date_format' ) ),
 		'slot_ts'          => $slot_ts,
 		'slot_label'       => $slot_ts ? wp_date( 'j F Y', $slot_ts ) : '',
-		'parcel_label'     => $parcel_ts ? wp_date( 'j F Y', $parcel_ts ) : '',
+		'parcel_label'     => gacct_pay_parcel_deadline_label( $slot_ts ),
+		'parcel_hour'      => gacct_pay_noshow_hour_label(),
 		'materiel'         => $materiel,
 		'reminder_label'   => gacct_pay_format_date( $deadlines['reminder'] ),
 		'deadline_label'   => gacct_pay_format_date( $deadlines['cancel'] ),
