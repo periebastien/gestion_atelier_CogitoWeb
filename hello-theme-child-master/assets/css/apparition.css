@@ -30,8 +30,8 @@
 		content: "";
 		position: absolute;
 		top: 28px;
-		left: calc(50% + 36px);
-		width: calc(100% - 72px);
+		left: calc(50% + 40px);
+		width: calc(100% - 60px);
 		height: 1px;
 		background: repeating-linear-gradient(to right, #20c4c3 0, #20c4c3 8px, transparent 8px, transparent 16px);
 		transform-origin: left center;

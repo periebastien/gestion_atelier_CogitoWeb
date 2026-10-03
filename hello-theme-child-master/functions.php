@@ -94,11 +94,13 @@ add_action( 'wp_enqueue_scripts', 'hello_elementor_child_lisibilite', 30 );
 
 /**
  * Apparition douce des blocs au défilement (Bastien, 03/10/2026).
- * EN TEST SUR L'ACCUEIL SEULEMENT : élargir la condition une fois validé.
- * Voir l'en-tête de assets/js/apparition.js.
+ * Pages vitrine et pages légales. TARIFS (1274) EXCLUE à la demande de Bastien
+ * tant qu'elle n'est pas revue ; les pages de formulaire, de compte et de
+ * commande ne sont pas concernées. Voir l'en-tête de assets/js/apparition.js.
  */
 function hello_elementor_child_apparition() {
-	if ( ! is_front_page() ) {
+	$pages = array( 1249, 1270, 1271, 1272, 1273, 1275, 1276, 2104, 2474, 1320, 1930, 2450, 2242, 2243, 2244, 2245, 2246 );
+	if ( ! is_page( $pages ) ) {
 		return;
 	}
 	$dir = get_stylesheet_directory();

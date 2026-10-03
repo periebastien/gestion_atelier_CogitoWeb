@@ -20,7 +20,11 @@
 	}
 
 	// Cartes : elles apparaissent l'une après l'autre (cascade de 200 ms, demande de Bastien).
-	var CARDS = '.ar-svc-card, .ar-card-iconline, .ar-stat, .ar-trust-row';
+	var CARDS = '.ar-svc-card, .ar-card-iconline, .ar-stat, .ar-trust-row, .ar-instr-card, .ar-fold-card, '
+		+ '.ar-presta-grid .jet-listing-grid__item, .ar-cc, .ar-ship-step, .ar-info-block, .ar-aside-card, '
+		+ '.ar-actus .elementor-post, .ar-booking .elementor-widget-icon-box';
+	// Jamais animés : on y vient pour lire ou agir (FAQ, formulaires, plan, ancres de Tarifs).
+	var EXCLUDE = '.ar-faq, .ar-form-card, .ar-contact-form, .elementor-widget-jet-form-builder-form, .ar-club-form, .ar-map-wrap, .ar-anchors';
 	// Blocs simples : têtes de section, textes, boutons, images.
 	var SIMPLE = '.elementor-widget-heading, .elementor-widget-text-editor, .elementor-widget-button, .elementor-widget-image, .elementor-widget-html, .elementor-widget-icon-box';
 	var STEP_GAP = 250; // ms entre deux étapes numérotées (le trait se dessine pendant ce temps)
@@ -32,7 +36,7 @@
 	var sections = page.children;
 
 	function add( el, kind ) {
-		if ( el.classList.contains( 'ar-rv-unit' ) || el.closest( '.ar-rv-unit' ) ) {
+		if ( el.classList.contains( 'ar-rv-unit' ) || el.closest( '.ar-rv-unit' ) || el.closest( EXCLUDE ) || el.querySelector( '.ar-rv-unit' ) ) {
 			return;
 		}
 		el.classList.add( 'ar-rv-unit' );
@@ -107,7 +111,7 @@
 				clean( e.target );
 			}, ( u ? u.delay : 0 ) + 1200 );
 		} );
-	}, { rootMargin: '0px 0px -8% 0px' } );
+	}, { rootMargin: '0px', threshold: 0 } );
 
 	hidden.forEach( function ( u ) {
 		io.observe( u.el );
