@@ -54,17 +54,9 @@
 		}
 	}
 
-	// Tap sur le téléphone : ouvre le panneau contact au lieu de composer.
-	// En desktop le lien tel: reste un lien normal.
-	if ( tel && pTel ) {
-		tel.addEventListener( 'click', function ( e ) {
-			if ( ! mq.matches ) {
-				return;
-			}
-			e.preventDefault();
-			toggle( pTel, null );
-		} );
-	}
+	// Tap sur le téléphone : appel direct (lien tel: du widget), sur mobile
+	// comme sur desktop. Le panneau contact (#arPanelTel, avec WhatsApp) n'est
+	// plus ouvert : l'atelier n'a pas de WhatsApp (Bastien, 03/10/2026).
 
 	if ( burger && pMenu ) {
 		burger.addEventListener( 'click', function () {

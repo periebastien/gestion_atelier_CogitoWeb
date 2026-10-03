@@ -670,6 +670,20 @@
 		font-size: 20px;
 		background: #fff;
 	}
+	/* Couleurs de la planche : cercle gris, combiné vert foncé. Les réglages
+	   du widget (couleur primaire turquoise, appliquée aussi à la bordure)
+	   sont émis à (0,4,0) par post-1284.css : d'où les !important. */
+	.ar-hdr .ar-mob-tel .elementor-icon,
+	.ar-hdr .ar-mob-tel .elementor-icon:hover {
+		border-color: #dfe3e3 !important;
+		color: #0f8584 !important;
+	}
+	.ar-hdr .ar-mob-tel .elementor-icon svg {
+		stroke: #0f8584 !important;
+	}
+	.ar-hdr .ar-mob-tel .elementor-icon svg path {
+		stroke: #0f8584 !important;
+	}
 
 	/* Menu : pastille jaune « Menu ». L'icône d'origine (traits décroissants,
 	   bicolore) est masquée ; l'icône noire est un masque CSS sur ::before. */
