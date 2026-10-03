@@ -72,3 +72,95 @@ footer.elementor-location-footer .elementor-widget-container,
 .ar-fp .elementor-button .elementor-button-text {
 	white-space: nowrap;
 }
+
+/* ── Passe globale du 03/10/2026 : composants des pages ──────────────────
+   Report de /commande-groupee/ (0 texte sous 16 px) sur l'accueil, les pages
+   services, Contact, Actualités et Consignes d'emballage. Échelle : texte
+   courant 16 px, titres de cartes et d'étapes 18 px. La page Tarifs
+   (page-id-1274) est EXCLUE à la demande de Bastien : elle sera revue à part.
+   ──────────────────────────────────────────────────────────────────────── */
+
+/* Titres de cartes et d'étapes : 18 px, au-dessus du texte courant */
+body:not(.page-id-1274) .ar-process h3.elementor-heading-title,
+body:not(.page-id-1274) .ar-booking .elementor-icon-box-title,
+body:not(.page-id-1274) .ar-booking .elementor-icon-box-title span,
+body:not(.page-id-1274) .ar-info-head .elementor-icon-box-title,
+body:not(.page-id-1274) .ar-info-head .elementor-icon-box-title span,
+body:not(.page-id-1274) .ar-ship-step h4.elementor-heading-title {
+	font-size: 18px !important;
+}
+
+/* Cartes à icône, étapes, réservation, badges posés sur les photos */
+body:not(.page-id-1274) .ar-card-iconline .elementor-icon-box-description,
+body:not(.page-id-1274) .ar-svc-card .elementor-icon-box-description,
+body:not(.page-id-1274) .ar-process .elementor-widget-text-editor,
+body:not(.page-id-1274) .ar-process .elementor-widget-text-editor p,
+body:not(.page-id-1274) .ar-booking .elementor-icon-box-description,
+body:not(.page-id-1274) .ar-hero .elementor-widget-icon-box .elementor-icon-box-title,
+body:not(.page-id-1274) .ar-hero .elementor-widget-icon-box .elementor-icon-box-title span,
+body:not(.page-id-1274) .ar-hero .elementor-widget-icon-box .elementor-icon-box-description,
+.elementor-1249 .elementor-element-2e25db8 .elementor-icon-box-title,
+.elementor-1249 .elementor-element-2e25db8 .elementor-icon-box-description {
+	font-size: 16px !important;
+}
+
+/* Accueil : bloc « À propos » (texte, chiffres clés, engagements) */
+.elementor-1249 .elementor-element-7cb65c5 .elementor-widget-text-editor,
+.elementor-1249 .elementor-element-7cb65c5 .elementor-widget-text-editor :is(p, strong, a),
+.elementor-1249 .ar-stat .elementor-icon-box-description,
+.elementor-1249 .ar-trust-row .elementor-icon-box-description {
+	font-size: 16px !important;
+}
+.elementor-1249 .ar-trust-row .elementor-icon-box-title,
+.elementor-1249 .ar-trust-row .elementor-icon-box-title span {
+	font-size: 18px !important;
+	line-height: 24px !important;
+}
+.elementor-1249 .ar-trust-row .elementor-icon-box-icon {
+	height: 24px !important;
+}
+
+/* Pages services : prestations, instruments, pliage, texte éditorial */
+body:not(.page-id-1274) .ar-presta-list li,
+body:not(.page-id-1274) .ar-presta-list p,
+body:not(.page-id-1274) .ar-presta-list strong,
+body:not(.page-id-1274) .ar-presta-btn a,
+body:not(.page-id-1274) .ar-presta-note p,
+body:not(.page-id-1274) .ar-repair-pills span,
+body:not(.page-id-1274) .ar-seat-btn,
+body:not(.page-id-1274) .ar-seat-btn small,
+body:not(.page-id-1274) .ar-instr-card :is(p, strong, li),
+body:not(.page-id-1274) .ar-fold-card p,
+body:not(.page-id-1274) .ar-addr,
+body:not(.page-id-1274) .ar-addr strong,
+body:not(.page-id-1274) .ar-editorial-aside :is(p, strong),
+body:not(.page-id-1274) .ar-editorial-body :is(p, span, a, strong, em),
+body:not(.page-id-1274) .ar-editorial-kw .ar-kw-pills span {
+	font-size: 16px !important;
+}
+
+/* Contact : cartes, formulaire, encart, plan, horaires, envoi */
+.elementor-1276 .ar-hero-side .elementor-icon-list-text,
+.elementor-1276 .ar-cc-sub p,
+.elementor-1276 .ar-form-intro p,
+.elementor-1276 .ar-form-note,
+.elementor-1276 .ar-contact-form :is(.jet-form-builder__label-text, .jet-form-builder__action-button, small, span, a),
+.elementor-1276 .ar-aside-intro p,
+.elementor-1276 .ar-aside-txt :is(strong, small),
+.elementor-1276 .ar-aside-teal-txt p,
+.elementor-1276 .ar-gps,
+.elementor-1276 .ar-hours-note,
+.elementor-1276 .ar-hrow,
+.elementor-1276 .ar-map-pin :is(strong, small),
+.elementor-1276 .ar-ship-lines,
+.elementor-1276 .ar-ship-lines strong,
+.elementor-1276 .ar-ship-txt :is(p, em),
+.elementor-1276 .ar-ship-copy span {
+	font-size: 16px !important;
+}
+
+/* Actualités : extrait et lien des cartes d'articles */
+body:not(.page-id-1274) .ar-actus .elementor-post__excerpt p,
+body:not(.page-id-1274) .ar-actus .elementor-post__read-more {
+	font-size: 16px !important;
+}
