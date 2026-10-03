@@ -78,6 +78,21 @@ function hello_elementor_child_header_assets() {
 add_action( 'wp_enqueue_scripts', 'hello_elementor_child_header_assets' );
 
 /**
+ * Plancher de lisibilité : aucun texte courant sous 14 px (Bastien, 03/10/2026).
+ * Voir l'en-tête de assets/css/lisibilite.css.
+ */
+function hello_elementor_child_lisibilite() {
+	$path = get_stylesheet_directory() . '/assets/css/lisibilite.css';
+	wp_enqueue_style(
+		'ar-lisibilite',
+		get_stylesheet_directory_uri() . '/assets/css/lisibilite.css',
+		array( 'ar-header' ),
+		file_exists( $path ) ? filemtime( $path ) : HELLO_ELEMENTOR_CHILD_VERSION
+	);
+}
+add_action( 'wp_enqueue_scripts', 'hello_elementor_child_lisibilite', 30 );
+
+/**
  * Habillage « Altitude Révision » du reste du front — design propre à CE site.
  *
  * Rapatrié du plugin gestion-atelier-cct le 03/08/2026, même motif que le

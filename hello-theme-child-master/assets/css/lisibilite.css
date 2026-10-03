@@ -1,0 +1,44 @@
+/* ── Lisibilité : plancher de 14 px pour tout texte courant (03/10/2026) ───
+   Règle de Bastien : jamais moins de 14 px, sur PC comme sur mobile ; seule
+   exception, les sous-titres en MAJUSCULES (eyebrows, titres de colonnes du
+   pied de page). Public visé : responsables de clubs, parfois âgés.
+   Ce fichier corrige les composants COMMUNS du site (pied de page, fil
+   d'Ariane, header, écran de connexion) ; les tailles posées dans les
+   réglages d'un widget se corrigent dans le widget lui-même.
+   Les !important sont voulus : ces tailles viennent du CSS du kit Elementor
+   (post-4.css) ou de feuilles chargées après celle-ci.
+   Une passe complète sur l'échelle typographique du site (tailles fluides)
+   reste à faire : ce fichier n'est qu'un plancher. ──────────────────────── */
+
+/* Fil d'Ariane et preuve sociale des bandeaux d'ouverture */
+.ar-crumbs,
+.ar-crumbs a,
+.ar-crumbs span,
+.ar-trust-txt,
+.ar-trust-txt p,
+.ar-trust-txt strong {
+	font-size: 14px !important;
+}
+
+/* Téléphone du header (ordinateur) */
+.ar-hdr-tel .elementor-icon-list-text {
+	font-size: 14px !important;
+}
+
+/* Écran de connexion « l'e-mail d'abord » */
+.gacct-login .gacct-login-hint,
+.gacct-login .gacct-login-or span,
+.gacct-login .gacct-login-or {
+	font-size: 14px !important;
+}
+
+/* Pied de page : textes, liens, adresse, mentions (les titres de colonnes
+   en majuscules restent à leur taille) */
+footer.elementor-location-footer .elementor-widget-text-editor,
+footer.elementor-location-footer .elementor-widget-text-editor p,
+footer.elementor-location-footer .ar-flink,
+footer.elementor-location-footer .ar-botlink,
+footer.elementor-location-footer .elementor-icon-list-text,
+footer.elementor-location-footer .elementor-widget-container {
+	font-size: 14px !important;
+}

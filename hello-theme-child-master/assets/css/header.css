@@ -716,20 +716,29 @@
 		color: #1a1a1a;
 		transition: color .2s ease;
 	}
-	/* Survol et menu ouvert : comme les boutons d'action du site (noir). */
-	.ar-hdr .ar-mob-burger .elementor-icon:hover,
-	.ar-hdr .ar-mob-burger [aria-expanded="true"] .elementor-icon,
-	.ar-hdr .ar-mob-burger[aria-expanded="true"] .elementor-icon,
+	/* Menu ouvert : noir, comme les boutons d'action du site. Le survol ne
+	   s'applique qu'aux appareils à souris : sur écran tactile, :hover reste
+	   collé après le tap et le bouton restait noir une fois le menu refermé
+	   (retour de Bastien, 03/10/2026). */
 	.ar-hdr #arBurger[aria-expanded="true"] .elementor-icon {
 		background: #1a1a1a;
 	}
-	.ar-hdr .ar-mob-burger .elementor-icon:hover::before,
 	.ar-hdr #arBurger[aria-expanded="true"] .elementor-icon::before {
 		background: #fff;
 	}
-	.ar-hdr .ar-mob-burger .elementor-icon:hover::after,
 	.ar-hdr #arBurger[aria-expanded="true"] .elementor-icon::after {
 		color: #fff;
+	}
+	@media (hover: hover) {
+		.ar-hdr .ar-mob-burger .elementor-icon:hover {
+			background: #1a1a1a;
+		}
+		.ar-hdr .ar-mob-burger .elementor-icon:hover::before {
+			background: #fff;
+		}
+		.ar-hdr .ar-mob-burger .elementor-icon:hover::after {
+			color: #fff;
+		}
 	}
 
 	/* Espace client : même bouton, porté par le widget JetMenu. */
