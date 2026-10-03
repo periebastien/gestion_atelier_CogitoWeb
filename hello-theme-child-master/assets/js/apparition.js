@@ -19,12 +19,13 @@
 		return;
 	}
 
-	// Cartes : elles apparaissent l'une après l'autre (cascade de 80 ms).
+	// Cartes : elles apparaissent l'une après l'autre (cascade de 200 ms, demande de Bastien).
 	var CARDS = '.ar-svc-card, .ar-card-iconline, .ar-stat, .ar-trust-row';
 	// Blocs simples : têtes de section, textes, boutons, images.
 	var SIMPLE = '.elementor-widget-heading, .elementor-widget-text-editor, .elementor-widget-button, .elementor-widget-image, .elementor-widget-html, .elementor-widget-icon-box';
 	var STEP_GAP = 250; // ms entre deux étapes numérotées (le trait se dessine pendant ce temps)
-	var CARD_GAP = 80;  // ms entre deux cartes ou deux blocs voisins
+	var CARD_GAP = 200; // ms entre deux cartes d'une même rangée
+	var BLOCK_GAP = 80; // ms entre deux blocs simples voisins (titre, texte, bouton)
 	var MAX_RANK = 5;
 
 	var units = [];
@@ -60,19 +61,24 @@
 		} );
 	}
 
-	// Rang dans la fratrie (même parent) pour la cascade.
+	// Rang dans la fratrie (même parent ET même rangée) pour la cascade : sur PC, quatre cartes
+	// côte à côte arrivent l'une après l'autre ; sur mobile, empilées, chacune arrive sans attendre.
 	var ranks = new Map();
 	var limit = window.innerHeight * 0.9;
 	var hidden = [];
 	units.forEach( function ( u ) {
+		var top = Math.round( u.el.getBoundingClientRect().top + window.scrollY );
 		var parent = u.el.parentElement;
-		var rank = ranks.get( parent ) || 0;
-		ranks.set( parent, rank + 1 );
+		var row = ranks.get( parent ) || {};
+		var rank = row[ top ] || 0;
+		row[ top ] = rank + 1;
+		ranks.set( parent, row );
 		if ( u.el.getBoundingClientRect().top < limit ) {
 			u.el.classList.remove( 'ar-rv-unit' );
 			return; // déjà visible au chargement : pas d'animation
 		}
-		var delay = 'step' === u.kind ? rank * STEP_GAP : Math.min( rank, MAX_RANK ) * CARD_GAP;
+		var gap = 'step' === u.kind ? STEP_GAP : ( 'card' === u.kind ? CARD_GAP : BLOCK_GAP );
+		var delay = Math.min( rank, MAX_RANK ) * gap;
 		u.el.style.setProperty( '--ar-rv-delay', delay + 'ms' );
 		u.el.classList.add( 'ar-rv', 'step' === u.kind ? 'ar-rv-step' : 'ar-rv-block' );
 		u.delay = delay;
