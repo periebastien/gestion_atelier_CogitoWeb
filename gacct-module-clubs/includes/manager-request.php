@@ -14,17 +14,21 @@ defined( 'ABSPATH' ) || exit;
 
 add_shortcode( 'gacct_club_demande', 'gacct_clubs_request_shortcode' );
 
-function gacct_clubs_request_shortcode() {
+function gacct_clubs_request_shortcode( $atts = array() ) {
 	wp_enqueue_style( 'gacct-clubs-front', GACCT_CLUBS_URL . 'assets/clubs-front.css', array(), GACCT_CLUBS_VERSION );
+
+	// entete="non" : la page d'atterrissage porte déjà le titre de la section.
+	$atts      = shortcode_atts( array( 'entete' => 'oui' ), (array) $atts, 'gacct_club_demande' );
+	$with_head = 'non' !== $atts['entete'];
 
 	if ( ! is_user_logged_in() ) {
 		if ( ! function_exists( 'gacct_login_ui_render' ) ) {
 			return '<p>Connectez-vous pour envoyer la demande de votre club.</p>';
 		}
 		// Retour exact sur cette page après identification ou création du compte.
-		$_GET['redirect_to'] = home_url( add_query_arg( array() ) );
-		return '<div class="gcl"><div class="gcl-head"><div><h1>Révision groupée de votre club</h1>'
-			. '<p>Indiquez d’abord votre adresse e-mail : vous suivrez ensuite la commande de votre club depuis votre espace client.</p></div></div>'
+		$_GET['redirect_to'] = home_url( add_query_arg( array() ) ) . '#demande-club';
+		return '<div class="gcl gcl--login">'
+			. ( $with_head ? '<div class="gcl-head"><div><h1>Révision groupée de votre club</h1><p>Indiquez d’abord votre adresse e-mail : vous suivrez ensuite la commande de votre club depuis votre espace client.</p></div></div>' : '' )
 			. gacct_login_ui_render( 'compte' ) . '</div>';
 	}
 
@@ -45,12 +49,14 @@ function gacct_clubs_request_shortcode() {
 	ob_start();
 	?>
 	<div class="gcl">
+		<?php if ( $with_head ) : ?>
 		<div class="gcl-head">
 			<div>
 				<h1>Révision groupée de votre club</h1>
 				<p>Quelques informations suffisent. Nous revenons vers vous avec la date de début d’intervention et un code à transmettre à vos membres.</p>
 			</div>
 		</div>
+		<?php endif; ?>
 		<?php if ( $errors ) : ?>
 			<div class="gcl-alert err" role="alert"><?php echo esc_html( implode( ' ', $errors ) ); ?></div>
 		<?php endif; ?>
