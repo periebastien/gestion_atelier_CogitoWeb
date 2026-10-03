@@ -287,9 +287,12 @@
 	}
 }
 
-/* ── ≤1200 : on ne garde que les icônes du téléphone et de « Mon compte » ─ */
+/* ── ≤1400 : on ne garde que les icônes du téléphone et de « Mon compte » ─
+   Seuil relevé de 1200 à 1400 px le 03/10/2026 : avec le menu à 16 px
+   (plancher de lisibilité, lisibilite.css), « Contact » touchait le
+   téléphone entre 1201 et 1366 px. */
 
-@media (max-width: 1200px) {
+@media (max-width: 1400px) {
 	/* `.ar-btn-swap .elementor-button-text` du kit (0,2,0) pose display:grid
 	   pour le défilement du libellé : il faut passer au-dessus, d'où la classe
 	   du bouton accolée. Le libellé disparaît, l'animation reste intacte dès
@@ -802,5 +805,18 @@
 	}
 	.ar-hdr.ar-mob-pill .ar-brand img {
 		height: 34px;
+	}
+}
+
+/* ── 1025-1150 : menu à 16 px, espacement resserré pour laisser de l'air
+   avant les icônes (03/10/2026). */
+@media (min-width: 1025px) and (max-width: 1150px) {
+	.ar-mnav .elementor-nav-menu--main .elementor-nav-menu,
+	.ar-mnav .elementor-nav-menu--main .elementor-nav-menu > li {
+		gap: 7px;
+	}
+	.ar-hdr .ar-hdr-in,
+	.ar-fp-wrap .ar-fp {
+		gap: 14px;
 	}
 }

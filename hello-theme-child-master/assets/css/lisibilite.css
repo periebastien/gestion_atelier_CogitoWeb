@@ -1,10 +1,12 @@
-/* ── Lisibilité : plancher de 14 px pour tout texte courant (03/10/2026) ───
-   Règle de Bastien : jamais moins de 14 px, sur PC comme sur mobile ; seule
-   exception, les sous-titres en MAJUSCULES (eyebrows, titres de colonnes du
-   pied de page). Public visé : responsables de clubs, parfois âgés.
-   Ce fichier corrige les composants COMMUNS du site (pied de page, fil
-   d'Ariane, header, écran de connexion) ; les tailles posées dans les
-   réglages d'un widget se corrigent dans le widget lui-même.
+/* ── Lisibilité : plancher de 16 px pour tout texte courant ───────────────
+   Règle de Bastien (03/10/2026, relevée de 14 à 16 px le même jour) : aucun
+   texte courant sous 16 px, sur PC comme sur mobile ; seule exception, les
+   sous-titres en MAJUSCULES (eyebrows, titres de colonnes du pied de page,
+   libellé flottant d'un champ rempli). Public visé : responsables de clubs,
+   parfois âgés.
+   Ce fichier corrige les composants COMMUNS du site (header, boutons, FAQ,
+   fil d'Ariane, écran de connexion, pied de page) ; une taille posée dans
+   les réglages d'un widget se corrige dans le widget lui-même.
    Les !important sont voulus : ces tailles viennent du CSS du kit Elementor
    (post-4.css) ou de feuilles chargées après celle-ci.
    Une passe complète sur l'échelle typographique du site (tailles fluides)
@@ -17,28 +19,56 @@
 .ar-trust-txt,
 .ar-trust-txt p,
 .ar-trust-txt strong {
-	font-size: 14px !important;
+	font-size: 16px !important;
 }
 
-/* Téléphone du header (ordinateur) */
+/* Boutons du site (libellé animé et libellé simple) */
+.elementor-button .ar-swap-line,
+.elementor-button .elementor-button-text {
+	font-size: 16px !important;
+}
+
+/* Header : menu, téléphone, boutons */
+.ar-mnav .elementor-nav-menu--main .elementor-item,
 .ar-hdr-tel .elementor-icon-list-text {
-	font-size: 14px !important;
+	font-size: 16px !important;
 }
 
-/* Écran de connexion « l'e-mail d'abord » */
+/* FAQ (accordéons) : réponses */
+.ar-faq .elementor-widget-text-editor,
+.ar-faq .elementor-widget-text-editor p {
+	font-size: 16px !important;
+}
+
+/* Écran de connexion « l'e-mail d'abord » (le libellé flottant, une fois
+   remonté en petites capitales, reste exempté) */
 .gacct-login .gacct-login-hint,
+.gacct-login .gacct-login-or,
 .gacct-login .gacct-login-or span,
-.gacct-login .gacct-login-or {
-	font-size: 14px !important;
+.gacct-login .gacct-login-input:placeholder-shown:not(:focus) + .gacct-login-flabel {
+	font-size: 16px !important;
 }
 
-/* Pied de page : textes, liens, adresse, mentions (les titres de colonnes
-   en majuscules restent à leur taille) */
+/* Pied de page : textes, liens, adresse, mentions, régions */
 footer.elementor-location-footer .elementor-widget-text-editor,
 footer.elementor-location-footer .elementor-widget-text-editor p,
 footer.elementor-location-footer .ar-flink,
 footer.elementor-location-footer .ar-botlink,
 footer.elementor-location-footer .elementor-icon-list-text,
-footer.elementor-location-footer .elementor-widget-container {
-	font-size: 14px !important;
+footer.elementor-location-footer .elementor-widget-container,
+.gacct-rf-t,
+.gacct-rf-t ~ a,
+.gacct-rf a {
+	font-size: 16px !important;
+}
+
+/* Boutons du header : à 16 px, « Demande d'intervention » et « Mon compte »
+   passaient sur deux lignes entre 1025 et 1280 px (barre de 90 px). */
+.ar-hdr-right .elementor-button,
+.ar-hdr-right .elementor-button .ar-swap-line,
+.ar-hdr-right .elementor-button .elementor-button-text,
+.ar-fp .elementor-button,
+.ar-fp .elementor-button .ar-swap-line,
+.ar-fp .elementor-button .elementor-button-text {
+	white-space: nowrap;
 }

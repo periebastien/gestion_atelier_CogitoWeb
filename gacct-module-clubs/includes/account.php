@@ -540,7 +540,7 @@ function gacct_clubs_dashboard_card( $html, $data ) {
 			$cta   = 'Suivre la commande';
 		}
 		$cards .= '<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;border:1px solid #ffe2a0;background:#fff6de;border-radius:14px;padding:16px 20px;margin:0 0 14px">'
-			. '<div style="flex:1 1 260px;min-width:0"><strong style="display:block;font-size:16px;color:#1a1a1a">' . esc_html( $title ) . '</strong><span style="font-size:14px;color:#55595e">' . esc_html( $text ) . '</span></div>'
+			. '<div style="flex:1 1 260px;min-width:0"><strong style="display:block;font-size:16px;color:#1a1a1a">' . esc_html( $title ) . '</strong><span style="font-size:16px;color:#55595e">' . esc_html( $text ) . '</span></div>'
 			. '<a href="' . esc_url( gacct_clubs_account_url( (int) $lot['id'] ) ) . '" style="display:inline-flex;align-items:center;border-radius:8px;padding:10px 18px;font-weight:700;background:#ffbd20;color:#1a1a1a;text-decoration:none;white-space:nowrap">' . esc_html( $cta ) . '</a></div>';
 	}
 	return $cards . $html;
