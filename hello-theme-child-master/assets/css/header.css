@@ -504,19 +504,58 @@
 	stroke: #20c4c3;
 }
 
-/* ── Pied de page : icône devant les numéros de téléphone (07/09/2026) ────
-   Les liens `.ar-flink` sont stylés dans le CSS du kit (post 4, display:block).
-   Le text-editor d Elementor retire tout <svg> inline : l icône est donc un
-   ::before en image de fond (data URI, déjà turquoise). ⚠ Ce bloc contient
-   des apostrophes : ne jamais le réécrire via un heredoc dans un ssh '…'. */
+/* ── Pied de page : téléphones comme dans le header (03/10/2026) ──────────
+   Demande de Bastien : même icône que le header (média 1581, phone.svg) et
+   icône de la MÊME couleur que le numéro (avant : icône turquoise, numéro
+   gris). Le text-editor d Elementor retire tout <svg> inline : l icône est un
+   ::before masqué par le SVG du header, peint en currentColor, donc elle suit
+   la couleur du lien, survol compris. Numéro en gras foncé, comme le header. */
+footer .ar-flink.ar-flink-tel {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	color: #1a1a1a;
+	font-weight: 700;
+}
+footer .ar-flink.ar-flink-tel:hover {
+	color: #20c4c3;
+}
 .ar-flink-tel::before {
 	content: "";
-	display: inline-block;
-	width: 14px;
-	height: 14px;
-	margin-right: 8px;
-	vertical-align: -2px;
-	background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2320c4c3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.01 1.18 2 2 0 012 .01h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z'/%3E%3C/svg%3E") center / contain no-repeat;
+	flex: none;
+	width: 15px;
+	height: 15px;
+	background-color: currentColor;
+	-webkit-mask: url("/wp-content/uploads/2026/07/phone.svg") center / contain no-repeat;
+	mask: url("/wp-content/uploads/2026/07/phone.svg") center / contain no-repeat;
+	transition: background-color 0.15s;
+}
+
+/* ── Barre « Vous venez d une autre région ? » (03/10/2026) ──────────────
+   Le socle (gacct-regions.php) pose un bleu neutre #1a73e8 ; sur ce site,
+   les liens prennent le turquoise habituel. */
+.gacct-rf .gacct-rf-l a {
+	color: #20c4c3;
+}
+.gacct-rf .gacct-rf-l a:hover {
+	border-bottom-color: #20c4c3;
+}
+
+/* ── Pied de page mobile : deux colonnes (03/10/2026) ─────────────────────
+   Logo et présentation sur toute la largeur, puis Services | Atelier côte à
+   côte, puis Contact sur toute la largeur. */
+@media (max-width: 767px) {
+	footer.elementor-location-footer .elementor-element-7ec133a {
+		flex-direction: row;
+		flex-wrap: wrap;
+		column-gap: 24px;
+		row-gap: 40px;
+	}
+	footer.elementor-location-footer .elementor-element-652308d,
+	footer.elementor-location-footer .elementor-element-416e28c {
+		width: calc(50% - 12px);
+		max-width: calc(50% - 12px);
+	}
 }
 
 /* ── Actualités : cartes du widget Posts (skin classic) et corps d article ─
