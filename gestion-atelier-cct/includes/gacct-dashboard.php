@@ -911,6 +911,30 @@ function gacct_dash_build_action( $etat, array $row, $order, array $conf, $mater
 		return gacct_dash_action_devis( $row, $order, $conf, $materiel_label );
 	}
 
+	$tiers = function_exists( 'gacct_order_third_party' ) ? gacct_order_third_party( $order ) : null;
+
+	// --- Commande prise en charge par un tiers : ni solde ni expédition ------
+	if ( $tiers ) {
+		if ( $etat <= 1 && '' === (string) $order->get_meta( '_gacct_reception_date' ) && ! empty( $tiers['dash_title'] ) ) {
+			return array(
+				'type'      => 'expedition',
+				'title'     => $tiers['dash_title'],
+				'text_html' => isset( $tiers['dash_text'] ) ? wp_kses_post( $tiers['dash_text'] ) : '',
+				'note'      => '',
+				'chip'      => '',
+				'url'       => ! empty( $tiers['dash_url'] ) ? $tiers['dash_url'] : $order->get_view_order_url(),
+				'cta_label' => ! empty( $tiers['dash_cta'] ) ? $tiers['dash_cta'] : __( 'Voir le dossier', 'gestion-atelier-cct' ),
+				'cta_style' => 'ghost',
+				'icon'      => 'truck',
+				'urgent'    => false,
+				'sort_ts'   => time(),
+			);
+		}
+		if ( 4 !== $etat ) {
+			return null;
+		}
+	}
+
 	// --- Solde à payer (état 6) --------------------------------------------
 	if ( 6 === $etat ) {
 		return gacct_dash_action_solde( $row, $order, $conf );

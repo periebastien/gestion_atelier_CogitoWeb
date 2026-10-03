@@ -1133,7 +1133,7 @@ function gacct_demande_availability_map() {
 					SELECT SUM( TIME_TO_SEC( o.duree_totale_commande ) / 3600 )
 					FROM {$occupation_table} o
 					WHERE o.cct_status = %s
-						AND o.date_reservee = c.date_jour
+						AND o.date_reservee = c.date_jour" . gacct_occupation_counted_sql( 'o' ) . "
 				), 0 ) AS occupied_hours
 			FROM {$calendar_table} c
 			WHERE c.cct_status = %s

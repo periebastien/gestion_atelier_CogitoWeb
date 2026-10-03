@@ -290,6 +290,10 @@ function gacct_lc_process_no_show() {
 			continue; // Les calendriers de paiement s'en chargent.
 		}
 
+		if ( gacct_order_skip_automation( $order, 'noshow' ) ) {
+			continue;
+		}
+
 		// Suivi colis déclaré : exclu de l'automatique, signalé le matin.
 		if ( function_exists( 'gacct_ship_in_transit' ) && gacct_ship_in_transit( $revision_id ) ) {
 			jwcct_log( "lifecycle no_show : révision $revision_id exclue de la bascule (suivi colis déclaré), classement manuel possible." );
@@ -386,8 +390,8 @@ function gacct_lc_process_preslot_reminders() {
 			continue;
 		}
 
-		if ( $order->get_meta( $meta_key ) ) {
-			continue; // Palier déjà envoyé.
+		if ( $order->get_meta( $meta_key ) || gacct_order_skip_automation( $order, 'preslot' ) ) {
+			continue; // Palier déjà envoyé, ou expédition prise en charge par un tiers.
 		}
 
 		if ( function_exists( 'gacct_order_payment_received' ) && ! gacct_order_payment_received( $order ) ) {
@@ -504,6 +508,10 @@ function gacct_lc_process_balance_reminders() {
 		$order = wc_get_order( (int) $row['order_id'] );
 
 		if ( ! $order instanceof WC_Order || $order->has_status( array( 'cancelled', 'refunded', 'trash' ) ) ) {
+			continue;
+		}
+
+		if ( gacct_order_skip_automation( $order, 'balance_reminder' ) ) {
 			continue;
 		}
 

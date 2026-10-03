@@ -55,7 +55,8 @@ if ( ! empty( $d['in_transit'] ) && function_exists( 'gacct_ship_texts' ) ) {
 		? $d['in_transit']['status_label']
 		: gacct_ship_texts()['in_transit'];
 }
-$needs_you = in_array( $etat, array( 0, 4, 6 ), true );
+$vo_tiers  = ! empty( $d['third_party'] ) ? $d['third_party'] : null;
+$needs_you = in_array( $etat, $vo_tiers ? array( 4 ) : array( 0, 4, 6 ), true );
 
 // État 5 : le libellé précise la décision rendue sur le devis.
 if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
@@ -212,6 +213,11 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 					<td><?php esc_html_e( 'Total de la commande', 'gestion-atelier-cct' ); ?></td>
 					<td class="gacct-vo-amount"><?php echo esc_html( $vo_fmt( $d['total_initial'] ) ); ?></td>
 				</tr>
+				<?php if ( $vo_tiers ) : ?>
+				<tr class="gacct-vo-paid">
+					<td colspan="2"><?php echo esc_html( ! empty( $vo_tiers['paid_label'] ) ? $vo_tiers['paid_label'] : sprintf( __( 'Réglé par %s', 'gestion-atelier-cct' ), $vo_tiers['name'] ) ); ?></td>
+				</tr>
+				<?php else : ?>
 				<tr class="gacct-vo-paid">
 					<td><?php echo esc_html( $is_bacs_waiting ? __( 'Acompte à régler par virement', 'gestion-atelier-cct' ) : __( 'Acompte réglé', 'gestion-atelier-cct' ) ); ?></td>
 					<td class="gacct-vo-amount"><?php echo esc_html( $vo_fmt( $d['deposit'] ) ); ?></td>
@@ -223,6 +229,7 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 					</td>
 					<td class="gacct-vo-amount"><?php echo esc_html( $vo_fmt( $d['balance'] ) ); ?></td>
 				</tr>
+				<?php endif; ?>
 			</tfoot>
 		</table>
 	</div>
@@ -267,7 +274,16 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 		</div>
 	<?php endif; ?>
 
-	<?php if ( null !== $etat && $etat <= 1 && ! $is_dead ) : ?>
+	<?php if ( $vo_tiers && null !== $etat && $etat <= 1 && ! $is_dead ) : ?>
+		<!-- ── Expédition prise en charge par un tiers (ex. club) ── -->
+		<div class="gacct-vo-card">
+			<h3><?php echo esc_html( ! empty( $vo_tiers['ship_title'] ) ? $vo_tiers['ship_title'] : __( 'Remise de votre matériel', 'gestion-atelier-cct' ) ); ?></h3>
+			<?php echo wp_kses_post( isset( $vo_tiers['ship_html'] ) ? $vo_tiers['ship_html'] : '' ); ?>
+			<?php if ( function_exists( 'gacct_conf_feature' ) && gacct_conf_feature( 'work_order' ) && ! empty( $d['links']['work_order'] ) && empty( $d['work_order_locked'] ) ) : ?>
+				<a class="gacct-vo-btn is-secondary" href="<?php echo esc_url( $d['links']['work_order'] ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Imprimer le bon d\'intervention', 'gestion-atelier-cct' ); ?></a>
+			<?php endif; ?>
+		</div>
+	<?php elseif ( null !== $etat && $etat <= 1 && ! $is_dead ) : ?>
 		<!-- ── Expédition du matériel ──────────────────────────────── -->
 		<div class="gacct-vo-card">
 			<h3><?php esc_html_e( 'Expédiez votre matériel', 'gestion-atelier-cct' ); ?></h3>

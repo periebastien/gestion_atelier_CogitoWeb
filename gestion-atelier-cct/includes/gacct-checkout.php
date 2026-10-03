@@ -322,6 +322,9 @@ function jwcct_process_order_link( $order_id ) {
     if ( ( ! $revision_id || $rev_ok ) && ( ! $occupation_id || $occ_ok ) ) {
         jwcct_clear_pending_ids( $user_id );
     }
+
+    // Les modules complètent la liaison (ex. rattachement à une commande groupée).
+    do_action( 'gacct_order_linked', $order, (int) $revision_id, (int) $occupation_id );
 }
 
 

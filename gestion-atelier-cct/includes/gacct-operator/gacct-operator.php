@@ -100,7 +100,9 @@ function gacct_op_current_view() {
 
 	$view = isset( $_GET['view'] ) ? sanitize_key( wp_unslash( $_GET['view'] ) ) : '';
 
-	return in_array( $view, array( 'list', 'reception', 'planning', 'profil' ), true ) ? $view : 'today';
+	$known = array_merge( array( 'list', 'reception', 'planning', 'profil' ), array_keys( gacct_op_console_extra_views() ) );
+
+	return in_array( $view, $known, true ) ? $view : 'today';
 }
 
 /**
@@ -114,6 +116,11 @@ function gacct_op_render_console_nav( $active ) {
 		'reception' => array( gacct_op_console_url( 0, array( 'view' => 'reception' ) ), __( 'Réception colis', 'gestion-atelier-cct' ) ),
 		'planning'  => array( gacct_op_console_url( 0, array( 'view' => 'planning' ) ), __( 'Planning', 'gestion-atelier-cct' ) ),
 	);
+
+	// Onglets ajoutés par les modules (filtre gacct_op_console_views).
+	foreach ( gacct_op_console_extra_views() as $slug => $extra_view ) {
+		$tabs[ $slug ] = array( gacct_op_console_url( 0, array( 'view' => $slug ) ), $extra_view['label'] );
+	}
 
 	echo '<nav class="nav-tab-wrapper gacct-op-nav">';
 	foreach ( $tabs as $key => $tab ) {
@@ -173,6 +180,11 @@ function gacct_op_render_console() {
 			gacct_op_render_planning_screen();
 			break;
 		default:
+			$extra_views = gacct_op_console_extra_views();
+			if ( isset( $extra_views[ $view ] ) ) {
+				call_user_func( $extra_views[ $view ]['render'] );
+				break;
+			}
 			gacct_op_render_today_screen();
 	}
 }

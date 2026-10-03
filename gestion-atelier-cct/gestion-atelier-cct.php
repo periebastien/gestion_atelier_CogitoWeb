@@ -29,6 +29,7 @@ function gacct_asset_version( $relative ) {
 	return $time ? (string) $time : GACCT_Plugin::VERSION;
 }
 
+require_once __DIR__ . '/includes/gacct-extensions.php';
 require_once __DIR__ . '/includes/gacct-checkout.php';
 require_once __DIR__ . '/includes/gacct-calendar.php';
 require_once __DIR__ . '/includes/gacct-products.php';
@@ -1120,7 +1121,7 @@ final class GACCT_Plugin {
 			FROM {$calendar_table} c
 			LEFT JOIN {$occupation_table} o
 				ON o.date_reservee = c.date_jour
-				AND o.cct_status = %s
+				AND o.cct_status = %s" . gacct_occupation_counted_sql( 'o' ) . "
 				AND EXISTS (
 					SELECT 1
 					FROM {$relation_table} rel_av
@@ -1532,6 +1533,15 @@ final class GACCT_Plugin {
 			$validation_url = $this->create_validation_url( $order, $revision_id );
 			$order->add_order_note( __( 'Lien securise de validation devis genere pour le client.', 'gestion-atelier-cct' ) );
 			$order->save();
+		}
+
+		if ( 6 === $state && function_exists( 'gacct_order_skip_automation' ) && gacct_order_skip_automation( $order, 'balance_request' ) ) {
+			// Solde pris en charge par un tiers (module) : ni demande de solde,
+			// ni e-mail au client, ni passage automatique en 7.
+			$order->add_order_note( __( 'Etat 6 : intervention finie, solde pris en charge par un tiers (aucune demande de paiement au client).', 'gestion-atelier-cct' ) );
+			$order->save();
+			do_action( 'gacct_state6_third_party', $order, $revision_id );
+			return;
 		}
 
 		if ( 6 === $state ) {

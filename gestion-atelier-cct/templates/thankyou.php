@@ -57,6 +57,15 @@ endif;
 $conf_etat = isset( $d['etat'] ) ? $d['etat'] : null;
 
 /*
+ * Commande prise en charge par un tiers (ex. commande groupée d'un club) : ni
+ * acompte, ni solde, ni expédition individuelle. Le module fournit la page.
+ */
+if ( ! empty( $d['third_party']['thankyou_html'] ) && ( null === $conf_etat || (int) $conf_etat <= 1 ) ) {
+	echo '<div class="gacct-conf"><div class="gacct-conf-wrap">' . wp_kses_post( $d['third_party']['thankyou_html'] ) . '</div></div>';
+	return;
+}
+
+/*
  * Règlement du SOLDE (phase Kojito « solde » / « solde_paye », 09/09/2026) :
  * page dédiée, jamais le bandeau « matériel bien arrivé ». Virement : RIB,
  * référence et montant exact ; carte : confirmation et suite du dossier.

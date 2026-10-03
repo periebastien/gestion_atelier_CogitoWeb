@@ -694,7 +694,7 @@ function gacct_op_ajax_planning_events() {
 		$materiel = trim( implode( ' ', array_filter( array( $row['rev_marque'], $row['rev_modele'] ) ) ) );
 		$free     = ( $state <= 2 );
 
-		$events[] = array(
+		$event = array(
 			'id'            => 'occ-' . absint( $row['occupation_id'] ),
 			'title'         => trim( $ref . ( $client ? ' · ' . $client : '' ) ),
 			'start'         => wp_date( 'Y-m-d', (int) $row['day_ts'], $tz ),
@@ -716,6 +716,12 @@ function gacct_op_ajax_planning_events() {
 				'needs_reason'  => ! $free,
 			),
 		);
+
+		// Un module peut réécrire l'événement (ex. réserve d'un club) ou le masquer (null).
+		$event = apply_filters( 'gacct_op_planning_event', $event, $row );
+		if ( is_array( $event ) ) {
+			$events[] = $event;
+		}
 	}
 
 	wp_send_json( $events );

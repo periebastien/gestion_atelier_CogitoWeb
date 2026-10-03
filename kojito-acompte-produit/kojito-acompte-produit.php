@@ -129,10 +129,18 @@ class Kojito_Acompte_Produit {
 		}
 
 		if ( '' === $acompte || ! is_numeric( $acompte ) || (float) $acompte < 0 ) {
-			return null;
+			$acompte = null;
+		} else {
+			$acompte = (float) $acompte;
 		}
 
-		return (float) $acompte;
+		/**
+		 * Acompte d'un produit, modifiable par un module (null = pas d'acompte,
+		 * 0 = rien a payer a la commande). Ex. : commande groupee d'un club.
+		 */
+		$acompte = apply_filters( 'kojito_montant_acompte', $acompte, $product_id, $parent_id );
+
+		return ( null === $acompte || ! is_numeric( $acompte ) || (float) $acompte < 0 ) ? null : (float) $acompte;
 	}
 
 	/**

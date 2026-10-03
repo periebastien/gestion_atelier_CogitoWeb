@@ -269,6 +269,9 @@ function gacct_conf_data( $order ) {
 		'links'            => gacct_conf_links( $order ),
 	);
 
+	// Paiement et expédition pris en charge par un tiers (module), ou null.
+	$data['third_party'] = function_exists( 'gacct_order_third_party' ) ? gacct_order_third_party( $order ) : null;
+
 	return apply_filters( 'gacct_conf_data', $data, $order );
 }
 

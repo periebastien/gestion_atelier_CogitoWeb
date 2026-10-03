@@ -904,9 +904,12 @@ function gacct_pay_send_deposit_received( $order, $force = false ) {
 
 	$data = gacct_conf_data( $order );
 
+	// Un module peut substituer son propre modèle (ex. membre d'un club : pas d'expédition individuelle).
+	$deposit_tpl = (string) apply_filters( 'gacct_pay_deposit_received_template', 'deposit_received', $order );
+
 	$sent = gacct_pay_send_email(
 		$order->get_billing_email(),
-		'deposit_received',
+		$deposit_tpl,
 		gacct_pay_email_variables( $order, array(
 			'{slot_date}'         => $data['slot_label'] ? $data['slot_label'] : __( 'la date convenue', 'gestion-atelier-cct' ),
 			'{parcel_deadline}'   => $data['parcel_label'] ? $data['parcel_label'] : sprintf( /* translators: %s: heure limite */ __( 'matin de votre révision, avant %s', 'gestion-atelier-cct' ), gacct_pay_noshow_hour_label() ),
@@ -1053,7 +1056,7 @@ function gacct_pay_process_bacs_orders() {
 	$now = time();
 
 	foreach ( $orders as $order ) {
-		if ( ! gacct_pay_order_awaits_transfer( $order ) ) {
+		if ( ! gacct_pay_order_awaits_transfer( $order ) || gacct_order_skip_automation( $order, 'auto_cancel' ) ) {
 			continue;
 		}
 
@@ -1117,7 +1120,7 @@ function gacct_pay_process_unpaid_orders() {
 
 	foreach ( $orders as $order ) {
 		// Le flux virement gère ses propres commandes (échéance en jours).
-		if ( 'bacs' === $order->get_payment_method() ) {
+		if ( 'bacs' === $order->get_payment_method() || gacct_order_skip_automation( $order, 'auto_cancel' ) ) {
 			continue;
 		}
 

@@ -380,7 +380,7 @@ function gacct_cal_occupied_between( $start_ymd, $end_ymd ) {
 	$from = gacct_cal_day_ts( $start_ymd ) - DAY_IN_SECONDS;
 	$to   = gacct_cal_day_ts( $end_ymd ) + DAY_IN_SECONDS;
 	$rows = (array) $wpdb->get_results( $wpdb->prepare(
-		'SELECT date_reservee, COALESCE(SUM(TIME_TO_SEC(duree_totale_commande) / 3600), 0) AS h FROM ' . gacct_cal_occupation_table() . " WHERE cct_status = 'publish' AND date_reservee >= %d AND date_reservee < %d GROUP BY date_reservee",
+		'SELECT date_reservee, COALESCE(SUM(TIME_TO_SEC(duree_totale_commande) / 3600), 0) AS h FROM ' . gacct_cal_occupation_table() . " WHERE cct_status = 'publish'" . gacct_occupation_counted_sql() . " AND date_reservee >= %d AND date_reservee < %d GROUP BY date_reservee",
 		$from,
 		$to
 	), ARRAY_A );

@@ -450,7 +450,7 @@ function gacct_op_advance_slot_to_today( $revision_id, $reason = '' ) {
 	} else {
 		$occupied = (float) $wpdb->get_var( $wpdb->prepare(
 			"SELECT COALESCE(SUM(TIME_TO_SEC(duree_totale_commande) / 3600), 0) FROM {$occ_table}
-			 WHERE cct_status = 'publish' AND date_reservee = %d",
+			 WHERE cct_status = 'publish' AND date_reservee = %d" . gacct_occupation_counted_sql(),
 			$today_ts
 		) );
 		$over = $occupied > (float) $capacity['capacity_hours'] + 0.001;
@@ -1409,7 +1409,7 @@ function gacct_op_planning_capacities( $start_ts, $end_ts ) {
 		FROM {$cal} c
 		LEFT JOIN {$occ} o
 			ON o.date_reservee = c.date_jour
-			AND o.cct_status = 'publish'
+			AND o.cct_status = 'publish'" . gacct_occupation_counted_sql( 'o' ) . "
 		WHERE c.cct_status = 'publish'
 			AND c.date_jour >= %d
 			AND c.date_jour < %d
@@ -1565,7 +1565,7 @@ function gacct_op_reschedule( $occupation_id, $ymd, array $args = array() ) {
 	$occupied  = (float) $wpdb->get_var( $wpdb->prepare(
 		"SELECT COALESCE(SUM(TIME_TO_SEC(duree_totale_commande) / 3600), 0)
 		FROM {$occ_table}
-		WHERE cct_status = 'publish' AND date_reservee = %d AND _ID != %d",
+		WHERE cct_status = 'publish' AND date_reservee = %d AND _ID != %d" . gacct_occupation_counted_sql() . "",
 		$new_ts,
 		$occupation_id
 	) );
@@ -1574,6 +1574,7 @@ function gacct_op_reschedule( $occupation_id, $ymd, array $args = array() ) {
 		'SELECT TIME_TO_SEC(%s) / 3600',
 		(string) ( $occupation['duree_totale_commande'] ?? '00:00' )
 	) );
+	$duration_h = gacct_occupation_counted_hours( $duration_h, $occupation );
 
 	$available = (float) $target['capacity_hours'] - $occupied;
 
