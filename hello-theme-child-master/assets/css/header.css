@@ -545,16 +545,29 @@ footer .ar-flink.ar-flink-tel:hover {
    Logo et présentation sur toute la largeur, puis Services | Atelier côte à
    côte, puis Contact sur toute la largeur. */
 @media (max-width: 767px) {
+	/* Les marges intérieures s'empilaient (section 20 + rangée 10 + colonne 10 = 40 px de
+	   gouttière) et l'écart entre colonnes ne s'appliquait pas : colonnes serrées à gauche,
+	   vide à droite. Gouttière ramenée à 20 px, deux colonnes égales séparées de 20 px. */
 	footer.elementor-location-footer .elementor-element-7ec133a {
+		padding-left: 0 !important;
+		padding-right: 0 !important;
+	}
+	/* Rangée « boxed » : la boîte flex est .e-con-inner, pas le conteneur. */
+	footer.elementor-location-footer .elementor-element-7ec133a,
+	footer.elementor-location-footer .elementor-element-7ec133a > .e-con-inner {
 		flex-direction: row;
 		flex-wrap: wrap;
-		column-gap: 24px;
-		row-gap: 40px;
+		gap: 40px 20px !important;
+	}
+	/* cd84e7c : liens du bas (mentions, CGV…), décalés de 10 px par rapport au copyright. */
+	footer.elementor-location-footer :is(.elementor-element-406ca5f, .elementor-element-652308d, .elementor-element-416e28c, .elementor-element-842c0f5, .elementor-element-cd84e7c) {
+		padding-left: 0 !important;
+		padding-right: 0 !important;
 	}
 	footer.elementor-location-footer .elementor-element-652308d,
 	footer.elementor-location-footer .elementor-element-416e28c {
-		width: calc(50% - 12px);
-		max-width: calc(50% - 12px);
+		width: calc(50% - 10px) !important;
+		max-width: calc(50% - 10px);
 	}
 }
 
