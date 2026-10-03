@@ -66,61 +66,61 @@ function gacct_clubs_request_shortcode( $atts = array() ) {
 			<?php wp_nonce_field( 'gacct_club_demande', 'gacct_club_demande_nonce' ); ?>
 			<div class="gcl-form">
 				<?php if ( $clubs ) : ?>
-					<div class="full">
-						<label for="gcl-club">Club</label>
+					<div class="gcl-f full is-select">
 						<select id="gcl-club" name="club_id">
 							<?php foreach ( $clubs as $c ) : ?>
 								<option value="<?php echo (int) $c['id']; ?>" <?php selected( (int) ( $old['club_id'] ?? $first['id'] ), (int) $c['id'] ); ?>><?php echo esc_html( $c['nom'] ); ?></option>
 							<?php endforeach; ?>
 							<option value="0" <?php selected( isset( $old['club_id'] ) && '0' === (string) $old['club_id'] ); ?>>Un autre club</option>
 						</select>
+						<label for="gcl-club">Club</label>
 					</div>
 				<?php endif; ?>
-				<div class="full gcl-newclub">
+				<div class="gcl-f full gcl-newclub">
+					<input placeholder=" " id="gcl-nom" name="club_nom" type="text" value="<?php echo $v( 'club_nom', $first ? $first['nom'] : '' ); // phpcs:ignore ?>" <?php echo $clubs ? '' : 'required'; ?>>
 					<label for="gcl-nom">Nom du club, de l’école ou du groupe</label>
-					<input id="gcl-nom" name="club_nom" type="text" value="<?php echo $v( 'club_nom', $first ? $first['nom'] : '' ); // phpcs:ignore ?>" <?php echo $clubs ? '' : 'required'; ?>>
 				</div>
-				<div class="full gcl-newclub">
+				<div class="gcl-f full gcl-newclub is-area">
+					<textarea placeholder=" " id="gcl-adresse" name="club_adresse" rows="2"><?php echo esc_textarea( $old['club_adresse'] ?? ( $first ? $first['adresse'] : '' ) ); ?></textarea>
 					<label for="gcl-adresse">Adresse</label>
-					<textarea id="gcl-adresse" name="club_adresse" rows="2"><?php echo esc_textarea( $old['club_adresse'] ?? ( $first ? $first['adresse'] : '' ) ); ?></textarea>
 				</div>
-				<div class="gcl-newclub">
+				<div class="gcl-f gcl-newclub">
+					<input placeholder=" " id="gcl-mail" name="club_email" type="email" value="<?php echo $v( 'club_email', $first ? $first['email'] : '' ); // phpcs:ignore ?>">
 					<label for="gcl-mail">E-mail du club</label>
-					<input id="gcl-mail" name="club_email" type="email" value="<?php echo $v( 'club_email', $first ? $first['email'] : '' ); // phpcs:ignore ?>">
 				</div>
-				<div>
+				<div class="gcl-f">
+					<input placeholder=" " id="gcl-contact" name="contact_nom" type="text" value="<?php echo $v( 'contact_nom', $name ); // phpcs:ignore ?>" required>
 					<label for="gcl-contact">Contact à joindre</label>
-					<input id="gcl-contact" name="contact_nom" type="text" value="<?php echo $v( 'contact_nom', $name ); // phpcs:ignore ?>" required>
 				</div>
-				<div>
+				<div class="gcl-f">
+					<input placeholder=" " id="gcl-tel" name="contact_tel" type="tel" value="<?php echo $v( 'contact_tel', $tel ); // phpcs:ignore ?>" required>
 					<label for="gcl-tel">Téléphone du contact</label>
-					<input id="gcl-tel" name="contact_tel" type="tel" value="<?php echo $v( 'contact_tel', $tel ); // phpcs:ignore ?>" required>
 				</div>
-				<div>
+				<div class="gcl-f">
+					<input placeholder=" " id="gcl-cmail" name="contact_email" type="email" value="<?php echo $v( 'contact_email', $user->user_email ); // phpcs:ignore ?>" required>
 					<label for="gcl-cmail">E-mail du contact</label>
-					<input id="gcl-cmail" name="contact_email" type="email" value="<?php echo $v( 'contact_email', $user->user_email ); // phpcs:ignore ?>" required>
 				</div>
 				<div class="full gcl-num3">
-					<div>
+					<div class="gcl-f">
+						<input placeholder=" " id="gcl-ip" name="nb_ip" type="number" min="0" max="200" inputmode="numeric" value="<?php echo $v( 'nb_ip', '0' ); // phpcs:ignore ?>">
 						<label for="gcl-ip">Voiles en inspection partielle</label>
-						<input id="gcl-ip" name="nb_ip" type="number" min="0" max="200" inputmode="numeric" value="<?php echo $v( 'nb_ip', '0' ); // phpcs:ignore ?>">
 					</div>
-					<div>
+					<div class="gcl-f">
+						<input placeholder=" " id="gcl-rp" name="nb_rp" type="number" min="0" max="200" inputmode="numeric" value="<?php echo $v( 'nb_rp', '0' ); // phpcs:ignore ?>">
 						<label for="gcl-rp">Voiles en révision périodique</label>
-						<input id="gcl-rp" name="nb_rp" type="number" min="0" max="200" inputmode="numeric" value="<?php echo $v( 'nb_rp', '0' ); // phpcs:ignore ?>">
 					</div>
-					<div>
+					<div class="gcl-f">
+						<input placeholder=" " id="gcl-sec" name="nb_secours" type="number" min="0" max="200" inputmode="numeric" value="<?php echo $v( 'nb_secours', '0' ); // phpcs:ignore ?>">
 						<label for="gcl-sec">Secours à plier</label>
-						<input id="gcl-sec" name="nb_secours" type="number" min="0" max="200" inputmode="numeric" value="<?php echo $v( 'nb_secours', '0' ); // phpcs:ignore ?>">
 					</div>
 				</div>
-				<div class="full">
-					<label for="gcl-periode">Période d’intervention souhaitée</label>
+				<div class="gcl-f full">
 					<input id="gcl-periode" name="periode" type="text" placeholder="Ex. deuxième quinzaine de novembre" value="<?php echo $v( 'periode' ); // phpcs:ignore ?>">
+					<label for="gcl-periode">Période d’intervention souhaitée</label>
 				</div>
-				<div class="full">
+				<div class="gcl-f full is-area">
+					<textarea placeholder=" " id="gcl-rem" name="remarques" rows="3"><?php echo esc_textarea( $old['remarques'] ?? '' ); ?></textarea>
 					<label for="gcl-rem">Remarques</label>
-					<textarea id="gcl-rem" name="remarques" rows="3"><?php echo esc_textarea( $old['remarques'] ?? '' ); ?></textarea>
 				</div>
 			</div>
 			<div class="gcl-palier">

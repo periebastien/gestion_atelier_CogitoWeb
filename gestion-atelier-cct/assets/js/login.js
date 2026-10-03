@@ -98,6 +98,19 @@
 		}).catch(function () { busy(steps.email, false); fail(); });
 	});
 
+	/* Destination après connexion. Si elle ne diffère de la page courante que par l'ancre
+	   (retour sur la même page, ex. #demande-club), changer href ne fait que défiler et
+	   « Un instant… » resterait affiché : on recharge pour montrer l'état connecté. */
+	function go(url) {
+		var here = window.location.href.split('#')[0];
+		if (url && url.split('#')[0] === here) {
+			if (url.indexOf('#') > -1) { history.replaceState(null, '', url); }
+			window.location.reload();
+			return;
+		}
+		window.location.href = url;
+	}
+
 	/* Étape 2a : mot de passe */
 	steps.password.addEventListener('submit', function (e) {
 		e.preventDefault();
@@ -106,7 +119,7 @@
 		busy(steps.password, true);
 		post('gacct_login_signin', { password: pw, remember: remember }).then(function (res) {
 			if (!res || !res.success) { busy(steps.password, false); return fail(res); }
-			window.location.href = res.data.redirect;
+			go(res.data.redirect);
 		}).catch(function () { busy(steps.password, false); fail(); });
 	});
 
@@ -120,7 +133,7 @@
 				if (res && res.data && res.data.exists) { show('password'); }
 				return fail(res);
 			}
-			window.location.href = res.data.redirect;
+			go(res.data.redirect);
 		}).catch(function () { busy(steps.create, false); fail(); });
 	});
 

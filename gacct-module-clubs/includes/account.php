@@ -370,8 +370,7 @@ function gacct_clubs_account_detail( array $lot ) {
 						<form method="post" class="gcl-form" style="grid-template-columns:minmax(0,1fr)">
 							<?php wp_nonce_field( 'gacct_club_aller_' . (int) $lot['id'], 'gacct_club_aller_nonce' ); ?>
 							<input type="hidden" name="gacct_club_lot" value="<?php echo (int) $lot['id']; ?>">
-							<div>
-								<label for="gcl-carrier"><?php echo esc_html( $lot['envoi_transporteur'] ? 'Modifier l’envoi' : 'Déclarer l’envoi du colis' ); ?></label>
+							<div class="gcl-f is-select">
 								<select id="gcl-carrier" name="carrier">
 									<?php foreach ( ( function_exists( 'gacct_ship_carriers' ) ? gacct_ship_carriers() : array() ) as $key => $car ) : ?>
 										<?php if ( 'depot' === $key ) { continue; } ?>
@@ -379,8 +378,9 @@ function gacct_clubs_account_detail( array $lot ) {
 									<?php endforeach; ?>
 									<option value="boutique" <?php selected( $lot['envoi_transporteur'], 'boutique' ); ?>>Dépôt à la boutique</option>
 								</select>
+								<label for="gcl-carrier"><?php echo esc_html( $lot['envoi_transporteur'] ? 'Modifier l’envoi' : 'Déclarer l’envoi du colis' ); ?></label>
 							</div>
-							<div><label for="gcl-track">Numéro de suivi (ou date du dépôt)</label><input id="gcl-track" name="tracking" type="text" value="<?php echo esc_attr( $lot['envoi_suivi'] ); ?>"></div>
+							<div class="gcl-f"><input placeholder=" " id="gcl-track" name="tracking" type="text" value="<?php echo esc_attr( $lot['envoi_suivi'] ); ?>"><label for="gcl-track">Numéro de suivi (ou date du dépôt)</label></div>
 							<div><button type="submit" class="gcl-btn">Enregistrer l’envoi</button></div>
 							<p class="gcl-note">Transporteur et numéro de suivi, ou « dépôt à la boutique ». L’atelier est prévenu.</p>
 						</form>

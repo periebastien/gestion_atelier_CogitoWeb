@@ -119,9 +119,18 @@
 .gcl-inv tr.tot td { font-weight: 900; font-size: 16px; border-top: 2px solid var(--gcl-ink); }
 .gcl-form { display: grid; grid-template-columns: repeat( 2, minmax( 0, 1fr ) ); gap: 14px 16px; }
 .gcl-form .full { grid-column: 1 / -1; }
-.gcl-form label { display: block; font-size: 16px; font-weight: 800; color: var(--gcl-ink2); margin-bottom: 6px; }
-.gcl-form input, .gcl-form select, .gcl-form textarea { width: 100%; min-height: 48px; border: 1px solid rgba(0,0,0,.12); border-radius: 8px; padding: 10px 12px; font: inherit; color: var(--gcl-ink); background: #fff; }
-.gcl-form textarea { min-height: 96px; }
+.gcl-form input, .gcl-form select, .gcl-form textarea { width: 100%; min-height: 56px; border: 1px solid rgba(0,0,0,.12); border-radius: 8px; padding: 24px 14px 8px; font: inherit; font-size: 16px; line-height: 1.4; color: var(--gcl-ink); background: #fff; transition: border-color .15s, box-shadow .15s; }
+.gcl-form textarea { min-height: 104px; padding-top: 28px; resize: vertical; }
+/* Libellés flottants, comme l'écran de connexion et les formulaires du site : au repos dans le champ,
+   remontés en petites capitales turquoise dès que le champ a le focus ou une valeur. */
+.gcl-f { position: relative; }
+/* Fiche club en lecture (pas un champ) : libellé au-dessus de la valeur. */
+.gcl-form > div:not(.gcl-f) > label { display: block; font-size: 16px; font-weight: 800; color: var(--gcl-ink2); margin-bottom: 6px; }
+.gcl-f > label { position: absolute; left: 15px; top: 28px; transform: translateY(-50%); margin: 0; font-size: 16px; font-weight: 400; line-height: 1.2; color: var(--gcl-ink2); pointer-events: none; white-space: nowrap; max-width: calc(100% - 30px); overflow: hidden; text-overflow: ellipsis; transition: all .15s cubic-bezier(.4,0,.2,1); }
+.gcl-f input::placeholder, .gcl-f textarea::placeholder { color: transparent; }
+.gcl-f input:focus::placeholder, .gcl-f textarea:focus::placeholder { color: var(--gcl-ink3); }
+.gcl-f input:focus ~ label, .gcl-f input:not(:placeholder-shown) ~ label, .gcl-f textarea:focus ~ label, .gcl-f textarea:not(:placeholder-shown) ~ label, .gcl-f select ~ label { top: 8px; transform: none; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--gcl-teal); }
+.gcl-form input:hover, .gcl-form select:hover, .gcl-form textarea:hover { border-color: var(--gcl-teal); }
 .gcl-form input:focus, .gcl-form select:focus, .gcl-form textarea:focus { outline: none; border-color: var(--gcl-teal); box-shadow: 0 0 0 3px rgba(32,196,195,.18); }
 .gcl-form .hint { font-size: 16px; color: var(--gcl-ink3); margin-top: 4px; }
 .gcl-num3 { display: grid; grid-template-columns: repeat( 3, minmax( 0, 1fr ) ); gap: 12px; }
