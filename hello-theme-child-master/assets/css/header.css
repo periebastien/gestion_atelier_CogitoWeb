@@ -820,3 +820,12 @@
 		gap: 14px;
 	}
 }
+
+/* Fil d’Ariane masqué sur mobile, sur tout le site (décision de Bastien, 03/10/2026) :
+   le logo ramène déjà à l’accueil, et la place gagnée remonte le bandeau d’ouverture
+   (preuve sociale visible sans défiler). Il reste affiché sur tablette et ordinateur. */
+@media (max-width: 767px) {
+	.elementor-widget.ar-breadcrumb {
+		display: none;
+	}
+}
