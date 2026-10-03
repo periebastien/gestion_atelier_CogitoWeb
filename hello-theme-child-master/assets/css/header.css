@@ -628,3 +628,156 @@
 		transition: none;
 	}
 }
+
+
+/* ── Header mobile, proposition B (validée par Bastien le 03/10/2026) ──────
+   Planche : claude.ai/artifact/6EsXncSWJiR4GsprRRCe42.
+   Logo à gauche (40 px, 34 en pilule), téléphone cerclé 44 px, bouton jaune
+   « Menu » 44 px avec une icône NOIRE à traits égaux (pas de trait turquoise :
+   il ne se lit pas sur le jaune). Tout se fait en CSS, l'ordre des widgets
+   du template 1284 n'est pas touché : la grille est réordonnée par `order`.
+   Le menu reste piloté par header.js (#arBurger) : seule l'apparence change.
+   Bloc placé EN FIN de fichier : à spécificité égale il gagne sur les règles
+   ≤1024 / ≤767 plus haut (même sélecteurs). ─────────────────────────────── */
+@media (max-width: 1024px) {
+	.ar-hdr .ar-hdr-in {
+		grid-template-columns: minmax(0, 1fr) auto auto;
+		gap: 8px;
+		height: 68px;
+	}
+	.ar-hdr .ar-brand {
+		order: 1;
+		justify-content: flex-start;
+	}
+	.ar-hdr .ar-brand img {
+		height: 40px;
+		margin-inline: 0;
+	}
+	.ar-hdr .ar-mob-r {
+		order: 2;
+	}
+	.ar-hdr .ar-mob-l {
+		order: 3;
+	}
+
+	/* Téléphone : cercle de 44 px. Adversaire : `.ar-mob-ic .elementor-icon`
+	   (0,2,0) qui retire bordure et fond, d'où (0,3,0) ici. */
+	.ar-hdr .ar-mob-tel .elementor-icon {
+		width: 44px;
+		height: 44px;
+		border: 1px solid #dfe3e3;
+		border-radius: 50%;
+		font-size: 20px;
+		background: #fff;
+	}
+
+	/* Menu : pastille jaune « Menu ». L'icône d'origine (traits décroissants,
+	   bicolore) est masquée ; l'icône noire est un masque CSS sur ::before. */
+	.ar-hdr .ar-mob-burger .elementor-icon {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		height: 44px;
+		padding: 0 16px 0 14px;
+		border-radius: 999px;
+		background: #ffbd20;
+		font-size: 22px;
+		transition: background .2s ease;
+	}
+	.ar-hdr .ar-mob-burger .elementor-icon svg {
+		display: none;
+	}
+	.ar-hdr .ar-mob-burger .elementor-icon::before {
+		content: "";
+		width: 22px;
+		height: 22px;
+		background: #1a1a1a;
+		-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M4 7h16M8 12h12M4 17h16'/%3E%3C/svg%3E") center / contain no-repeat;
+		mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M4 7h16M8 12h12M4 17h16'/%3E%3C/svg%3E") center / contain no-repeat;
+		transition: background .2s ease;
+	}
+	.ar-hdr .ar-mob-burger .elementor-icon::after {
+		content: "Menu";
+		font: 800 15px/1 Nunito, system-ui, sans-serif;
+		color: #1a1a1a;
+		transition: color .2s ease;
+	}
+	/* Survol et menu ouvert : comme les boutons d'action du site (noir). */
+	.ar-hdr .ar-mob-burger .elementor-icon:hover,
+	.ar-hdr .ar-mob-burger [aria-expanded="true"] .elementor-icon,
+	.ar-hdr .ar-mob-burger[aria-expanded="true"] .elementor-icon,
+	.ar-hdr #arBurger[aria-expanded="true"] .elementor-icon {
+		background: #1a1a1a;
+	}
+	.ar-hdr .ar-mob-burger .elementor-icon:hover::before,
+	.ar-hdr #arBurger[aria-expanded="true"] .elementor-icon::before {
+		background: #fff;
+	}
+	.ar-hdr .ar-mob-burger .elementor-icon:hover::after,
+	.ar-hdr #arBurger[aria-expanded="true"] .elementor-icon::after {
+		color: #fff;
+	}
+
+	/* Espace client : même bouton, porté par le widget JetMenu. */
+	.ar-hdr .ar-mob-jetburger .jet-mobile-menu__toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		height: 44px;
+		padding: 0 16px 0 14px;
+		border-radius: 999px;
+		background: #ffbd20;
+	}
+	.ar-hdr .ar-mob-jetburger .jet-mobile-menu__toggle-icon {
+		display: none;
+	}
+	.ar-hdr .ar-mob-jetburger .jet-mobile-menu__toggle::before {
+		content: "";
+		width: 22px;
+		height: 22px;
+		background: #1a1a1a;
+		-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M4 7h16M8 12h12M4 17h16'/%3E%3C/svg%3E") center / contain no-repeat;
+		mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M4 7h16M8 12h12M4 17h16'/%3E%3C/svg%3E") center / contain no-repeat;
+	}
+	.ar-hdr .ar-mob-jetburger .jet-mobile-menu__toggle::after {
+		content: "Menu";
+		font: 800 15px/1 Nunito, system-ui, sans-serif;
+		color: #1a1a1a;
+	}
+
+	/* Pilule flottante : un cran plus compacte. */
+	.ar-hdr.ar-mob-pill .ar-hdr-in {
+		height: 58px;
+		padding: 0 7px 0 18px;
+	}
+	.ar-hdr.ar-mob-pill .ar-brand img {
+		height: 34px;
+	}
+	.ar-hdr.ar-mob-pill .ar-mob-tel .elementor-icon {
+		width: 42px;
+		height: 42px;
+		font-size: 19px;
+	}
+	.ar-hdr.ar-mob-pill .ar-mob-burger .elementor-icon,
+	.ar-hdr.ar-mob-pill .ar-mob-jetburger .jet-mobile-menu__toggle {
+		height: 42px;
+	}
+}
+
+@media (max-width: 767px) {
+	/* Gouttières de 16 px en haut de page (alignées sur le contenu) ; la
+	   pilule garde ses 10 px pour flotter, comme les panneaux. */
+	.ar-hdr .ar-hdr-in {
+		grid-template-columns: minmax(0, 1fr) auto auto;
+		width: calc(100% - 32px);
+	}
+	.ar-hdr .ar-brand img {
+		height: 40px;
+	}
+	.ar-hdr.ar-mob-pill .ar-hdr-in {
+		width: calc(100% - 20px);
+	}
+	.ar-hdr.ar-mob-pill .ar-brand img {
+		height: 34px;
+	}
+}
