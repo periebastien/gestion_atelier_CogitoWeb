@@ -188,7 +188,8 @@
 /* Garde générale : un SVG en trait ne doit jamais devenir un aplat quand
    Elementor pose un `fill` sur le <svg> (au repos comme au survol). */
 .ar-hdr svg[fill="none"],
-.ar-fp-wrap svg[fill="none"] {
+.ar-fp-wrap svg[fill="none"],
+.elementor-button svg[fill="none"] { /* tous les boutons du site : la flèche en trait des CTA se remplissait au survol (03/10/2026) */
 	fill: none !important;
 }
 
