@@ -1,0 +1,56 @@
+/* ── Apparition douce des blocs au défilement (03/10/2026) ────────────────
+   Validé par Bastien : effet DISCRET (fondu + montée de 16 px, 0,5 s), cartes
+   en cascade (80 ms), étapes numérotées l'une après l'autre avec le trait
+   pointillé qui se dessine de gauche à droite. En test sur l'accueil.
+   Les classes sont posées par assets/js/apparition.js ; sans lui, rien n'est
+   caché. Rien ne bouge avec « réduire les animations ».
+   ──────────────────────────────────────────────────────────────────────── */
+
+/* Masquage instantané ; la transition ne porte que sur l'apparition (sinon le
+   masquage initial hériterait du retard et un bloc retardé resterait visible). */
+.ar-rv {
+	opacity: 0;
+	transform: translate3d(0, 16px, 0);
+}
+.ar-rv.ar-rv-in {
+	opacity: 1;
+	transform: none;
+	transition:
+		opacity 0.5s ease-out var(--ar-rv-delay, 0ms),
+		transform 0.5s cubic-bezier(0.22, 1, 0.36, 1) var(--ar-rv-delay, 0ms);
+}
+
+/* Trait pointillé entre deux étapes (sur PC). La règle d'origine du kit,
+   écrite avec « &gt; », n'était plus appliquée. */
+@media (min-width: 1025px) {
+	.e-con:has(> .elementor-widget-heading.ar-step-line) {
+		position: relative;
+	}
+	.e-con:has(> .elementor-widget-heading.ar-step-line)::after {
+		content: "";
+		position: absolute;
+		top: 28px;
+		left: calc(50% + 36px);
+		width: calc(100% - 72px);
+		height: 1px;
+		background: repeating-linear-gradient(to right, #20c4c3 0, #20c4c3 8px, transparent 8px, transparent 16px);
+		transform-origin: left center;
+	}
+	/* Le trait se dessine après l'apparition de son étape, avant la suivante. */
+	.ar-rv-step::after {
+		transform: scaleX(0);
+	}
+	.ar-rv-step.ar-rv-in::after {
+		transform: scaleX(1);
+		transition: transform 0.45s ease-in-out calc(var(--ar-rv-delay, 0ms) + 200ms);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ar-rv,
+	.ar-rv-step::after {
+		opacity: 1 !important;
+		transform: none !important;
+		transition: none !important;
+	}
+}

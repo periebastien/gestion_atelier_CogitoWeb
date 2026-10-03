@@ -93,6 +93,22 @@ function hello_elementor_child_lisibilite() {
 add_action( 'wp_enqueue_scripts', 'hello_elementor_child_lisibilite', 30 );
 
 /**
+ * Apparition douce des blocs au défilement (Bastien, 03/10/2026).
+ * EN TEST SUR L'ACCUEIL SEULEMENT : élargir la condition une fois validé.
+ * Voir l'en-tête de assets/js/apparition.js.
+ */
+function hello_elementor_child_apparition() {
+	if ( ! is_front_page() ) {
+		return;
+	}
+	$dir = get_stylesheet_directory();
+	$uri = get_stylesheet_directory_uri();
+	wp_enqueue_style( 'ar-apparition', $uri . '/assets/css/apparition.css', array(), filemtime( $dir . '/assets/css/apparition.css' ) );
+	wp_enqueue_script( 'ar-apparition', $uri . '/assets/js/apparition.js', array(), filemtime( $dir . '/assets/js/apparition.js' ), true );
+}
+add_action( 'wp_enqueue_scripts', 'hello_elementor_child_apparition', 30 );
+
+/**
  * Habillage « Altitude Révision » du reste du front — design propre à CE site.
  *
  * Rapatrié du plugin gestion-atelier-cct le 03/08/2026, même motif que le
