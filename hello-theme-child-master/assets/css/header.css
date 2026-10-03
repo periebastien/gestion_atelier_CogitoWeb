@@ -288,12 +288,13 @@
 	}
 }
 
-/* ── ≤1400 : on ne garde que les icônes du téléphone et de « Mon compte » ─
+/* ── ≤1500 : on ne garde que les icônes du téléphone et de « Mon compte » ─
    Seuil relevé de 1200 à 1400 px le 03/10/2026 : avec le menu à 16 px
    (plancher de lisibilité, lisibilite.css), « Contact » touchait le
-   téléphone entre 1201 et 1366 px. */
+   téléphone entre 1201 et 1366 px. Relevé à 1500 px le même jour avec
+   l entrée « Clubs » du menu (il ne restait que 43 px libres à 1440). */
 
-@media (max-width: 1400px) {
+@media (max-width: 1500px) {
 	/* `.ar-btn-swap .elementor-button-text` du kit (0,2,0) pose display:grid
 	   pour le défilement du libellé : il faut passer au-dessus, d'où la classe
 	   du bouton accolée. Le libellé disparaît, l'animation reste intacte dès
@@ -866,11 +867,31 @@ footer .ar-flink.ar-flink-tel:hover {
 @media (min-width: 1025px) and (max-width: 1150px) {
 	.ar-mnav .elementor-nav-menu--main .elementor-nav-menu,
 	.ar-mnav .elementor-nav-menu--main .elementor-nav-menu > li {
-		gap: 7px;
+		gap: 5px;
 	}
 	.ar-hdr .ar-hdr-in,
 	.ar-fp-wrap .ar-fp {
-		gap: 14px;
+		gap: 10px;
+	}
+	/* Avec l entrée « Clubs » (03/10/2026) : bloc de droite et bouton jaune
+	   resserrés, sinon « Contact » touche les icônes à 1025 px. */
+	.ar-hdr .ar-hdr-right,
+	.ar-fp .ar-hdr-right {
+		gap: 8px;
+	}
+	.ar-hdr .ar-hdr-cta.elementor-widget.elementor-widget-button .elementor-button,
+	.ar-fp .ar-hdr-cta.elementor-widget.elementor-widget-button .elementor-button {
+		padding-left: 14px;
+		padding-right: 14px;
+	}
+	.ar-hdr .ar-hdr-account.elementor-widget.elementor-widget-button .elementor-button,
+	.ar-fp .ar-hdr-account.elementor-widget.elementor-widget-button .elementor-button {
+		padding-left: 10px;
+		padding-right: 10px;
+	}
+	.ar-hdr .ar-brand img,
+	.ar-fp-wrap .ar-brand img {
+		height: 28px;
 	}
 }
 
@@ -881,4 +902,28 @@ footer .ar-flink.ar-flink-tel:hover {
 	.elementor-widget.ar-breadcrumb {
 		display: none;
 	}
+}
+
+/* ── Menu mobile : pastille de remise sur l entrée « Clubs » (03/10/2026) ──
+   À l essai (Bastien). La pastille est dans le libellé de l entrée 2496 du
+   menu « Menu mobile site » (<span class="ar-mi-badge">) ; pour l enlever,
+   remettre le titre de l entrée à « Clubs ». Texte en petites capitales :
+   exempté du plancher de 16 px. */
+.ar-mi-club > a {
+	align-items: center;
+	gap: 10px;
+}
+.ar-mi-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 9px;
+	border-radius: 999px;
+	background: #ffbd2e;
+	color: #1a1a1a;
+	font-size: 12px;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	line-height: 1.4;
+	text-transform: uppercase;
+	white-space: nowrap;
 }
