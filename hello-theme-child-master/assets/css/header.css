@@ -201,7 +201,7 @@
 	margin: 8px auto 0;
 	background: #fff;
 	border: 1px solid rgba(16, 24, 32, 0.08);
-	border-radius: 18px;
+	border-radius: 16px;
 	box-shadow: 0 18px 50px rgba(0, 0, 0, 0.14);
 	overflow: hidden;
 }
@@ -409,11 +409,11 @@
 		fill: revert-layer;
 	}
 
-	/* État « pilule givrée » : la barre redescend en capsule flottante. */
+	/* État « barre givrée » : la barre redescend en flottant, coins arrondis de 16 px comme les cartes et le panneau du menu (03/10/2026 ; c était une capsule). */
 	.ar-hdr.ar-mob-pill .ar-hdr-in {
 		margin-top: 10px;
 		padding: 0 14px;
-		border-radius: 999px;
+		border-radius: 16px;
 		background: rgba(255, 255, 255, 0.78);
 		-webkit-backdrop-filter: blur(16px) saturate(1.4);
 		backdrop-filter: blur(16px) saturate(1.4);
@@ -689,7 +689,7 @@ footer .ar-flink.ar-flink-tel:hover {
 
 /* ── Header mobile, proposition B (validée par Bastien le 03/10/2026) ──────
    Planche : claude.ai/artifact/6EsXncSWJiR4GsprRRCe42.
-   Logo à gauche (40 px, 34 en pilule), téléphone cerclé 44 px, bouton jaune
+   Logo à gauche (40 px, 34 en pilule), téléphone 44 px (carré arrondi depuis le 03/10), bouton jaune
    « Menu » 44 px avec une icône NOIRE à traits égaux (pas de trait turquoise :
    il ne se lit pas sur le jaune). Tout se fait en CSS, l'ordre des widgets
    du template 1284 n'est pas touché : la grille est réordonnée par `order`.
@@ -717,13 +717,13 @@ footer .ar-flink.ar-flink-tel:hover {
 		order: 3;
 	}
 
-	/* Téléphone : cercle de 44 px. Adversaire : `.ar-mob-ic .elementor-icon`
+	/* Téléphone : carré arrondi de 44 px (rayon 8 px, charte des boutons, 03/10/2026 ; c était un cercle). Adversaire : `.ar-mob-ic .elementor-icon`
 	   (0,2,0) qui retire bordure et fond, d'où (0,3,0) ici. */
 	.ar-hdr .ar-mob-tel .elementor-icon {
 		width: 44px;
 		height: 44px;
 		border: 1px solid #dfe3e3;
-		border-radius: 50%;
+		border-radius: 8px;
 		font-size: 20px;
 		background: #fff;
 	}
@@ -742,7 +742,7 @@ footer .ar-flink.ar-flink-tel:hover {
 		stroke: #0f8584 !important;
 	}
 
-	/* Menu : pastille jaune « Menu ». L'icône d'origine (traits décroissants,
+	/* Menu : bouton jaune « Menu », coins arrondis de 8 px comme les boutons du site (03/10/2026). L'icône d'origine (traits décroissants,
 	   bicolore) est masquée ; l'icône noire est un masque CSS sur ::before. */
 	.ar-hdr .ar-mob-burger .elementor-icon {
 		display: inline-flex;
@@ -750,7 +750,7 @@ footer .ar-flink.ar-flink-tel:hover {
 		gap: 8px;
 		height: 44px;
 		padding: 0 16px 0 14px;
-		border-radius: 999px;
+		border-radius: 8px;
 		background: #ffbd20;
 		font-size: 22px;
 		transition: background .2s ease;
@@ -805,7 +805,7 @@ footer .ar-flink.ar-flink-tel:hover {
 		gap: 8px;
 		height: 44px;
 		padding: 0 16px 0 14px;
-		border-radius: 999px;
+		border-radius: 8px;
 		background: #ffbd20;
 	}
 	.ar-hdr .ar-mob-jetburger .jet-mobile-menu__toggle-icon {
@@ -916,11 +916,11 @@ footer .ar-flink.ar-flink-tel:hover {
 .ar-mi-badge {
 	display: inline-flex;
 	align-items: center;
-	padding: 3px 9px;
-	border-radius: 999px;
+	padding: 2px 7px;
+	border-radius: 6px;
 	background: #ffbd2e;
 	color: #1a1a1a;
-	font-size: 12px;
+	font-size: 10px;
 	font-weight: 800;
 	letter-spacing: 0.04em;
 	line-height: 1.4;
