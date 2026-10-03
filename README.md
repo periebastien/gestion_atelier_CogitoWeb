@@ -9,4 +9,8 @@ Deux plugins WordPress à installer ensemble sur un site WooCommerce + Elementor
 - **kojito-acompte-produit/** — acomptes par produit WooCommerce et paiement du
   solde.
 
+- **gacct-module-clubs/** (facultatif, 03/10/2026) : commandes groupées des
+  clubs. Se branche uniquement sur les prises d'extension du socle
+  (includes/gacct-extensions.php) ; désactivé, le site garde son comportement.
+
 Déploiement : copier les deux dossiers dans `wp-content/plugins/` et activer.
