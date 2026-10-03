@@ -148,3 +148,9 @@
 	.gcl-cards td.first { display: block; text-align: left; }
 	.gcl-cards td.first::before { display: none; }
 }
+
+/* Écran de connexion intégré à une page (entete="non") : l'écran du socle
+   porte une marge haute de 32 px pensée pour une page seule ; dans une carte
+   elle laisse un grand vide au-dessus du bouton Google. */
+.gcl--login .gacct-login { margin-top: 0; }
+.gcl-login-intro { margin: 0 0 22px; font-size: 16px; line-height: 1.55; color: var(--gcl-ink2); text-align: center; }

@@ -28,7 +28,9 @@ function gacct_clubs_request_shortcode( $atts = array() ) {
 		// Retour exact sur cette page après identification ou création du compte.
 		$_GET['redirect_to'] = home_url( add_query_arg( array() ) ) . '#demande-club';
 		return '<div class="gcl gcl--login">'
-			. ( $with_head ? '<div class="gcl-head"><div><h1>Révision groupée de votre club</h1><p>Indiquez d’abord votre adresse e-mail : vous suivrez ensuite la commande de votre club depuis votre espace client.</p></div></div>' : '' )
+			. ( $with_head
+				? '<div class="gcl-head"><div><h1>Révision groupée de votre club</h1><p>Indiquez d’abord votre adresse e-mail : vous suivrez ensuite la commande de votre club depuis votre espace client.</p></div></div>'
+				: '<p class="gcl-login-intro">Commencez par votre adresse e-mail. Vous suivrez ensuite la demande de votre club depuis votre espace client.</p>' )
 			. gacct_login_ui_render( 'compte' ) . '</div>';
 	}
 
