@@ -909,21 +909,25 @@ footer .ar-flink.ar-flink-tel:hover {
    menu « Menu mobile site » (<span class="ar-mi-badge">) ; pour l enlever,
    remettre le titre de l entrée à « Clubs ». Texte en petites capitales :
    exempté du plancher de 16 px. */
-.ar-mi-club > a {
-	align-items: center;
-	gap: 10px;
+/* Pastille en EXPOSANT (Bastien, 03/10/2026) : 9 px, calée sur la ligne haute
+   du libellé « Clubs ». 9 px est le plus petit qui reste net (à 8 px l accent
+   du « À » se tasse et le texte bave sur les écrans de densité moyenne). */
+.ar-mi-club > a.elementor-item {
+	align-items: flex-start !important;
+	gap: 4px !important;
 }
 .ar-mi-badge {
 	display: inline-flex;
 	align-items: center;
-	padding: 2px 7px;
-	border-radius: 6px;
+	margin-top: -7px;
+	padding: 2px 5px;
+	border-radius: 4px;
 	background: #ffbd2e;
 	color: #1a1a1a;
-	font-size: 10px;
+	font-size: 9px;
 	font-weight: 800;
-	letter-spacing: 0.04em;
-	line-height: 1.4;
+	letter-spacing: 0.05em;
+	line-height: 1.25;
 	text-transform: uppercase;
 	white-space: nowrap;
 }
