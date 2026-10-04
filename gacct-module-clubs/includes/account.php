@@ -266,6 +266,8 @@ function gacct_clubs_account_detail( array $lot ) {
 					<div class="gcl-card <?php echo $order->is_paid() ? '' : 'is-hy'; ?>">
 						<div><?php if ( ! $order->is_paid() ) : ?><div class="gcl-eyebrow" style="color:#a06d00">À faire maintenant</div><?php endif; ?><h2><?php echo esc_html( $order->is_paid() ? 'Facture du club réglée' : 'Facture du club à régler' ); ?> <small>N° <?php echo esc_html( $order->get_order_number() ); ?></small></h2></div>
 						<?php if ( ! $order->is_paid() ) : ?><p>Le matériel repart dès réception du paiement, en un seul envoi vers le club.</p><?php endif; ?>
+						<?php $payeur = trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ); ?>
+						<p class="gcl-note">Facture au nom de <?php echo esc_html( $order->get_billing_company() ); ?><?php echo $payeur ? esc_html( ', à l’attention de ' . $payeur ) : ''; ?>.</p>
 						<div class="gcl-tbl">
 							<table class="gcl-inv">
 								<thead><tr><th>Prestation</th><th class="r">Montant</th></tr></thead>
@@ -278,7 +280,11 @@ function gacct_clubs_account_detail( array $lot ) {
 							</table>
 						</div>
 						<?php if ( ! $order->is_paid() ) : ?>
-							<div class="gcl-row"><a class="gcl-btn" href="<?php echo esc_url( $order->get_checkout_payment_url() ); ?>">Régler la facture</a><span class="gcl-note">Paiement par carte ou par virement.</span></div>
+							<?php if ( (int) $order->get_customer_id() === get_current_user_id() ) : ?>
+								<div class="gcl-row"><a class="gcl-btn" href="<?php echo esc_url( $order->get_checkout_payment_url() ); ?>">Régler la facture</a><span class="gcl-note">Paiement par carte ou par virement.</span></div>
+							<?php else : // Règle de Bastien (04/10/2026) : seule la personne qui a fait la demande règle la facture. ?>
+								<p class="gcl-note">Le règlement se fait depuis le compte de <?php echo esc_html( $payeur ? $payeur : 'la personne qui a fait la demande' ); ?>, qui a reçu la facture par e-mail.</p>
+							<?php endif; ?>
 						<?php endif; ?>
 					</div>
 				<?php endif; ?>
