@@ -399,8 +399,7 @@ body:not(.page-id-1274) .ar-actus .elementor-post__read-more {
 
 /* Preuve sociale du hero, ordinateur et tablette : le chiffre (.ar-trust-txt) passe toujours sous les
    avis, centré. Avant, il ne passait dessous que si le texte était assez long pour forcer le retour
-   (Contrôles, « +600 voiles / an », restait à côté). Bastien, 04/10/2026. */
-@media (min-width: 768px) {
-	.ar-hero-trust { flex-wrap: wrap !important; }
-	.ar-hero-trust > .ar-trust-txt { flex-basis: 100% !important; width: 100% !important; text-align: center; }
-}
+   (Contrôles, « +600 voiles / an », restait à côté). Bastien, 04/10/2026. Puis même jour : visible aussi
+   en mobile (hide_mobile retiré) et ajoutée à l accueil (b7a1e30), donc règle sur tous écrans. */
+.ar-hero-trust { flex-wrap: wrap !important; }
+.ar-hero-trust > .ar-trust-txt { flex-basis: 100% !important; width: 100% !important; text-align: center; }
