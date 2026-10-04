@@ -867,11 +867,17 @@ footer .ar-flink.ar-flink-tel:hover {
 }
 
 @media (max-width: 767px) {
-	/* Gouttières de 16 px en haut de page (alignées sur le contenu) ; la
-	   pilule garde ses 10 px pour flotter, comme les panneaux. */
+	/* Gouttière unique du site sur mobile (04/10/2026, Bastien) : fluide de
+	   16 px (375 px de large et moins) à 24 px (412 px et plus), la même pour
+	   le header, toutes les pages (Tarifs comprise) et le pied de page
+	   (lisibilite.css, section « Gabarit mobile »). La pilule garde ses 10 px
+	   pour flotter, comme les panneaux. */
+	:root {
+		--ar-gut: clamp(16px, calc(21.6vw - 65px), 24px);
+	}
 	.ar-hdr .ar-hdr-in {
 		grid-template-columns: minmax(0, 1fr) auto auto;
-		width: calc(100% - 32px);
+		width: calc(100% - 2 * var(--ar-gut));
 	}
 	.ar-hdr .ar-brand img {
 		height: 40px;
