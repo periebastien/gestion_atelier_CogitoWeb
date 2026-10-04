@@ -97,7 +97,7 @@ function gacct_clubs_account_list( array $clubs ) {
 		<?php foreach ( $clubs as $c ) : ?>
 			<div class="gcl-card">
 				<div class="gcl-row" style="justify-content:space-between"><h2><?php echo esc_html( $c['nom'] ); ?></h2><span class="gcl-note">Une information à corriger ? Contactez l’atelier.</span></div>
-				<div class="gcl-form" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+				<div class="gcl-form gcl-form-3 gcl-clubinfo">
 					<div><label>Adresse</label><?php echo esc_html( $c['adresse'] ? $c['adresse'] : '–' ); ?></div>
 					<div><label>E-mail du club</label><?php echo esc_html( $c['email'] ? $c['email'] : '–' ); ?></div>
 					<div><label>Responsables</label><?php echo esc_html( implode( ', ', array_map( static function ( $u ) use ( $user ) {
@@ -127,7 +127,7 @@ function gacct_clubs_account_list( array $clubs ) {
 						<td data-l="État"><span class="gcl-badge <?php echo esc_attr( $st[1] ); ?>"><?php echo esc_html( $st[0] ); ?></span></td>
 						<td data-l="Voiles" class="num"><?php echo esc_html( $c['voiles'] . ' / ' . ( (int) $l['nb_ip'] + (int) $l['nb_rp'] ) ); ?></td>
 						<td data-l="Secours" class="num"><?php echo esc_html( $c['secours'] . ' / ' . (int) $l['nb_secours'] ); ?></td>
-						<td data-l="Facture" class="num"><?php echo $order ? wp_kses_post( wc_price( $order->get_total() ) ) . '<span class="sub">' . esc_html( $order->is_paid() ? 'Réglée' : 'À régler' ) . '</span>' : '<span class="sub">À la fin de l’intervention</span>'; ?></td>
+						<td data-l="Facture" class="num"><span class="gcl-val"><?php echo $order ? wp_kses_post( wc_price( $order->get_total() ) ) . '<span class="sub">' . esc_html( $order->is_paid() ? 'Réglée' : 'À régler' ) . '</span>' : '<span class="sub">À la fin de l’intervention</span>'; ?></span></td>
 						<td><a class="gcl-btn is-ghost is-sm" href="<?php echo esc_url( $url ); ?>">Voir</a></td>
 					</tr>
 				<?php endforeach; ?>

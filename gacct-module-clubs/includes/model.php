@@ -252,10 +252,12 @@ function gacct_clubs_generate_code( array $lot ) {
 	$first_day = $lot['jours'] ? array_key_first( $lot['jours'] ) : current_time( 'Y-m-d' );
 	$code      = substr( $base, 0, 10 ) . substr( (string) $first_day, 2, 2 );
 	$try       = $code;
-	$n         = 2;
+	$n         = 1;
 
+	// Commandes suivantes de la même année : FALAISES26B, FALAISES26C… (un chiffre collé à l'année se lisait mal).
 	while ( (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . gacct_clubs_table( 'club_lots' ) . ' WHERE code = %s AND id <> %d', $try, $lot['id'] ) ) > 0 ) {
-		$try = $code . $n++;
+		$try = $code . ( $n < 26 ? chr( 65 + $n ) : $n );
+		$n++;
 	}
 
 	return $try;
@@ -316,7 +318,16 @@ function gacct_clubs_date_label( $ymd, $format = 'j F Y' ) {
 		return '';
 	}
 	$d = DateTimeImmutable::createFromFormat( '!Y-m-d', substr( (string) $ymd, 0, 10 ), wp_timezone() );
-	return $d ? wp_date( $format, $d->getTimestamp() ) : '';
+	if ( ! $d ) {
+		return '';
+	}
+	// « M » sortait en anglais (« Sep », « Oct ») : abréviations françaises usuelles, échappées pour le format.
+	if ( false !== strpos( $format, 'M' ) ) {
+		$abbr   = apply_filters( 'gacct_clubs_month_abbr', array( 1 => 'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.' ) );
+		$chars  = preg_split( '//u', $abbr[ (int) $d->format( 'n' ) ], -1, PREG_SPLIT_NO_EMPTY );
+		$format = str_replace( 'M', '\\' . implode( '\\', $chars ), $format );
+	}
+	return wp_date( $format, $d->getTimestamp() );
 }
 
 /** « 12 novembre 2026 » ou « du 12 au 14 novembre 2026 ». */
