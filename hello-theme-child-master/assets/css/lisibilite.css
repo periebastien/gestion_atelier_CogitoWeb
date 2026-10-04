@@ -388,3 +388,11 @@ body:not(.page-id-1274) .ar-actus .elementor-post__read-more {
 	width: 20px !important;
 	height: 20px !important;
 }
+
+/* Bloc « Pourquoi passer par notre site » (.ar-booking), mobile : 32 px entre le bouton et
+   les cartes (seul Contrôles avait une marge), icône et texte des cartes centrés. 04/10/2026. */
+@media (max-width: 767px) {
+	.ar-booking .elementor-widget-button { margin-bottom: 32px !important; }
+	.ar-booking .elementor-widget-icon-box .elementor-icon-box-wrapper { text-align: center !important; }
+	.ar-booking .elementor-widget-icon-box .elementor-icon-box-icon { display: flex !important; justify-content: center; margin-left: auto !important; margin-right: auto !important; }
+}
