@@ -170,11 +170,13 @@ body:not(.page-id-1274) .ar-actus .elementor-post__read-more {
    preuve sociale) occupe toute la hauteur visible sous le header : 100svh
    moins 85 px (header 69 px + marge haute de la section 16 px). C'est un
    minimum : sur un petit écran dont le contenu dépasse déjà, rien ne change.
-   Révision (Bastien) : la colonne n'est plus centrée, sinon l'espace en trop
-   d'un grand écran s'accumulait sous la preuve sociale (jusqu'à 186 px avant
-   la photo). La preuve sociale reste en bas, suivie d'un écart normal et fixe
-   (56 px jusqu'à la photo) ; l'espace libre se répartit À PARTS ÉGALES
-   au-dessus du sur-titre et entre l'intro et les boutons (marges auto).
+   Répartition (Bastien, option A) : l'espace libre se partage en TROIS
+   PARTS ÉGALES, au-dessus du sur-titre, entre l'intro et les boutons, et
+   sous la preuve sociale jusqu'au bas de l'écran (marges auto sur le
+   premier enfant, sur .ar-hero-ctas et sur un ::after vide). Chaque espace
+   vaut 32 px + sa part, donc les trois sont toujours identiques ; sur un
+   petit écran sans espace libre, il reste 32 px partout. La photo commence
+   pile au bas de l'écran : elle apparaît au premier défilement.
    Typographie fluide sur la largeur ET la hauteur : sur-titre 12 → 14 px,
    titre 36 → 50 px (lignes équilibrées), intro 16 → 19 px.
    Classes posées dans Elementor : ar-hero-txt (pages à CTA et collage),
@@ -188,14 +190,19 @@ body:not(.page-id-1274) .ar-actus .elementor-post__read-more {
 	body:not(.page-id-1274) .e-con.ar-hero-txt {
 		min-height: calc(100svh - 85px);
 		justify-content: flex-start !important;
-		padding-top: 16px !important;
-		padding-bottom: 8px !important;
+		padding-top: 16px !important; /* + 16 px de la section = 32 */
+		padding-bottom: 0 !important;
 	}
-	/* Écart vertical du hero entre la colonne texte et la photo : 48 px partout
-	   (sur les pages de service, 0 d écart et une marge de 32 px sur la colonne
-	   photo), soit 8 + 48 = 56 px sous la preuve sociale. */
+	body:not(.page-id-1274) .e-con.ar-hero-txt::after {
+		content: "";
+		flex: none;
+		height: 32px;
+		margin-top: auto;
+	}
+	/* Rien entre la colonne texte et la photo : la photo démarre au bas de
+	   l'écran (les pages de service portaient 32 px de marge sur la photo). */
 	body:not(.page-id-1274) :is(.e-con, .e-con-inner):has(> .ar-hero-txt) {
-		row-gap: 48px !important;
+		row-gap: 0 !important;
 	}
 	body:not(.page-id-1274) .ar-hero-txt + .e-con {
 		margin-top: 0 !important;
@@ -205,7 +212,7 @@ body:not(.page-id-1274) .ar-actus .elementor-post__read-more {
 	}
 	body:not(.page-id-1274) .ar-hero-txt > .ar-hero-ctas {
 		margin-top: auto !important;
-		padding-top: clamp(24px, 4svh, 36px);
+		padding-top: 22px; /* + 10 px de marge du bouton = 32 */
 	}
 	body:not(.page-id-1274) :is(.ar-hero-txt, .ar-hero-court) > .elementor-widget-heading:first-child .elementor-heading-title {
 		font-size: clamp(12px, min(3.3vw, 1.7svh), 14px) !important;
@@ -228,8 +235,8 @@ body:not(.page-id-1274) .ar-actus .elementor-post__read-more {
 		margin-top: clamp(20px, 4svh, 36px) !important;
 	}
 
-	/* Pages régions : après la preuve sociale, 20 + 28 (écart de grille)
-	   + 8 (marge de la photo) = 56 px jusqu'à la photo. */
+	/* Pages régions : même répartition en trois parts égales, photo au bas
+	   de l'écran (écart de grille et marge de la photo annulés). */
 	body .ar-region-hero {
 		padding-top: 16px;
 	}
@@ -238,7 +245,20 @@ body:not(.page-id-1274) .ar-actus .elementor-post__read-more {
 		display: flex;
 		flex-direction: column;
 		justify-content: flex-start;
-		padding: 16px 0 20px;
+		padding: 16px 0 0;
+	}
+	body .ar-region-hero-text::after {
+		content: "";
+		order: 3; /* après les boutons (1) et la preuve sociale (2) */
+		flex: none;
+		height: 32px;
+		margin-top: auto;
+	}
+	body .ar-region-hero-in {
+		row-gap: 0;
+	}
+	body .ar-region-hero-media {
+		margin-top: 0;
 	}
 	body .ar-region-eyebrow {
 		margin-top: auto;
@@ -252,7 +272,7 @@ body:not(.page-id-1274) .ar-actus .elementor-post__read-more {
 		text-wrap: balance;
 	}
 	body .ar-region-intro {
-		margin-bottom: 0;
+		margin-bottom: 0 !important;
 		font-size: clamp(16px, min(4.5vw, 2.3svh), 19px);
 		line-height: 1.6;
 	}
@@ -261,7 +281,7 @@ body:not(.page-id-1274) .ar-actus .elementor-post__read-more {
 		flex-direction: column;
 		gap: 10px;
 		margin-top: auto;
-		padding-top: clamp(24px, 4svh, 36px);
+		padding-top: 32px;
 	}
 	body .ar-region-badge {
 		order: 2;
