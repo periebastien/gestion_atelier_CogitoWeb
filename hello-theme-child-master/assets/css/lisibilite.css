@@ -315,3 +315,55 @@ body:not(.page-id-1274) .ar-actus .elementor-post__read-more {
 		padding-right: var(--ar-gut);
 	}
 }
+
+/* ── Étiquette posée sur la photo du hero, mobile (04/10/2026) ───────────
+   Bastien : sur mobile, l étiquette (« Depuis 2010 », « Élastiques neufs »,
+   « 40 €/h TTC », « À partir de 12 € ») tombait sous le collage (Pliages,
+   Réparations : flottante seulement sur ordinateur), sous la vidéo
+   (Suspentes), ou dépassait de 20 px à gauche (accueil). Règle commune :
+   l icône-box qui suit la colonne texte du hero devient compacte (icône à
+   gauche, texte à droite), posée à 12 px du bord gauche de la photo
+   principale et débordant de 20 px sous elle ; elle couvre 10 à 14 % de
+   l image (la vidéo de Suspentes garde son bouton lecture libre). La
+   colonne photo prend 20 px de marge basse pour ce débord. Ordinateur et
+   tablette inchangés. Tarifs (1274) exclu.
+   ────────────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+	body:not(.page-id-1274) .ar-hero-txt + .e-con {
+		position: relative;
+		padding-bottom: 20px !important;
+	}
+	body:not(.page-id-1274) .ar-hero-txt + .e-con > .elementor-widget-icon-box {
+		position: absolute !important;
+		left: 12px !important;
+		right: auto !important;
+		top: auto !important;
+		bottom: 0 !important;
+		width: auto !important;
+		max-width: calc(100% - 24px) !important;
+		margin: 0 !important;
+		z-index: 5;
+	}
+	body:not(.page-id-1274) .ar-hero-txt + .e-con > .elementor-widget-icon-box > .elementor-widget-container {
+		padding: 10px 16px 10px 10px !important;
+	}
+	body:not(.page-id-1274) .ar-hero-txt + .e-con > .elementor-widget-icon-box .elementor-icon-box-wrapper {
+		display: flex !important;
+		flex-direction: row !important;
+		align-items: center !important;
+		gap: 12px;
+		text-align: left !important;
+	}
+	body:not(.page-id-1274) .ar-hero-txt + .e-con > .elementor-widget-icon-box .elementor-icon-box-icon {
+		margin: 0 !important;
+		flex: none;
+	}
+	body:not(.page-id-1274) .ar-hero-txt + .e-con > .elementor-widget-icon-box .elementor-icon-box-title {
+		margin: 0 !important;
+		line-height: 1.25 !important;
+	}
+	body:not(.page-id-1274) .ar-hero-txt + .e-con > .elementor-widget-icon-box .elementor-icon-box-description {
+		margin: 0 !important;
+		line-height: 1.3 !important;
+	}
+}
