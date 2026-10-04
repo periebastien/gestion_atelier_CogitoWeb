@@ -164,3 +164,78 @@ body:not(.page-id-1274) .ar-actus .elementor-post__excerpt p,
 body:not(.page-id-1274) .ar-actus .elementor-post__read-more {
 	font-size: 16px !important;
 }
+
+/* ── Hero mobile plein écran (04/10/2026) ─────────────────────────────────
+   Sur téléphone, la colonne texte du hero (sur-titre, titre, intro, boutons,
+   preuve sociale) occupe toute la hauteur visible sous le header : 100svh
+   moins 85 px (header 69 px + marge haute de la section 16 px). C'est un
+   minimum : sur un petit écran dont le contenu dépasse déjà, rien ne change.
+   Le titre et l'intro sont fluides (36 → 46 px et 16 → 18 px selon la
+   largeur), les espacements grandissent avec la hauteur de l'écran.
+   Classes posées dans Elementor : ar-hero-txt (pages à CTA et collage),
+   ar-hero-court (Contact, Actualités : typographie seule, sans pleine
+   hauteur pour ne pas repousser le formulaire ou les articles).
+   Pages régions (gabarit de l'extension) : mêmes règles sur leurs classes,
+   et boutons remis au-dessus de la preuve sociale comme sur l'accueil.
+   Tarifs (1274) exclu.
+   ────────────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+	body:not(.page-id-1274) .e-con.ar-hero-txt {
+		min-height: calc(100svh - 85px);
+		justify-content: center !important;
+		padding-top: 24px !important;
+		padding-bottom: 40px !important;
+	}
+	body:not(.page-id-1274) :is(.ar-hero-txt, .ar-hero-court) h1.elementor-heading-title {
+		font-size: clamp(36px, 10.6vw, 46px) !important;
+		line-height: 1.06 !important;
+		letter-spacing: -0.01em;
+	}
+	body:not(.page-id-1274) :is(.ar-hero-txt, .ar-hero-court) > .elementor-widget-heading:has(h1) {
+		margin: 14px 0 clamp(16px, 3svh, 28px) !important;
+	}
+	body:not(.page-id-1274) :is(.ar-hero-txt, .ar-hero-court) > :not(.ar-hero-ctas):not(.elementor-widget-heading) :is(p, li) {
+		font-size: clamp(16px, 4.2vw, 18px) !important;
+		line-height: 1.6 !important;
+	}
+	body:not(.page-id-1274) .ar-hero-txt > .ar-hero-ctas {
+		margin-top: clamp(16px, 4svh, 40px) !important;
+	}
+	body:not(.page-id-1274) .ar-hero-txt .ar-hero-trust {
+		margin-top: clamp(20px, 4svh, 36px) !important;
+	}
+
+	/* Pages régions */
+	body .ar-region-hero {
+		padding-top: 16px;
+	}
+	body .ar-region-hero-text {
+		min-height: calc(100svh - 85px);
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		padding: 24px 0 40px;
+	}
+	body .ar-region-h1 {
+		margin: 14px 0 clamp(16px, 3svh, 28px);
+		font-size: clamp(36px, 10.6vw, 46px);
+		line-height: 1.06;
+	}
+	body .ar-region-intro {
+		margin-bottom: 0;
+		font-size: clamp(16px, 4.2vw, 18px);
+		line-height: 1.6;
+	}
+	body .ar-region-cta-row {
+		order: 1;
+		flex-direction: column;
+		gap: 10px;
+		margin-top: clamp(16px, 4svh, 40px);
+	}
+	body .ar-region-badge {
+		order: 2;
+		display: flex;
+		justify-content: center;
+		margin: clamp(20px, 4svh, 36px) 0 0;
+	}
+}

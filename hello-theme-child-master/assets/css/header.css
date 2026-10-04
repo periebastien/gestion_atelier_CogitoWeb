@@ -265,6 +265,16 @@
 .ar-acc .elementor-nav-menu--main .elementor-nav-menu > li > a.elementor-item {
 	justify-content: flex-start;
 }
+/* Entrées du tiroir en taille fluide (04/10/2026) : 18 px sur un grand
+   téléphone, jusqu'à 16 px sur un écran bas (iPhone SE, 667 px : le tiroir y
+   tient tout juste). Calée sur la HAUTEUR, qui est la vraie contrainte :
+   16 px à 680 px de haut et moins, 18 px à 760 px et plus. L'espace vertical
+   suit (14 → 16 px). */
+.ar-hdr .ar-acc .elementor-nav-menu--main .elementor-nav-menu > li > a.elementor-item {
+	font-size: clamp(16px, calc(2.5svh - 1px), 18px) !important;
+	padding-top: clamp(14px, calc(2.5svh - 3px), 16px) !important;
+	padding-bottom: clamp(14px, calc(2.5svh - 3px), 16px) !important;
+}
 
 /* ── Header de l'espace client (template 30) ───────────────────────────────
    Il porte les mêmes classes que le header public et hérite donc de tout ce
