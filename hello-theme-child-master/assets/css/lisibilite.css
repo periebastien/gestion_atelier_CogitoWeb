@@ -165,13 +165,18 @@ body:not(.page-id-1274) .ar-actus .elementor-post__read-more {
 	font-size: 16px !important;
 }
 
-/* ── Hero mobile plein écran (04/10/2026) ─────────────────────────────────
+/* ── Hero mobile plein écran (04/10/2026, révisé le même jour) ────────────
    Sur téléphone, la colonne texte du hero (sur-titre, titre, intro, boutons,
    preuve sociale) occupe toute la hauteur visible sous le header : 100svh
    moins 85 px (header 69 px + marge haute de la section 16 px). C'est un
    minimum : sur un petit écran dont le contenu dépasse déjà, rien ne change.
-   Le titre et l'intro sont fluides (36 → 46 px et 16 → 18 px selon la
-   largeur), les espacements grandissent avec la hauteur de l'écran.
+   Révision (Bastien) : la colonne n'est plus centrée, sinon l'espace en trop
+   d'un grand écran s'accumulait sous la preuve sociale (jusqu'à 186 px avant
+   la photo). La preuve sociale reste en bas, suivie d'un écart normal et fixe
+   (56 px jusqu'à la photo) ; l'espace libre se répartit À PARTS ÉGALES
+   au-dessus du sur-titre et entre l'intro et les boutons (marges auto).
+   Typographie fluide sur la largeur ET la hauteur : sur-titre 12 → 14 px,
+   titre 36 → 50 px (lignes équilibrées), intro 16 → 19 px.
    Classes posées dans Elementor : ar-hero-txt (pages à CTA et collage),
    ar-hero-court (Contact, Actualités : typographie seule, sans pleine
    hauteur pour ne pas repousser le formulaire ou les articles).
@@ -182,30 +187,49 @@ body:not(.page-id-1274) .ar-actus .elementor-post__read-more {
 @media (max-width: 767px) {
 	body:not(.page-id-1274) .e-con.ar-hero-txt {
 		min-height: calc(100svh - 85px);
-		justify-content: center !important;
-		padding-top: 24px !important;
-		padding-bottom: clamp(48px, 9svh, 80px) !important;
+		justify-content: flex-start !important;
+		padding-top: 16px !important;
+		padding-bottom: 8px !important;
+	}
+	/* Écart vertical du hero entre la colonne texte et la photo : 48 px partout
+	   (sur les pages de service, 0 d écart et une marge de 32 px sur la colonne
+	   photo), soit 8 + 48 = 56 px sous la preuve sociale. */
+	body:not(.page-id-1274) :is(.e-con, .e-con-inner):has(> .ar-hero-txt) {
+		row-gap: 48px !important;
+	}
+	body:not(.page-id-1274) .ar-hero-txt + .e-con {
+		margin-top: 0 !important;
+	}
+	body:not(.page-id-1274) .ar-hero-txt > :first-child {
+		margin-top: auto !important;
+	}
+	body:not(.page-id-1274) .ar-hero-txt > .ar-hero-ctas {
+		margin-top: auto !important;
+		padding-top: clamp(24px, 4svh, 36px);
+	}
+	body:not(.page-id-1274) :is(.ar-hero-txt, .ar-hero-court) > .elementor-widget-heading:first-child .elementor-heading-title {
+		font-size: clamp(12px, min(3.3vw, 1.7svh), 14px) !important;
+		line-height: 1.45 !important; /* sur-titre sur deux lignes (Réparations, Suspentes) */
 	}
 	body:not(.page-id-1274) :is(.ar-hero-txt, .ar-hero-court) h1.elementor-heading-title {
-		font-size: clamp(36px, 10.6vw, 46px) !important;
+		font-size: clamp(36px, min(11.4vw, 6svh), 50px) !important;
 		line-height: 1.06 !important;
 		letter-spacing: -0.01em;
+		text-wrap: balance;
 	}
 	body:not(.page-id-1274) :is(.ar-hero-txt, .ar-hero-court) > .elementor-widget-heading:has(h1) {
 		margin: 14px 0 clamp(16px, 3svh, 28px) !important;
 	}
 	body:not(.page-id-1274) :is(.ar-hero-txt, .ar-hero-court) > :not(.ar-hero-ctas):not(.elementor-widget-heading) :is(p, li) {
-		font-size: clamp(16px, 4.2vw, 18px) !important;
+		font-size: clamp(16px, min(4.5vw, 2.3svh), 19px) !important;
 		line-height: 1.6 !important;
-	}
-	body:not(.page-id-1274) .ar-hero-txt > .ar-hero-ctas {
-		margin-top: clamp(16px, 4svh, 40px) !important;
 	}
 	body:not(.page-id-1274) .ar-hero-txt .ar-hero-trust {
 		margin-top: clamp(20px, 4svh, 36px) !important;
 	}
 
-	/* Pages régions */
+	/* Pages régions : après la preuve sociale, 20 + 28 (écart de grille)
+	   + 8 (marge de la photo) = 56 px jusqu'à la photo. */
 	body .ar-region-hero {
 		padding-top: 16px;
 	}
@@ -213,24 +237,31 @@ body:not(.page-id-1274) .ar-actus .elementor-post__read-more {
 		min-height: calc(100svh - 85px);
 		display: flex;
 		flex-direction: column;
-		justify-content: center;
-		padding: 24px 0 clamp(48px, 9svh, 80px);
+		justify-content: flex-start;
+		padding: 16px 0 20px;
+	}
+	body .ar-region-eyebrow {
+		margin-top: auto;
+		font-size: clamp(12px, min(3.3vw, 1.7svh), 14px);
+		line-height: 1.45;
 	}
 	body .ar-region-h1 {
 		margin: 14px 0 clamp(16px, 3svh, 28px);
-		font-size: clamp(36px, 10.6vw, 46px);
+		font-size: clamp(36px, min(11.4vw, 6svh), 50px);
 		line-height: 1.06;
+		text-wrap: balance;
 	}
 	body .ar-region-intro {
 		margin-bottom: 0;
-		font-size: clamp(16px, 4.2vw, 18px);
+		font-size: clamp(16px, min(4.5vw, 2.3svh), 19px);
 		line-height: 1.6;
 	}
 	body .ar-region-cta-row {
 		order: 1;
 		flex-direction: column;
 		gap: 10px;
-		margin-top: clamp(16px, 4svh, 40px);
+		margin-top: auto;
+		padding-top: clamp(24px, 4svh, 36px);
 	}
 	body .ar-region-badge {
 		order: 2;
