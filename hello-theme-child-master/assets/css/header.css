@@ -244,6 +244,18 @@
 .ar-wa .elementor-button-icon svg {
 	stroke: none;
 }
+/* Tiroir mobile (04/10/2026) : « Demande d'intervention » seule en haut, pleine
+   largeur ; « Mon compte » et « Contact » partagent la rangée du dessous.
+   Boutons à 16 px (plancher de lisibilité, ils étaient à 15) ; libellés sur une
+   ligne et marges latérales réduites pour que « Mon compte » et son icône
+   tiennent dans une demi-rangée dès 360 px. */
+.ar-hdr .ar-drawer-btn .elementor-button {
+	font-size: 16px !important; /* le widget pose 15 px en (0,4,0) */
+	padding-inline: 12px !important;
+}
+.ar-hdr .ar-drawer-btn .elementor-button-text {
+	white-space: nowrap;
+}
 
 /* Liste du tiroir : un filet sous chaque entrée. Scopé à `--main` comme la nav
    desktop, pour ne pas toucher le <ul> déroulant que le widget rend aussi. */
