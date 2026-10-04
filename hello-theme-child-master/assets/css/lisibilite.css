@@ -403,3 +403,15 @@ body:not(.page-id-1274) .ar-actus .elementor-post__read-more {
    en mobile (hide_mobile retiré) et ajoutée à l accueil (b7a1e30), donc règle sur tous écrans. */
 .ar-hero-trust { flex-wrap: wrap !important; }
 .ar-hero-trust > .ar-trust-txt { flex-basis: 100% !important; width: 100% !important; text-align: center; }
+
+/* Contact (1276), cartes .ar-cc : icône à cheval sur le trait haut comme .ar-card-iconline
+   (64 px, 21 px au-dessus, alignée sur la marge de 28 px), remplissage turquoise au survol.
+   translate et non transform : la classe d apparition pilote déjà transform. Bastien, 04/10/2026. */
+.e-con.ar-cc { position: relative; overflow: visible; padding-top: 64px !important; }
+.e-con.ar-cc > .elementor-widget-icon { position: absolute !important; top: 0; left: 28px; width: auto !important; margin: 0 !important; transform: none !important; translate: 0 -21px; line-height: 0; z-index: 2; }
+.e-con.ar-cc > .elementor-widget-icon .elementor-icon { display: grid; place-items: center; width: 64px !important; height: 64px !important; padding: 0 !important; font-size: 30px !important; border-radius: 16px !important; background-color: #fff !important; border: 1px solid rgba(0,0,0,.08); transition: background-color .2s, border-color .2s; }
+.e-con.ar-cc > .elementor-widget-icon .elementor-icon svg { width: 30px; height: 30px; transition: filter .2s; }
+.e-con.ar-cc:hover > .elementor-widget-icon .elementor-icon { background-color: #20c4c3 !important; border-color: #20c4c3; }
+.e-con.ar-cc:hover > .elementor-widget-icon .elementor-icon svg { filter: brightness(0) invert(1); }
+.e-con:has(> .e-con.ar-cc) { margin-top: 22px; }
+@media (max-width: 767px) { .e-con:has(> .e-con.ar-cc) { row-gap: 48px !important; } }
