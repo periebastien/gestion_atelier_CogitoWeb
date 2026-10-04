@@ -15,6 +15,32 @@ add_filter( 'gacct_op_console_views', static function ( $views ) {
 	return $views;
 } );
 
+/*
+ * Entrée « Clubs » du menu Gestion Atelier (Bastien, 04/10/2026), placée après
+ * Planning, avec la pastille native de WordPress pour les demandes à traiter.
+ */
+add_action( 'admin_menu', static function () {
+	if ( ! defined( 'GACCT_OP_MENU_SLUG' ) ) {
+		return;
+	}
+	global $wpdb;
+	$n     = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . gacct_clubs_table( 'club_lots' ) . ' WHERE statut = %s', 'demande' ) );
+	$label = __( 'Clubs', 'gacct-module-clubs' );
+	if ( $n ) {
+		$label .= sprintf( ' <span class="awaiting-mod count-%1$d"><span class="pending-count">%1$d</span></span>', $n );
+	}
+	add_submenu_page( GACCT_OP_MENU_SLUG, __( 'Clubs', 'gacct-module-clubs' ), $label, gacct_clubs_op_cap(), 'admin.php?page=' . GACCT_OP_MENU_SLUG . '&view=clubs', '', 4 );
+}, 20 );
+
+// Surligne « Clubs » (et non « Aujourd'hui ») quand l'onglet est ouvert.
+add_filter( 'submenu_file', static function ( $file ) {
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( defined( 'GACCT_OP_MENU_SLUG' ) && isset( $_GET['page'], $_GET['view'] ) && GACCT_OP_MENU_SLUG === $_GET['page'] && 'clubs' === $_GET['view'] ) {
+		return 'admin.php?page=' . GACCT_OP_MENU_SLUG . '&view=clubs';
+	}
+	return $file;
+} );
+
 function gacct_clubs_console_url( $lot_id = 0, array $extra = array() ) {
 	$args = array_merge( array( 'view' => 'clubs' ), $lot_id ? array( 'lot' => absint( $lot_id ) ) : array(), $extra );
 	return function_exists( 'gacct_op_console_url' ) ? gacct_op_console_url( 0, $args ) : add_query_arg( array_merge( array( 'page' => 'gacct-console' ), $args ), admin_url( 'admin.php' ) );

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Gestion Atelier : commandes groupées des clubs
  * Description: Module complémentaire de Gestion Atelier. Un responsable de club demande une révision groupée, l'atelier réserve les jours et génère un code club, chaque pilote inscrit sa voile sans acompte avec le formulaire habituel, puis l'atelier facture le club en une seule commande et réexpédie le lot.
- * Version: 1.0.0
+ * Version: 1.0.2
  * Requires Plugins: gestion-atelier-cct
  * Author: CogitoWeb
  *
@@ -34,7 +34,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'GACCT_CLUBS_VERSION', '1.0.1' );
+define( 'GACCT_CLUBS_VERSION', '1.0.2' );
 define( 'GACCT_CLUBS_DB_VERSION', '1' );
 define( 'GACCT_CLUBS_DIR', __DIR__ );
 define( 'GACCT_CLUBS_URL', plugin_dir_url( __FILE__ ) );
