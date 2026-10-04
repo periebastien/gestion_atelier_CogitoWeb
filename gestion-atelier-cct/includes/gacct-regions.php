@@ -101,7 +101,7 @@ function gacct_regions_data() {
 			'h1'       => 'Révision de parapente en Normandie',
 			'h1_html'  => 'Révision de parapente <em>en Normandie</em>',
 			'hero_img' => 2239,
-			'intro'    => 'Notre atelier n’est pas installé n’importe où : Route des Crêtes, à Clécy, au pied du plus haut décollage du Nord-Ouest de la France. Les voiles que nous révisons, nous les voyons voler. Si vous êtes normand, vous êtes chez vous ici — la plupart de nos clients de la région déposent leur matériel en main propre et repartent avec les explications qui vont avec.',
+			'intro'    => 'Notre atelier n’est pas installé n’importe où : Route des Crêtes, à Clécy, au pied du plus haut décollage du Nord-Ouest de la France. Les voiles que nous révisons, nous les voyons voler. Si vous êtes normand, vous êtes chez vous ici : la plupart de nos clients de la région déposent leur matériel en main propre et repartent avec les explications qui vont avec.',
 			'stat_local' => array( 'value' => '1 765', 'label' => 'révisions en Normandie depuis 2019' ),
 			'depts'    => array(
 				array( 'Calvados', '676' ),
@@ -114,12 +114,12 @@ function gacct_regions_data() {
 				array(
 					'eyebrow' => 'L’atelier',
 					'h2'   => 'Un atelier au bord du décollage',
-					'html' => '<p>La Suisse Normande est le terrain de jeu du vol libre normand : Clécy et ses deux décollages, Pont-d’Ouilly, les rochers de la vallée de l’Orne. Nous sommes à quelques minutes de tout ça — un contrôle déposé le matin, une discussion sur le calage de votre aile, et vous savez précisément où elle en est.</p><p>Pour les pilotes du Calvados, l’atelier est à une petite heure de Caen.</p>',
+					'html' => '<p>La Suisse Normande est le terrain de jeu du vol libre normand : Clécy et ses deux décollages, Pont-d’Ouilly, les rochers de la vallée de l’Orne. Nous sommes à quelques minutes de tout ça : un contrôle déposé le matin, une discussion sur le calage de votre aile, et vous savez précisément où elle en est.</p><p>Pour les pilotes du Calvados, l’atelier est à une petite heure de Caen.</p>',
 				),
 				array(
 					'eyebrow' => 'Air marin',
 					'h2'   => 'Voler en bord de mer use les voiles plus vite',
-					'html' => '<p>Une grande partie du vol normand se fait au-dessus de l’eau : le soaring côtier du Bessin (Commes, Tracy-sur-Mer, Vierville-sur-Mer), les falaises et dunes du Nord-Cotentin gérées par Cotentin Vol Libre (Carteret, Diélette, Biville, la baie d’Écalgrain, Le Rozel), les sites du Sud-Manche autour de Granville, Champeaux et Carolles.</p><p>Le sel et le sable ne pardonnent pas. Ils s’infiltrent dans le tissu, attaquent les suspentes, accélèrent la perte de porosité. Une voile qui vole régulièrement en bord de mer mérite un contrôle plus attentif qu’une voile de montagne — et c’est précisément ce que mesure le protocole PARACHECK : porosité, résistance des suspentes, état des coutures, calage.</p>',
+					'html' => '<p>Une grande partie du vol normand se fait au-dessus de l’eau : le soaring côtier du Bessin (Commes, Tracy-sur-Mer, Vierville-sur-Mer), les falaises et dunes du Nord-Cotentin gérées par Cotentin Vol Libre (Carteret, Diélette, Biville, la baie d’Écalgrain, Le Rozel), les sites du Sud-Manche autour de Granville, Champeaux et Carolles.</p><p>Le sel et le sable ne pardonnent pas. Ils s’infiltrent dans le tissu, attaquent les suspentes, accélèrent la perte de porosité. Une voile qui vole régulièrement en bord de mer mérite un contrôle plus attentif qu’une voile de montagne, et c’est précisément ce que mesure le protocole PARACHECK : porosité, résistance des suspentes, état des coutures, calage.</p>',
 				),
 			),
 			'access'   => array(
@@ -152,7 +152,7 @@ function gacct_regions_data() {
 			'h1'       => 'Révision de parapente en Bretagne',
 			'h1_html'  => 'Révision de parapente <em>en Bretagne</em>',
 			'hero_img' => 2240,
-			'intro'    => 'Voler en Bretagne, c’est voler au-dessus de la mer. Le Menez Hom, Tréfeuntec, les falaises de Plouézec : l’essentiel de la pratique bretonne se joue en dynamique côtière, sur du granit et du sable, dans un air chargé de sel. C’est un régime d’usure particulier — et c’est exactement ce qu’un contrôle PARACHECK sait mesurer.',
+			'intro'    => 'Voler en Bretagne, c’est voler au-dessus de la mer. Le Menez Hom, Tréfeuntec, les falaises de Plouézec : l’essentiel de la pratique bretonne se joue en dynamique côtière, sur du granit et du sable, dans un air chargé de sel. C’est un régime d’usure particulier, et c’est exactement ce qu’un contrôle PARACHECK sait mesurer.',
 			'stat_local' => array( 'value' => '671', 'label' => 'révisions pour des pilotes bretons' ),
 			'depts'    => array(
 				array( 'Côtes-d’Armor', '249' ),
@@ -170,12 +170,12 @@ function gacct_regions_data() {
 				array(
 					'eyebrow' => 'Usure côtière',
 					'h2'   => 'Sel, sable et porosité',
-					'html' => '<p>Une voile bretonne prend le sel à chaque vol. Le sel est hygroscopique : il retient l’humidité au cœur du tissu, et le sable agit comme un abrasif dans les caissons et sur les gaines de suspentes. Résultat : une perte de porosité et une baisse de résistance des lignes plus rapides que sur une voile qui ne vole qu’en montagne.</p><p>Notre contrôle mesure ces deux points précisément — porosimètre sur plusieurs zones de l’extrados, test de résistance sur les suspentes prélevées, inspection complète des coutures et du calage. Vous repartez avec un rapport chiffré, pas avec une impression.</p>',
+					'html' => '<p>Une voile bretonne prend le sel à chaque vol. Le sel est hygroscopique : il retient l’humidité au cœur du tissu, et le sable agit comme un abrasif dans les caissons et sur les gaines de suspentes. Résultat : une perte de porosité et une baisse de résistance des lignes plus rapides que sur une voile qui ne vole qu’en montagne.</p><p>Notre contrôle mesure ces deux points précisément : porosimètre sur plusieurs zones de l’extrados, test de résistance sur les suspentes prélevées, inspection complète des coutures et du calage. Vous repartez avec un rapport chiffré, pas avec une impression.</p>',
 				),
 			),
 			'access'   => array(
 				'title' => 'Expédiez votre voile, c’est la voie normale',
-				'intro' => 'Pour la plupart des pilotes bretons, l’envoi est la solution évidente — et c’est un parcours que nous faisons tourner tous les jours. Vous réservez votre créneau en ligne, vous connaissez la date de prise en charge avant même d’expédier, vous suivez votre colis à l’aller comme au retour, et vous recevez votre rapport de contrôle avec la voile.',
+				'intro' => 'Pour la plupart des pilotes bretons, l’envoi est la solution évidente, et c’est un parcours que nous faisons tourner tous les jours. Vous réservez votre créneau en ligne, vous connaissez la date de prise en charge avant même d’expédier, vous suivez votre colis à l’aller comme au retour, et vous recevez votre rapport de contrôle avec la voile.',
 				'rows'  => array(
 					array( 'Rennes', '≈ 2 h 15' ),
 					array( 'Saint-Brieuc', '≈ 2 h 40' ),
@@ -191,7 +191,7 @@ function gacct_regions_data() {
 			'faq'      => array(
 				array( 'q' => 'Combien de temps ma voile est-elle immobilisée ?', 'a' => 'En réservant un créneau, vous limitez l’immobilisation au strict nécessaire : la voile est traitée à la date prévue.' ),
 				array( 'q' => 'Comment emballer ma voile pour l’envoi ?', 'a' => 'Dans son sac, en carton fermé. Nous renvoyons systématiquement en colis suivi et protégé.' ),
-				array( 'q' => 'Puis-je faire réviser mon secours en même temps ?', 'a' => 'Oui — pliage et contrôle de parachute de secours font partie de nos prestations, et cela évite un second envoi.' ),
+				array( 'q' => 'Puis-je faire réviser mon secours en même temps ?', 'a' => 'Oui : pliage et contrôle de parachute de secours font partie de nos prestations, et cela évite un second envoi.' ),
 			),
 		),
 
@@ -203,7 +203,7 @@ function gacct_regions_data() {
 			'h1'       => 'Révision de parapente en Pays de la Loire',
 			'h1_html'  => 'Révision de parapente <em>en Pays de la Loire</em>',
 			'hero_img' => 2241,
-			'intro'    => 'En Pays de la Loire, on ne décolle pas d’une pente : on décolle au treuil. C’est une pratique à part, avec ses contraintes propres — et des sollicitations mécaniques que le contrôle d’une voile doit savoir regarder.',
+			'intro'    => 'En Pays de la Loire, on ne décolle pas d’une pente : on décolle au treuil. C’est une pratique à part, avec ses contraintes propres, et des sollicitations mécaniques que le contrôle d’une voile doit savoir regarder.',
 			'stat_local' => array( 'value' => '368', 'label' => 'révisions pour des pilotes ligériens' ),
 			'depts'    => array(
 				array( 'Loire-Atlantique', '150' ),
@@ -221,7 +221,7 @@ function gacct_regions_data() {
 				array(
 					'eyebrow' => 'Contraintes mécaniques',
 					'h2'   => 'Ce que le treuil impose à une voile',
-					'html' => '<p>Un décollage au treuil, ce n’est pas une course sur une pente : c’est une traction franche appliquée d’un coup à l’ensemble du suspentage, plusieurs fois par journée de vol. Les points d’ancrage, les élévateurs, les suspentes hautes et les coutures d’attache travaillent différemment — et plus durement — que sur un vol de pente.</p><p>Un contrôle PARACHECK mesure la résistance réelle des suspentes par test de rupture, vérifie le calage complet et l’intégrité des coutures. Sur une voile treuillée régulièrement, ce n’est pas une formalité.</p>',
+					'html' => '<p>Un décollage au treuil, ce n’est pas une course sur une pente : c’est une traction franche appliquée d’un coup à l’ensemble du suspentage, plusieurs fois par journée de vol. Les points d’ancrage, les élévateurs, les suspentes hautes et les coutures d’attache travaillent différemment (et plus durement) que sur un vol de pente.</p><p>Un contrôle PARACHECK mesure la résistance réelle des suspentes par test de rupture, vérifie le calage complet et l’intégrité des coutures. Sur une voile treuillée régulièrement, ce n’est pas une formalité.</p>',
 				),
 			),
 			'access'   => array(
@@ -253,7 +253,7 @@ function gacct_regions_data() {
 			'h1'       => 'Révision de parapente en Île-de-France',
 			'h1_html'  => 'Révision de parapente <em>en Île-de-France</em>',
 			'hero_img' => 2239,
-			'intro'    => 'L’Île-de-France est la région où l’on est le plus nombreux à voler, et celle où l’on vole le moins près de chez soi. Pas de relief : du treuil, quelques pentes-écoles, et des week-ends passés ailleurs. Votre matériel voyage déjà beaucoup — le faire réviser ne devrait pas être une contrainte de plus.',
+			'intro'    => 'L’Île-de-France est la région où l’on est le plus nombreux à voler, et celle où l’on vole le moins près de chez soi. Pas de relief : du treuil, quelques pentes-écoles, et des week-ends passés ailleurs. Votre matériel voyage déjà beaucoup : le faire réviser ne devrait pas être une contrainte de plus.',
 			'stat_local' => array( 'value' => '919', 'label' => 'révisions pour des pilotes franciliens' ),
 			'depts'    => array(
 				array( 'Yvelines', '277' ),
@@ -271,12 +271,12 @@ function gacct_regions_data() {
 				array(
 					'eyebrow' => 'Transport & pliages',
 					'h2'   => 'Une voile qui roule beaucoup',
-					'html' => '<p>Le pilote francilien type plie sa voile le vendredi soir, la déplie dans les Alpes ou le Massif central, et recommence. Ce n’est pas le vol qui use le plus, c’est le reste : pliages répétés, sac chargé, coffre chaud en plein été, humidité résiduelle quand on remballe sous la pluie.</p><p>Le contrôle mesure l’état réel du tissu et des suspentes — porosité, résistance à la rupture, coutures, calage — indépendamment du nombre d’heures que vous croyez avoir fait.</p>',
+					'html' => '<p>Le pilote francilien type plie sa voile le vendredi soir, la déplie dans les Alpes ou le Massif central, et recommence. Ce n’est pas le vol qui use le plus, c’est le reste : pliages répétés, sac chargé, coffre chaud en plein été, humidité résiduelle quand on remballe sous la pluie.</p><p>Le contrôle mesure l’état réel du tissu et des suspentes (porosité, résistance à la rupture, coutures, calage), indépendamment du nombre d’heures que vous croyez avoir fait.</p>',
 				),
 			),
 			'access'   => array(
 				'title' => 'L’envoi, sans y penser',
-				'intro' => 'Certains pilotes déposent leur voile en passant, sur la route de la Normandie ou d’un week-end à la côte. Les autres l’expédient — c’est la solution la plus simple, et la plus courante. Vous réservez votre créneau en ligne, vous savez quand votre voile sera prise en charge, vous suivez le colis dans les deux sens, et vous récupérez un rapport de contrôle complet.',
+				'intro' => 'Certains pilotes déposent leur voile en passant, sur la route de la Normandie ou d’un week-end à la côte. Les autres l’expédient : c’est la solution la plus simple, et la plus courante. Vous réservez votre créneau en ligne, vous savez quand votre voile sera prise en charge, vous suivez le colis dans les deux sens, et vous récupérez un rapport de contrôle complet.',
 				'rows'  => array(
 					array( 'Paris (A13)', '≈ 2 h 30' ),
 					array( 'Versailles', '≈ 2 h 15' ),
@@ -289,7 +289,7 @@ function gacct_regions_data() {
 				array( 'quote' => 'J’ai récupéré ma voile d’une révision périodique, et j’ai à la fin de celle-ci un rapport détaillé, le matériel respecté délicatement rangé, un colis proprement emballé.', 'author' => 'Ludo Is', 'date' => 'mai 2025' ),
 			),
 			'faq'      => array(
-				array( 'q' => 'Je peux déposer en passant ?', 'a' => 'Oui, sur rendez-vous — l’atelier est à Clécy, dans le Calvados, à environ 2 h 30 de Paris.' ),
+				array( 'q' => 'Je peux déposer en passant ?', 'a' => 'Oui, sur rendez-vous : l’atelier est à Clécy, dans le Calvados, à environ 2 h 30 de Paris.' ),
 				array( 'q' => 'Je vole surtout hors de la région, ça change quelque chose ?', 'a' => 'Non pour le contrôle lui-même. Dites-nous simplement où et comment vous volez, cela oriente notre lecture.' ),
 				array( 'q' => 'Puis-je faire contrôler sellette et secours en même temps ?', 'a' => 'Oui, un envoi unique suffit.' ),
 			),
@@ -316,7 +316,7 @@ function gacct_regions_data() {
 				array(
 					'eyebrow' => 'Sites & saison',
 					'h2'   => 'Une saison courte sur la côte, du treuil dans les terres',
-					'html' => '<p>Sur la Côte d’Opale, les falaises des Deux-Caps sont sous arrêtés préfectoraux de protection de biotope pris le 26 mars 2021 : au cap Blanc-Nez et à la pointe de la Crèche, le vol libre est interdit du 1ᵉʳ janvier au 31 août, pour protéger les colonies de mouettes tridactyles, de fulmars et de goélands.</p><p>Dans les terres, deux reliefs font exception, et ils sont très identitaires : le terril 11/19 de Loos-en-Gohelle, les deux plus hauts terrils d’Europe, et les collines d’Artois autour de La Comté et Bajus. Partout ailleurs — Nord, Oise, Somme, Aisne — on vole au treuil, sur des plateformes conventionnées.</p>',
+					'html' => '<p>Sur la Côte d’Opale, les falaises des Deux-Caps sont sous arrêtés préfectoraux de protection de biotope pris le 26 mars 2021 : au cap Blanc-Nez et à la pointe de la Crèche, le vol libre est interdit du 1ᵉʳ janvier au 31 août, pour protéger les colonies de mouettes tridactyles, de fulmars et de goélands.</p><p>Dans les terres, deux reliefs font exception, et ils sont très identitaires : le terril 11/19 de Loos-en-Gohelle, les deux plus hauts terrils d’Europe, et les collines d’Artois autour de La Comté et Bajus. Partout ailleurs (Nord, Oise, Somme, Aisne), on vole au treuil, sur des plateformes conventionnées.</p>',
 				),
 				array(
 					'eyebrow' => 'Le bon moment',
