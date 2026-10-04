@@ -124,11 +124,11 @@ function gacct_clubs_request_shortcode( $atts = array() ) {
 				</div>
 			</div>
 			<div class="gcl-palier">
-				<strong>Remise club</strong> sur les inspections, révisions et pliages : <?php echo esc_html( gacct_clubs_tiers_text() ); ?>. Aucune remise sur les suppléments et réparations. Une facture unique au nom du club, avec le détail par pilote.
+				<strong>Remise club</strong> sur les inspections, révisions et pliages : <?php echo esc_html( gacct_clubs_tiers_text() ); ?>. Aucune remise sur les suppléments et réparations. Une seule commande à régler au nom du club, avec le détail par pilote.
 			</div>
 			<div class="gcl-row">
 				<button type="submit" class="gcl-btn">Envoyer la demande</button>
-				<span class="gcl-note">Rien n’est réservé ni facturé à ce stade.</span>
+				<span class="gcl-note">Rien n’est réservé et rien n’est à payer à ce stade.</span>
 			</div>
 		</form>
 	</div>

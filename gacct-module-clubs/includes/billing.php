@@ -118,12 +118,12 @@ function gacct_clubs_invoice_preview( array $lot ) {
  */
 function gacct_clubs_create_invoice( array $lot, array $args = array() ) {
 	if ( (int) $lot['facture_order_id'] && wc_get_order( (int) $lot['facture_order_id'] ) ) {
-		return new WP_Error( 'exists', 'La facture du club existe déjà.' );
+		return new WP_Error( 'exists', 'La commande à régler du club existe déjà.' );
 	}
 
 	$prev = gacct_clubs_invoice_preview( $lot );
 	if ( ! $prev['lines'] ) {
-		return new WP_Error( 'empty', 'Aucune prestation à facturer pour ce lot.' );
+		return new WP_Error( 'empty', 'Aucune prestation à régler pour ce lot.' );
 	}
 
 	$rate = isset( $args['rate'] ) && '' !== (string) $args['rate'] ? max( 0, min( 100, (float) str_replace( ',', '.', (string) $args['rate'] ) ) ) : $prev['rate'];
@@ -181,7 +181,7 @@ function gacct_clubs_create_invoice( array $lot, array $args = array() ) {
 	$order->update_meta_data( GACCT_CLUBS_META_INVOICE, (int) $lot['id'] );
 	$order->calculate_totals();
 	$order->set_status( 'pending' );
-	$order->add_order_note( sprintf( 'Facture de la commande groupée %1$s (%2$s) : %3$d prestations, %4$d voiles, remise %5$s %%.', $lot['code'], $lot['nom'], count( $prev['lines'] ), $prev['voiles'], $rate ) );
+	$order->add_order_note( sprintf( 'Commande à régler de la commande groupée %1$s (%2$s) : %3$d prestations, %4$d voiles, remise %5$s %%.', $lot['code'], $lot['nom'], count( $prev['lines'] ), $prev['voiles'], $rate ) );
 	$order->save();
 
 	foreach ( $item_meta as $item_id => $metas ) {
@@ -249,7 +249,7 @@ function gacct_clubs_release_reports( array $lot ) {
 		}
 		$res = gacct_op_change_state( (int) $m['revision']['_ID'], 7, array(
 			'force'  => true,
-			'reason' => sprintf( 'Facture du club %s réglée (commande groupée %s).', $lot['nom'], $lot['code'] ),
+			'reason' => sprintf( 'Commande à régler du club %s réglée (commande groupée %s).', $lot['nom'], $lot['code'] ),
 		) );
 		if ( ! is_wp_error( $res ) ) {
 			$n++;
@@ -269,7 +269,7 @@ function gacct_clubs_release_reports( array $lot ) {
  */
 function gacct_clubs_ship_lot( array $lot, $carrier, $tracking ) {
 	if ( 'paye' !== $lot['statut'] && 'expedie' !== $lot['statut'] ) {
-		return new WP_Error( 'unpaid', 'La facture du club doit être réglée avant le retour du matériel.' );
+		return new WP_Error( 'unpaid', 'La commande du club doit être réglée avant le retour du matériel.' );
 	}
 
 	$carrier  = sanitize_key( $carrier );
@@ -321,8 +321,8 @@ function gacct_clubs_on_member_state6( $order, $revision_id ) {
 			return; // Encore des voiles en cours.
 		}
 	}
-	$subject = sprintf( 'Commande groupée %1$s (%2$s) : toutes les voiles sont terminées, facture à émettre', $lot['code'], $lot['nom'] );
-	$body    = '<p>Toutes les voiles de la commande groupée de <strong>' . esc_html( $lot['nom'] ) . '</strong> sont terminées.</p><p>Émettre la facture du club depuis la console : ' . esc_url( gacct_clubs_console_url( $lot_id ) ) . '</p>';
+	$subject = sprintf( 'Commande groupée %1$s (%2$s) : toutes les voiles sont terminées, commande à régler à créer', $lot['code'], $lot['nom'] );
+	$body    = '<p>Toutes les voiles de la commande groupée de <strong>' . esc_html( $lot['nom'] ) . '</strong> sont terminées.</p><p>Créer la commande à régler du club depuis la console : ' . esc_url( gacct_clubs_console_url( $lot_id ) ) . '</p>';
 	$html    = function_exists( 'gacct_render_email_html' ) ? gacct_render_email_html( $subject, $body ) : $body;
 	foreach ( function_exists( 'gacct_pay_admin_emails' ) ? (array) gacct_pay_admin_emails() : array( get_option( 'admin_email' ) ) as $to ) {
 		wp_mail( $to, $subject, $html, array( 'Content-Type: text/html; charset=UTF-8' ) );

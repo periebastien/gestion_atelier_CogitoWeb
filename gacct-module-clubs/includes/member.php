@@ -106,7 +106,7 @@ function gacct_clubs_banner_html() {
 		return '<div class="gacct-club-banner is-on" role="status">'
 			. '<p class="gacct-club-banner-eyebrow">Commande groupée · code ' . esc_html( $lot['code'] ) . '</p>'
 			. '<p class="gacct-club-banner-title">Vous inscrivez votre matériel à la révision groupée de ' . esc_html( $lot['nom'] ) . '</p>'
-			. '<p>Intervention ' . esc_html( gacct_clubs_period_label( $lot ) ) . '. Rien à payer : la facture est réglée par le club. Vous remettrez votre voile au club, qui envoie tout ensemble.'
+			. '<p>Intervention ' . esc_html( gacct_clubs_period_label( $lot ) ) . '. Rien à payer : c’est le club qui règle. Vous remettrez votre voile au club, qui envoie tout ensemble.'
 			. ( $deadline ? ' Inscriptions ouvertes jusqu’au ' . esc_html( $deadline ) . '.' : '' ) . '</p>'
 			. '<p class="gacct-club-banner-quit"><a href="' . $quit . '">Ce n’est pas une demande pour le club</a></p>'
 			. '</div>';
@@ -216,7 +216,7 @@ add_action( 'woocommerce_before_checkout_form', static function () {
 	$lot_id = gacct_clubs_session_lot_id();
 	$lot    = $lot_id ? gacct_clubs_get_lot( $lot_id ) : null;
 	if ( $lot ) {
-		wc_print_notice( sprintf( 'Commande groupée de %s : rien à payer, la facture est réglée par le club. Validez simplement votre demande.', esc_html( $lot['nom'] ) ), 'notice' );
+		wc_print_notice( sprintf( 'Commande groupée de %s : rien à payer, c’est le club qui règle. Validez simplement votre demande.', esc_html( $lot['nom'] ) ), 'notice' );
 	}
 }, 5 );
 
@@ -235,7 +235,7 @@ function gacct_clubs_on_order_linked( $order, $revision_id, $occupation_id ) {
 	}
 
 	$order->update_meta_data( GACCT_CLUBS_META_LOT, (int) $lot['id'] );
-	$order->add_order_note( sprintf( 'Commande groupée %1$s (%2$s) : dossier rattaché au lot, aucun acompte, facturé au club.', $lot['code'], $lot['nom'] ) );
+	$order->add_order_note( sprintf( 'Commande groupée %1$s (%2$s) : dossier rattaché au lot, aucun acompte, réglé par le club.', $lot['code'], $lot['nom'] ) );
 	$order->save();
 
 	if ( $revision_id ) {
@@ -300,7 +300,7 @@ function gacct_clubs_third_party( $tp, $order ) {
 
 	$thank = '<div class="conf"><div class="conf-eyebrow">Commande groupée · ' . esc_html( $lot['code'] ) . '</div>'
 		. '<h1 class="conf-h1">' . ( $name ? esc_html( sprintf( 'Merci %s, votre voile est inscrite', $name ) ) : 'Votre voile est inscrite' ) . '</h1>'
-		. '<p class="conf-sub">Révision groupée de <strong>' . esc_html( $lot['nom'] ) . '</strong>, ' . esc_html( gacct_clubs_period_label( $lot ) ) . '. Rien à payer : la facture est réglée par le club.</p>'
+		. '<p class="conf-sub">Révision groupée de <strong>' . esc_html( $lot['nom'] ) . '</strong>, ' . esc_html( gacct_clubs_period_label( $lot ) ) . '. Rien à payer : c’est le club qui règle.</p>'
 		. '<ol class="conf-sub" style="text-align:left;max-width:560px;margin:16px auto">'
 		. '<li><strong>Imprimez votre bon d’intervention.</strong> Il est indispensable : il identifie votre voile à l’atelier.</li>'
 		. '<li><strong>Remettez votre voile au club</strong>' . ( $remise ? ' avant le ' . esc_html( $remise ) : '' ) . ', avec le bon. Le club envoie tout ensemble.</li>'

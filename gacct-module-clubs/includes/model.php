@@ -19,8 +19,8 @@ function gacct_clubs_statuts() {
 	return apply_filters( 'gacct_clubs_statuts', array(
 		'demande'  => array( 'Demande reçue', 'b-n' ),
 		'planifie' => array( 'Planifiée', 'b-b' ),
-		'facture'  => array( 'Facture à régler', 'b-y' ),
-		'paye'     => array( 'Facture réglée', 'b-g' ),
+		'facture'  => array( 'Commande à régler', 'b-y' ),
+		'paye'     => array( 'Commande réglée', 'b-g' ),
 		'expedie'  => array( 'Matériel réexpédié', 'b-g' ),
 		'annule'   => array( 'Annulée', 'b-r' ),
 	) );

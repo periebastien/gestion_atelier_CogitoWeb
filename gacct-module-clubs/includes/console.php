@@ -195,7 +195,7 @@ function gacct_clubs_render_lot_screen( array $lot ) {
 
 	// 4. Facture.
 	if ( in_array( $lot['statut'], array( 'planifie', 'facture', 'paye', 'expedie' ), true ) && $members ) {
-		echo gacct_clubs_postbox( 'Facture du club', gacct_clubs_invoice_box( $lot, $members ) ); // phpcs:ignore WordPress.Security.EscapeOutput
+		echo gacct_clubs_postbox( 'Commande à régler', gacct_clubs_invoice_box( $lot, $members ) ); // phpcs:ignore WordPress.Security.EscapeOutput
 	}
 
 	// 5. Retour.
@@ -321,7 +321,7 @@ function gacct_clubs_members_table( array $lot, array $members, array $counts ) 
 			. '<td>' . ( $m['order'] ? '<a href="' . esc_url( $m['order']->get_edit_order_url() ) . '">' . esc_html( $m['order']->get_order_number() ) . '</a>' : '–' ) . '</td></tr>';
 	}
 	$h .= '</tbody></table>';
-	$h .= '<p class="description">Une voile mise en attente depuis sa fiche (matériaux à commander) sort du lot : elle n’est ni facturée ni renvoyée avec les autres.</p>';
+	$h .= '<p class="description">Une voile mise en attente depuis sa fiche (matériaux à commander) sort du lot : elle ne figure pas dans la commande à régler et n’est pas renvoyée avec les autres.</p>';
 	return $h;
 }
 
@@ -400,10 +400,10 @@ function gacct_clubs_invoice_box( array $lot, array $members ) {
 	$order = $lot['facture_order_id'] ? wc_get_order( (int) $lot['facture_order_id'] ) : null;
 
 	if ( $order ) {
-		$h  = '<p>Facture <a href="' . esc_url( $order->get_edit_order_url() ) . '"><strong>' . esc_html( $order->get_order_number() ) . '</strong></a> : ' . wp_kses_post( wc_price( $order->get_total() ) ) . ' · ' . esc_html( wc_get_order_status_name( $order->get_status() ) ) . '</p>';
+		$h  = '<p>Commande <a href="' . esc_url( $order->get_edit_order_url() ) . '"><strong>' . esc_html( $order->get_order_number() ) . '</strong></a> : ' . wp_kses_post( wc_price( $order->get_total() ) ) . ' · ' . esc_html( wc_get_order_status_name( $order->get_status() ) ) . '</p>';
 		$h .= '<p><code style="word-break:break-all">' . esc_html( $order->get_checkout_payment_url() ) . '</code></p>';
 		if ( ! $order->is_paid() ) {
-			$h .= gacct_clubs_post_form_open( 'gacct_clubs_invoice_resend', $id ) . '<p><button type="submit" class="button">Renvoyer la facture au responsable</button></p></form>';
+			$h .= gacct_clubs_post_form_open( 'gacct_clubs_invoice_resend', $id ) . '<p><button type="submit" class="button">Renvoyer la commande à régler au responsable</button></p></form>';
 			$h .= '<p class="description">Paiement par virement reçu ? Passez la commande en « En cours » dans WooCommerce : les rapports sont alors libérés et le lot peut repartir.</p>';
 		}
 		return $h;
@@ -427,7 +427,7 @@ function gacct_clubs_invoice_box( array $lot, array $members ) {
 	}
 
 	if ( $pending ) {
-		$h .= '<div class="notice notice-info inline"><p>' . esc_html( sprintf( '%d dossier(s) pas encore terminé(s). La facture se fait normalement quand toutes les voiles sont en état « intervention finie ».', count( $pending ) ) ) . '</p></div>';
+		$h .= '<div class="notice notice-info inline"><p>' . esc_html( sprintf( '%d dossier(s) pas encore terminé(s). La commande à régler se crée normalement quand toutes les voiles sont en état « intervention finie ».', count( $pending ) ) ) . '</p></div>';
 	}
 
 	if ( current_user_can( 'manage_woocommerce' ) ) {
@@ -442,8 +442,8 @@ function gacct_clubs_invoice_box( array $lot, array $members ) {
 		}
 		$h .= '</select></p>';
 		$h .= '<p><label for="gcl-rate">Remise (%)</label><br><input type="number" step="0.5" min="0" max="100" class="small-text" id="gcl-rate" name="rate" value="' . esc_attr( (string) $prev['rate'] ) . '"> <span class="description">calculée d’après le palier, modifiable</span></p>';
-		$h .= '<p><label><input type="checkbox" name="notify" value="1" checked> Envoyer la facture au responsable</label></p>';
-		$h .= '<p><button type="submit" class="button button-primary"' . ( $prev['lines'] ? '' : ' disabled' ) . '>Créer la facture du club</button></p></form>';
+		$h .= '<p><label><input type="checkbox" name="notify" value="1" checked> Envoyer la commande à régler au responsable</label></p>';
+		$h .= '<p><button type="submit" class="button button-primary"' . ( $prev['lines'] ? '' : ' disabled' ) . '>Créer la commande à régler du club</button></p></form>';
 	}
 
 	return $h;
@@ -621,14 +621,14 @@ add_action( 'admin_post_gacct_clubs_invoice', static function () {
 	if ( is_wp_error( $order ) ) {
 		gacct_clubs_back( $lot, $order->get_error_message(), true );
 	}
-	gacct_clubs_back( $lot, sprintf( 'Facture %s créée%s.', $order->get_order_number(), empty( $_POST['notify'] ) ? '' : ' et envoyée au responsable' ) );
+	gacct_clubs_back( $lot, sprintf( 'Commande à régler %s créée%s.', $order->get_order_number(), empty( $_POST['notify'] ) ? '' : ' et envoyée au responsable' ) );
 } );
 
 add_action( 'admin_post_gacct_clubs_invoice_resend', static function () {
 	$lot   = gacct_clubs_action_guard( 'gacct_clubs_invoice_resend' );
 	$order = wc_get_order( (int) $lot['facture_order_id'] );
 	$ok    = $order ? gacct_clubs_send_invoice_email( $lot, $order ) : false;
-	gacct_clubs_back( $lot, $ok ? 'Facture renvoyée.' : 'Envoi impossible.', ! $ok );
+	gacct_clubs_back( $lot, $ok ? 'Commande à régler renvoyée.' : 'Envoi impossible.', ! $ok );
 } );
 
 add_action( 'admin_post_gacct_clubs_ship', static function () {

@@ -26,7 +26,7 @@ function gacct_clubs_account_shortcode() {
 
 	if ( ! $clubs ) {
 		return '<div class="gcl"><div class="gcl-head"><div><h1>Mon club</h1><p>Vous n’êtes responsable d’aucun club pour l’instant.</p></div></div>'
-			. '<div class="gcl-card"><p>Vous organisez la révision du matériel de votre club, de votre école ou d’un groupe ? Envoyez une demande groupée : une seule facture pour le club, un créneau réservé, un suivi individuel pour chaque pilote.</p>'
+			. '<div class="gcl-card"><p>Vous organisez la révision du matériel de votre club, de votre école ou d’un groupe ? Envoyez une demande groupée : une seule commande à régler pour le club, un créneau réservé, un suivi individuel pour chaque pilote.</p>'
 			. '<p><a class="gcl-btn" href="' . esc_url( gacct_clubs_page_url( 'request_page' ) ) . '">Demander une révision groupée</a></p></div></div>';
 	}
 
@@ -109,7 +109,7 @@ function gacct_clubs_account_list( array $clubs ) {
 
 		<div class="gcl-tbl">
 			<table class="gcl-cards">
-				<thead><tr><th>Commande groupée</th><th>Intervention</th><th>État</th><th>Voiles</th><th>Secours</th><th>Facture</th><th></th></tr></thead>
+				<thead><tr><th>Commande groupée</th><th>Intervention</th><th>État</th><th>Voiles</th><th>Secours</th><th>Règlement</th><th></th></tr></thead>
 				<tbody>
 				<?php if ( ! $lots ) : ?>
 					<tr><td colspan="7">Aucune commande groupée pour l’instant.</td></tr>
@@ -127,7 +127,7 @@ function gacct_clubs_account_list( array $clubs ) {
 						<td data-l="État"><span class="gcl-badge <?php echo esc_attr( $st[1] ); ?>"><?php echo esc_html( $st[0] ); ?></span></td>
 						<td data-l="Voiles" class="num"><?php echo esc_html( $c['voiles'] . ' / ' . ( (int) $l['nb_ip'] + (int) $l['nb_rp'] ) ); ?></td>
 						<td data-l="Secours" class="num"><?php echo esc_html( $c['secours'] . ' / ' . (int) $l['nb_secours'] ); ?></td>
-						<td data-l="Facture" class="num"><span class="gcl-val"><?php echo $order ? wp_kses_post( wc_price( $order->get_total() ) ) . '<span class="sub">' . esc_html( $order->is_paid() ? 'Réglée' : 'À régler' ) . '</span>' : '<span class="sub">À la fin de l’intervention</span>'; ?></span></td>
+						<td data-l="Règlement" class="num"><span class="gcl-val"><?php echo $order ? wp_kses_post( wc_price( $order->get_total() ) ) . '<span class="sub">' . esc_html( $order->is_paid() ? 'Réglée' : 'À régler' ) . '</span>' : '<span class="sub">À la fin de l’intervention</span>'; ?></span></td>
 						<td><a class="gcl-btn is-ghost is-sm" href="<?php echo esc_url( $url ); ?>">Voir</a></td>
 					</tr>
 				<?php endforeach; ?>
@@ -151,7 +151,7 @@ function gacct_clubs_lot_display_state( array $lot, array $c ) {
 			}
 			return $c['recues'] ? array( 'En atelier', 'b-b' ) : array( 'Inscriptions closes, envoi attendu', 'b-o' );
 		case 'facture':
-			return array( 'Facture à régler', 'b-y' );
+			return array( 'Commande à régler', 'b-y' );
 		case 'paye':
 			return array( 'Retour en préparation', 'b-b' );
 		case 'expedie':
@@ -204,7 +204,7 @@ function gacct_clubs_account_detail( array $lot ) {
 		array( 'Inscriptions closes', '' ),
 		array( 'Colis reçu', $lot['limite_arrivee'] ? 'avant le ' . gacct_clubs_date_label( $lot['limite_arrivee'], 'j M' ) : '' ),
 		array( 'En atelier', $lot['jours'] ? gacct_clubs_period_label( $lot ) : '' ),
-		array( 'Facture à régler', '' ),
+		array( 'Commande à régler', '' ),
 		array( 'Matériel réexpédié', '' ),
 	);
 
@@ -239,7 +239,7 @@ function gacct_clubs_account_detail( array $lot ) {
 				<?php if ( 'demande' === $lot['statut'] ) : ?>
 					<div class="gcl-card is-hl">
 						<div><div class="gcl-eyebrow">Demande reçue</div><h2>L’atelier prépare votre créneau</h2></div>
-						<p>Nous revenons vers vous très vite avec la date de début d’intervention et le code à transmettre à vos membres. Rien n’est réservé ni facturé pour l’instant.</p>
+						<p>Nous revenons vers vous très vite avec la date de début d’intervention et le code à transmettre à vos membres. Rien n’est réservé et rien n’est à payer pour l’instant.</p>
 						<p>Annoncé : <?php echo esc_html( sprintf( '%d inspections partielles, %d révisions périodiques, %d secours.', (int) $lot['nb_ip'], (int) $lot['nb_rp'], (int) $lot['nb_secours'] ) ); ?></p>
 					</div>
 				<?php endif; ?>
@@ -264,10 +264,10 @@ function gacct_clubs_account_detail( array $lot ) {
 
 				<?php if ( $order ) : ?>
 					<div class="gcl-card <?php echo $order->is_paid() ? '' : 'is-hy'; ?>">
-						<div><?php if ( ! $order->is_paid() ) : ?><div class="gcl-eyebrow" style="color:#a06d00">À faire maintenant</div><?php endif; ?><h2><?php echo esc_html( $order->is_paid() ? 'Facture du club réglée' : 'Facture du club à régler' ); ?> <small>N° <?php echo esc_html( $order->get_order_number() ); ?></small></h2></div>
+						<div><?php if ( ! $order->is_paid() ) : ?><div class="gcl-eyebrow" style="color:#a06d00">À faire maintenant</div><?php endif; ?><h2><?php echo esc_html( $order->is_paid() ? 'Commande du club réglée' : 'Commande du club à régler' ); ?> <small>N° <?php echo esc_html( $order->get_order_number() ); ?></small></h2></div>
 						<?php if ( ! $order->is_paid() ) : ?><p>Le matériel repart dès réception du paiement, en un seul envoi vers le club.</p><?php endif; ?>
 						<?php $payeur = trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ); ?>
-						<p class="gcl-note">Facture au nom de <?php echo esc_html( $order->get_billing_company() ); ?><?php echo $payeur ? esc_html( ', à l’attention de ' . $payeur ) : ''; ?>.</p>
+						<p class="gcl-note">Commande au nom de <?php echo esc_html( $order->get_billing_company() ); ?><?php echo $payeur ? esc_html( ', à l’attention de ' . $payeur ) : ''; ?>.</p>
 						<div class="gcl-tbl">
 							<table class="gcl-inv">
 								<thead><tr><th>Prestation</th><th class="r">Montant</th></tr></thead>
@@ -281,9 +281,9 @@ function gacct_clubs_account_detail( array $lot ) {
 						</div>
 						<?php if ( ! $order->is_paid() ) : ?>
 							<?php if ( (int) $order->get_customer_id() === get_current_user_id() ) : ?>
-								<div class="gcl-row"><a class="gcl-btn" href="<?php echo esc_url( $order->get_checkout_payment_url() ); ?>">Régler la facture</a><span class="gcl-note">Paiement par carte ou par virement.</span></div>
-							<?php else : // Règle de Bastien (04/10/2026) : seule la personne qui a fait la demande règle la facture. ?>
-								<p class="gcl-note">Le règlement se fait depuis le compte de <?php echo esc_html( $payeur ? $payeur : 'la personne qui a fait la demande' ); ?>, qui a reçu la facture par e-mail.</p>
+								<div class="gcl-row"><a class="gcl-btn" href="<?php echo esc_url( $order->get_checkout_payment_url() ); ?>">Régler la commande</a><span class="gcl-note">Paiement par carte ou par virement.</span></div>
+							<?php else : // Règle de Bastien (04/10/2026) : seule la personne qui a fait la demande règle la commande. ?>
+								<p class="gcl-note">Le règlement se fait depuis le compte de <?php echo esc_html( $payeur ? $payeur : 'la personne qui a fait la demande' ); ?>, qui a reçu la commande à régler par e-mail.</p>
 							<?php endif; ?>
 						<?php endif; ?>
 					</div>
@@ -395,8 +395,8 @@ function gacct_clubs_account_detail( array $lot ) {
 
 				<?php if ( ! $order && 'demande' !== $lot['statut'] ) : ?>
 					<div class="gcl-card">
-						<h2>Facture</h2>
-						<p>Une facture unique au nom du club sera établie à la fin de l’intervention, avec le détail par membre. Le club la règle avant le retour du matériel.</p>
+						<h2>Règlement</h2>
+						<p>À la fin de l’intervention, une commande unique au nom du club sera à régler, avec le détail par membre. Le club la règle avant le retour du matériel.</p>
 					</div>
 				<?php endif; ?>
 
@@ -533,9 +533,9 @@ function gacct_clubs_dashboard_card( $html, $data ) {
 	foreach ( gacct_clubs_lots( array( 'user_id' => $uid, 'statut' => array( 'demande', 'planifie', 'facture' ) ) ) as $lot ) {
 		$c = gacct_clubs_lot_counts( $lot );
 		if ( 'facture' === $lot['statut'] ) {
-			$title = sprintf( 'Commande groupée de %s : facture à régler', $lot['nom'] );
+			$title = sprintf( 'Commande groupée de %s : commande à régler', $lot['nom'] );
 			$text  = 'Le matériel repart dès réception du paiement.';
-			$cta   = 'Voir la facture';
+			$cta   = 'Voir la commande à régler';
 		} elseif ( gacct_clubs_registrations_open( $lot ) ) {
 			$title = sprintf( 'Commande groupée du club : %1$d voiles inscrites sur %2$d', $c['voiles'], (int) $lot['nb_ip'] + (int) $lot['nb_rp'] );
 			$text  = $lot['limite_inscription'] ? sprintf( 'Inscriptions ouvertes jusqu’au %s. Pensez à relancer vos membres.', gacct_clubs_date_label( $lot['limite_inscription'], 'j F' ) ) : '';

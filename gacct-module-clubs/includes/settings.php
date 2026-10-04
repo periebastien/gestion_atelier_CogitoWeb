@@ -181,7 +181,7 @@ function gacct_clubs_render_config_tab() {
 	echo '</table>';
 
 	echo '<h2>Retour groupé</h2><table class="form-table">';
-	printf( '<tr><th><label for="product_retour">Produit de retour imposé aux pilotes</label></th><td><input type="number" min="0" class="small-text" id="product_retour" name="product_retour" value="%d"> <span class="description">%s. Le port du retour groupé est ajouté une seule fois sur la facture du club.</span></td></tr>', (int) $s['product_retour'], $prod( (int) $s['product_retour'] ) ); // phpcs:ignore WordPress.Security.EscapeOutput
+	printf( '<tr><th><label for="product_retour">Produit de retour imposé aux pilotes</label></th><td><input type="number" min="0" class="small-text" id="product_retour" name="product_retour" value="%d"> <span class="description">%s. Le port du retour groupé est ajouté une seule fois sur la commande à régler du club.</span></td></tr>', (int) $s['product_retour'], $prod( (int) $s['product_retour'] ) ); // phpcs:ignore WordPress.Security.EscapeOutput
 	echo '</table>';
 
 	echo '<h2>Délais</h2><table class="form-table">';
@@ -196,7 +196,7 @@ function gacct_clubs_render_config_tab() {
 	}
 	echo '</table>';
 
-	echo '<h2>Remise par paliers</h2><p>Sur le nombre de voiles du lot facturé. Les secours ne comptent pas dans le palier mais profitent du taux.</p><table class="widefat striped" style="max-width:420px"><thead><tr><th>À partir de (voiles)</th><th>Remise (%)</th></tr></thead><tbody>';
+	echo '<h2>Remise par paliers</h2><p>Sur le nombre de voiles de la commande à régler. Les secours ne comptent pas dans le palier mais profitent du taux.</p><table class="widefat striped" style="max-width:420px"><thead><tr><th>À partir de (voiles)</th><th>Remise (%)</th></tr></thead><tbody>';
 	for ( $i = 0; $i < 5; $i++ ) {
 		$t = isset( $s['tiers'][ $i ] ) ? $s['tiers'][ $i ] : array( 'min' => '', 'rate' => '' );
 		printf( '<tr><td><input type="number" min="0" class="small-text" name="tier_min[%1$d]" value="%2$s"></td><td><input type="text" class="small-text" name="tier_rate[%1$d]" value="%3$s"></td></tr>', $i, esc_attr( (string) $t['min'] ), esc_attr( (string) $t['rate'] ) );

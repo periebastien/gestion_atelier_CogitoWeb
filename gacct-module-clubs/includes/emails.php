@@ -62,7 +62,7 @@ function gacct_clubs_register_emails( $defaults ) {
 			'label'      => 'Clubs : inscription d’un pilote confirmée (remplace « Paiement reçu »)',
 			'subject'    => 'Votre voile est inscrite à la révision groupée de {club_name}',
 			'body'       => $p( 'Bonjour {customer_name},' )
-				. $p( 'Votre demande <strong>{order_number}</strong> est enregistrée dans la révision groupée de <strong>{club_name}</strong>, prévue {lot_dates}. Vous n’avez rien à payer : la facture est réglée par le club.' )
+				. $p( 'Votre demande <strong>{order_number}</strong> est enregistrée dans la révision groupée de <strong>{club_name}</strong>, prévue {lot_dates}. Vous n’avez rien à payer : c’est le club qui règle.' )
 				. '{work_order_block}'
 				. $p( '<strong>Ce qu’il vous reste à faire</strong>' )
 				. '<ol><li>Imprimez votre bon d’intervention. Il est indispensable : il identifie votre voile à l’atelier.</li><li>Remettez votre voile à votre club avec le bon, avant le {member_deadline}. Le club envoie toutes les voiles ensemble.</li></ol>'
@@ -83,13 +83,13 @@ function gacct_clubs_register_emails( $defaults ) {
 		'club_invoice'               => array(
 			'enabled'    => true,
 			'copy_admin' => true,
-			'label'      => 'Clubs : facture du club (au responsable)',
-			'subject'    => 'Facture de la révision groupée de {club_name} : {invoice_total}',
+			'label'      => 'Clubs : commande à régler du club (au responsable)',
+			'subject'    => 'Révision groupée de {club_name} : commande à régler ({invoice_total})',
 			'body'       => $p( 'Bonjour {contact_name},' )
-				. $p( 'L’intervention sur le matériel de <strong>{club_name}</strong> est terminée. Voici la facture du club, avec le détail par membre.' )
+				. $p( 'L’intervention sur le matériel de <strong>{club_name}</strong> est terminée. Voici la commande à régler du club, avec le détail par membre.' )
 				. '{invoice_lines}'
 				. $p( '<strong>Total à régler : {invoice_total}</strong>' )
-				. $p( 'Régler la facture : {payment_url}' )
+				. $p( 'Régler la commande : {payment_url}' )
 				. $p( 'Le matériel repart dès réception du paiement, en un seul envoi vers le club. Le détail est aussi dans votre espace client : {account_url}' )
 				. $p( 'L’équipe {site_name}<br>{contact_phone}' ),
 		),
@@ -164,7 +164,7 @@ function gacct_clubs_member_message( array $lot ) {
 	$lines[] = gacct_clubs_member_url_text( $lot );
 	$lines[] = sprintf( '(ou code club %s sur le formulaire de demande)', $lot['code'] );
 	$lines[] = '';
-	$lines[] = sprintf( 'Rien à payer : la facture est réglée par le club. Imprimez le bon d’intervention que vous recevrez par e-mail et remettez-le avec votre voile au club%s.', $remise ? ' avant le ' . $remise : '' );
+	$lines[] = sprintf( 'Rien à payer : c’est le club qui règle. Imprimez le bon d’intervention que vous recevrez par e-mail et remettez-le avec votre voile au club%s.', $remise ? ' avant le ' . $remise : '' );
 	$lines[] = '';
 	$lines[] = $lot['contact_nom'] ? explode( ' ', trim( $lot['contact_nom'] ) )[0] : '';
 
