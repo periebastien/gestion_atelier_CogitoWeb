@@ -80,7 +80,11 @@
 
 /* Segments faits (pages passées + page courante). */
 .gacct-v2 .jet-form-builder-progress-pages > div.passed-page,
-.gacct-v2 .jet-form-builder-progress-pages > div.active-page {
+.gacct-v2 .jet-form-builder-progress-pages > div.active-page,
+/* Étape d'identification (hors formulaire) : toujours faite. JetFormBuilder
+   réécrit les classes de TOUS les segments à chaque changement de page et lui
+   retirait passed-page (barre grise au retour sur l'étape 2, 05/10/2026). */
+.gacct-v2 .jet-form-builder-progress-pages > div.gacct-v2-progress-offset {
 	background: var(--v2-teal);
 }
 
