@@ -190,6 +190,10 @@ function gacct_demande_v2_config() {
 			// unique de leur groupe (ex. montage sur sellette avec un pliage de secours).
 			// Liste fournie par l'atelier via le filtre `gacct_demande_cumulables_ids`.
 			'cumulablesIds' => array_values( array_map( 'absint', (array) apply_filters( 'gacct_demande_cumulables_ids', array() ) ) ),
+			// 05/10/2026 (retour Hervé du 30/09) : travaux sur suspentes commandables
+			// SANS révision ni pliage. Désactivé par défaut (règle du 27/08/2026),
+			// l'atelier l'ouvre par le filtre `gacct_demande_suspentes_seules`.
+			'suspentesSeules' => (bool) apply_filters( 'gacct_demande_suspentes_seules', false ),
 			// Champs explicitement facultatifs : reçoivent la pastille « Facultatif »
 			// (l'étoile des champs requis étant peu lisible pour un néophyte).
 			'facultatifs' => array( 'numero_serie' ),
@@ -258,6 +262,7 @@ function gacct_demande_v2_config() {
 				'repairTitre'     => __( 'Besoin d’une réparation ?', 'gestion-atelier-cct' ),
 				'repairDesc'      => __( 'Nous examinons votre matériel à l’atelier, puis nous vous envoyons un devis détaillé par e-mail. Vous l’acceptez ou le refusez : <strong>rien n’est réparé sans votre accord.</strong>', 'gestion-atelier-cct' ),
 				'suspentesVerrou' => __( 'Choisissez d’abord une révision ou un pliage de secours : les travaux sur suspentes s’ajoutent à une intervention.', 'gestion-atelier-cct' ),
+				'suspentesSeulesNote' => __( 'Pas de révision à prévoir ? Vous pouvez commander une suspente seule : envoyez-nous uniquement la suspente abîmée, ou sa symétrique (la même suspente de l’autre côté de la voile) si elle est coupée. Nous la refaisons à l’identique.', 'gestion-atelier-cct' ),
 				'repairNote'      => __( 'Vous avez demandé un devis de réparation : inutile de choisir ici, l’atelier listera précisément ce qu’il faut remplacer.', 'gestion-atelier-cct' ),
 				'suppBiplace'     => __( '+ Supplément biplace : %s', 'gestion-atelier-cct' ),
 				// --- Navigation / autres étapes ---

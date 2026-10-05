@@ -2643,8 +2643,15 @@
 				}
 			} else {
 				// Second verrou, indépendant du devis : sans révision ni pliage de
-				// secours choisi, les suspentes restent fermées (règle du 27/08/2026).
-				var ouvert = interventionChoisie();
+				// secours choisi, les suspentes restent fermées (règle du 27/08/2026),
+				// sauf si l'atelier les autorise seules (v2.suspentesSeules, 05/10/2026) :
+				// la note devient alors la consigne d'envoi de la suspente.
+				var avecIntervention = interventionChoisie();
+				var ouvert           = !! v2.suspentesSeules || avecIntervention;
+
+				if ( noteVerrou && v2.suspentesSeules && v2i18n.suspentesSeulesNote ) {
+					noteVerrou.textContent = v2i18n.suspentesSeulesNote;
+				}
 
 				autres.forEach( function ( el ) {
 					// Une prestation décochée après coup ne doit pas laisser
@@ -2663,7 +2670,7 @@
 					noteDevis.hidden = true;
 				}
 				if ( noteVerrou ) {
-					noteVerrou.hidden = ouvert;
+					noteVerrou.hidden = avecIntervention || ( ouvert && ! v2.suspentesSeules );
 				}
 			}
 

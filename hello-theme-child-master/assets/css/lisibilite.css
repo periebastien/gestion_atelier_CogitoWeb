@@ -431,3 +431,6 @@ body:not(.page-id-1274) .ar-actus .elementor-post__read-more {
 /* Lien d action calé en bas des cartes .ar-cc, alignés d une carte à l autre (Bastien, 04/10/2026).
    La règle .ar-cc-sub flex-grow du kit est inopérante (sélecteur enregistré avec &gt;). */
 .e-con.ar-cc > .ar-cc-link { margin-top: auto !important; }
+/* Notes de l accordeon Suspentes du formulaire de demande (consigne suspente seule, devis) :
+   14,5 px dans le socle, plancher de 16 px du site (05/10/2026). */
+.gacct-v2 .gacct-v2-repair-note { font-size: 16px; }

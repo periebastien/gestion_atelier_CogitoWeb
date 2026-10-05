@@ -125,6 +125,14 @@ function gacct_pack_ar_cumulables_ids( $ids ) {
 }
 
 /* -----------------------------------------------------------------------------
+ * Formulaire de demande : suspentes commandables seules (05/10/2026, retour
+ * Hervé du 30/09). Un pilote qui ne veut qu'une suspente n'a plus à choisir
+ * une révision ; le formulaire lui dit d'envoyer la suspente ou sa symétrique.
+ * -------------------------------------------------------------------------- */
+
+add_filter( 'gacct_demande_suspentes_seules', '__return_true' );
+
+/* -----------------------------------------------------------------------------
  * 28/09/2026, retour Hervé du 15/09 : les points de porosité passent de l'ordre
  * du classeur (P4, P2, P1, P3) à l'ordre du schéma (P1, P2, P3, P4). Les mesures
  * étant stockées par INDEX dans data.porosity, les entrées enregistrées avant ce
