@@ -91,6 +91,29 @@ function gacct_op_render_quote_card( $revision_id, array $revision, $order, $sta
 		) ) . '</p>';
 	}
 
+	// ---- Devis demandé par le client mais inutile : dispense (état 3). ----
+	$waiver     = function_exists( 'gacct_quote_waiver' ) ? gacct_quote_waiver( $order ) : array();
+	$can_waive  = 3 === $state && '' === $sent_at && gacct_quote_order_has_devis_product( $order );
+
+	if ( $can_waive && $waiver ) {
+		echo '<p class="gacct-op-quote-status is-accepted">✓ ' . esc_html( sprintf(
+			/* translators: 1: date, 2: opérateur, 3: motif */
+			__( 'Pas de devis nécessaire (le %1$s par %2$s) : %3$s. Vous pouvez clore l\'intervention.', 'gestion-atelier-cct' ),
+			date_i18n( get_option( 'date_format' ) . ' H:i', strtotime( $waiver['at'] ) ),
+			'' !== (string) ( $waiver['by'] ?? '' ) ? $waiver['by'] : '?',
+			$waiver['reason'] ?? ''
+		) ) . ' <button type="button" class="button-link" data-op-action="quote-unwaive">' . esc_html__( 'Annuler', 'gestion-atelier-cct' ) . '</button></p>';
+	} elseif ( $can_waive ) {
+		echo '<p class="gacct-op-muted">' . esc_html__( 'Le client a demandé un devis. S\'il n\'est pas nécessaire, indiquez-le : vous pourrez clore l\'intervention sans rien lui envoyer.', 'gestion-atelier-cct' ) . '</p>';
+		echo '<div class="gacct-op-force">';
+		echo '<button type="button" class="button" data-op-action="toggle-force" aria-expanded="false">' . esc_html__( 'Pas de devis nécessaire…', 'gestion-atelier-cct' ) . '</button>';
+		echo '<div class="gacct-op-force-form" hidden>';
+		echo '<label class="gacct-op-label">' . esc_html__( 'Motif (obligatoire, journalisé)', 'gestion-atelier-cct' ) . '</label>';
+		echo '<textarea rows="2" data-op-field="waive-reason" placeholder="' . esc_attr__( 'Ex. : contrôle sans réparation à prévoir', 'gestion-atelier-cct' ) . '"></textarea>';
+		echo '<button type="button" class="button button-primary" data-op-action="quote-waive">' . esc_html__( 'Confirmer : pas de devis', 'gestion-atelier-cct' ) . '</button>';
+		echo '</div></div>';
+	}
+
 	// ---- Lignes du devis en cours (états 4+ : lecture). ----
 	if ( $extras ) {
 		echo '<ul class="gacct-op-items gacct-op-quote-lines">';
@@ -124,11 +147,16 @@ function gacct_op_render_quote_card( $revision_id, array $revision, $order, $sta
 			);
 		}
 
+		// Dispense posée : le formulaire reste accessible, replié.
+		$form_folded = 4 === $state || ( $can_waive && $waiver );
+
 		if ( 4 === $state ) {
 			echo '<button type="button" class="button" data-op-action="toggle-quote-form" aria-expanded="false">' . esc_html__( 'Modifier le devis…', 'gestion-atelier-cct' ) . '</button>';
+		} elseif ( $form_folded ) {
+			echo '<button type="button" class="button" data-op-action="toggle-quote-form" aria-expanded="false">' . esc_html__( 'Envoyer quand même un devis…', 'gestion-atelier-cct' ) . '</button>';
 		}
 
-		echo '<div class="gacct-op-quote-form"' . ( 4 === $state ? ' hidden' : '' ) . ' data-quote-prefill="' . esc_attr( wp_json_encode( $prefill ) ) . '">';
+		echo '<div class="gacct-op-quote-form"' . ( $form_folded ? ' hidden' : '' ) . ' data-quote-prefill="' . esc_attr( wp_json_encode( $prefill ) ) . '">';
 		echo '<script type="application/json" data-quote-products>' . wp_json_encode( $products ) . '</script>';
 
 		echo '<p class="gacct-op-muted">' . esc_html__( 'Ajoutez les travaux constatés : prestations du catalogue (Réparation, Suspentes & travaux) ou lignes libres. Rien n\'est facturé maintenant : le montant s\'ajoute au solde de fin d\'intervention.', 'gestion-atelier-cct' ) . '</p>';

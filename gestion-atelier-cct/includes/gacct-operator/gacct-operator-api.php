@@ -74,6 +74,27 @@ function gacct_op_ajax_send_quote() {
 add_action( 'wp_ajax_gacct_op_send_quote', 'gacct_op_ajax_send_quote' );
 
 /**
+ * « Pas de devis nécessaire » : dispense motivée (undo=1 la retire).
+ * Aucun e-mail, aucun changement d'état.
+ */
+function gacct_op_ajax_waive_quote() {
+	gacct_op_api_guard();
+
+	$result = gacct_quote_waive(
+		isset( $_POST['revision_id'] ) ? absint( $_POST['revision_id'] ) : 0,
+		isset( $_POST['reason'] ) ? wp_unslash( $_POST['reason'] ) : '',
+		! empty( $_POST['undo'] )
+	);
+
+	if ( is_wp_error( $result ) ) {
+		wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+	}
+
+	wp_send_json_success( array() );
+}
+add_action( 'wp_ajax_gacct_op_waive_quote', 'gacct_op_ajax_waive_quote' );
+
+/**
  * Facturation atelier : ajout de lignes (catalogue, libres, remises).
  * Lignes JSON [{product_id, qty} | {label, price, qty}] — aucun email client.
  */

@@ -41,6 +41,7 @@ define( 'GACCT_QUOTE_META_REMINDED2_AT', '_gacct_quote_reminded2_at' );
 define( 'GACCT_QUOTE_META_DECISION', '_gacct_quote_decision' );
 define( 'GACCT_QUOTE_META_DECIDED_AT', '_gacct_quote_decided_at' );
 define( 'GACCT_QUOTE_META_REFUSAL_MODE', '_gacct_quote_refusal_mode' );
+define( 'GACCT_QUOTE_META_WAIVED', '_gacct_quote_waived' ); // array { at, reason, by }
 
 // État atteint après la décision du client, acceptation comme refus :
 // 5 « Intervention à finir » (le satellite « Devis refusé » n'existe plus).
@@ -158,6 +159,90 @@ function gacct_quote_order_has_devis_product( $order ) {
 }
 
 /**
+ * Dispense de devis posée par l'atelier (retour Timothée, 05/10/2026) : le
+ * client a coché « devis » alors que rien ne le justifie. Tableau vide si
+ * aucune dispense.
+ *
+ * @return array { at, reason, by }
+ */
+function gacct_quote_waiver( $order ) {
+	if ( ! $order instanceof WC_Order ) {
+		return array();
+	}
+
+	$waiver = $order->get_meta( GACCT_QUOTE_META_WAIVED );
+
+	return is_array( $waiver ) && ! empty( $waiver['at'] ) ? $waiver : array();
+}
+
+/**
+ * Le devis complémentaire est-il exigé avant de clore l'intervention (3→6) ?
+ * Oui si la commande contient un produit « demande de devis », sauf dispense.
+ */
+function gacct_quote_is_required( $order ) {
+	return gacct_quote_order_has_devis_product( $order ) && ! gacct_quote_waiver( $order );
+}
+
+/**
+ * « Pas de devis nécessaire » (console, état 3, aucun devis envoyé) : dispense
+ * motivée, note signée, AUCUN e-mail ni changement d'état. L'atelier clôt
+ * ensuite normalement (3→6). $undo = true retire la dispense.
+ *
+ * @return true|WP_Error
+ */
+function gacct_quote_waive( $revision_id, $reason, $undo = false ) {
+	$revision_id = absint( $revision_id );
+	$revision    = jwcct_get_cct_item( JWCCT_CCT_REVISION, $revision_id );
+
+	if ( ! $revision ) {
+		return new WP_Error( 'gacct_quote_not_found', __( 'Dossier introuvable.', 'gestion-atelier-cct' ) );
+	}
+
+	$state = gacct_op_read_state( $revision_id );
+	$state = ( null === $state ) ? absint( $revision['etat_de_la_commande'] ?? 0 ) : $state;
+
+	if ( 3 !== $state ) {
+		return new WP_Error( 'gacct_quote_bad_state', __( 'La dispense de devis se pose pendant l\'intervention (état 3).', 'gestion-atelier-cct' ) );
+	}
+
+	$order = gacct_op_get_order_for_revision( $revision );
+
+	if ( ! $order ) {
+		return new WP_Error( 'gacct_quote_no_order', __( 'Commande liée introuvable.', 'gestion-atelier-cct' ) );
+	}
+
+	if ( $undo ) {
+		$order->delete_meta_data( GACCT_QUOTE_META_WAIVED );
+		$order->save();
+		gacct_op_add_signed_note( $order, __( 'Dispense de devis annulée : le devis complémentaire est de nouveau exigé', 'gestion-atelier-cct' ) );
+		return true;
+	}
+
+	if ( '' !== (string) $order->get_meta( GACCT_QUOTE_META_SENT_AT ) ) {
+		return new WP_Error( 'gacct_quote_already_sent', __( 'Un devis a déjà été envoyé pour ce dossier.', 'gestion-atelier-cct' ) );
+	}
+
+	$reason = trim( sanitize_textarea_field( (string) $reason ) );
+
+	if ( '' === $reason ) {
+		return new WP_Error( 'gacct_quote_reason_required', __( 'Indiquez pourquoi le devis n\'est pas nécessaire.', 'gestion-atelier-cct' ) );
+	}
+
+	$user = wp_get_current_user();
+
+	$order->update_meta_data( GACCT_QUOTE_META_WAIVED, array(
+		'at'     => current_time( 'mysql' ),
+		'reason' => $reason,
+		'by'     => $user && $user->exists() ? $user->display_name : '',
+	) );
+	$order->save();
+
+	gacct_op_add_signed_note( $order, sprintf( __( 'Devis non nécessaire, motif : %s', 'gestion-atelier-cct' ), $reason ) );
+
+	return true;
+}
+
+/**
  * Le dossier a-t-il un « volet devis » ? Détermine l'affichage des étapes 4 et
  * 5 de la frise client : un dossier sans devis ne les traverse jamais.
  *
@@ -181,7 +266,8 @@ function gacct_quote_has_quote_context( $order, $etat = null ) {
 		return true;
 	}
 
-	return gacct_quote_order_has_devis_product( $order );
+	// Dispense de devis : la frise client repasse à 7 étapes.
+	return gacct_quote_is_required( $order );
 }
 
 /**
@@ -455,6 +541,7 @@ function gacct_quote_send( $revision_id, array $lines, $comment = '' ) {
 	$order->delete_meta_data( GACCT_QUOTE_META_DECISION );
 	$order->delete_meta_data( GACCT_QUOTE_META_DECIDED_AT );
 	$order->delete_meta_data( GACCT_QUOTE_META_REFUSAL_MODE );
+	$order->delete_meta_data( GACCT_QUOTE_META_WAIVED ); // Un devis envoyé lève la dispense.
 	$order->save();
 
 	if ( 3 === $state ) {

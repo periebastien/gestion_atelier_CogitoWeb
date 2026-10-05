@@ -240,11 +240,12 @@ function gacct_op_change_state( $revision_id, $new_state, array $args = array() 
 	// invisible du client tant que l'état est < 7. « Réalisé par » automatique.
 	if ( 6 === $new_state ) {
 		// Produit « demande de devis » dans la commande : le devis est obligatoire,
-		// 3→6 direct n'a pas de sens (il n'y a rien d'autre à facturer).
-		if ( 3 === $old_state && function_exists( 'gacct_quote_order_has_devis_product' ) && gacct_quote_order_has_devis_product( $order ) ) {
+		// 3→6 direct n'a pas de sens (il n'y a rien d'autre à facturer), sauf
+		// dispense « Pas de devis nécessaire » posée par l'atelier.
+		if ( 3 === $old_state && function_exists( 'gacct_quote_is_required' ) && gacct_quote_is_required( $order ) ) {
 			return new WP_Error(
 				'gacct_op_quote_required',
-				__( 'Cette commande est une demande de devis : envoyez le devis complémentaire au client avant de clore l\'intervention.', 'gestion-atelier-cct' )
+				__( 'Cette commande est une demande de devis : envoyez le devis complémentaire au client, ou indiquez « Pas de devis nécessaire », avant de clore l\'intervention.', 'gestion-atelier-cct' )
 			);
 		}
 

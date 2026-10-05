@@ -707,6 +707,27 @@
 
 				var action = button.getAttribute( 'data-op-action' );
 
+				// « Pas de devis nécessaire » : dispense motivée, aucun e-mail.
+				if ( 'quote-waive' === action || 'quote-unwaive' === action ) {
+					var undo       = 'quote-unwaive' === action;
+					var waiveField = quoteCard.querySelector( '[data-op-field="waive-reason"]' );
+					var waiveWhy   = waiveField ? waiveField.value.trim() : '';
+
+					if ( ! undo && '' === waiveWhy ) {
+						quoteShowFeedback( 'error', window.gacctOp.i18n.reasonRequired );
+						return;
+					}
+
+					run( button, 'gacct_op_waive_quote', {
+						revision_id: revisionId,
+						reason: waiveWhy,
+						undo: undo ? 1 : 0
+					}, function () {
+						window.location.reload();
+					} );
+					return;
+				}
+
 				if ( 'toggle-quote-form' === action ) {
 					quoteForm.hidden = ! quoteForm.hidden;
 					button.setAttribute( 'aria-expanded', quoteForm.hidden ? 'false' : 'true' );
