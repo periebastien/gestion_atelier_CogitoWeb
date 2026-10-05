@@ -213,7 +213,6 @@ function gacct_clubs_render_lot_screen( array $lot ) {
 		echo gacct_clubs_postbox( 'Dates et inscriptions', gacct_clubs_dates_box( $lot ) ); // phpcs:ignore WordPress.Security.EscapeOutput
 		echo gacct_clubs_postbox( 'Envoi du club vers l’atelier', gacct_clubs_aller_box( $lot, $counts ) ); // phpcs:ignore WordPress.Security.EscapeOutput
 	}
-	echo gacct_clubs_postbox( 'Responsables du club', gacct_clubs_managers_box( $lot ) ); // phpcs:ignore WordPress.Security.EscapeOutput
 
 	if ( in_array( $lot['statut'], array( 'demande', 'planifie' ), true ) && current_user_can( 'manage_woocommerce' ) ) {
 		$f  = gacct_clubs_post_form_open( 'gacct_clubs_cancel', $id );
@@ -379,19 +378,6 @@ function gacct_clubs_aller_box( array $lot, array $counts ) {
 	$h .= '<p>' . gacct_clubs_carrier_select( 'carrier', $lot['envoi_transporteur'] ) . ' <input type="text" class="regular-text" name="tracking" placeholder="N° de suivi ou date du dépôt" value="' . esc_attr( $lot['envoi_suivi'] ) . '"></p>';
 	$h .= '<p><button type="submit" class="button">Enregistrer l’envoi</button></p></form>';
 	$h .= '<p class="description">Le responsable peut aussi déclarer l’envoi depuis son espace. À l’arrivée, scannez chaque bon comme d’habitude dans « Réception colis ».</p>';
-	return $h;
-}
-
-function gacct_clubs_managers_box( array $lot ) {
-	$h = '<ul>';
-	foreach ( gacct_clubs_managers( (int) $lot['club_id'] ) as $u ) {
-		$h .= '<li>' . esc_html( $u->display_name ) . ' · ' . esc_html( $u->user_email );
-		$h .= ' ' . gacct_clubs_post_form_open( 'gacct_clubs_manager_remove', (int) $lot['id'] ) . '<input type="hidden" name="user" value="' . (int) $u->ID . '"><button type="submit" class="button-link button-link-delete">retirer</button></form></li>';
-	}
-	$h .= '</ul>';
-	$h .= gacct_clubs_post_form_open( 'gacct_clubs_manager_add', (int) $lot['id'] );
-	$h .= '<p><input type="email" class="regular-text" name="email" placeholder="adresse e-mail du nouveau responsable" required> <button type="submit" class="button">Ajouter</button></p>';
-	$h .= '<p class="description">Un compte client est créé s’il n’existe pas (le responsable choisira son mot de passe avec « mot de passe oublié »).</p></form>';
 	return $h;
 }
 
@@ -585,30 +571,6 @@ add_action( 'admin_post_gacct_clubs_aller', static function () {
 		'envoi_suivi'        => sanitize_text_field( wp_unslash( $_POST['tracking'] ?? '' ) ),
 	) );
 	gacct_clubs_back( $lot, 'Envoi du club enregistré.' );
-} );
-
-add_action( 'admin_post_gacct_clubs_manager_add', static function () {
-	$lot   = gacct_clubs_action_guard( 'gacct_clubs_manager_add' );
-	$email = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
-	if ( ! is_email( $email ) ) {
-		gacct_clubs_back( $lot, 'Adresse e-mail invalide.', true );
-	}
-	$user = get_user_by( 'email', $email );
-	if ( ! $user && function_exists( 'wc_create_new_customer' ) ) {
-		$uid  = wc_create_new_customer( $email, '', wp_generate_password( 24 ) );
-		$user = is_wp_error( $uid ) ? null : get_userdata( $uid );
-	}
-	if ( ! $user ) {
-		gacct_clubs_back( $lot, 'Impossible de créer le compte de ce responsable.', true );
-	}
-	gacct_clubs_add_manager( (int) $lot['club_id'], (int) $user->ID );
-	gacct_clubs_back( $lot, 'Responsable ajouté.' );
-} );
-
-add_action( 'admin_post_gacct_clubs_manager_remove', static function () {
-	$lot = gacct_clubs_action_guard( 'gacct_clubs_manager_remove' );
-	gacct_clubs_remove_manager( (int) $lot['club_id'], absint( $_POST['user'] ?? 0 ) );
-	gacct_clubs_back( $lot, 'Responsable retiré.' );
 } );
 
 add_action( 'admin_post_gacct_clubs_invoice', static function () {

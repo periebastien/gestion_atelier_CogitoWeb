@@ -5,7 +5,7 @@
  * Maquette validée par Bastien le 03/10/2026 : page liste des commandes
  * groupées du club, page détail (frise, partage du lien, compteurs et palier
  * de remise, matériel inscrit, dates, envoi groupé, facture), carte ajoutée
- * au tableau de bord. L'onglet n'est visible que des responsables.
+ * au tableau de bord. L'onglet n'est visible que de qui a passé une commande groupée.
  *
  * @package gacct-module-clubs
  */
@@ -25,7 +25,7 @@ function gacct_clubs_account_shortcode() {
 	$clubs = gacct_clubs_for_user( $user->ID );
 
 	if ( ! $clubs ) {
-		return '<div class="gcl"><div class="gcl-head"><div><h1>Commandes groupées</h1><p>Vous n’êtes responsable d’aucun club pour l’instant.</p></div></div>'
+		return '<div class="gcl"><div class="gcl-head"><div><h1>Commandes groupées</h1><p>Vous n’avez passé aucune commande groupée pour l’instant.</p></div></div>'
 			. '<div class="gcl-card"><p>Vous organisez la révision du matériel de votre club, de votre école ou d’un groupe ? Envoyez une demande groupée : une seule commande à régler pour le club, un créneau réservé, un suivi individuel pour chaque pilote.</p>'
 			. '<p><a class="gcl-btn" href="' . esc_url( gacct_clubs_page_url( 'request_page' ) ) . '">Demander une révision groupée</a></p></div></div>';
 	}
@@ -33,7 +33,7 @@ function gacct_clubs_account_shortcode() {
 	$lot_id = isset( $_GET['lot'] ) ? absint( $_GET['lot'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	$lot    = $lot_id ? gacct_clubs_get_lot( $lot_id ) : null;
 
-	if ( $lot && gacct_clubs_user_is_manager( $user->ID, (int) $lot['club_id'] ) ) {
+	if ( $lot && gacct_clubs_user_owns_lot( $user->ID, $lot ) ) {
 		return gacct_clubs_account_detail( $lot );
 	}
 
@@ -107,12 +107,9 @@ function gacct_clubs_account_list( array $clubs ) {
 		<?php foreach ( $clubs as $c ) : ?>
 			<div class="gcl-card">
 				<div class="gcl-row" style="justify-content:space-between"><h2><?php echo esc_html( $c['nom'] ); ?></h2><span class="gcl-note">Une information à corriger ? Contactez l’atelier.</span></div>
-				<div class="gcl-form gcl-form-3 gcl-clubinfo">
+				<div class="gcl-form gcl-clubinfo">
 					<div><label>Adresse</label><?php echo esc_html( $c['adresse'] ? $c['adresse'] : '–' ); ?></div>
 					<div><label>E-mail du club</label><?php echo esc_html( $c['email'] ? $c['email'] : '–' ); ?></div>
-					<div><label>Responsables</label><?php echo esc_html( implode( ', ', array_map( static function ( $u ) use ( $user ) {
-						return $u->display_name . ( (int) $u->ID === (int) $user->ID ? ' (vous)' : '' );
-					}, gacct_clubs_managers( (int) $c['id'] ) ) ) ); ?></div>
 				</div>
 			</div>
 		<?php endforeach; ?>
@@ -144,7 +141,7 @@ function gacct_clubs_account_list( array $clubs ) {
 				</tbody>
 			</table>
 		</div>
-		<p class="gcl-note">Vos propres révisions restent dans « Mes interventions ». Ici n’apparaissent que les commandes du club dont vous êtes responsable.</p>
+		<p class="gcl-note">Vos propres révisions restent dans « Mes interventions ». Ici n’apparaissent que les commandes groupées passées depuis votre compte.</p>
 	</div>
 	<?php
 	return ob_get_clean();
@@ -471,7 +468,7 @@ function gacct_clubs_account_handle_aller() {
 	}
 	$lot_id = absint( $_POST['gacct_club_lot'] ?? 0 );
 	$lot    = $lot_id ? gacct_clubs_get_lot( $lot_id ) : null;
-	if ( ! $lot || ! gacct_clubs_user_is_manager( get_current_user_id(), (int) $lot['club_id'] )
+	if ( ! $lot || ! gacct_clubs_user_owns_lot( get_current_user_id(), $lot )
 		|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gacct_club_aller_nonce'] ) ), 'gacct_club_aller_' . $lot_id ) ) {
 		return;
 	}
@@ -504,7 +501,7 @@ function gacct_clubs_print_all_work_orders() {
 	}
 	$lot = gacct_clubs_get_lot( absint( $_GET['gacct_club_bons'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	$uid = get_current_user_id();
-	if ( ! $lot || ! $uid || ( ! gacct_clubs_user_is_manager( $uid, (int) $lot['club_id'] ) && ! current_user_can( gacct_clubs_op_cap() ) ) ) {
+	if ( ! $lot || ! $uid || ( ! gacct_clubs_user_owns_lot( $uid, $lot ) && ! current_user_can( gacct_clubs_op_cap() ) ) ) {
 		auth_redirect();
 		exit;
 	}
@@ -581,7 +578,7 @@ function gacct_clubs_dashboard_card( $html, $data ) {
 	return $cards . $html;
 }
 
-/** L'onglet « Commandes groupées » n'est visible que des responsables. */
+/** L'onglet « Commandes groupées » n'est visible que de qui a passé une commande groupée. */
 add_filter( 'body_class', static function ( $classes ) {
 	if ( is_user_logged_in() && gacct_clubs_user_is_manager( get_current_user_id() ) ) {
 		$classes[] = 'gacct-club-manager';

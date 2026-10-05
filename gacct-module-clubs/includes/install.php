@@ -5,7 +5,7 @@
  * Tables :
  *   {prefix}gacct_clubs               le club (nom, adresse, e-mail) ;
  *   {prefix}gacct_club_lots           chaque commande groupée ;
- *   {prefix}gacct_club_responsables   comptes autorisés à suivre le club.
+ *   {prefix}gacct_club_responsables   (plus utilisée depuis le 05/10/2026 : la commande groupée appartient à son demandeur).
  *
  * Colonnes CCT ajoutées (déclarées aussi dans JetEngine) :
  *   revision.club_lot_id              dossier d'un pilote inscrit via le club ;

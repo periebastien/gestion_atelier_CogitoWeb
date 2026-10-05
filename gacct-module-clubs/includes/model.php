@@ -58,24 +58,33 @@ function gacct_clubs_update_club( $club_id, array $data ) {
 	}
 }
 
-/** Clubs dont l'utilisateur est responsable. */
+/*
+ * Propriété (décision de Bastien du 05/10/2026) : une commande groupée appartient au
+ * compte qui l'a demandée (`demandeur_id`), et à lui seul. Il n'y a plus de
+ * « responsables du club » ajoutés par l'atelier : la table club_responsables n'est
+ * plus lue ni écrite (elle reste en base, sans usage). Le « responsable » est donc
+ * simplement le compte qui a passé au moins une commande groupée.
+ */
+
+/** Clubs pour lesquels l'utilisateur a passé au moins une commande groupée. */
 function gacct_clubs_for_user( $user_id ) {
 	global $wpdb;
 	if ( ! $user_id ) {
 		return array();
 	}
 	return (array) $wpdb->get_results( $wpdb->prepare(
-		'SELECT c.* FROM ' . gacct_clubs_table( 'clubs' ) . ' c INNER JOIN ' . gacct_clubs_table( 'club_responsables' ) . ' r ON r.club_id = c.id WHERE r.user_id = %d ORDER BY c.nom',
+		'SELECT DISTINCT c.* FROM ' . gacct_clubs_table( 'clubs' ) . ' c INNER JOIN ' . gacct_clubs_table( 'club_lots' ) . ' l ON l.club_id = c.id WHERE l.demandeur_id = %d ORDER BY c.nom',
 		$user_id
 	), ARRAY_A );
 }
 
+/** L'utilisateur a-t-il passé une commande groupée (pour ce club, si précisé) ? */
 function gacct_clubs_user_is_manager( $user_id, $club_id = 0 ) {
 	global $wpdb;
 	if ( ! $user_id ) {
 		return false;
 	}
-	$sql = 'SELECT COUNT(*) FROM ' . gacct_clubs_table( 'club_responsables' ) . ' WHERE user_id = %d';
+	$sql = 'SELECT COUNT(*) FROM ' . gacct_clubs_table( 'club_lots' ) . ' WHERE demandeur_id = %d';
 	$arg = array( $user_id );
 	if ( $club_id ) {
 		$sql  .= ' AND club_id = %d';
@@ -84,26 +93,9 @@ function gacct_clubs_user_is_manager( $user_id, $club_id = 0 ) {
 	return (int) $wpdb->get_var( $wpdb->prepare( $sql, $arg ) ) > 0;
 }
 
-function gacct_clubs_add_manager( $club_id, $user_id ) {
-	global $wpdb;
-	$wpdb->query( $wpdb->prepare(
-		'INSERT IGNORE INTO ' . gacct_clubs_table( 'club_responsables' ) . ' (club_id, user_id, created) VALUES (%d, %d, %s)',
-		$club_id,
-		$user_id,
-		current_time( 'mysql' )
-	) );
-}
-
-function gacct_clubs_remove_manager( $club_id, $user_id ) {
-	global $wpdb;
-	$wpdb->delete( gacct_clubs_table( 'club_responsables' ), array( 'club_id' => absint( $club_id ), 'user_id' => absint( $user_id ) ) );
-}
-
-/** @return WP_User[] */
-function gacct_clubs_managers( $club_id ) {
-	global $wpdb;
-	$ids = $wpdb->get_col( $wpdb->prepare( 'SELECT user_id FROM ' . gacct_clubs_table( 'club_responsables' ) . ' WHERE club_id = %d ORDER BY created', $club_id ) );
-	return array_values( array_filter( array_map( 'get_userdata', array_map( 'absint', $ids ) ) ) );
+/** La commande groupée appartient-elle à cet utilisateur ? */
+function gacct_clubs_user_owns_lot( $user_id, $lot ) {
+	return $user_id && is_array( $lot ) && (int) $lot['demandeur_id'] === (int) $user_id;
 }
 
 /** Club existant au nom proche (aide à éviter les doublons dans la console). */
@@ -174,7 +166,7 @@ function gacct_clubs_lots( array $args = array() ) {
 		$vals    = array_merge( $vals, $st );
 	}
 	if ( ! empty( $args['user_id'] ) ) {
-		$where[] = 'l.club_id IN (SELECT club_id FROM ' . gacct_clubs_table( 'club_responsables' ) . ' WHERE user_id = %d)';
+		$where[] = 'l.demandeur_id = %d';
 		$vals[]  = absint( $args['user_id'] );
 	}
 

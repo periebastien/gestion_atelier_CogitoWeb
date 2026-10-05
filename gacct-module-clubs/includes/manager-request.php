@@ -219,7 +219,6 @@ function gacct_clubs_request_handle() {
 	} else {
 		$club_id = gacct_clubs_create_club( array( 'nom' => $nom, 'adresse' => $in['club_adresse'] ?? '', 'email' => $in['club_email'] ?? '' ) );
 	}
-	gacct_clubs_add_manager( $club_id, $user->ID );
 
 	if ( ! get_user_meta( $user->ID, 'billing_phone', true ) ) {
 		update_user_meta( $user->ID, 'billing_phone', sanitize_text_field( $in['contact_tel'] ) );

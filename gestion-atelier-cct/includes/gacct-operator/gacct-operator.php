@@ -422,14 +422,17 @@ function gacct_op_enqueue_assets( $hook_suffix ) {
 		'profil'    => 'operator-profil.css',
 		'today'     => 'operator-today.css',
 	);
-	$screen_css = $screen_css_map[ gacct_op_current_view() ];
+	// Les vues ajoutées par un module (filtre gacct_op_console_views, ex. Clubs) n'ont pas de feuille ici.
+	$screen_css = $screen_css_map[ gacct_op_current_view() ] ?? '';
 
-	wp_enqueue_style(
-		'gacct-operator-screen',
-		$base . '/assets/css/' . $screen_css,
-		array( 'gacct-operator' ),
-		gacct_asset_version( 'assets/css/' . $screen_css )
-	);
+	if ( $screen_css ) {
+		wp_enqueue_style(
+			'gacct-operator-screen',
+			$base . '/assets/css/' . $screen_css,
+			array( 'gacct-operator' ),
+			gacct_asset_version( 'assets/css/' . $screen_css )
+		);
+	}
 
 	wp_enqueue_script(
 		'gacct-operator',
