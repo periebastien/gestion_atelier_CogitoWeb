@@ -1144,6 +1144,15 @@ function gacct_dash_action_expedition( $order, array $conf, array $row = array()
 		'guide_url'        => isset( $links['packing_guide'] ) ? (string) $links['packing_guide'] : '',
 	);
 
+	// Vente seule (suspente sans intervention, gacct-vente-seule.php) : ni
+	// créneau, ni bon d'intervention, consignes d'envoi propres.
+	$vs_textes = ! empty( $conf['vente_seule'] ) && function_exists( 'gacct_vente_seule_textes' ) ? gacct_vente_seule_textes() : array();
+	if ( $vs_textes ) {
+		$text                   = esc_html( $vs_textes['carte_texte'] ?? '' );
+		$instr['work_order_on'] = false;
+		$instr['vente_seule']   = $vs_textes;
+	}
+
 	$is_depot = ( $ship && ! empty( $ship['depot'] ) );
 	if ( $is_depot ) {
 		$text = ! empty( $conf['slot_label'] )
@@ -1155,9 +1164,9 @@ function gacct_dash_action_expedition( $order, array $conf, array $row = array()
 		'ship_html' => $ship_html,
 		'instr'     => $is_depot ? array() : $instr, // dépôt déclaré : le CTA mène à la confirmation, pas aux instructions d’envoi
 		'type'      => 'expedition',
-		'title'     => gacct_dash_text( $is_depot ? 'expedition_depot_title' : 'expedition_title' ),
+		'title'     => $vs_textes && ! $is_depot ? ( $vs_textes['carte_titre'] ?? '' ) : gacct_dash_text( $is_depot ? 'expedition_depot_title' : 'expedition_title' ),
 		'text_html' => $text,
-		'note'      => gacct_dash_text( $is_depot ? 'expedition_depot_note' : 'expedition_note' ),
+		'note'      => $vs_textes ? '' : gacct_dash_text( $is_depot ? 'expedition_depot_note' : 'expedition_note' ),
 		'chip'      => ( $parcel_ts && ! $is_depot ) ? gacct_dash_chip_days( max( 0, $days ) ) : '',
 		'url'       => $order->get_checkout_order_received_url(),
 		'cta_label' => gacct_dash_text( $is_depot ? 'expedition_depot_cta' : 'expedition_cta' ),
@@ -1510,8 +1519,18 @@ function gacct_dash_rib_modal_html( $modal_id, array $bank_rows ) {
 function gacct_dash_instructions_modal_html( $modal_id, array $instr ) {
 	$order = isset( $instr['order'] ) ? $instr['order'] : null;
 
+	$vs    = ! empty( $instr['vente_seule'] ) ? (array) $instr['vente_seule'] : array();
 	$steps = '';
 	for ( $i = 1; $i <= 4; $i++ ) {
+		if ( $vs ) {
+			// Vente seule : consignes d'envoi d'une suspente (gacct_vente_seule_textes).
+			$steps .= sprintf(
+				'<li><strong>%1$s</strong><span>%2$s</span></li>',
+				esc_html( $vs[ 'etape' . $i . '_t' ] ?? '' ),
+				esc_html( sprintf( (string) ( $vs[ 'etape' . $i ] ?? '' ), $order instanceof WC_Order ? $order->get_order_number() : '' ) )
+			);
+			continue;
+		}
 		$steps .= sprintf(
 			'<li><strong>%1$s</strong><span>%2$s</span></li>',
 			esc_html( gacct_dash_text( 'instr_step' . $i . '_t' ) ),
@@ -1549,7 +1568,7 @@ function gacct_dash_instructions_modal_html( $modal_id, array $instr ) {
 	}
 
 	$guide = '' !== (string) $instr['guide_url']
-		? '<a class="instr-guide" href="' . esc_url( $instr['guide_url'] ) . '" target="_blank" rel="noopener">' . esc_html( gacct_dash_text( 'instr_guide' ) ) . '</a>'
+		? '<a class="instr-guide" href="' . esc_url( $instr['guide_url'] ) . '" target="_blank" rel="noopener">' . esc_html( $vs ? ( $vs['guide'] ?? '' ) : gacct_dash_text( 'instr_guide' ) ) . '</a>'
 		: '';
 
 	$ship = ( $order instanceof WC_Order && function_exists( 'gacct_ship_render_form' ) )

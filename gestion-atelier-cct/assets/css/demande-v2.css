@@ -1240,3 +1240,31 @@
 	margin: 0;
 	line-height: 1.25;
 }
+
+/* ==========================================================================
+   Vente seule (05/10/2026) : suspente sans intervention. L'étape 3 ne garde
+   que le retour ; la note d'explication n'apparaît que dans ce mode.
+   ========================================================================== */
+
+.gacct-v2 .gacct-v2-vs-note {
+	display: none;
+}
+
+.gacct-v2 .gacct-v2--vente-seule .gacct-v2-vs-note,
+.gacct-v2.gacct-v2--vente-seule .gacct-v2-vs-note,
+form.gacct-v2--vente-seule .gacct-v2-vs-note {
+	display: block;
+	margin-bottom: 20px;
+}
+
+/* Seule la partie date de l'étape 3 disparaît : le choix du retour reste. */
+form.gacct-v2--vente-seule .gacct-v2-step--date > .gacct-v2-titre,
+form.gacct-v2--vente-seule .gacct-v2-step--date > .gacct-v2-sous-titre,
+form.gacct-v2--vente-seule .gacct-v2-step--date > .field-type-text-field {
+	display: none !important;
+}
+
+/* Retours réservés (ou exclus) selon le mode, posés par demande-v2.js. */
+.gacct-v2 .jet-form-builder__field-wrap[hidden] {
+	display: none !important;
+}

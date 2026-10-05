@@ -153,6 +153,14 @@
 		}
 
 		function gotoPage( n ) {
+			// La capture par le hook jet.fb.multistep.init échoue quand ce script
+			// est chargé avant jet-plugins (cas du formulaire 1920) : repli sur
+			// l'instance exposée par JetFormBuilder (window.JetFormBuilder[id]).
+			if ( ! multistep ) {
+				var idForm = form.getAttribute( 'data-form-id' );
+				var racine = idForm && window.JetFormBuilder ? window.JetFormBuilder[ idForm ] : null;
+				multistep = racine && racine.multistep ? racine.multistep : null;
+			}
 			if ( multistep && multistep.index ) {
 				multistep.index.current = n;
 				return;
@@ -2808,6 +2816,7 @@
 
 		var totalEtape2 = null;
 		var acompteEtape2 = null;
+		var dernierVenteSeule = false;
 
 		function buildTotalEtape2() {
 			if ( ! accordions.length ) {
@@ -2839,6 +2848,8 @@
 			var sommePort = 0;
 			var acomptePrestations = 0;
 			var sommeAcompte = 0;
+			// Vente seule : tout est dû aujourd'hui (prestations ET retour).
+			var vs = venteSeuleActive();
 
 			prestationNames.forEach( function ( name ) {
 				fieldInputs( name ).forEach( function ( input ) {
@@ -2852,7 +2863,9 @@
 					var qte = qtyDe( input );
 					nbPrestations++;
 					sommePrestations += ( ( parseFloat( info.prix ) || 0 ) + suppPour( input, 'prix' ) ) * qte;
-					acomptePrestations += ( acompteDe( info, parseFloat( info.prix ) || 0 ) + suppPour( input, 'acompte' ) ) * qte;
+					acomptePrestations += vs
+						? ( ( parseFloat( info.prix ) || 0 ) + suppPour( input, 'prix' ) ) * qte
+						: ( acompteDe( info, parseFloat( info.prix ) || 0 ) + suppPour( input, 'acompte' ) ) * qte;
 					heuresRequises += ( parseFloat( info.duree ) || 0 ) * qte;
 				} );
 			} );
@@ -2865,7 +2878,7 @@
 					var info = prestations[ input.value ];
 					var prix = info ? parseFloat( info.prix ) || 0 : 0;
 					sommePort += prix;
-					sommeAcompte += acompteDe( info, prix );
+					sommeAcompte += vs ? prix : acompteDe( info, prix );
 				} );
 			}
 
@@ -2887,7 +2900,13 @@
 
 			if ( acompteEtape2 ) {
 				acompteEtape2.querySelector( 'strong' ).textContent = formatMoney( acomptePrestations );
+				acompteEtape2.querySelector( 'span' ).textContent = vs
+					? ( v2i18n.aPayer || 'À payer aujourd’hui' )
+					: ( v2i18n.acompte || 'Acompte à payer aujourd’hui' );
 			}
+
+			dernierVenteSeule = vs;
+			majVenteSeule( vs );
 
 			if ( nbPrestations > 0 ) {
 				effaceErreur( 'presta' );
@@ -2903,6 +2922,109 @@
 			var a = parseFloat( info && info.acompte );
 			return isNaN( a ) ? prix : a;
 		}
+
+		/* ---------------------------------------------------------------
+		 * Vente seule (05/10/2026) : produits cochés « Vente seule » sans
+		 * révision ni pliage. Miroir de gacct_vente_seule_ids() (PHP) : tout se
+		 * paie à 100 %, l'étape matériel est sautée, l'étape 3 ne garde que le
+		 * retour (date technique = jour de la demande).
+		 * ------------------------------------------------------------- */
+
+		var venteSeuleIds = ( v2.venteSeuleIds || [] ).map( String );
+		var dateTechnique = false;
+
+		function venteSeuleActive() {
+			// venteSeuleIds peut ne pas être encore initialisé (recalcul précoce).
+			if ( ! venteSeuleIds || ! venteSeuleIds.length || interventionChoisie() ) {
+				return false;
+			}
+			return prestationNames.some( function ( name ) {
+				return fieldInputs( name ).some( function ( el ) {
+					return el.checked && venteSeuleIds.indexOf( String( el.value ) ) > -1;
+				} );
+			} );
+		}
+
+		function aujourdhuiIso() {
+			var d = new Date();
+			return d.getFullYear() + '-' + ( '0' + ( d.getMonth() + 1 ) ).slice( -2 ) + '-' + ( '0' + d.getDate() ).slice( -2 );
+		}
+
+		/* État visuel et date technique, appelés à chaque recalcul. */
+		function majVenteSeule( vs ) {
+			form.classList.toggle( 'gacct-v2--vente-seule', vs );
+
+			// Retours : un port coché « Vente seule » (ex. enveloppe « Suspente »)
+			// n'est proposé qu'aux ventes seules ; en vente seule, seuls ces ports
+			// et les retours gratuits (retrait à l'atelier) restent proposés.
+			if ( portName && venteSeuleIds ) {
+				fieldInputs( portName ).forEach( function ( input ) {
+					if ( 'radio' !== input.type && 'checkbox' !== input.type ) {
+						return;
+					}
+					var info    = prestations[ input.value ];
+					var gratuit = info && 0 === ( parseFloat( info.prix ) || 0 );
+					var reserve = venteSeuleIds.indexOf( String( input.value ) ) > -1;
+					var visible = vs ? ( reserve || gratuit ) : ! reserve;
+					var wrap    = input.closest( '.jet-form-builder__field-wrap' ) || input.parentNode;
+
+					wrap.hidden = ! visible;
+					if ( ! visible && input.checked ) {
+						input.checked = false;
+						input.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+					}
+				} );
+			}
+
+			if ( ! inputDate || ! venteSeuleIds ) {
+				return;
+			}
+			if ( vs && '' === inputDate.value.trim() ) {
+				inputDate.value = aujourdhuiIso();
+				dateTechnique = true;
+			} else if ( ! vs && dateTechnique ) {
+				// Retour à une commande avec intervention : la vraie date se choisit.
+				if ( instanceFp ) {
+					instanceFp.clear();
+				}
+				inputDate.value = '';
+				dateTechnique = false;
+			}
+		}
+
+		/* Note de l'étape 3 (retour seul), créée une fois. */
+		var noteRetourVs = null;
+		( function () {
+			var page3 = form.querySelector( '.jet-form-builder-page[data-page="3"]' );
+			if ( ! page3 || ! venteSeuleIds.length ) {
+				return;
+			}
+			noteRetourVs = document.createElement( 'p' );
+			noteRetourVs.className = 'gacct-v2-repair-note gacct-v2-vs-note';
+			noteRetourVs.textContent = v2i18n.venteSeuleRetour || '';
+			page3.insertBefore( noteRetourVs, page3.firstChild );
+		}() );
+
+		/* Navigation : l'étape matériel est sautée dans les deux sens. */
+		var vsPagePrecedente = 0;
+		if ( window.jQuery ) {
+			window.jQuery( document ).on( 'jet-form-builder/switch-page', function () {
+				setTimeout( function () {
+					var p = pageCourante();
+					if ( 2 === p && venteSeuleActive() ) {
+						if ( vsPagePrecedente <= 1 ) {
+							viderChampsVoile();
+							gotoPage( 3 );
+						} else {
+							gotoPage( 1 );
+						}
+						return;
+					}
+					vsPagePrecedente = p;
+				}, 0 );
+			} );
+		}
+		setTimeout( function () { vsPagePrecedente = pageCourante(); }, 0 );
 
 		/* ---------------------------------------------------------------
 		 * Récapitulatif (étape 4)
@@ -3026,17 +3148,23 @@
 				}
 			} );
 
+			// Vente seule : ni matériel ni date, tout se règle aujourd'hui.
+			var vsRecap = dernierVenteSeule;
+
 			recap.innerHTML =
 				recapRow( v2i18n.recapPrestas || 'Prestations', prestaHtml, 1 ) +
-				recapRow( v2i18n.recapVoile || 'Votre matériel', voileHtml, 2 ) +
-				recapRow( v2i18n.recapDate || 'Date', escapeHtml( dateEnToutesLettres() || '–' ), 3 ) +
+				( vsRecap
+					? recapRow( v2i18n.recapVoile || 'Votre matériel', escapeHtml( v2i18n.venteSeuleMateriel || '' ), 1 ) +
+						recapRow( v2i18n.recapDate || 'Date', escapeHtml( v2i18n.venteSeuleDate || '' ), 3 )
+					: recapRow( v2i18n.recapVoile || 'Votre matériel', voileHtml, 2 ) +
+						recapRow( v2i18n.recapDate || 'Date', escapeHtml( dateEnToutesLettres() || '–' ), 3 ) ) +
 				recapRow( v2i18n.recapRetour || 'Retour', retourHtml, 3 ) +
 				'<div class="gacct-v2-total"><span>' + escapeHtml( v2i18n.total || 'Total' ) + '</span><strong>' +
 				formatMoney( dernierTotalGlobal ) + '</strong></div>' +
 				'<div class="gacct-v2-total gacct-v2-total--acompte"><span>' +
-				escapeHtml( v2i18n.acompte || 'Acompte à payer aujourd’hui' ) + '</span><strong>' +
+				escapeHtml( vsRecap ? ( v2i18n.aPayer || 'À payer aujourd’hui' ) : ( v2i18n.acompte || 'Acompte à payer aujourd’hui' ) ) + '</span><strong>' +
 				formatMoney( dernierAcompte ) + '</strong></div>' +
-				'<p class="gacct-v2-total-note">' + escapeHtml( v2i18n.acompteNote || '' ) + '</p>';
+				'<p class="gacct-v2-total-note">' + escapeHtml( vsRecap ? ( v2i18n.venteSeuleNote || '' ) : ( v2i18n.acompteNote || '' ) ) + '</p>';
 
 			recap.querySelectorAll( '.gacct-v2-r-edit' ).forEach( function ( btn ) {
 				btn.addEventListener( 'click', function () {

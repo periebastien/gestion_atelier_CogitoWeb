@@ -895,13 +895,23 @@ function gacct_op_ajax_confirm_deposit() {
 		wp_send_json_error( array( 'message' => __( 'Cette commande n\'est pas en attente de virement.', 'gestion-atelier-cct' ) ) );
 	}
 
-	gacct_op_add_signed_note( $order, __( 'Acompte encaissé : virement reçu, commande passée en « Acompte payé »', 'gestion-atelier-cct' ) );
+	// Vente seule (gacct-vente-seule.php) : pas d'acompte, la commande est
+	// réglée en totalité, statut WooCommerce standard « En cours ».
+	$vente_seule = function_exists( 'gacct_vente_seule_commande' ) && gacct_vente_seule_commande( $order );
+
+	gacct_op_add_signed_note( $order, $vente_seule
+		? __( 'Virement encaissé : commande réglée en totalité, passée en « En cours »', 'gestion-atelier-cct' )
+		: __( 'Acompte encaissé : virement reçu, commande passée en « Acompte payé »', 'gestion-atelier-cct' ) );
 
 	if ( ! $order->get_date_paid() ) {
 		$order->set_date_paid( time() );
 	}
 
-	$order->update_status( 'acompte-paye', __( 'Virement d\'acompte encaissé (console atelier).', 'gestion-atelier-cct' ) );
+	if ( $vente_seule ) {
+		$order->update_status( 'processing', __( 'Virement encaissé (console atelier), commande sans acompte.', 'gestion-atelier-cct' ) );
+	} else {
+		$order->update_status( 'acompte-paye', __( 'Virement d\'acompte encaissé (console atelier).', 'gestion-atelier-cct' ) );
+	}
 
 	$updated = jwcct_get_cct_item( JWCCT_CCT_REVISION, $revision_id );
 

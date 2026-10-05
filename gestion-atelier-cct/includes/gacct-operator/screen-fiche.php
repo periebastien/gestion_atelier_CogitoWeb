@@ -850,7 +850,8 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 		$deposit = function_exists( 'gacct_quote_deposit_paid' ) ? gacct_quote_deposit_paid( $order ) : (float) $order->get_total();
 
 		echo '<dl class="gacct-op-facts">';
-		echo '<div><dt>' . esc_html__( 'Acompte', 'gestion-atelier-cct' ) . '</dt><dd>' . wp_kses_post( wc_price( $deposit, array( 'currency' => $order->get_currency() ) ) ) . '</dd></div>';
+		$vente_seule = function_exists( 'gacct_vente_seule_commande' ) && gacct_vente_seule_commande( $order );
+		echo '<div><dt>' . esc_html( $vente_seule ? __( 'Payé en totalité (sans intervention)', 'gestion-atelier-cct' ) : __( 'Acompte', 'gestion-atelier-cct' ) ) . '</dt><dd>' . wp_kses_post( wc_price( $deposit, array( 'currency' => $order->get_currency() ) ) ) . '</dd></div>';
 		echo '<div><dt>' . esc_html__( 'Statut', 'gestion-atelier-cct' ) . '</dt><dd>' . esc_html( $status_name ) . '</dd></div>';
 		if ( $order->get_payment_method_title() ) {
 			echo '<div><dt>' . esc_html__( 'Méthode', 'gestion-atelier-cct' ) . '</dt><dd>' . esc_html( $order->get_payment_method_title() ) . '</dd></div>';

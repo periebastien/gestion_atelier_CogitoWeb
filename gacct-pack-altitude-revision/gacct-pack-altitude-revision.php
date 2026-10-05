@@ -132,6 +132,12 @@ function gacct_pack_ar_cumulables_ids( $ids ) {
 
 add_filter( 'gacct_demande_suspentes_seules', '__return_true' );
 
+// Vente seule (socle, gacct-vente-seule.php) : les consignes complètes d'envoi
+// d'une suspente sont sur la page Suspentes (1273).
+add_filter( 'gacct_vente_seule_guide_url', function () {
+	return (string) get_permalink( 1273 );
+} );
+
 /* -----------------------------------------------------------------------------
  * 28/09/2026, retour Hervé du 15/09 : les points de porosité passent de l'ordre
  * du classeur (P4, P2, P1, P3) à l'ordre du schéma (P1, P2, P3, P4). Les mesures

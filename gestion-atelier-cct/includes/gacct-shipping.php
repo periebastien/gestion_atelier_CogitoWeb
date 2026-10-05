@@ -652,7 +652,8 @@ function gacct_ship_form_html( $order, $info, $args = array() ) {
 
 	$is_depot = $info && ! empty( $info['depot'] );
 
-	$html .= '<p class="gacct-ship-hint gacct-ship-depot-hint">' . esc_html( gacct_ship_text( 'depot_hint' ) ) . '</p>';
+	// Filtrable par commande (vente seule : pas de créneau à garder, 05/10/2026).
+	$html .= '<p class="gacct-ship-hint gacct-ship-depot-hint">' . esc_html( (string) apply_filters( 'gacct_ship_depot_hint', gacct_ship_text( 'depot_hint' ), $order ) ) . '</p>';
 	$html .= '<p class="gacct-ship-field">';
 	$html .= '<label for="' . esc_attr( $uid . '-carrier' ) . '">' . esc_html( gacct_ship_text( 'label_carrier' ) ) . '</label>';
 	$html .= '<select id="' . esc_attr( $uid . '-carrier' ) . '" name="gacct_ship_carrier" required data-gacct-ship-carrier>';

@@ -162,6 +162,15 @@ if ( null !== $conf_etat && (int) $conf_etat >= 2 ) :
 	return;
 endif;
 
+/*
+ * Vente seule (suspente sans intervention, payée à 100 %, sans créneau) : page
+ * dédiée, ni acompte, ni créneau, ni bon d'intervention (gacct-vente-seule.php).
+ */
+if ( ! empty( $d['vente_seule'] ) && ( null === $conf_etat || (int) $conf_etat <= 1 ) ) {
+	include __DIR__ . '/thankyou-vente-seule.php';
+	return;
+}
+
 $is_bacs     = ( 'bacs' === $d['variant'] );
 $wo_locked   = ! empty( $d['work_order_locked'] );
 $ship_locked = ! empty( $d['shipping_locked'] );

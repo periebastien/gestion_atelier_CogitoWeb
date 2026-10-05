@@ -194,6 +194,9 @@ function gacct_demande_v2_config() {
 			// SANS révision ni pliage. Désactivé par défaut (règle du 27/08/2026),
 			// l'atelier l'ouvre par le filtre `gacct_demande_suspentes_seules`.
 			'suspentesSeules' => (bool) apply_filters( 'gacct_demande_suspentes_seules', false ),
+			// Produits « Vente seule » (gacct-vente-seule.php) : commandés sans
+			// intervention, ils se paient à 100 % et sautent matériel et date.
+			'venteSeuleIds' => function_exists( 'gacct_vente_seule_ids_formulaire' ) ? gacct_vente_seule_ids_formulaire() : array(),
 			// Champs explicitement facultatifs : reçoivent la pastille « Facultatif »
 			// (l'étoile des champs requis étant peu lisible pour un néophyte).
 			'facultatifs' => array( 'numero_serie' ),
@@ -262,7 +265,12 @@ function gacct_demande_v2_config() {
 				'repairTitre'     => __( 'Besoin d’une réparation ?', 'gestion-atelier-cct' ),
 				'repairDesc'      => __( 'Nous examinons votre matériel à l’atelier, puis nous vous envoyons un devis détaillé par e-mail. Vous l’acceptez ou le refusez : <strong>rien n’est réparé sans votre accord.</strong>', 'gestion-atelier-cct' ),
 				'suspentesVerrou' => __( 'Choisissez d’abord une révision ou un pliage de secours : les travaux sur suspentes s’ajoutent à une intervention.', 'gestion-atelier-cct' ),
-				'suspentesSeulesNote' => __( 'Pas de révision à prévoir ? Vous pouvez commander une suspente seule : envoyez-nous uniquement la suspente abîmée, ou sa symétrique (la même suspente de l’autre côté de la voile) si elle est coupée. Nous la refaisons à l’identique.', 'gestion-atelier-cct' ),
+				'suspentesSeulesNote' => __( 'Suspente seule : vous nous enverrez uniquement la suspente, nous vous expliquons comment après le paiement.', 'gestion-atelier-cct' ),
+				'aPayer'          => __( 'À payer aujourd’hui', 'gestion-atelier-cct' ),
+				'venteSeuleNote'  => __( 'Commande sans intervention : elle se règle en totalité aujourd’hui.', 'gestion-atelier-cct' ),
+				'venteSeuleRetour' => __( 'Pas de date à réserver : nous traitons votre suspente dès sa réception. Choisissez comment la récupérer.', 'gestion-atelier-cct' ),
+				'venteSeuleMateriel' => __( 'Suspente seule, rien à déclarer', 'gestion-atelier-cct' ),
+				'venteSeuleDate'  => __( 'Dès réception', 'gestion-atelier-cct' ),
 				'repairNote'      => __( 'Vous avez demandé un devis de réparation : inutile de choisir ici, l’atelier listera précisément ce qu’il faut remplacer.', 'gestion-atelier-cct' ),
 				'suppBiplace'     => __( '+ Supplément biplace : %s', 'gestion-atelier-cct' ),
 				// --- Navigation / autres étapes ---
@@ -493,6 +501,23 @@ function gacct_demande_garde_serveur( $request, $handler ) {
 	// Depuis le 08/09/2026 les prestations sont choisies AVANT le matériel : ce
 	// que l'on exige dépend de ce qui est coché (gacct_demande_materiel_requis).
 	$requis = gacct_demande_materiel_requis( $request );
+
+	// Vente seule (gacct-vente-seule.php) : ni matériel ni date à déclarer. La
+	// date technique est le jour de la demande (occupation de 0 h, automatismes
+	// de créneau désactivés pour la commande).
+	$vente_seule = function_exists( 'gacct_vente_seule_ids' ) && gacct_vente_seule_ids( gacct_vente_seule_ids_requete( $request ) );
+
+	if ( $vente_seule ) {
+		$requis = array( 'voile' => false, 'secours' => false, 'sellette' => false );
+
+		if ( '' === trim( (string) ( $request['date_intervention'] ?? '' ) ) ) {
+			$request['date_intervention'] = current_time( 'Y-m-d' );
+
+			if ( is_object( $handler ) && isset( $handler->request_data ) && ( is_array( $handler->request_data ) || $handler->request_data instanceof \ArrayAccess ) ) {
+				$handler->request_data['date_intervention'] = $request['date_intervention'];
+			}
+		}
+	}
 
 	if ( $requis['voile'] ) {
 		if ( '' === trim( (string) ( $request['marque'] ?? '' ) ) ) {
