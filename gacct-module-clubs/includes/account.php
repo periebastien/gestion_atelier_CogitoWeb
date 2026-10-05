@@ -58,6 +58,16 @@ function gacct_clubs_account_list( array $clubs ) {
 	$lots = array_values( array_filter( $lots, static function ( $l ) {
 		return 'annule' !== $l['statut'];
 	} ) );
+	// À régler d'abord, puis inscriptions ouvertes, en cours, terminées (Bastien, 05/10/2026).
+	// usort n'est pas stable avant PHP 8 : l'index d'origine départage.
+	$rank = array( 'regler' => 0, 'ouvert' => 1, 'cours' => 2, 'termine' => 3 );
+	foreach ( $lots as $i => &$l ) {
+		$l['_ord'] = $rank[ gacct_clubs_lot_family( $l ) ] * 10000 + $i;
+	}
+	unset( $l );
+	usort( $lots, static function ( $a, $b ) {
+		return $a['_ord'] - $b['_ord'];
+	} );
 
 	$en_cours = array_filter( $lots, static function ( $l ) {
 		return 'expedie' !== $l['statut'];
@@ -121,7 +131,7 @@ function gacct_clubs_account_list( array $clubs ) {
 					$order = $l['facture_order_id'] ? wc_get_order( (int) $l['facture_order_id'] ) : null;
 					$url   = gacct_clubs_account_url( (int) $l['id'] );
 					?>
-					<tr>
+					<tr class="gcl-f-<?php echo esc_attr( gacct_clubs_lot_family( $l ) ); ?>">
 						<td class="first"><a href="<?php echo esc_url( $url ); ?>"><strong><?php echo esc_html( gacct_clubs_lot_has_code( $l ) ? $l['code'] : 'Demande n° ' . $l['id'] ); ?></strong></a><span class="sub"><?php echo esc_html( $l['nom'] . ' · demandée le ' . gacct_clubs_date_label( $l['created'], 'j M Y' ) ); ?></span></td>
 						<td data-l="Intervention" class="num"><?php echo esc_html( $l['jours'] ? gacct_clubs_period_label( $l ) : 'À planifier' ); ?></td>
 						<td data-l="État"><span class="gcl-badge <?php echo esc_attr( $st[1] ); ?>"><?php echo esc_html( $st[0] ); ?></span></td>
@@ -147,7 +157,7 @@ function gacct_clubs_lot_display_state( array $lot, array $c ) {
 			return array( 'Demande envoyée', 'b-n' );
 		case 'planifie':
 			if ( gacct_clubs_registrations_open( $lot ) ) {
-				return array( 'Inscriptions ouvertes', 'b-y' );
+				return array( 'Inscriptions ouvertes', 'b-g' );
 			}
 			return $c['recues'] ? array( 'En atelier', 'b-b' ) : array( 'Inscriptions closes, envoi attendu', 'b-o' );
 		case 'facture':
@@ -155,9 +165,27 @@ function gacct_clubs_lot_display_state( array $lot, array $c ) {
 		case 'paye':
 			return array( 'Retour en préparation', 'b-b' );
 		case 'expedie':
-			return array( 'Matériel réexpédié', 'b-g' );
+			return array( 'Matériel réexpédié', 'b-n' );
 	}
 	return array( 'Annulée', 'b-r' );
+}
+
+/**
+ * Famille d'une commande groupée dans la liste du responsable (couleur de la
+ * ligne, option A de Bastien du 05/10/2026) : à régler (jaune), inscriptions
+ * ouvertes (vert), en cours (turquoise), terminée (gris).
+ */
+function gacct_clubs_lot_family( array $lot ) {
+	if ( 'facture' === $lot['statut'] ) {
+		return 'regler';
+	}
+	if ( in_array( $lot['statut'], array( 'expedie', 'annule' ), true ) ) {
+		return 'termine';
+	}
+	if ( 'planifie' === $lot['statut'] && gacct_clubs_registrations_open( $lot ) ) {
+		return 'ouvert';
+	}
+	return 'cours';
 }
 
 /* ---------------------------------------------------------------- détail --- */

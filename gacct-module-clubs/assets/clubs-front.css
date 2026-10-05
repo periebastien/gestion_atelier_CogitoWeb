@@ -76,7 +76,7 @@
 .gcl-badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .gcl-badge.b-y { background: var(--gcl-yellow-soft); color: #a06d00; }
 .gcl-badge.b-b { background: var(--gcl-blue-soft); color: var(--gcl-blue); }
-.gcl-badge.b-g { background: var(--gcl-green-soft); color: var(--gcl-green); }
+.gcl-badge.b-g { background: #d7f4e6; color: #0b7a55; }
 .gcl-badge.b-o { background: var(--gcl-orange-soft); color: #c4621f; }
 .gcl-badge.b-r { background: var(--gcl-red-soft); color: var(--gcl-red); }
 .gcl-badge.b-n { background: var(--gcl-soft); color: var(--gcl-ink2); }
@@ -85,6 +85,17 @@
 .gcl th { font-size: 12px; letter-spacing: .07em; text-transform: uppercase; color: var(--gcl-ink2); font-weight: 800; text-align: left; padding: 14px 16px; background: var(--gcl-soft); border: 0; border-bottom: 1px solid var(--gcl-line); white-space: nowrap; }
 .gcl td { padding: 14px 16px; border: 0; border-bottom: 1px solid var(--gcl-line2); vertical-align: middle; }
 .gcl tr:last-child td { border-bottom: 0; }
+/* Liste des commandes groupées : une couleur par famille (option A de Bastien, 05/10/2026).
+   Fond pâle + trait à gauche ; le zébrage gris du reset Hello Elementor
+   (tbody tr:nth-child(odd) > td) est neutralisé. */
+.gcl .gcl-cards tbody tr > td { background: transparent; }
+.gcl .gcl-cards tbody tr.gcl-f-regler > td { background: #fff7e3; }
+.gcl .gcl-cards tbody tr.gcl-f-ouvert > td { background: #eefaf4; }
+.gcl .gcl-cards tbody tr.gcl-f-regler > td.first { box-shadow: inset 4px 0 0 var(--gcl-yellow); }
+.gcl .gcl-cards tbody tr.gcl-f-ouvert > td.first { box-shadow: inset 4px 0 0 #10b981; }
+.gcl .gcl-cards tbody tr.gcl-f-cours > td.first { box-shadow: inset 4px 0 0 var(--gcl-teal); }
+.gcl .gcl-cards tbody tr.gcl-f-termine > td.first { box-shadow: inset 4px 0 0 #c9cfcf; }
+.gcl .gcl-cards tbody tr.gcl-f-termine > td { color: #6b7272; }
 .gcl .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .gcl .r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .gcl .sub { display: block; font-size: 16px; color: var(--gcl-ink3); }
@@ -163,6 +174,13 @@
 	.gcl-cards td::before { flex: none; }
 	.gcl-cards td > .gcl-val { text-align: right; }
 	.gcl-cards td > .gcl-val .sub { font-size: 16px; }
+	/* Cartes : le trait de couleur passe sur la carte entière. */
+	.gcl .gcl-cards tbody tr { padding-left: 18px; }
+	.gcl .gcl-cards tbody tr[class] > td.first { box-shadow: none; }
+	.gcl .gcl-cards tbody tr.gcl-f-regler { background: #fff7e3; box-shadow: inset 4px 0 0 var(--gcl-yellow); }
+	.gcl .gcl-cards tbody tr.gcl-f-ouvert { background: #eefaf4; box-shadow: inset 4px 0 0 #10b981; }
+	.gcl .gcl-cards tbody tr.gcl-f-cours { box-shadow: inset 4px 0 0 var(--gcl-teal); }
+	.gcl .gcl-cards tbody tr.gcl-f-termine { box-shadow: inset 4px 0 0 #c9cfcf; }
 }
 
 /* Écran de connexion intégré à une page (entete="non") : l'écran du socle
