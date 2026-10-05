@@ -79,6 +79,7 @@
 .gcl-badge.b-g { background: #d7f4e6; color: #0b7a55; }
 .gcl-badge.b-o { background: var(--gcl-orange-soft); color: #c4621f; }
 .gcl-badge.b-r { background: var(--gcl-red-soft); color: var(--gcl-red); }
+.gcl-badge.b-t { background: var(--gcl-teal-soft); color: var(--gcl-teal-ink); }
 .gcl-badge.b-n { background: var(--gcl-soft); color: var(--gcl-ink2); }
 .gcl-tbl { border: 1px solid var(--gcl-line); border-radius: 14px; overflow-x: auto; }
 .gcl table { width: 100%; border-collapse: collapse; font-size: 16px; border: 0; margin: 0; }
@@ -106,6 +107,7 @@
 .gcl-st.done i { background: var(--gcl-teal); }
 .gcl-st.now { color: var(--gcl-ink); }
 .gcl-st.now i { background: var(--gcl-yellow); }
+.gcl-st .gcl-sh { display: none; }
 .gcl-share { display: grid; grid-template-columns: minmax( 0, 1fr ) minmax( 0, 1fr ); gap: 12px; }
 .gcl-field { border: 1px solid var(--gcl-line); background: #fff; border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; min-width: 0; }
 .gcl-field .v { flex: 1; min-width: 0; overflow-wrap: anywhere; font-weight: 700; }
@@ -161,6 +163,12 @@
 	.gcl-head h1 { font-size: 28px; }
 	.gcl-head .gcl-btn { width: 100%; }
 	.gcl-frise { grid-template-columns: repeat( 4, minmax( 0, 1fr ) ); row-gap: 14px; }
+	/* Libellés courts : en 4 colonnes, « Inscriptions ouvertes » et « Commande à régler » se chevauchaient. */
+	.gcl-st .gcl-lg { display: none; }
+	.gcl-st .gcl-sh { display: inline; }
+	/* Marges de la carte resserrées : à 360 px, « Demande » et « Renvoyé » tiennent dans leur colonne. */
+	.gcl .gcl-frise { padding: 16px 10px; column-gap: 4px; }
+	.gcl-st > span { overflow-wrap: break-word; }
 	.gcl-share, .gcl-counts, .gcl-form, .gcl-form-3, .gcl-num3 { grid-template-columns: minmax( 0, 1fr ); }
 	.gcl-cards thead { display: none; }
 	.gcl-cards, .gcl-cards tbody, .gcl-cards tr, .gcl-cards td { display: block; width: 100%; }

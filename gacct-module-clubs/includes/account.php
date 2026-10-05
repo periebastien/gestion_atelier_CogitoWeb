@@ -154,16 +154,16 @@ function gacct_clubs_account_list( array $clubs ) {
 function gacct_clubs_lot_display_state( array $lot, array $c ) {
 	switch ( $lot['statut'] ) {
 		case 'demande':
-			return array( 'Demande envoyée', 'b-n' );
+			return array( 'Demande envoyée', 'b-t' );
 		case 'planifie':
 			if ( gacct_clubs_registrations_open( $lot ) ) {
 				return array( 'Inscriptions ouvertes', 'b-g' );
 			}
-			return $c['recues'] ? array( 'En atelier', 'b-b' ) : array( 'Inscriptions closes, envoi attendu', 'b-o' );
+			return $c['recues'] ? array( 'En atelier', 'b-t' ) : array( 'Inscriptions closes, envoi attendu', 'b-t' );
 		case 'facture':
 			return array( 'Commande à régler', 'b-y' );
 		case 'paye':
-			return array( 'Retour en préparation', 'b-b' );
+			return array( 'Retour en préparation', 'b-t' );
 		case 'expedie':
 			return array( 'Matériel réexpédié', 'b-n' );
 	}
@@ -228,12 +228,13 @@ function gacct_clubs_account_detail( array $lot ) {
 	$steps = array(
 		array( 'Demande envoyée', gacct_clubs_date_label( $lot['created'], 'j M' ) ),
 		array( 'Planifiée', $first ? gacct_clubs_date_label( $first, 'j M' ) : '' ),
-		array( 'Inscriptions ouvertes', $lot['limite_inscription'] ? 'jusqu’au ' . gacct_clubs_date_label( $lot['limite_inscription'], 'j M' ) : '' ),
-		array( 'Inscriptions closes', '' ),
+		// 3e valeur : libellé court du mobile (4 colonnes, Bastien 05/10/2026).
+		array( 'Inscriptions ouvertes', $lot['limite_inscription'] ? 'jusqu’au ' . gacct_clubs_date_label( $lot['limite_inscription'], 'j M' ) : '', 'Ouvertes' ),
+		array( 'Inscriptions closes', '', 'Closes' ),
 		array( 'Colis reçu', $lot['limite_arrivee'] ? 'avant le ' . gacct_clubs_date_label( $lot['limite_arrivee'], 'j M' ) : '' ),
 		array( 'En atelier', $lot['jours'] ? gacct_clubs_period_label( $lot ) : '' ),
-		array( 'Commande à régler', '' ),
-		array( 'Matériel réexpédié', '' ),
+		array( 'Commande à régler', '', 'À régler' ),
+		array( 'Matériel réexpédié', '', 'Renvoyé' ),
 	);
 
 	$next   = gacct_clubs_next_tier( $c['voiles'] );
@@ -257,7 +258,7 @@ function gacct_clubs_account_detail( array $lot ) {
 
 		<div class="gcl-frise" aria-label="Avancement de la commande groupée">
 			<?php foreach ( $steps as $i => $s ) : ?>
-				<div class="gcl-st <?php echo esc_attr( $i < $now ? 'done' : ( $i === $now ? 'now' : '' ) ); ?>"><i></i><span><?php echo esc_html( $s[0] ); ?></span><small><?php echo esc_html( $s[1] ); ?></small></div>
+				<div class="gcl-st <?php echo esc_attr( $i < $now ? 'done' : ( $i === $now ? 'now' : '' ) ); ?>"><i></i><span><?php echo empty( $s[2] ) ? esc_html( $s[0] ) : '<span class="gcl-lg">' . esc_html( $s[0] ) . '</span><span class="gcl-sh">' . esc_html( $s[2] ) . '</span>'; ?></span><small><?php echo esc_html( $s[1] ); ?></small></div>
 			<?php endforeach; ?>
 		</div>
 
