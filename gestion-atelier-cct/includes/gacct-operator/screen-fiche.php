@@ -817,8 +817,12 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 			$status_name = __( 'En attente de virement', 'gestion-atelier-cct' );
 		}
 
+		// Acompte réellement réglé (meta Kojito) : le total de la commande, lui,
+		// devient le reste à payer dès que le solde est demandé (Hervé, 29/09/2026).
+		$deposit = function_exists( 'gacct_quote_deposit_paid' ) ? gacct_quote_deposit_paid( $order ) : (float) $order->get_total();
+
 		echo '<dl class="gacct-op-facts">';
-		echo '<div><dt>' . esc_html__( 'Acompte', 'gestion-atelier-cct' ) . '</dt><dd>' . wp_kses_post( wc_price( $order->get_total(), array( 'currency' => $order->get_currency() ) ) ) . '</dd></div>';
+		echo '<div><dt>' . esc_html__( 'Acompte', 'gestion-atelier-cct' ) . '</dt><dd>' . wp_kses_post( wc_price( $deposit, array( 'currency' => $order->get_currency() ) ) ) . '</dd></div>';
 		echo '<div><dt>' . esc_html__( 'Statut', 'gestion-atelier-cct' ) . '</dt><dd>' . esc_html( $status_name ) . '</dd></div>';
 		if ( $order->get_payment_method_title() ) {
 			echo '<div><dt>' . esc_html__( 'Méthode', 'gestion-atelier-cct' ) . '</dt><dd>' . esc_html( $order->get_payment_method_title() ) . '</dd></div>';
@@ -826,7 +830,7 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 
 		if ( function_exists( 'gacct_kojito_total_initial' ) ) {
 			$total_initial = gacct_kojito_total_initial( $order );
-			if ( $total_initial > 0 && abs( $total_initial - (float) $order->get_total() ) > 0.005 ) {
+			if ( $total_initial > 0 && abs( $total_initial - $deposit ) > 0.005 ) {
 				echo '<div><dt>' . esc_html__( 'Total dû (acompte + solde)', 'gestion-atelier-cct' ) . '</dt><dd>' . wp_kses_post( wc_price( $total_initial, array( 'currency' => $order->get_currency() ) ) ) . '</dd></div>';
 			}
 		}
@@ -834,7 +838,11 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 		$solde = $order->get_meta( '_kojito_solde_restant' );
 		if ( '' !== $solde && null !== $solde ) {
 			echo '<div><dt>' . esc_html__( 'Solde restant', 'gestion-atelier-cct' ) . '</dt><dd>' . wp_kses_post( wc_price( (float) $solde, array( 'currency' => $order->get_currency() ) ) );
-			echo '<br><a href="' . esc_url( $order->get_checkout_payment_url() ) . '" target="_blank" rel="noopener">' . esc_html__( 'Lien de paiement du solde', 'gestion-atelier-cct' ) . '</a></dd></div>';
+			// Solde réglé (meta à 0) : plus de lien de paiement à proposer.
+			if ( (float) $solde > 0 ) {
+				echo '<br><a href="' . esc_url( $order->get_checkout_payment_url() ) . '" target="_blank" rel="noopener">' . esc_html__( 'Lien de paiement du solde', 'gestion-atelier-cct' ) . '</a>';
+			}
+			echo '</dd></div>';
 		}
 		echo '</dl>';
 
