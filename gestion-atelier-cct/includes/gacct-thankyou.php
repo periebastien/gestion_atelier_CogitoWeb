@@ -31,6 +31,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return float
  */
 function gacct_kojito_total_initial( $order ) {
+	// Commande sans aucune ligne en acompte (vente seule) : tout est payé à la
+	// commande, le dû est le total encaissé. Recalculer ligne par ligne réintroduit
+	// l'arrondi de TVA par ligne (prix à 0 décimale : 69 € payés, 69,50 € « dus »,
+	// solde fantôme de 1 €, 05/10/2026).
+	if ( $order instanceof WC_Order && gacct_commande_sans_acompte( $order ) ) {
+		return round( max( 0, (float) $order->get_total() ), wc_get_price_decimals() );
+	}
+
 	if ( method_exists( 'Kojito_Acompte_Produit', 'get_total_initial' ) ) {
 		return (float) Kojito_Acompte_Produit::get_total_initial( $order );
 	}
@@ -59,7 +67,32 @@ function gacct_kojito_montant_ligne( $item ) {
 		}
 	}
 
-	return (float) $item->get_total() + (float) $item->get_total_tax();
+	// Ligne payée à son prix plein : prix unitaire TTC arrondi comme le catalogue,
+	// pas la somme HT + TVA arrondie par ligne (34,33 € affichés pour 2 × 17 €).
+	$qty = max( 1, (int) $item->get_quantity() );
+
+	return round( ( (float) $item->get_total() + (float) $item->get_total_tax() ) / $qty, wc_get_price_decimals() ) * $qty;
+}
+
+/**
+ * La commande n'a-t-elle AUCUNE ligne facturée en acompte (ni phase de solde) ?
+ * Cas de la vente seule (gacct-vente-seule.php) et de toute commande payée à 100 %.
+ *
+ * @param WC_Order $order
+ * @return bool
+ */
+function gacct_commande_sans_acompte( $order ) {
+	if ( '' !== (string) $order->get_meta( '_kojito_phase_paiement' ) ) {
+		return false;
+	}
+
+	foreach ( $order->get_items() as $item ) {
+		if ( '' !== (string) $item->get_meta( '_kojito_prix_total_initial' ) ) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 /* =============================================================================

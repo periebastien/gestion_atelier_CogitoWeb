@@ -245,7 +245,10 @@ function gacct_op_render_today_screen() {
 			$slot     = absint( $item['date_reservee'] ?? 0 );
 			// Limite = le jour du créneau à l'heure limite de réception (Hervé, 30/09/2026).
 			$deadline = function_exists( 'gacct_pay_parcel_deadline_ts' ) ? gacct_pay_parcel_deadline_ts( $slot ) : $slot;
-			$is_late  = ( time() > $deadline );
+			// Vente seule (commande de suspente) : pas de créneau, donc ni date
+			// limite ni retard ; traitée dès réception.
+			$vente_seule = $order && function_exists( 'gacct_vente_seule_commande' ) && gacct_vente_seule_commande( $order );
+			$is_late     = ! $vente_seule && ( time() > $deadline );
 
 			gacct_op_today_row_open( gacct_op_console_url( absint( $item['_ID'] ) ), $is_late ? 'is-late' : '' );
 			echo '<span class="gacct-op-row-ref">' . esc_html( gacct_op_today_reference( $order, $order_id ) ) . '</span>';
@@ -254,11 +257,13 @@ function gacct_op_render_today_screen() {
 			echo '<span class="gacct-op-row-muted">' . esc_html( gacct_op_today_material( $item ) ) . '</span>';
 			echo '</span>';
 			echo '<span class="gacct-op-row-meta">';
-			echo esc_html( sprintf(
-				/* translators: %s: date et heure limites de réception (jour du créneau) */
-				__( 'Limite : %s', 'gestion-atelier-cct' ),
-				wp_date( $date_format . ' G \\h', $deadline )
-			) );
+			echo esc_html( $vente_seule
+				? __( 'Sans date limite, dès réception', 'gestion-atelier-cct' )
+				: sprintf(
+					/* translators: %s: date et heure limites de réception (jour du créneau) */
+					__( 'Limite : %s', 'gestion-atelier-cct' ),
+					wp_date( $date_format . ' G \\h', $deadline )
+				) );
 			if ( $is_late ) {
 				echo ' <span class="gacct-op-pill danger">' . esc_html__( 'en retard', 'gestion-atelier-cct' ) . '</span>';
 			}

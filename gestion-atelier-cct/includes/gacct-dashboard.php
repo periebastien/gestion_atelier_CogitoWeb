@@ -495,7 +495,11 @@ function gacct_dash_data( $user_id = 0 ) {
 				'revision_id'    => $revision_id,
 				'order_id'       => $order_id,
 				'etat'           => $etat,
-				'marque_libelle' => function_exists( 'jwcct_render_marque_libelle' ) ? jwcct_render_marque_libelle( (string) $row['marque'] ) : ucfirst( (string) $row['marque'] ),
+				// Sans voile (pliage seul, commande de suspente) : le libellé de repli
+				// (« Secours Supair Short », « Commande de suspente ») sert de titre.
+				'marque_libelle' => '' === trim( (string) $row['marque'] ) && '' === trim( (string) $row['modele'] )
+					? $materiel_label
+					: ( function_exists( 'jwcct_render_marque_libelle' ) ? jwcct_render_marque_libelle( (string) $row['marque'] ) : ucfirst( (string) $row['marque'] ) ),
 				'modele'         => (string) $row['modele'],
 				'taille'         => (string) $row['taille'],
 				'couleurs'       => $couleurs,
@@ -787,8 +791,12 @@ function gacct_dash_revision_extra( array $row, $order, array $conf ) {
 		return $extra;
 	}
 
-	// 4. Créneau atelier (date déjà calculée par `gacct_conf_data()`).
-	if ( ! empty( $conf['slot_label'] ) ) {
+	// 4. Créneau atelier (date déjà calculée par `gacct_conf_data()`). Vente
+	//    seule (commande de suspente) : pas de créneau, traitée dès réception.
+	if ( ! empty( $conf['vente_seule'] ) ) {
+		$extra['label'] = __( 'Traitement', 'gestion-atelier-cct' );
+		$extra['value'] = __( 'Dès réception', 'gestion-atelier-cct' );
+	} elseif ( ! empty( $conf['slot_label'] ) ) {
 		$extra['label'] = gacct_dash_text( 'slot_label' );
 		$extra['value'] = (string) $conf['slot_label'];
 	}
@@ -1974,6 +1982,11 @@ function gacct_dash_render_voile( $revision_id ) {
 	$marque = ( '' !== $marque && function_exists( 'jwcct_render_marque_libelle' ) ) ? jwcct_render_marque_libelle( $marque ) : $marque;
 
 	$brand = trim( $marque . ' ' . trim( (string) ( $row['modele'] ?? '' ) ) );
+
+	// Sans voile (pliage seul, commande de suspente) : libellé de repli.
+	if ( '' === $brand ) {
+		$brand = gacct_dash_materiel_label( $row );
+	}
 
 	$sous_titre = array_filter(
 		array(

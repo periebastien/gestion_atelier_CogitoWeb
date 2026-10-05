@@ -423,6 +423,12 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 		$revision['taille'] ?? '',
 		$revision['couleur'] ?? '',
 	) );
+	// Vente seule (commande de suspente) : ni voile ni créneau, on nomme le
+	// dossier et ses prestations (gacct-vente-seule.php, 05/10/2026).
+	$vente_seule = $order && function_exists( 'gacct_vente_seule_commande' ) && gacct_vente_seule_commande( $order );
+	if ( ! $materiel && $vente_seule ) {
+		$materiel = array( gacct_vente_seule_libelle() . ' : ' . gacct_vente_seule_prestations( $order ) );
+	}
 	echo '<div><dt>' . esc_html__( 'Matériel', 'gestion-atelier-cct' ) . '</dt><dd>' . esc_html( $materiel ? implode( ' · ', $materiel ) : '—' ) . '</dd></div>';
 
 	$serial = trim( (string) ( $revision['numero_de_serie'] ?? '' ) );
@@ -443,7 +449,9 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 	}
 
 	echo '<div><dt>' . esc_html__( 'Créneau', 'gestion-atelier-cct' ) . '</dt><dd>';
-	if ( $slot && ! empty( $slot['date_reservee'] ) ) {
+	if ( $vente_seule ) {
+		echo esc_html__( 'Sans créneau, traitée dès réception', 'gestion-atelier-cct' );
+	} elseif ( $slot && ! empty( $slot['date_reservee'] ) ) {
 		$ts = is_numeric( $slot['date_reservee'] ) ? (int) $slot['date_reservee'] : strtotime( $slot['date_reservee'] );
 		echo esc_html( date_i18n( get_option( 'date_format' ), $ts ) );
 		if ( ! empty( $slot['duree_totale_commande'] ) ) {
@@ -468,7 +476,7 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 	// 0 à 2, et 9 « Sans suite » (occupation en brouillon, invisible du
 	// Planning : la fiche est la seule porte de reprise pour l'atelier).
 	// À partir de 3 : replanification réservée à l'admin, via le Planning.
-	$can_reschedule = $slot && ! empty( $slot['_ID'] ) && ! $is_cancelled
+	$can_reschedule = $slot && ! empty( $slot['_ID'] ) && ! $is_cancelled && ! $vente_seule
 		&& ( $state <= 2 || ( defined( 'GACCT_STATE_SANS_SUITE' ) && GACCT_STATE_SANS_SUITE === (int) $state ) );
 
 	if ( $can_reschedule ) {

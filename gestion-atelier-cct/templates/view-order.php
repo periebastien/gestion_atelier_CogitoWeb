@@ -217,6 +217,12 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 				<tr class="gacct-vo-paid">
 					<td colspan="2"><?php echo esc_html( ! empty( $vo_tiers['paid_label'] ) ? $vo_tiers['paid_label'] : sprintf( __( 'Réglé par %s', 'gestion-atelier-cct' ), $vo_tiers['name'] ) ); ?></td>
 				</tr>
+				<?php elseif ( ! empty( $d['vente_seule'] ) ) : ?>
+				<!-- Vente seule (commande de suspente) : payée en totalité, aucun solde. -->
+				<tr class="gacct-vo-paid">
+					<td><?php echo esc_html( $is_bacs_waiting ? __( 'À régler par virement', 'gestion-atelier-cct' ) : __( 'Réglé en totalité', 'gestion-atelier-cct' ) ); ?></td>
+					<td class="gacct-vo-amount"><?php echo esc_html( $vo_fmt( $d['total_initial'] ) ); ?></td>
+				</tr>
 				<?php else : ?>
 				<tr class="gacct-vo-paid">
 					<td><?php echo esc_html( $is_bacs_waiting ? __( 'Acompte à régler par virement', 'gestion-atelier-cct' ) : __( 'Acompte réglé', 'gestion-atelier-cct' ) ); ?></td>
@@ -254,7 +260,9 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 			<p>
 				<?php
 				printf(
-					esc_html__( 'Merci d\'effectuer le virement de l\'acompte (%1$s) avant le %2$s, il reste %3$s. Passé ce délai, le créneau est libéré et la commande annulée automatiquement.', 'gestion-atelier-cct' ),
+					! empty( $d['vente_seule'] )
+						? esc_html__( 'Merci d\'effectuer le virement (%1$s) avant le %2$s, il reste %3$s. Passé ce délai, la commande est annulée automatiquement.', 'gestion-atelier-cct' )
+						: esc_html__( 'Merci d\'effectuer le virement de l\'acompte (%1$s) avant le %2$s, il reste %3$s. Passé ce délai, le créneau est libéré et la commande annulée automatiquement.', 'gestion-atelier-cct' ),
 					'<strong>' . esc_html( $vo_fmt( $d['deposit'] ) ) . '</strong>',
 					'<strong>' . esc_html( $d['deadline_label'] ) . '</strong>',
 					'<strong>' . esc_html( sprintf( _n( '%d jour', '%d jours', $d['days_remaining'], 'gestion-atelier-cct' ), $d['days_remaining'] ) ) . '</strong>'
@@ -281,6 +289,28 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 			<?php echo wp_kses_post( isset( $vo_tiers['ship_html'] ) ? $vo_tiers['ship_html'] : '' ); ?>
 			<?php if ( function_exists( 'gacct_conf_feature' ) && gacct_conf_feature( 'work_order' ) && ! empty( $d['links']['work_order'] ) && empty( $d['work_order_locked'] ) ) : ?>
 				<a class="gacct-vo-btn is-secondary" href="<?php echo esc_url( $d['links']['work_order'] ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Imprimer le bon d\'intervention', 'gestion-atelier-cct' ); ?></a>
+			<?php endif; ?>
+		</div>
+	<?php elseif ( null !== $etat && $etat <= 1 && ! $is_dead && ! empty( $d['vente_seule'] ) && function_exists( 'gacct_vente_seule_textes' ) ) : ?>
+		<!-- ── Vente seule : envoi de la suspente (gacct-vente-seule.php) ── -->
+		<?php $vo_vs = gacct_vente_seule_textes(); ?>
+		<div class="gacct-vo-card">
+			<h3><?php esc_html_e( 'Envoyez-nous votre suspente', 'gestion-atelier-cct' ); ?></h3>
+			<?php if ( ! empty( $d['shipping_locked'] ) ) : ?>
+				<p><?php esc_html_e( 'Les consignes d’envoi s’afficheront ici dès la réception de votre paiement.', 'gestion-atelier-cct' ); ?></p>
+			<?php else : ?>
+				<ol class="gacct-vo-steps">
+					<li><?php echo esc_html( $vo_vs['etape1'] ); ?></li>
+					<li><?php printf( esc_html( $vo_vs['etape2'] ), '<strong>' . esc_html( $d['reference'] ) . '</strong>' ); ?></li>
+					<li><?php echo esc_html( $vo_vs['etape3'] ); ?><?php if ( ! empty( $d['store_address'] ) ) : ?> : <strong><?php echo esc_html( implode( ', ', $d['store_address'] ) ); ?></strong><?php endif; ?>.</li>
+					<li><?php echo esc_html( $vo_vs['etape4'] ); ?></li>
+				</ol>
+				<?php if ( ! empty( $d['links']['packing_guide'] ) ) : ?>
+					<a class="gacct-vo-btn is-secondary" href="<?php echo esc_url( $d['links']['packing_guide'] ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $vo_vs['guide'] ); ?></a>
+				<?php endif; ?>
+				<?php if ( function_exists( 'gacct_ship_render_form' ) ) : ?>
+					<?php echo gacct_ship_render_form( $order ); // phpcs:ignore WordPress.Security.EscapeOutput -- HTML construit et échappé par le module shipping. ?>
+				<?php endif; ?>
 			<?php endif; ?>
 		</div>
 	<?php elseif ( null !== $etat && $etat <= 1 && ! $is_dead ) : ?>

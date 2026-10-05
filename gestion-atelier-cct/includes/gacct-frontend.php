@@ -734,6 +734,13 @@ function jwcct_render_order_status_tracker( $value, $order_id = 0 ) {
 
     $order = ( $order_id && function_exists( 'wc_get_order' ) ) ? wc_get_order( $order_id ) : false;
 
+    // Vente seule (commande de suspente, gacct-vente-seule.php) : c'est la
+    // suspente qui est attendue, pas « votre matériel ».
+    $vente_seule = $order && function_exists( 'gacct_vente_seule_commande' ) && gacct_vente_seule_commande( $order );
+    if ( $vente_seule && 1 === $state ) {
+        $s['tip'] = '<strong>Info :</strong> ' . esc_html__( 'nous attendons la réception de votre suspente à l’atelier.', 'gestion-atelier-cct' );
+    }
+
     // État d'affichage dérivé (pas un état de la machine) : suivi colis déclaré
     // et voile pas encore reçue → « En cours d'acheminement vers l'atelier ».
     if ( 1 === $state && $order_id && function_exists( 'gacct_ship_in_transit' ) ) {
@@ -824,7 +831,8 @@ function jwcct_render_order_status_tracker( $value, $order_id = 0 ) {
     // deja un 403, mais le tableau de bord proposait un lien actif qui menait
     // droit dessus.
     $workorder_html = '';
-    $wo_visible     = $state <= 1 && $order && function_exists( 'gacct_wo_print_url' )
+    // Vente seule : un papier avec la référence suffit, pas de bon côté client.
+    $wo_visible     = $state <= 1 && $order && ! $vente_seule && function_exists( 'gacct_wo_print_url' )
         && ! $order->has_status( array( 'cancelled', 'refunded', 'trash' ) );
     $wo_locked      = $wo_visible && function_exists( 'gacct_order_payment_received' )
         && ! gacct_order_payment_received( $order );
@@ -1245,6 +1253,16 @@ function jwcct_render_equipment_info( $cct_id ) {
     $couleur_brute = ! empty( $data['couleur'] ) ? $data['couleur'] : '';
     $taille = ! empty( $data['taille'] ) ? $data['taille'] : '';
     $sn = ! empty( $data['numero_de_serie'] ) ? 'S/N : ' . $data['numero_de_serie'] : '';
+
+    // Ni voile ni modèle (pliage seul, commande de suspente) : libellé de repli
+    // (« Secours Supair Short », « Commande de suspente »).
+    if ( '' === $marque && '' === $modele && function_exists( 'gacct_equip_materiel_fallback' ) ) {
+        $repli = gacct_equip_materiel_fallback( $data );
+        if ( '' !== $repli ) {
+            // text-transform neutralisé : la marque est en capitale de titre (CSS du thème).
+            return sprintf( '<div class="voile-stack"><div class="voile-meta"><div class="voile-brand" style="text-transform:none">%s</div></div></div>', esc_html( $repli ) );
+        }
+    }
 
     // Palette et extraction : voir gacct_couleurs_voile() / gacct_extraire_couleurs().
     $gradient = gacct_degrade_couleurs( gacct_extraire_couleurs( $couleur_brute ) );

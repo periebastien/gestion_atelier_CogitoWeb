@@ -153,5 +153,7 @@ function gacct_equip_materiel_fallback( array $row ) {
 			return $prefix . ' ' . $label;
 		}
 	}
-	return '';
+	// Ni voile, ni secours, ni sellette : un module peut nommer le dossier
+	// (ex. « Commande de suspente », gacct-vente-seule.php, 05/10/2026).
+	return (string) apply_filters( 'gacct_materiel_fallback', '', $row );
 }

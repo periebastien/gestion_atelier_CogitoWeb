@@ -270,6 +270,110 @@ function gacct_vente_seule_depot_hint( $hint, $order ) {
 }
 
 /* =============================================================================
+ *  AFFICHAGE DU DOSSIER (liste, tableau de bord, détail, console)
+ * ============================================================================= */
+
+/**
+ * Nom d'une vente seule là où un dossier affiche son matériel (filtrable).
+ */
+function gacct_vente_seule_libelle() {
+	return (string) apply_filters( 'gacct_vente_seule_libelle', __( 'Commande de suspente', 'gestion-atelier-cct' ) );
+}
+
+/**
+ * Le dossier (ligne CCT revision ou son ID) est-il une vente seule ?
+ *
+ * @param array|int $row
+ */
+function gacct_vente_seule_dossier( $row ) {
+	static $cache = array();
+
+	if ( ! is_array( $row ) ) {
+		global $wpdb;
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT order_id FROM {$wpdb->prefix}jet_cct_revision WHERE _ID = %d", absint( $row ) ), ARRAY_A );
+	}
+
+	$order_id = absint( $row['order_id'] ?? 0 );
+
+	if ( ! $order_id ) {
+		return false;
+	}
+	if ( ! isset( $cache[ $order_id ] ) ) {
+		$cache[ $order_id ] = gacct_vente_seule_commande( wc_get_order( $order_id ) );
+	}
+
+	return $cache[ $order_id ];
+}
+
+/**
+ * Prestations d'une vente seule, frais de port exclus
+ * (« Lignes basses de frein non montées × 2, Suspente complexe × 2 »).
+ */
+function gacct_vente_seule_prestations( $order ) {
+	$order = $order instanceof WC_Order ? $order : wc_get_order( $order );
+
+	if ( ! $order ) {
+		return '';
+	}
+
+	$ports = array();
+	if ( function_exists( 'gacct_demande_queries_map' ) && class_exists( '\Jet_Engine\Query_Builder\Manager' ) ) {
+		$map   = gacct_demande_queries_map();
+		$query = empty( $map['frais_de_ports'] ) ? null : \Jet_Engine\Query_Builder\Manager::instance()->get_query_by_id( $map['frais_de_ports'] );
+		foreach ( (array) ( $query ? ( $query->query['tax_query'] ?? array() ) : array() ) as $clause ) {
+			if ( is_array( $clause ) && 'product_cat' === ( $clause['taxonomy'] ?? '' ) ) {
+				$ports = array_merge( $ports, wp_parse_id_list( $clause['terms'] ?? array() ) );
+			}
+		}
+	}
+
+	$parts = array();
+	foreach ( $order->get_items() as $item ) {
+		if ( $ports && has_term( $ports, 'product_cat', $item->get_product_id() ) ) {
+			continue;
+		}
+		$parts[] = $item->get_name() . ( $item->get_quantity() > 1 ? ' × ' . (int) $item->get_quantity() : '' );
+	}
+
+	return implode( ', ', $parts );
+}
+
+/**
+ * Libellé matériel d'un dossier sans voile ni équipement : « Commande de suspente ».
+ * Sert au tableau de bord (carte « Mes révisions en cours ») et à la console.
+ */
+add_filter( 'gacct_materiel_fallback', 'gacct_vente_seule_materiel_fallback', 10, 2 );
+
+function gacct_vente_seule_materiel_fallback( $label, $row ) {
+	return ( '' === $label && is_array( $row ) && gacct_vente_seule_dossier( $row ) ) ? gacct_vente_seule_libelle() : $label;
+}
+
+/**
+ * Colonne « Intervention programmée » du tableau « Mes demandes » (table
+ * dynamique JetEngine 16) : « Dès réception » pour une vente seule, sinon la
+ * date au format de la colonne (d F Y).
+ */
+add_filter( 'jet-engine/listings/allowed-callbacks', function ( $callbacks ) {
+	$callbacks['gacct_render_date_creneau'] = 'GACCT : Date du créneau (vente seule : dès réception)';
+	return $callbacks;
+} );
+
+function gacct_render_date_creneau( $value ) {
+	if ( function_exists( 'jwcct_tracker_current_order_id' ) ) {
+		$order_id = jwcct_tracker_current_order_id();
+		if ( $order_id && gacct_vente_seule_commande( wc_get_order( $order_id ) ) ) {
+			return esc_html__( 'Dès réception', 'gestion-atelier-cct' );
+		}
+	}
+
+	if ( '' === (string) $value || ! is_numeric( $value ) ) {
+		return esc_html( (string) $value );
+	}
+
+	return esc_html( date_i18n( 'd F Y', (int) $value ) );
+}
+
+/* =============================================================================
  *  E-MAIL « PAIEMENT REÇU »
  * ============================================================================= */
 
