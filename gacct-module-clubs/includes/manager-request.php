@@ -5,7 +5,7 @@
  * Non connecté : l'écran « l'e-mail d'abord » du socle (adresse inconnue =
  * compte créé sans mot de passe en un clic), retour sur cette page.
  * Connecté : formulaire court (champs fixés par Hervé le 30/09/2026), prérempli
- * si la personne gère déjà un club. POST sur la page, puis PRG vers « Mon club ».
+ * si la personne gère déjà un club. POST sur la page, puis PRG vers « Commandes groupées ».
  *
  * @package gacct-module-clubs
  */

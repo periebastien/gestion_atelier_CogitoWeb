@@ -1,6 +1,6 @@
 <?php
 /**
- * Espace client du responsable : onglet « Mon club » (shortcode [gacct_club]).
+ * Espace client du responsable : onglet « Commandes groupées » (shortcode [gacct_club]).
  *
  * Maquette validée par Bastien le 03/10/2026 : page liste des commandes
  * groupées du club, page détail (frise, partage du lien, compteurs et palier
@@ -25,7 +25,7 @@ function gacct_clubs_account_shortcode() {
 	$clubs = gacct_clubs_for_user( $user->ID );
 
 	if ( ! $clubs ) {
-		return '<div class="gcl"><div class="gcl-head"><div><h1>Mon club</h1><p>Vous n’êtes responsable d’aucun club pour l’instant.</p></div></div>'
+		return '<div class="gcl"><div class="gcl-head"><div><h1>Commandes groupées</h1><p>Vous n’êtes responsable d’aucun club pour l’instant.</p></div></div>'
 			. '<div class="gcl-card"><p>Vous organisez la révision du matériel de votre club, de votre école ou d’un groupe ? Envoyez une demande groupée : une seule commande à régler pour le club, un créneau réservé, un suivi individuel pour chaque pilote.</p>'
 			. '<p><a class="gcl-btn" href="' . esc_url( gacct_clubs_page_url( 'request_page' ) ) . '">Demander une révision groupée</a></p></div></div>';
 	}
@@ -77,12 +77,12 @@ function gacct_clubs_account_list( array $clubs ) {
 	ob_start();
 	?>
 	<div class="gcl">
-		<div class="gcl-crumb"><a href="<?php echo esc_url( home_url( '/mon-compte/' ) ); ?>">Espace client</a><span>›</span><span>Mon club</span></div>
+		<div class="gcl-crumb"><a href="<?php echo esc_url( home_url( '/mon-compte/' ) ); ?>">Espace client</a><span>›</span><span>Commandes groupées</span></div>
 		<?php echo gacct_clubs_account_notice(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 		<div class="gcl-head">
 			<div>
-				<h1>Mon club</h1>
-				<p><?php echo esc_html( implode( ', ', wp_list_pluck( $clubs, 'nom' ) ) ); ?> · les commandes groupées de vos membres</p>
+				<h1>Commandes groupées</h1>
+				<p><?php echo esc_html( implode( ', ', wp_list_pluck( $clubs, 'nom' ) ) ); ?> · le suivi des révisions de vos membres</p>
 			</div>
 			<a class="gcl-btn" href="<?php echo esc_url( gacct_clubs_page_url( 'request_page' ) ); ?>">+ Nouvelle commande groupée</a>
 		</div>
@@ -217,7 +217,7 @@ function gacct_clubs_account_detail( array $lot ) {
 	ob_start();
 	?>
 	<div class="gcl">
-		<div class="gcl-crumb"><a href="<?php echo esc_url( home_url( '/mon-compte/' ) ); ?>">Espace client</a><span>›</span><a href="<?php echo esc_url( gacct_clubs_account_url() ); ?>">Mon club</a><span>›</span><span><?php echo esc_html( $code_ok ? $lot['code'] : 'Demande n° ' . $lot['id'] ); ?></span></div>
+		<div class="gcl-crumb"><a href="<?php echo esc_url( home_url( '/mon-compte/' ) ); ?>">Espace client</a><span>›</span><a href="<?php echo esc_url( gacct_clubs_account_url() ); ?>">Commandes groupées</a><span>›</span><span><?php echo esc_html( $code_ok ? $lot['code'] : 'Demande n° ' . $lot['id'] ); ?></span></div>
 		<?php echo gacct_clubs_account_notice(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 		<div class="gcl-head">
 			<div>
@@ -552,7 +552,7 @@ function gacct_clubs_dashboard_card( $html, $data ) {
 	return $cards . $html;
 }
 
-/** L'onglet « Mon club » n'est visible que des responsables. */
+/** L'onglet « Commandes groupées » n'est visible que des responsables. */
 add_filter( 'body_class', static function ( $classes ) {
 	if ( is_user_logged_in() && gacct_clubs_user_is_manager( get_current_user_id() ) ) {
 		$classes[] = 'gacct-club-manager';

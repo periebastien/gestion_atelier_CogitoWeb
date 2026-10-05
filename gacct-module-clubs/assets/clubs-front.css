@@ -1,4 +1,4 @@
-/* Module Clubs : bandeau du formulaire de demande, pré-demande, espace « Mon club ».
+/* Module Clubs : bandeau du formulaire de demande, pré-demande, espace « Commandes groupées ».
    Aucun texte courant sous 16 px (règle du 03/10/2026), sauf libellés en majuscules.
    Couleurs et rayons repris de l'espace client (login.css, dashboard.css). */
 :root {
@@ -41,7 +41,7 @@
 .gacct-club-code-form button:hover { background: var(--gcl-ink); color: #fff; }
 .gacct-club-step-note { border: 1px solid #bfeaea; background: var(--gcl-teal-soft); color: var(--gcl-teal-ink); border-radius: 12px; padding: 14px 16px; margin: 0 0 16px; font-weight: 700; }
 
-/* ---------- Espace « Mon club » et pré-demande ---------- */
+/* ---------- Espace « Commandes groupées » et pré-demande ---------- */
 .gcl { display: flex; flex-direction: column; gap: 22px; color: var(--gcl-ink); font-size: 16px; line-height: 1.45; min-width: 0; }
 .gcl *, .gcl *::before, .gcl *::after { box-sizing: border-box; }
 .gcl a { color: inherit; }

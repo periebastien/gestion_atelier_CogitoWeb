@@ -316,6 +316,19 @@ body:not(.page-id-1274) .ar-actus .elementor-post__read-more {
 	}
 }
 
+/* Espace client (page 14 et ses onglets Profile Builder) : même gouttière que
+   le site (Bastien, 05/10/2026). La section de premier niveau reçoit déjà
+   --ar-gut ci-dessus ; la zone de contenu 0e53f69 (10 px en mobile) et le
+   conteneur de chaque gabarit d'onglet (10 px) s'y ajoutaient, d'où 36 px au
+   lieu de 16 sur Mon club. On les ramène à 0 sur mobile. */
+@media (max-width: 767px) {
+	.elementor-element.elementor-element-0e53f69,
+	.elementor-element-0e53f69 [data-elementor-type] > .e-parent {
+		padding-left: 0 !important;
+		padding-right: 0 !important;
+	}
+}
+
 /* ── Étiquette posée sur la photo du hero, mobile (04/10/2026) ───────────
    Bastien : sur mobile, l étiquette (« Depuis 2010 », « Élastiques neufs »,
    « 40 €/h TTC », « À partir de 12 € ») tombait sous le collage (Pliages,

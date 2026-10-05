@@ -29,7 +29,7 @@ function gacct_clubs_register_emails( $defaults ) {
 			'body'       => $p( 'Bonjour {contact_name},' )
 				. $p( 'Nous avons bien reçu la demande de révision groupée de <strong>{club_name}</strong> : {nb_voiles} voiles et {nb_secours} secours, période souhaitée : {periode}.' )
 				. $p( 'Nous revenons vers vous très vite avec la date de début d’intervention. Le créneau sera bloqué pour votre club et toutes les voiles seront traitées dans la foulée.' )
-				. $p( 'Vous recevrez ensuite un code et un lien à transmettre à vos membres : chacun inscrira sa voile en ligne, sans acompte. Vous suivrez l’ensemble depuis votre espace client, rubrique « Mon club » : {account_url}' )
+				. $p( 'Vous recevrez ensuite un code et un lien à transmettre à vos membres : chacun inscrira sa voile en ligne, sans acompte. Vous suivrez l’ensemble depuis votre espace client, rubrique « Commandes groupées » : {account_url}' )
 				. $p( 'L’équipe {site_name}<br>{contact_phone}' ),
 		),
 		'club_request_admin'         => array(
@@ -53,7 +53,7 @@ function gacct_clubs_register_emails( $defaults ) {
 				. $p( '<strong>Le message à transférer à vos membres</strong>' )
 				. '<blockquote style="border-left:3px solid #20c4c3;margin:0 0 16px;padding:8px 14px;color:#444">{member_message}</blockquote>'
 				. $p( 'Les inscriptions se ferment le {registration_deadline}. Le colis du club doit nous parvenir avant le {parcel_deadline}. Toutes les voiles arrivent et repartent ensemble, chacune avec sa feuille de révision imprimée : elle conditionne notre intervention.' )
-				. $p( 'Vous suivez les inscriptions, imprimez les bons et déclarez l’envoi depuis votre espace client, rubrique « Mon club » : {account_url}' )
+				. $p( 'Vous suivez les inscriptions, imprimez les bons et déclarez l’envoi depuis votre espace client, rubrique « Commandes groupées » : {account_url}' )
 				. $p( 'L’équipe {site_name}<br>{contact_phone}' ),
 		),
 		'club_member_registered'     => array(
