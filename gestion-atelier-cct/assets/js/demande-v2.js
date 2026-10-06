@@ -1781,6 +1781,28 @@
 			buildAccordion( name, name === cfg.accordeonOuvert );
 		} );
 
+		// Arrivée par un bouton « Commander » (?svc=<ID produit>) : on déplie le
+		// groupe qui porte la prestation pré-cochée (ex. une suspente) au lieu
+		// de laisser ouvert le groupe par défaut.
+		( function () {
+			var m = /[?&]svc=([0-9,]+)/.exec( window.location.search );
+			if ( ! m ) {
+				return;
+			}
+			var ids = m[ 1 ].split( "," ).filter( Boolean );
+			var cible = accordions.filter( function ( acc ) {
+				return ids.some( function ( id ) {
+					return acc.body.querySelector( "input[value=\"" + id + "\"]" );
+				} );
+			} )[ 0 ];
+			if ( ! cible ) {
+				return;
+			}
+			accordions.forEach( function ( acc ) {
+				acc.setOpen( acc === cible );
+			} );
+		} )();
+
 		/* ---------------------------------------------------------------
 		 * Prestations v2 : choix unique décochable (révision, pliage),
 		 * quantités 1–9 sur les suspentes, carte « devis de réparation »

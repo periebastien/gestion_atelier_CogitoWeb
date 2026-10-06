@@ -328,3 +328,22 @@ function gacct_clubs_on_member_state6( $order, $revision_id ) {
 		wp_mail( $to, $subject, $html, array( 'Content-Type: text/html; charset=UTF-8' ) );
 	}
 }
+
+/**
+ * Page de paiement de la commande du club : gabarit maison (détail par pilote)
+ * à la place du formulaire natif de WooCommerce.
+ */
+add_filter( 'wc_get_template', 'gacct_clubs_pay_template', 20, 2 );
+
+function gacct_clubs_pay_template( $template, $template_name ) {
+	if ( 'checkout/form-pay.php' !== $template_name ) {
+		return $template;
+	}
+	$order_id = absint( get_query_var( 'order-pay' ) );
+	$order    = $order_id ? wc_get_order( $order_id ) : false;
+	if ( ! $order || ! gacct_clubs_invoice_lot_id( $order ) ) {
+		return $template;
+	}
+	$file = GACCT_CLUBS_DIR . '/templates/order-pay-club.php';
+	return file_exists( $file ) ? $file : $template;
+}
