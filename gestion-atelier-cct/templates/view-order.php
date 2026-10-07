@@ -353,8 +353,28 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 	<?php
 	// Le rapport n'est visible du client qu'à partir de l'état 7 (solde réglé).
 	$vo_show_report = ( '' !== $d['rapport_url'] && null !== $etat && $etat >= 7 );
+	// Facture et avoirs (plugin PDF Invoices & Packing Slips, s'il est actif) : seulement les documents déjà émis.
+	$vo_factures = array();
+	if ( function_exists( 'wcpdf_get_document' ) && function_exists( 'WPO_WCPDF' ) ) {
+		$vo_inv = wcpdf_get_document( 'invoice', $order );
+		if ( $vo_inv && $vo_inv->exists() ) {
+			$vo_factures[] = array(
+				'url'   => WPO_WCPDF()->endpoint->get_document_link( $order, 'invoice' ),
+				'label' => sprintf( __( 'Télécharger la facture %s (PDF)', 'gestion-atelier-cct' ), $vo_inv->get_number() ? $vo_inv->get_number()->get_formatted() : '' ),
+			);
+		}
+		foreach ( $order->get_refunds() as $vo_refund ) {
+			$vo_cn = wcpdf_get_document( 'credit-note', $vo_refund );
+			if ( $vo_cn && $vo_cn->exists() ) {
+				$vo_factures[] = array(
+					'url'   => WPO_WCPDF()->endpoint->get_document_link( $vo_refund, 'credit-note' ),
+					'label' => sprintf( __( "Télécharger l'avoir %s (PDF)", 'gestion-atelier-cct' ), $vo_cn->get_number() ? $vo_cn->get_number()->get_formatted() : '' ),
+				);
+			}
+		}
+	}
 	?>
-	<?php if ( '' !== $d['suivi'] || $vo_show_report ) : ?>
+	<?php if ( '' !== $d['suivi'] || $vo_show_report || $vo_factures ) : ?>
 		<!-- ── Retour & documents ──────────────────────────────────── -->
 		<div class="gacct-vo-card<?php echo 8 === $etat ? ' is-highlight' : ''; ?>">
 			<h3><?php esc_html_e( 'Retour & documents', 'gestion-atelier-cct' ); ?></h3>
@@ -379,6 +399,9 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 					?></a></p>
 					<?php endforeach; ?>
 			<?php endif; ?>
+			<?php foreach ( $vo_factures as $vo_facture ) : ?>
+				<p><a class="gacct-vo-btn is-secondary" href="<?php echo esc_url( $vo_facture['url'] ); ?>" target="_blank" rel="noopener"><?php echo esc_html( trim( $vo_facture['label'] ) ); ?></a></p>
+			<?php endforeach; ?>
 		</div>
 	<?php endif; ?>
 
