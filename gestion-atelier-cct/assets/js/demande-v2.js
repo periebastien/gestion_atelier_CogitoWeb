@@ -2925,6 +2925,11 @@
 				acompteEtape2.querySelector( 'span' ).textContent = vs
 					? ( v2i18n.aPayer || 'À payer aujourd’hui' )
 					: ( v2i18n.acompte || 'Acompte à payer aujourd’hui' );
+				// Tiers payant (ex. inscription via un club) : rien à régler ici.
+				if ( cfg.priseEnCharge ) {
+					acompteEtape2.querySelector( 'span' ).textContent = cfg.priseEnCharge;
+					acompteEtape2.querySelector( 'strong' ).textContent = '';
+				}
 			}
 
 			dernierVenteSeule = vs;
@@ -3184,9 +3189,9 @@
 				'<div class="gacct-v2-total"><span>' + escapeHtml( v2i18n.total || 'Total' ) + '</span><strong>' +
 				formatMoney( dernierTotalGlobal ) + '</strong></div>' +
 				'<div class="gacct-v2-total gacct-v2-total--acompte"><span>' +
-				escapeHtml( vsRecap ? ( v2i18n.aPayer || 'À payer aujourd’hui' ) : ( v2i18n.acompte || 'Acompte à payer aujourd’hui' ) ) + '</span><strong>' +
-				formatMoney( dernierAcompte ) + '</strong></div>' +
-				'<p class="gacct-v2-total-note">' + escapeHtml( vsRecap ? ( v2i18n.venteSeuleNote || '' ) : ( v2i18n.acompteNote || '' ) ) + '</p>';
+				escapeHtml( cfg.priseEnCharge ? cfg.priseEnCharge : ( vsRecap ? ( v2i18n.aPayer || 'À payer aujourd’hui' ) : ( v2i18n.acompte || 'Acompte à payer aujourd’hui' ) ) ) + '</span><strong>' +
+				( cfg.priseEnCharge ? '' : formatMoney( dernierAcompte ) ) + '</strong></div>' +
+				'<p class="gacct-v2-total-note">' + escapeHtml( cfg.priseEnCharge ? ( cfg.priseEnChargeNote || '' ) : ( vsRecap ? ( v2i18n.venteSeuleNote || '' ) : ( v2i18n.acompteNote || '' ) ) ) + '</p>';
 
 			recap.querySelectorAll( '.gacct-v2-r-edit' ).forEach( function ( btn ) {
 				btn.addEventListener( 'click', function () {

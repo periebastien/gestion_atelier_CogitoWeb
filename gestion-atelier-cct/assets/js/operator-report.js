@@ -574,6 +574,35 @@
 			current.form.hidden = true;
 		}
 		current = { form: null, model: '', reportId: '' };
+
+		// Un nouveau rapport enregistré n'a pas encore sa ligne dans la liste
+		// (rendue côté serveur) : on recharge pour qu'il soit rouvrable.
+		if ( listStale ) {
+			window.location.reload();
+		}
+	}
+
+	var listStale = false;
+
+	/** Met à jour (ou ajoute) l'entrée locale d'un rapport après sauvegarde. */
+	function rememberEntry( reportId, model, data, status ) {
+		if ( ! reportId ) {
+			return;
+		}
+		var now   = new Date();
+		var stamp = now.getFullYear() + '-' + pad2( now.getMonth() + 1 ) + '-' + pad2( now.getDate() ) + ' ' +
+			pad2( now.getHours() ) + ':' + pad2( now.getMinutes() ) + ':' + pad2( now.getSeconds() );
+		var entry = findEntry( reportId );
+		if ( ! entry ) {
+			entry = { id: reportId, model: model };
+			entries.push( entry );
+			listStale = true;
+		}
+		entry.data    = data;
+		entry.updated = stamp;
+		if ( status ) {
+			entry.status = status;
+		}
 	}
 
 	/**
@@ -644,6 +673,12 @@
 					window.location.reload();
 					return;
 				}
+
+				// Retour Hervé du 06/10/2026 : la liste `entries` (chargée avec la
+				// page) n'était jamais mise à jour. Rouvrir un rapport sans
+				// recharger affichait l'ancienne saisie, et l'enregistrement
+				// suivant écrasait la bonne. On la tient à jour à chaque sauvegarde.
+				rememberEntry( json.data.report_id, model, payload, json.data.status );
 
 				if ( current.form === form ) {
 					current.reportId  = json.data.report_id;

@@ -147,6 +147,9 @@ function gacct_clubs_demande_data( $data ) {
 
 	$first          = gacct_clubs_first_day( $lot );
 	$data['dispos'] = array( $first => 99 );
+	// Lu par le formulaire du socle : la ligne d'acompte devient une mention.
+	$data['priseEnCharge']     = 'Pris en charge par votre club';
+	$data['priseEnChargeNote'] = 'Rien à régler aujourd’hui : votre club reçoit une facture unique pour l’ensemble du lot.';
 	$data['club']   = array(
 		'code'     => $lot['code'],
 		'nom'      => $lot['nom'],
@@ -319,4 +322,22 @@ function gacct_clubs_third_party( $tp, $order ) {
 		'dash_cta'      => 'Imprimer mon bon',
 		'thankyou_html' => $thank,
 	);
+}
+
+/* ------------------------------------------------ bon d'intervention ------ */
+
+add_filter( 'gacct_wo_data', 'gacct_clubs_wo_bandeau', 10, 2 );
+
+/** Bon d'un dossier de lot : nom du club en très gros (retour de Timothée, 06/10/2026). */
+function gacct_clubs_wo_bandeau( $data, $order ) {
+	$lot = gacct_clubs_get_lot( gacct_clubs_order_lot_id( $order ) );
+	if ( ! $lot ) {
+		return $data;
+	}
+	$data['bandeau'] = array(
+		'label' => 'Commande groupée club',
+		'titre' => ! empty( $lot['club']['nom'] ) ? $lot['club']['nom'] : $lot['nom'],
+		'sous'  => 'Code ' . $lot['code'],
+	);
+	return $data;
 }

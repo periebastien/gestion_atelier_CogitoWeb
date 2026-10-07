@@ -150,6 +150,14 @@ td { vertical-align: top; padding: 0; }
 </table>
 <div class="rule"></div>
 
+<?php if ( ! empty( $data['bandeau']['titre'] ) ) : // Tiers (ex. club) : bandeau très visible, posé par un module. ?>
+	<div style="border:3px solid #1a1a1a;border-radius:8px;padding:10px 16px;margin:10px 0 14px;text-align:center;">
+		<?php if ( ! empty( $data['bandeau']['label'] ) ) : ?><div style="font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;"><?php echo esc_html( $data['bandeau']['label'] ); ?></div><?php endif; ?>
+		<div style="font-size:30px;font-weight:bold;line-height:1.15;"><?php echo esc_html( $data['bandeau']['titre'] ); ?></div>
+		<?php if ( ! empty( $data['bandeau']['sous'] ) ) : ?><div style="font-size:14px;"><?php echo esc_html( $data['bandeau']['sous'] ); ?></div><?php endif; ?>
+	</div>
+<?php endif; ?>
+
 <!-- ══ PARTIE À GLISSER DANS LE COLIS ══ -->
 <table>
 	<tr>
@@ -275,6 +283,7 @@ td { vertical-align: top; padding: 0; }
 				<?php endif; ?>
 				<div class="tag-ref"><?php echo esc_html( $data['reference'] ); ?></div>
 				<div class="tag-kind"><?php esc_html_e( 'Bon d\'intervention', 'gestion-atelier-cct' ); ?></div>
+				<?php if ( ! empty( $data['bandeau']['titre'] ) ) : ?><div style="font-size:16px;font-weight:bold;margin-top:4px;"><?php echo esc_html( $data['bandeau']['titre'] ); ?></div><?php endif; ?>
 				<?php if ( ! empty( $data['slot_date'] ) ) : ?>
 					<div class="tag-week">
 						<div class="lbl"><?php esc_html_e( 'Créneau atelier', 'gestion-atelier-cct' ); ?></div>

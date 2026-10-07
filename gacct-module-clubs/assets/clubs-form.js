@@ -49,7 +49,7 @@
 		}
 
 		var masquer = [ rowOf( input ), port ? rowOf( port ) : null ];
-		Array.prototype.forEach.call( page.querySelectorAll( '.flatpickr-calendar, .inputdateinter, .champ-date-cache' ), function ( el ) {
+		Array.prototype.forEach.call( page.querySelectorAll( '.flatpickr-calendar, .inputdateinter, .champ-date-cache, .gacct-v2-step--date > .gacct-v2-titre, .gacct-v2-step--date > .gacct-v2-sous-titre' ), function ( el ) {
 			masquer.push( el );
 		} );
 		masquer.forEach( function ( el ) {
