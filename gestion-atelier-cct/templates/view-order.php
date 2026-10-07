@@ -359,7 +359,7 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 		$vo_inv = wcpdf_get_document( 'invoice', $order );
 		if ( $vo_inv && $vo_inv->exists() ) {
 			$vo_factures[] = array(
-				'url'   => WPO_WCPDF()->endpoint->get_document_link( $order, 'invoice' ),
+				'url'   => WPO_WCPDF()->endpoint->get_document_link( $order, 'invoice', array( 'my-account' => 'true' ) ),
 				'label' => sprintf( __( 'Télécharger la facture %s (PDF)', 'gestion-atelier-cct' ), $vo_inv->get_number() ? $vo_inv->get_number()->get_formatted() : '' ),
 			);
 		}
@@ -367,7 +367,7 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 			$vo_cn = wcpdf_get_document( 'credit-note', $vo_refund );
 			if ( $vo_cn && $vo_cn->exists() ) {
 				$vo_factures[] = array(
-					'url'   => WPO_WCPDF()->endpoint->get_document_link( $vo_refund, 'credit-note' ),
+					'url'   => WPO_WCPDF()->endpoint->get_document_link( $vo_refund, 'credit-note', array( 'my-account' => 'true' ) ),
 					'label' => sprintf( __( "Télécharger l'avoir %s (PDF)", 'gestion-atelier-cct' ), $vo_cn->get_number() ? $vo_cn->get_number()->get_formatted() : '' ),
 				);
 			}
