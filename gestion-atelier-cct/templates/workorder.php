@@ -148,12 +148,18 @@ $wo_specs = array_filter(
 			<div class="howto">
 				<div class="lbl"><?php esc_html_e( 'Comment procéder', 'gestion-atelier-cct' ); ?></div>
 				<ol>
+					<?php if ( ! empty( $data['steps'] ) && is_array( $data['steps'] ) ) : // Consignes d'un module (ex. club). ?>
+						<?php foreach ( $data['steps'] as $wo_step ) : ?>
+							<li><?php echo esc_html( $wo_step ); ?></li>
+						<?php endforeach; ?>
+					<?php else : ?>
 					<li><?php esc_html_e( 'Imprimez cette page en A4, sans mise à l\'échelle.', 'gestion-atelier-cct' ); ?></li>
 					<li><?php esc_html_e( 'Découpez l\'étiquette du bas et scotchez-la sur votre matériel.', 'gestion-atelier-cct' ); ?></li>
 					<li><?php esc_html_e( 'Glissez cette partie haute dans le colis avec votre matériel.', 'gestion-atelier-cct' ); ?></li>
 					<li><?php esc_html_e( 'Expédiez avant la date limite ci-dessus.', 'gestion-atelier-cct' ); ?></li>
+					<?php endif; ?>
 				</ol>
-				<?php if ( ! empty( $data['store_address'] ) ) : ?>
+				<?php if ( ! empty( $data['store_address'] ) && empty( $data['hide_ship_address'] ) ) : ?>
 					<div class="lbl howto-addr-lbl"><?php esc_html_e( 'Adresse d\'expédition', 'gestion-atelier-cct' ); ?></div>
 					<address class="addr">
 						<?php foreach ( $data['store_address'] as $wo_i => $wo_line ) : ?>

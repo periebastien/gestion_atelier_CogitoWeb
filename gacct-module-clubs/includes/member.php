@@ -339,5 +339,15 @@ function gacct_clubs_wo_bandeau( $data, $order ) {
 		'titre' => ! empty( $lot['club']['nom'] ) ? $lot['club']['nom'] : $lot['nom'],
 		'sous'  => 'Code ' . $lot['code'],
 	);
+	// Envoi groupé par le club : le pilote ne poste rien (décision du 30/09,
+	// consignes adaptées le 07/10/2026). Ni date limite ni adresse d'envoi.
+	$data['deadline_date'] = '';
+	$data['hide_ship_address'] = true;
+	$data['steps']         = array(
+		'Imprimez cette page en A4, sans mise à l’échelle.',
+		'Découpez l’étiquette du bas et scotchez-la sur votre matériel.',
+		'Pliez cette partie haute et glissez-la avec votre matériel.',
+		'Remettez le tout au responsable de votre club : il nous envoie le matériel du club en un seul colis.',
+	);
 	return $data;
 }

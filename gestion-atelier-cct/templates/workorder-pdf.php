@@ -42,6 +42,10 @@ $wo_steps = array(
 	__( 'Glissez cette partie haute dans le colis avec votre matériel.', 'gestion-atelier-cct' ),
 	__( 'Expédiez avant la date limite ci-dessus.', 'gestion-atelier-cct' ),
 );
+// Consignes remplaçables par un module (ex. club : remise au responsable).
+if ( ! empty( $data['steps'] ) && is_array( $data['steps'] ) ) {
+	$wo_steps = $data['steps'];
+}
 ?><!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -219,7 +223,7 @@ td { vertical-align: top; padding: 0; }
 						</tr>
 					<?php endforeach; ?>
 				</table>
-				<?php if ( ! empty( $data['store_address'] ) ) : ?>
+				<?php if ( ! empty( $data['store_address'] ) && empty( $data['hide_ship_address'] ) ) : ?>
 					<div class="lbl" style="margin-top:4mm;"><?php esc_html_e( 'Adresse d\'expédition', 'gestion-atelier-cct' ); ?></div>
 					<div class="addr">
 						<?php foreach ( $data['store_address'] as $wo_i => $wo_line ) : ?>
