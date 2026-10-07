@@ -155,10 +155,10 @@ td { vertical-align: top; padding: 0; }
 <div class="rule"></div>
 
 <?php if ( ! empty( $data['bandeau']['titre'] ) ) : // Tiers (ex. club) : bandeau très visible, posé par un module. ?>
-	<div style="border:3px solid #1a1a1a;border-radius:8px;padding:10px 16px;margin:10px 0 14px;text-align:center;">
-		<?php if ( ! empty( $data['bandeau']['label'] ) ) : ?><div style="font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;"><?php echo esc_html( $data['bandeau']['label'] ); ?></div><?php endif; ?>
-		<div style="font-size:30px;font-weight:bold;line-height:1.15;"><?php echo esc_html( $data['bandeau']['titre'] ); ?></div>
-		<?php if ( ! empty( $data['bandeau']['sous'] ) ) : ?><div style="font-size:14px;"><?php echo esc_html( $data['bandeau']['sous'] ); ?></div><?php endif; ?>
+	<div style="border:2px solid #1a1a1a;border-radius:6px;padding:5px 12px;margin:6px 0 8px;text-align:center;">
+		<?php if ( ! empty( $data['bandeau']['label'] ) ) : ?><div style="font-size:10px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;"><?php echo esc_html( $data['bandeau']['label'] ); ?></div><?php endif; ?>
+		<div style="font-size:22px;font-weight:bold;line-height:1.1;"><?php echo esc_html( $data['bandeau']['titre'] ); ?></div>
+		<?php if ( ! empty( $data['bandeau']['sous'] ) ) : ?><div style="font-size:12px;"><?php echo esc_html( $data['bandeau']['sous'] ); ?></div><?php endif; ?>
 	</div>
 <?php endif; ?>
 

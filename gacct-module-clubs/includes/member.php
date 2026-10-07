@@ -343,6 +343,11 @@ function gacct_clubs_wo_bandeau( $data, $order ) {
 	// consignes adaptées le 07/10/2026). Ni date limite ni adresse d'envoi.
 	$data['deadline_date'] = '';
 	$data['hide_ship_address'] = true;
+	// Le retour imposé aux inscriptions club n'est pas une prestation du colis.
+	$retour = wc_get_product( (int) gacct_clubs_setting( 'product_retour' ) );
+	if ( $retour && ! empty( $data['prestations'] ) ) {
+		$data['prestations'] = array_values( array_diff( $data['prestations'], array( $retour->get_name() ) ) );
+	}
 	$data['steps']         = array(
 		'Imprimez cette page en A4, sans mise à l’échelle.',
 		'Découpez l’étiquette du bas et scotchez-la sur votre matériel.',
