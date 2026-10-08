@@ -99,7 +99,7 @@ add_action( 'wp_enqueue_scripts', 'hello_elementor_child_lisibilite', 30 );
  * commande ne sont pas concernées. Voir l'en-tête de assets/js/apparition.js.
  */
 function hello_elementor_child_apparition() {
-	$pages = array( 1249, 1270, 1271, 1272, 1273, 1275, 1276, 2104, 2474, 1320, 1930, 2450, 2242, 2243, 2244, 2245, 2246 );
+	$pages = array( 1249, 1270, 1271, 1272, 1273, 1275, 1276, 2104, 'commande-groupee', 1320, 1930, 2450, 2242, 2243, 2244, 2245, 2246 ); // page Clubs par son slug : son ID diffère entre dev et prod.
 	if ( ! is_page( $pages ) ) {
 		return;
 	}
