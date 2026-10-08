@@ -449,3 +449,13 @@ function gacct_clubs_estimate_table( array $est, $mode = 'mail' ) {
 
 	return $h;
 }
+
+/**
+ * Commande d un membre de lot : jamais « Terminée » ni facturée au pilote,
+ * c est le club qui paie (socle, gacct-order-complete.php, 08/10/2026).
+ */
+add_filter( 'gacct_complete_order_when_paid', 'gacct_clubs_no_member_completion', 10, 2 );
+
+function gacct_clubs_no_member_completion( $complete, $order ) {
+	return gacct_clubs_order_lot_id( $order ) ? false : $complete;
+}

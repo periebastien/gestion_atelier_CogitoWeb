@@ -2,7 +2,7 @@
 /**
  * Plugin Name: GACCT - Factures PDF (dates de paiement)
  * Description: Ajoute sur les factures PDF Invoices & Packing Slips les lignes « Acompte réglé le … » et « Solde réglé le … » (données Kojito), pour pointer les encaissements.
- * Version: 1.1.0
+ * Version: 1.1.1
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -41,6 +41,11 @@ function gacct_factures_lignes_paiements( $totals, $order, $document_type ) {
 	$est_bacs     = 'bacs' === $order->get_payment_method();
 	$mode_acompte = $mode( $order->get_meta( '_kojito_transaction_acompte' ), $est_bacs );
 	$mode_solde   = $mode( $order->get_meta( '_kojito_transaction_solde' ), $est_bacs || $order->get_meta( '_gacct_balance_bacs_pending' ) );
+	// Solde par carte CAWL validé au retour du client (avant le webhook) : Kojito ne
+	// voit pas la transaction. Une commande CAWL sans trace de virement = carte (08/10/2026).
+	if ( '' === $mode_solde && 0 === strpos( (string) $order->get_payment_method(), 'cawl' ) ) {
+		$mode_solde = __( 'par carte', 'gestion-atelier-cct' );
+	}
 
 	// Solde forcé depuis la console atelier : le motif saisi (ex. « VRMT / 02.10.2026 ») dit comment
 	// et quand l'argent est arrivé, plus fiable pour le pointage que le mode déduit.

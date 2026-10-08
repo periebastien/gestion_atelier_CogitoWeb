@@ -34,7 +34,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'GACCT_CLUBS_VERSION', '1.1.3' );
+define( 'GACCT_CLUBS_VERSION', '1.1.4' );
 define( 'GACCT_CLUBS_DB_VERSION', '2' );
 define( 'GACCT_CLUBS_DIR', __DIR__ );
 define( 'GACCT_CLUBS_URL', plugin_dir_url( __FILE__ ) );
