@@ -279,6 +279,7 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 					<?php endforeach; ?>
 				</tbody>
 			</table>
+			<?php echo gacct_pay_card_switch_html( $order ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 		</div>
 	<?php endif; ?>
 

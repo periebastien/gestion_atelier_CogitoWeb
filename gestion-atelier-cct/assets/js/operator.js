@@ -26,7 +26,12 @@
 			return;
 		}
 
-		if ( ! window.confirm( 'Confirmer l’encaissement de l’acompte (virement reçu) ? Le dossier passera en « En attente de réception ».' ) ) {
+		// Date d'arrivée du virement, reprise sur la facture (retour Hervé du 07/10/2026).
+		var now      = new Date();
+		var todayFr  = ( '0' + now.getDate() ).slice( -2 ) + '/' + ( '0' + ( now.getMonth() + 1 ) ).slice( -2 ) + '/' + now.getFullYear();
+		var paidDate = window.prompt( 'Encaissement de l’acompte : date de réception du virement (JJ/MM/AAAA). Le dossier passera en « En attente de réception ».', todayFr );
+
+		if ( null === paidDate ) {
 			return;
 		}
 
@@ -36,6 +41,7 @@
 		body.append( 'action', 'gacct_op_confirm_deposit' );
 		body.append( 'nonce', window.gacctOp.nonce );
 		body.append( 'revision_id', revId );
+		body.append( 'paid_date', paidDate.trim() );
 
 		fetch( window.gacctOp.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: body } )
 			.then( function ( r ) { return r.json(); } )
@@ -144,13 +150,17 @@
 			}
 
 			if ( 'change-state' === opAction ) {
-				var force  = '1' === button.getAttribute( 'data-force' ) ? 1 : 0;
-				var reason = '';
+				var force    = '1' === button.getAttribute( 'data-force' ) ? 1 : 0;
+				var reason   = '';
+				var paidDate = '';
 
 				if ( force ) {
 					var wrap  = button.closest( '.gacct-op-force-form' );
 					var field = wrap ? wrap.querySelector( '[data-op-field="force-reason"]' ) : null;
 					reason = field ? field.value.trim() : '';
+
+					var paidField = wrap ? wrap.querySelector( '[data-op-field="paid-date"]' ) : null;
+					paidDate = paidField ? paidField.value : '';
 
 					if ( '' === reason ) {
 						showFeedback( 'error', window.gacctOp.i18n.reasonRequired );
@@ -223,7 +233,8 @@
 					force: force,
 					reason: reason,
 					unlock_reason: unlockReason,
-					tracking: tracking
+					tracking: tracking,
+					paid_date: paidDate
 				}, function ( data ) {
 					// Intervention close avant la date réservée : proposer de
 					// libérer le créneau (révision réalisée en avance).

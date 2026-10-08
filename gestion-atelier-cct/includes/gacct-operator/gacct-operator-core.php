@@ -155,6 +155,58 @@ function gacct_op_get_order_for_revision( array $revision ) {
  * }
  * @return array|WP_Error  [ 'old' => int, 'new' => int, 'label' => string ]
  */
+/**
+ * Date de réception d'un paiement saisie dans la console (AAAA-MM-JJ ou
+ * JJ/MM/AAAA, vide = aujourd'hui). Ni dans le futur, ni avant la commande.
+ *
+ * @return string|WP_Error Date AAAA-MM-JJ.
+ */
+function gacct_op_clean_paid_date( $raw, $order ) {
+	$raw   = trim( (string) $raw );
+	$today = current_time( 'Y-m-d' );
+
+	if ( '' === $raw ) {
+		return $today;
+	}
+	if ( preg_match( '#^(\d{1,2})/(\d{1,2})/(\d{4})$#', $raw, $m ) ) {
+		$raw = sprintf( '%04d-%02d-%02d', $m[3], $m[2], $m[1] );
+	}
+	if ( ! preg_match( '/^(\d{4})-(\d{2})-(\d{2})$/', $raw, $m ) || ! checkdate( (int) $m[2], (int) $m[3], (int) $m[1] ) ) {
+		return new WP_Error( 'gacct_op_paid_date', __( 'Date de réception invalide (format JJ/MM/AAAA).', 'gestion-atelier-cct' ) );
+	}
+	if ( $raw > $today ) {
+		return new WP_Error( 'gacct_op_paid_date', __( 'La date de réception ne peut pas être dans le futur.', 'gestion-atelier-cct' ) );
+	}
+	$created = $order instanceof WC_Order && $order->get_date_created() ? $order->get_date_created()->date_i18n( 'Y-m-d' ) : '';
+	if ( $created && $raw < $created ) {
+		return new WP_Error( 'gacct_op_paid_date', __( 'La date de réception est antérieure à la commande.', 'gestion-atelier-cct' ) );
+	}
+
+	return $raw;
+}
+
+/**
+ * Solde réglé hors ligne (forçage 6 → 7) : la commande passe « Terminée »
+ * comme après un paiement par carte (Kojito marque alors le solde payé), puis
+ * la date du solde devient celle de la réception de l'argent.
+ */
+function gacct_op_mark_balance_paid( $order, $ymd ) {
+	if ( ! $order instanceof WC_Order ) {
+		return;
+	}
+	if ( ! $order->has_status( array( 'completed', 'cancelled', 'refunded' ) ) ) {
+		$order->update_status( 'completed', __( 'Solde réglé hors ligne, marqué payé depuis la console atelier.', 'gestion-atelier-cct' ) );
+	}
+
+	$order = wc_get_order( $order->get_id() ); // Relu : Kojito vient de le restaurer et l'enregistrer.
+	$ts    = strtotime( get_gmt_from_date( $ymd . ' 12:00:00' ) . ' UTC' );
+
+	$order->update_meta_data( '_kojito_date_solde_paye', $ymd . ' 12:00:00' );
+	$order->set_date_paid( $ts );
+	$order->set_date_completed( $ts );
+	$order->save();
+}
+
 function gacct_op_change_state( $revision_id, $new_state, array $args = array() ) {
 	$revision_id = absint( $revision_id );
 	$new_state   = absint( $new_state );
@@ -193,6 +245,15 @@ function gacct_op_change_state( $revision_id, $new_state, array $args = array() 
 			return new WP_Error( 'gacct_op_reason_required', __( 'Un motif est obligatoire pour forcer une transition.', 'gestion-atelier-cct' ) );
 		}
 		$action_label = $map[ $old_state ][ $new_state ];
+
+		// Solde forcé (virement, chèque…) : date de réception de l'argent, pour la
+		// facture. Retour Hervé du 07/10/2026.
+		if ( 6 === $old_state && 7 === $new_state && $order ) {
+			$paid_ymd = gacct_op_clean_paid_date( $args['paid_date'] ?? '', $order );
+			if ( is_wp_error( $paid_ymd ) ) {
+				return $paid_ymd;
+			}
+		}
 	} elseif ( $no_order_direct ) {
 		$action_label = __( 'Clore le dossier (rapport disponible)', 'gestion-atelier-cct' );
 
@@ -319,7 +380,15 @@ function gacct_op_change_state( $revision_id, $new_state, array $args = array() 
 		remove_filter( 'default_option_gacct_notification_settings', 'gacct_op_pickup_override_state8_email' );
 	}
 
+	if ( ! empty( $paid_ymd ) ) {
+		gacct_op_mark_balance_paid( $order, $paid_ymd );
+	}
+
 	$message = sprintf( '%s (état %d → %d)', $action_label, $old_state, $new_state );
+	// Date avant le motif : la facture (mu-plugin gacct-factures-pdf) relit le motif en fin de note.
+	if ( ! empty( $paid_ymd ) ) {
+		$message .= sprintf( ', paiement reçu le %s', wp_date( 'd/m/Y', strtotime( $paid_ymd . ' 12:00:00' ) ) );
+	}
 	if ( $force ) {
 		$message .= sprintf( ', FORCÉ, motif : %s', $reason );
 	}

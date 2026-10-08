@@ -568,6 +568,7 @@ $notice      = gacct_conf_notice();
 									</div>
 								<?php endforeach; ?>
 							</div>
+							<?php echo gacct_pay_card_switch_html( $order ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 							<p class="bank-warn">
 								<?php echo gacct_conf_icon( 'warn' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 								<span>

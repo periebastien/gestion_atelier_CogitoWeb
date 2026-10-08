@@ -721,6 +721,12 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 				echo '<label class="gacct-op-label">' . esc_html__( 'Motif (obligatoire, journalisé)', 'gestion-atelier-cct' ) . '</label>';
 				echo '<textarea rows="2" data-op-field="force-reason"></textarea>';
 
+				// Solde réglé hors ligne : date d'arrivée de l'argent (facture).
+				if ( 6 === $state && 7 === $target ) {
+					echo '<label class="gacct-op-label">' . esc_html__( 'Paiement reçu le', 'gestion-atelier-cct' ) . '</label>';
+					echo '<input type="date" data-op-field="paid-date" value="' . esc_attr( current_time( 'Y-m-d' ) ) . '" max="' . esc_attr( current_time( 'Y-m-d' ) ) . '">';
+				}
+
 				// Forçage vers l'intervention d'un dossier incomplet : motif de déblocage en plus (CDC §4.4).
 				$needs_unlock = ( 3 === $target && $is_incomplete );
 				if ( $needs_unlock ) {

@@ -1966,3 +1966,55 @@ function gacct_pay_render_admin_page() {
 	</div>
 	<?php
 }
+
+/* =============================================================================
+ *  VIREMENT EN ATTENTE → PAIEMENT PAR CARTE
+ *
+ *  Retour Hervé du 07/10/2026 : un client qui a choisi le virement pour
+ *  l'acompte ne pouvait plus changer d'avis (WooCommerce ne laisse payer en
+ *  ligne que les commandes pending / failed, le virement les met on-hold).
+ *  Tant que rien n'est encaissé (pas de phase Kojito), la commande on-hold
+ *  par virement reste payable : la page order-pay propose les moyens de
+ *  paiement, la carte passe par le circuit habituel (Kojito, acompte-paye).
+ * ============================================================================= */
+
+add_filter( 'woocommerce_valid_order_statuses_for_payment', 'gacct_pay_bacs_allow_card_switch', 20, 2 );
+
+function gacct_pay_bacs_allow_card_switch( $statuses, $order ) {
+	if ( gacct_pay_bacs_switchable( $order ) ) {
+		$statuses[] = 'on-hold';
+	}
+	return array_unique( $statuses );
+}
+
+add_filter( 'woocommerce_available_payment_gateways', 'gacct_pay_bacs_switch_gateways', 20 );
+
+/** Page de paiement d'une commande qui quitte le virement : la carte seule, présélectionnée. */
+function gacct_pay_bacs_switch_gateways( $gateways ) {
+	if ( is_admin() || ! function_exists( 'is_wc_endpoint_url' ) || ! is_wc_endpoint_url( 'order-pay' ) || ! isset( $gateways['bacs'] ) || count( $gateways ) < 2 ) {
+		return $gateways;
+	}
+	if ( gacct_pay_bacs_switchable( wc_get_order( absint( get_query_var( 'order-pay' ) ) ) ) ) {
+		unset( $gateways['bacs'] );
+	}
+	return $gateways;
+}
+
+/** Commande par virement en attente, rien d'encaissé : payable par carte. */
+function gacct_pay_bacs_switchable( $order ) {
+	return $order instanceof WC_Order
+		&& 'bacs' === $order->get_payment_method()
+		&& 'on-hold' === $order->get_status()
+		&& '' === (string) $order->get_meta( '_kojito_phase_paiement' )
+		&& ! $order->get_meta( '_gacct_balance_bacs_pending' );
+}
+
+/** Lien « payer par carte » sous les coordonnées bancaires. */
+function gacct_pay_card_switch_html( $order ) {
+	if ( ! gacct_pay_bacs_switchable( $order ) ) {
+		return '';
+	}
+	return '<p class="gacct-card-switch" style="margin:14px 0 0;font-size:16px;">'
+		. esc_html__( 'Vous préférez payer par carte ?', 'gestion-atelier-cct' ) . ' '
+		. '<a href="' . esc_url( $order->get_checkout_payment_url() ) . '" style="font-weight:700;">' . esc_html__( 'Régler par carte bancaire', 'gestion-atelier-cct' ) . '</a></p>';
+}

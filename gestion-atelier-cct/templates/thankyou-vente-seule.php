@@ -86,6 +86,7 @@ $vs_notice  = gacct_conf_notice();
 									</div>
 								<?php endforeach; ?>
 							</div>
+							<?php echo gacct_pay_card_switch_html( $order ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 							<p class="bank-warn">
 								<?php echo gacct_conf_icon( 'warn' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 								<span><strong><?php esc_html_e( 'La référence est obligatoire dans le libellé du virement', 'gestion-atelier-cct' ); ?></strong> : <?php esc_html_e( 'sans elle, nous ne pouvons pas rattacher votre paiement à votre commande.', 'gestion-atelier-cct' ); ?></span>

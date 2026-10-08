@@ -33,6 +33,7 @@ function gacct_op_ajax_change_state() {
 			'reason'        => isset( $_POST['reason'] ) ? wp_unslash( $_POST['reason'] ) : '',
 			'unlock_reason' => isset( $_POST['unlock_reason'] ) ? wp_unslash( $_POST['unlock_reason'] ) : '',
 			'tracking'      => isset( $_POST['tracking'] ) ? wp_unslash( $_POST['tracking'] ) : '',
+			'paid_date'     => isset( $_POST['paid_date'] ) ? sanitize_text_field( wp_unslash( $_POST['paid_date'] ) ) : '',
 		)
 	);
 
@@ -895,6 +896,13 @@ function gacct_op_ajax_confirm_deposit() {
 		wp_send_json_error( array( 'message' => __( 'Cette commande n\'est pas en attente de virement.', 'gestion-atelier-cct' ) ) );
 	}
 
+	// Date d'arrivée du virement (vide = aujourd'hui), reprise sur la facture.
+	$paid_ymd = gacct_op_clean_paid_date( isset( $_POST['paid_date'] ) ? sanitize_text_field( wp_unslash( $_POST['paid_date'] ) ) : '', $order );
+	if ( is_wp_error( $paid_ymd ) ) {
+		wp_send_json_error( array( 'message' => $paid_ymd->get_error_message() ) );
+	}
+	$paid_ts = strtotime( get_gmt_from_date( $paid_ymd . ' 12:00:00' ) . ' UTC' );
+
 	// Vente seule (gacct-vente-seule.php) : pas d'acompte, la commande est
 	// réglée en totalité, statut WooCommerce standard « En cours ».
 	$vente_seule = function_exists( 'gacct_vente_seule_commande' ) && gacct_vente_seule_commande( $order );
@@ -904,13 +912,26 @@ function gacct_op_ajax_confirm_deposit() {
 		: __( 'Acompte encaissé : virement reçu, commande passée en « Acompte payé »', 'gestion-atelier-cct' ) );
 
 	if ( ! $order->get_date_paid() ) {
-		$order->set_date_paid( time() );
+		$order->set_date_paid( $paid_ts );
 	}
 
+	/* translators: %s: date de réception */
+	$recu_le = sprintf( __( 'reçu le %s', 'gestion-atelier-cct' ), wp_date( 'd/m/Y', $paid_ts ) );
+
 	if ( $vente_seule ) {
-		$order->update_status( 'processing', __( 'Virement encaissé (console atelier), commande sans acompte.', 'gestion-atelier-cct' ) );
+		$order->update_status( 'processing', __( 'Virement encaissé (console atelier), commande sans acompte', 'gestion-atelier-cct' ) . ', ' . $recu_le . '.' );
 	} else {
-		$order->update_status( 'acompte-paye', __( 'Virement d\'acompte encaissé (console atelier).', 'gestion-atelier-cct' ) );
+		// Mêmes repères que Kojito après un paiement par carte : la facture
+		// affiche « Acompte réglé le … par virement » (retour Hervé du 07/10/2026).
+		if ( class_exists( 'Kojito_Acompte_Produit' ) && '' === (string) $order->get_meta( '_kojito_phase_paiement' ) ) {
+			$total_initial = Kojito_Acompte_Produit::get_total_initial( $order );
+			$order->update_meta_data( '_kojito_phase_paiement', 'acompte' );
+			$order->update_meta_data( '_kojito_total_initial', $total_initial );
+			$order->update_meta_data( '_kojito_acompte_paye', (float) $order->get_total() );
+			$order->update_meta_data( '_kojito_solde_restant', max( 0, $total_initial - (float) $order->get_total() ) );
+		}
+		$order->update_meta_data( '_kojito_date_acompte_paye', $paid_ymd . ' 12:00:00' );
+		$order->update_status( 'acompte-paye', __( 'Virement d\'acompte encaissé (console atelier)', 'gestion-atelier-cct' ) . ', ' . $recu_le . '.' );
 	}
 
 	$updated = jwcct_get_cct_item( JWCCT_CCT_REVISION, $revision_id );
