@@ -347,3 +347,105 @@ function gacct_clubs_pay_template( $template, $template_name ) {
 	$file = GACCT_CLUBS_DIR . '/templates/order-pay-club.php';
 	return file_exists( $file ) ? $file : $template;
 }
+
+/* ------------------------------------------------- chiffrage estimatif --- */
+
+/**
+ * Chiffrage d'un lot à partir de quantités par type (annoncées ou inscrites),
+ * aux prix catalogue TTC des produits de référence. Demande de Bastien du
+ * 08/10/2026 : Hervé et le club voient le budget et la remise dès la demande.
+ *
+ * @param array $qty { ip, rp, cc, secours }
+ */
+function gacct_clubs_estimate( array $qty ) {
+	$cats    = (array) gacct_clubs_setting( 'remise_cats' );
+	$exclude = array_map( 'absint', (array) gacct_clubs_setting( 'remise_exclude' ) );
+	$types   = array(
+		'ip'      => array( 'product_ip', 'Inspection partielle' ),
+		'rp'      => array( 'product_rp', 'Révision périodique' ),
+		'cc'      => array( 'product_cc', 'Contrôle complet équipement' ),
+		'secours' => array( 'product_secours', 'Pliage de secours' ),
+	);
+	$lines = array();
+	$base  = 0.0;
+	$sub   = 0.0;
+
+	foreach ( $types as $k => $t ) {
+		$n = (int) ( $qty[ $k ] ?? 0 );
+		$p = $n ? wc_get_product( (int) gacct_clubs_setting( $t[0] ) ) : null;
+		if ( ! $p ) {
+			continue;
+		}
+		$unit  = (float) wc_get_price_including_tax( $p );
+		$total = round( $unit * $n, 2 );
+		$sub  += $total;
+		if ( ! in_array( $p->get_id(), $exclude, true ) && gacct_clubs_product_in_cats( $p->get_id(), $cats ) ) {
+			$base += $total;
+		}
+		$lines[] = array( 'label' => $t[1], 'qty' => $n, 'unit' => $unit, 'total' => $total );
+	}
+
+	// Palier sur les voiles (IP, RP, contrôles complets) ; les secours profitent du taux.
+	$voiles = (int) ( $qty['ip'] ?? 0 ) + (int) ( $qty['rp'] ?? 0 ) + (int) ( $qty['cc'] ?? 0 );
+	$rate   = (float) gacct_clubs_rate_for( $voiles );
+	$remise = round( $base * $rate / 100, 2 );
+
+	return array(
+		'lines'    => $lines,
+		'subtotal' => round( $sub, 2 ),
+		'voiles'   => $voiles,
+		'rate'     => $rate,
+		'remise'   => $remise,
+		'total'    => round( $sub - $remise, 2 ),
+	);
+}
+
+function gacct_clubs_lot_estimate( array $lot ) {
+	return gacct_clubs_estimate( array( 'ip' => $lot['nb_ip'], 'rp' => $lot['nb_rp'], 'cc' => $lot['nb_cc'] ?? 0, 'secours' => $lot['nb_secours'] ) );
+}
+
+function gacct_clubs_rate_label( $rate ) {
+	return rtrim( rtrim( number_format( (float) $rate, 1, ',', '' ), '0' ), ',' ) . ' %';
+}
+
+/** Mention commune : l'estimation n'engage pas. */
+function gacct_clubs_estimate_notice() {
+	return (string) apply_filters( 'gacct_clubs_estimate_notice', 'Estimation indicative, non définitive, aux tarifs actuels. Le montant final dépend du matériel réellement inscrit par vos membres, des suppléments éventuels (parachute carré ou dirigeable), des réparations éventuelles et du port du retour. La remise est recalculée sur le nombre de voiles réellement inscrites.' );
+}
+
+/**
+ * Tableau du chiffrage. $mode : 'mail' (styles en ligne, e-mails et console)
+ * ou 'club' (classes de l'espace Mon club).
+ */
+function gacct_clubs_estimate_table( array $est, $mode = 'mail' ) {
+	$club = 'club' === $mode;
+	$td   = $club ? '' : ' style="padding:6px 8px;border-bottom:1px solid #e5e5e5;text-align:left"';
+	$tdr  = $club ? ' class="r"' : ' style="padding:6px 8px;border-bottom:1px solid #e5e5e5;text-align:right;white-space:nowrap"';
+	$span = $club ? 1 : 3;
+
+	// Mon club (mobile d'abord) : deux colonnes, « quantité × prix » sous la prestation.
+	if ( $club ) {
+		$h = '<div class="gcl-tbl"><table class="gcl-inv"><thead><tr><th>Prestation</th><th class="r">Montant</th></tr></thead><tbody>';
+		foreach ( $est['lines'] as $l ) {
+			$h .= '<tr><td>' . esc_html( $l['label'] ) . '<br><span class="gcl-note">' . (int) $l['qty'] . ' × ' . wp_kses_post( wc_price( $l['unit'] ) ) . '</span></td><td class="r">' . wp_kses_post( wc_price( $l['total'] ) ) . '</td></tr>';
+		}
+	} else {
+		$h = '<table style="border-collapse:collapse;width:100%;max-width:560px;font-size:15px"><thead><tr><th' . $td . '>Prestation</th><th' . $tdr . '>Qté</th><th' . $tdr . '>Prix unitaire</th><th' . $tdr . '>Total</th></tr></thead><tbody>';
+		foreach ( $est['lines'] as $l ) {
+			$h .= '<tr><td' . $td . '>' . esc_html( $l['label'] ) . '</td><td' . $tdr . '>' . (int) $l['qty'] . '</td><td' . $tdr . '>' . wp_kses_post( wc_price( $l['unit'] ) ) . '</td><td' . $tdr . '>' . wp_kses_post( wc_price( $l['total'] ) ) . '</td></tr>';
+		}
+	}
+
+	$tiers = (array) gacct_clubs_setting( 'tiers' );
+	$first = $tiers ? (int) min( wp_list_pluck( $tiers, 'min' ) ) : 0;
+	$lbl   = $est['rate'] > 0
+		? sprintf( 'Remise club %1$s (%2$d voiles, secours compris)', gacct_clubs_rate_label( $est['rate'] ), $est['voiles'] )
+		: sprintf( 'Remise club : aucune (%1$d voile%2$s, remise dès %3$d voiles)', $est['voiles'], $est['voiles'] > 1 ? 's' : '', $first );
+
+	$h .= '<tr><td colspan="' . $span . '"' . $td . '>Sous-total</td><td' . $tdr . '>' . wp_kses_post( wc_price( $est['subtotal'] ) ) . '</td></tr>';
+	$h .= '<tr' . ( $club ? ' class="disc"' : '' ) . '><td colspan="' . $span . '"' . $td . '>' . esc_html( $lbl ) . '</td><td' . $tdr . '>' . ( $est['remise'] > 0 ? '− ' . wp_kses_post( wc_price( $est['remise'] ) ) : '' ) . '</td></tr>';
+	$h .= '<tr' . ( $club ? ' class="tot"' : '' ) . '><td colspan="' . $span . '"' . $td . '><strong>Total estimé TTC</strong></td><td' . $tdr . '><strong>' . wp_kses_post( wc_price( $est['total'] ) ) . '</strong></td></tr>';
+	$h .= '</tbody></table>' . ( $club ? '</div>' : '' );
+
+	return $h;
+}

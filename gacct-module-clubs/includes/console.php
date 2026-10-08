@@ -181,6 +181,13 @@ function gacct_clubs_render_lot_screen( array $lot ) {
 	$html .= '<tr><th>Remarques</th><td>' . nl2br( esc_html( $lot['remarques'] ? $lot['remarques'] : 'aucune' ) ) . '</td></tr>';
 	$html .= '<tr><th>Estimation</th><td><strong>' . esc_html( gacct_clubs_hours_label( $lot['heures_estimees'] ) ) . '</strong> <span class="description">(calcul automatique d’après les durées des prestations, modifiable dans « Dates et inscriptions »)</span></td></tr>';
 	$html .= '</tbody></table>';
+
+	// Chiffrage estimatif (annoncé, puis inscrit dès qu'il y a des membres).
+	$html .= '<h3 style="margin:18px 0 6px">Chiffrage estimatif (annoncé)</h3>' . gacct_clubs_estimate_table( gacct_clubs_lot_estimate( $lot ) );
+	if ( 'demande' !== $lot['statut'] && $counts['dossiers'] ) {
+		$html .= '<h3 style="margin:18px 0 6px">Chiffrage d’après les inscrits</h3>' . gacct_clubs_estimate_table( gacct_clubs_estimate( $counts ) );
+	}
+	$html .= '<p class="description">' . esc_html( gacct_clubs_estimate_notice() ) . ' Le même chiffrage (annoncé) est montré au club, avec cette mention.</p>';
 	echo gacct_clubs_postbox( 'Demande', $html ); // phpcs:ignore WordPress.Security.EscapeOutput
 
 	// 2. Planification.

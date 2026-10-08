@@ -5,7 +5,7 @@
  *
  * Variables communes : {club_name}, {contact_name}, {lot_code}, {member_url},
  * {lot_dates}, {registration_deadline}, {parcel_deadline}, {account_url},
- * {nb_voiles}, {nb_cc}, {nb_secours}, {nb_inscrits}, {console_url}, plus celles du
+ * {nb_voiles}, {nb_cc}, {estimation}, {nb_secours}, {nb_inscrits}, {console_url}, plus celles du
  * socle ({site_name}, {contact_phone}, {contact_hours}).
  *
  * @package gacct-module-clubs
@@ -28,6 +28,8 @@ function gacct_clubs_register_emails( $defaults ) {
 			'subject'    => 'Votre demande de révision groupée pour {club_name} est bien reçue',
 			'body'       => $p( 'Bonjour {contact_name},' )
 				. $p( 'Nous avons bien reçu la demande de révision groupée de <strong>{club_name}</strong> : {nb_voiles} voiles et {nb_secours} secours, période souhaitée : {periode}.' )
+				. $p( '<strong>Budget estimé (estimation non définitive)</strong>' )
+				. '{estimation}'
 				. $p( 'Nous revenons vers vous très vite avec la date de début d’intervention. Le créneau sera bloqué pour votre club et toutes les voiles seront traitées dans la foulée.' )
 				. $p( 'Vous recevrez ensuite un code et un lien à transmettre à vos membres : chacun inscrira sa voile en ligne, sans acompte. Vous suivrez l’ensemble depuis votre espace client, rubrique « Commandes groupées » : {account_url}' )
 				. $p( 'L’équipe {site_name}<br>{contact_phone}' ),
@@ -52,6 +54,8 @@ function gacct_clubs_register_emails( $defaults ) {
 				. $p( '<strong>Votre code club : {lot_code}</strong><br>Lien d’inscription : {member_url}' )
 				. $p( '<strong>Le message à transférer à vos membres</strong>' )
 				. '<blockquote style="border-left:3px solid #20c4c3;margin:0 0 16px;padding:8px 14px;color:#444">{member_message}</blockquote>'
+				. $p( '<strong>Budget estimé (estimation non définitive)</strong>' )
+				. '{estimation}'
 				. $p( 'Les inscriptions se ferment le {registration_deadline}. Le colis du club doit nous parvenir avant le {parcel_deadline}. Toutes les voiles arrivent et repartent ensemble, chacune avec sa feuille de révision imprimée : elle conditionne notre intervention.' )
 				. $p( 'Vous suivez les inscriptions, imprimez les bons et déclarez l’envoi depuis votre espace client, rubrique « Commandes groupées » : {account_url}' )
 				. $p( 'L’équipe {site_name}<br>{contact_phone}' ),
@@ -138,6 +142,7 @@ function gacct_clubs_email_vars( array $lot, array $extra = array() ) {
 		'{nb_ip}'                 => (string) (int) $lot['nb_ip'],
 		'{nb_rp}'                 => (string) (int) $lot['nb_rp'],
 		'{nb_cc}'                 => (string) (int) $lot['nb_cc'],
+		'{estimation}'            => gacct_clubs_estimate_table( gacct_clubs_lot_estimate( $lot ) ) . '<p style="font-size:13px;color:#666">' . esc_html( gacct_clubs_estimate_notice() ) . '</p>',
 		'{nb_voiles}'             => (string) gacct_clubs_lot_voiles( $lot ),
 		'{nb_secours}'            => (string) (int) $lot['nb_secours'],
 		'{nb_inscrits}'           => (string) $counts['voiles'],

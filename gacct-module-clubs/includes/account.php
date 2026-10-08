@@ -315,6 +315,15 @@ function gacct_clubs_account_detail( array $lot ) {
 					</div>
 				<?php endif; ?>
 
+				<?php if ( ! $order ) : // Budget estimé, tant que la commande à régler n'existe pas. ?>
+					<div class="gcl-card">
+						<div><div class="gcl-eyebrow">Estimation, non définitive</div><h2>Budget estimé de votre commande groupée</h2></div>
+						<p>D’après le matériel annoncé dans votre demande, avec la remise club correspondante.</p>
+						<?php echo gacct_clubs_estimate_table( gacct_clubs_lot_estimate( $lot ), 'club' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+						<p class="gcl-note"><?php echo esc_html( gacct_clubs_estimate_notice() ); ?></p>
+					</div>
+				<?php endif; ?>
+
 				<?php if ( 'demande' !== $lot['statut'] ) : ?>
 					<div class="gcl-card">
 						<h2><?php echo esc_html( $order ? 'Bilan du lot' : 'Inscriptions' ); ?></h2>
