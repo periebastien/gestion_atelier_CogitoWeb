@@ -187,6 +187,19 @@
 	max-width: none;
 }
 
+/* Zones de texte posées directement dans une section (commentaires et travaux
+   effectués, remarques sellette / secours) : toute la largeur de la section.
+   Elles faisaient la largeur par défaut du navigateur (≈ 170 px). Retour de
+   Timothée du 08/10/2026. */
+.gacct-rf-section-body > textarea {
+	display: block;
+	width: 100%;
+	max-width: none;
+	box-sizing: border-box;
+	min-height: 140px;
+	resize: vertical;
+}
+
 .gacct-rf-seuil-wrap {
 	display: flex;
 	gap: 6px;

@@ -41,7 +41,7 @@ function gacct_clubs_context_lot() {
 		$code = gacct_clubs_clean_code( wp_unslash( $_COOKIE[ GACCT_CLUBS_COOKIE ] ) );
 	}
 
-	$lot = ( '' !== $code && '0' !== $code ) ? gacct_clubs_get_lot_by_code( $code ) : null;
+	$lot = gacct_clubs_lookup_visitor_code( $code );
 	if ( $lot && ! gacct_clubs_lot_has_code( $lot ) ) {
 		$lot = null;
 	}
@@ -68,7 +68,7 @@ function gacct_clubs_handle_club_param() {
 		return;
 	}
 
-	$lot = gacct_clubs_get_lot_by_code( $raw );
+	$lot = gacct_clubs_lookup_visitor_code( $raw );
 	if ( $lot && gacct_clubs_registrations_open( $lot ) ) {
 		setcookie( GACCT_CLUBS_COOKIE, $lot['code'], $opt );
 		$_COOKIE[ GACCT_CLUBS_COOKIE ] = $lot['code'];
@@ -113,10 +113,14 @@ function gacct_clubs_banner_html() {
 	}
 
 	if ( '' !== $asked && '0' !== $asked ) {
-		$known = gacct_clubs_get_lot_by_code( $asked );
-		$msg   = $known && gacct_clubs_lot_has_code( $known )
-			? sprintf( 'Les inscriptions à la révision groupée de %s sont closes. Contactez votre club ou l’atelier.', esc_html( $known['nom'] ) )
-			: 'Ce code club n’est pas reconnu. Vérifiez-le auprès de votre club.';
+		$known = gacct_clubs_lookup_visitor_code( $asked );
+		if ( ! $known && gacct_clubs_code_blocked() ) {
+			$msg = 'Trop de codes inconnus ont été essayés. Réessayez dans une heure, ou utilisez le lien envoyé par votre club.';
+		} else {
+			$msg = $known && gacct_clubs_lot_has_code( $known )
+				? sprintf( 'Les inscriptions à la révision groupée de %s sont closes. Contactez votre club ou l’atelier.', esc_html( $known['nom'] ) )
+				: 'Ce code club n’est pas reconnu. Vérifiez-le auprès de votre club.';
+		}
 		return '<div class="gacct-club-banner is-error" role="alert"><p>' . $msg . '</p>' . gacct_clubs_code_form() . '</div>';
 	}
 
@@ -131,7 +135,7 @@ function gacct_clubs_banner_html() {
 function gacct_clubs_code_form() {
 	return '<form method="get" class="gacct-club-code-form" action="' . esc_url( gacct_clubs_page_url( 'demande_page' ) ) . '">'
 		. '<label for="gacct-club-code">Code club</label>'
-		. '<input id="gacct-club-code" name="club" type="text" autocomplete="off" spellcheck="false" placeholder="Ex. FALAISES26" required>'
+		. '<input id="gacct-club-code" name="club" type="text" autocomplete="off" spellcheck="false" placeholder="Ex. FALAISES-7KQ4" required>'
 		. '<button type="submit">Valider</button></form>';
 }
 

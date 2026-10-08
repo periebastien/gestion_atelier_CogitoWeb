@@ -130,8 +130,44 @@ function gacct_clubs_get_lot_by_code( $code ) {
 	if ( '' === $code ) {
 		return null;
 	}
-	$lot = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . gacct_clubs_table( 'club_lots' ) . ' WHERE code = %s', $code ), ARRAY_A );
+	$lot = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . gacct_clubs_table( 'club_lots' ) . " WHERE REPLACE(code, '-', '') = %s", $code ), ARRAY_A );
 	return $lot ? gacct_clubs_hydrate_lot( $lot ) : null;
+}
+
+/**
+ * Code venu du visiteur (lien ?club= ou cookie) : au-delà de 8 codes inconnus
+ * en une heure depuis la même adresse IP, plus aucune recherche (retour de
+ * Timothée du 08/10/2026 : empêcher d'essayer des codes en série).
+ *
+ * @return array|null Lot, ou null (inconnu ou bloqué : voir gacct_clubs_code_blocked()).
+ */
+function gacct_clubs_lookup_visitor_code( $code ) {
+	static $cache = array();
+	$code = gacct_clubs_clean_code( $code );
+	if ( '' === $code || '0' === $code ) {
+		return null;
+	}
+	if ( array_key_exists( $code, $cache ) ) {
+		return $cache[ $code ];
+	}
+	if ( gacct_clubs_code_blocked() ) {
+		return $cache[ $code ] = null;
+	}
+	$lot = gacct_clubs_get_lot_by_code( $code );
+	if ( ! $lot ) {
+		$key = gacct_clubs_code_fail_key();
+		set_transient( $key, (int) get_transient( $key ) + 1, HOUR_IN_SECONDS );
+	}
+	return $cache[ $code ] = $lot;
+}
+
+function gacct_clubs_code_fail_key() {
+	$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+	return 'gacct_clubs_codefail_' . md5( $ip );
+}
+
+function gacct_clubs_code_blocked() {
+	return (int) get_transient( gacct_clubs_code_fail_key() ) >= (int) apply_filters( 'gacct_clubs_code_max_fails', 8 );
 }
 
 function gacct_clubs_clean_code( $code ) {
@@ -225,7 +261,7 @@ function gacct_clubs_lot_has_code( array $lot ) {
 
 /**
  * Code club lisible : premier mot significatif du nom + année sur 2 chiffres.
- * « Aéro-club des Falaises » → FALAISES26. Unicité garantie par un suffixe.
+ * « Aéro-club des Falaises » → FALAISES-7KQ4 (4 caractères au hasard, unicité vérifiée).
  */
 function gacct_clubs_generate_code( array $lot ) {
 	global $wpdb;
@@ -242,16 +278,17 @@ function gacct_clubs_generate_code( array $lot ) {
 	if ( '' === $base ) {
 		$base = 'CLUB';
 	}
-	$first_day = $lot['jours'] ? array_key_first( $lot['jours'] ) : current_time( 'Y-m-d' );
-	$code      = substr( $base, 0, 10 ) . substr( (string) $first_day, 2, 2 );
-	$try       = $code;
-	$n         = 1;
-
-	// Commandes suivantes de la même année : FALAISES26B, FALAISES26C… (un chiffre collé à l'année se lisait mal).
-	while ( (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . gacct_clubs_table( 'club_lots' ) . ' WHERE code = %s AND id <> %d', $try, $lot['id'] ) ) > 0 ) {
-		$try = $code . ( $n < 26 ? chr( 65 + $n ) : $n );
-		$n++;
-	}
+	// Nom du club + 4 caractères tirés au hasard (FALAISES-7KQ4) : retour de
+	// Timothée du 08/10/2026, l'ancien format NOM + année (FALAISES26) se
+	// devinait. Alphabet sans caractères ambigus (ni 0/O, ni 1/I/L).
+	$alpha = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+	do {
+		$rand = '';
+		for ( $i = 0; $i < 4; $i++ ) {
+			$rand .= $alpha[ random_int( 0, strlen( $alpha ) - 1 ) ];
+		}
+		$try = substr( $base, 0, 8 ) . '-' . $rand;
+	} while ( (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . gacct_clubs_table( 'club_lots' ) . " WHERE REPLACE(code, '-', '') = %s AND id <> %d", gacct_clubs_clean_code( $try ), $lot['id'] ) ) > 0 );
 
 	return $try;
 }
