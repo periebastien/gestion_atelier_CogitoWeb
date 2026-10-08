@@ -434,3 +434,7 @@ body:not(.page-id-1274) .ar-actus .elementor-post__read-more {
 /* Notes de l accordeon Suspentes du formulaire de demande (consigne suspente seule, devis) :
    14,5 px dans le socle, plancher de 16 px du site (05/10/2026). */
 .gacct-v2 .gacct-v2-repair-note { font-size: 16px; }
+/* Cartes à icône (.ar-card-iconline), toutes pages : l icône dépasse de 21 px au-dessus de la carte.
+   La règle d espacement du kit est inopérante (sélecteur enregistré avec &gt;), d où une icône collée
+   à la carte du dessus sur mobile. Même réglage que .ar-cc : 48 px entre rangées. Bastien, 08/10/2026. */
+.e-con:has(> .ar-card-iconline) { row-gap: 48px !important; margin-top: 22px; }
