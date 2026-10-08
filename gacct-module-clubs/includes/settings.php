@@ -15,6 +15,7 @@ function gacct_clubs_default_settings() {
 		// Estimation des heures : produits de référence (leur durée_presta).
 		'product_ip'      => 17,
 		'product_rp'      => 18,
+		'product_cc'      => 19,
 		'product_secours' => 361,
 		// Retour : produit « frais de port » imposé aux pilotes (retour groupé).
 		'product_retour'  => 20,
@@ -132,7 +133,7 @@ function gacct_clubs_save_config() {
 	$in  = wp_unslash( $_POST );
 	$out = array();
 
-	foreach ( array( 'product_ip', 'product_rp', 'product_secours', 'product_retour', 'close_days', 'reminder_days', 'parcel_days', 'quota_margin' ) as $k ) {
+	foreach ( array( 'product_ip', 'product_rp', 'product_cc', 'product_secours', 'product_retour', 'close_days', 'reminder_days', 'parcel_days', 'quota_margin' ) as $k ) {
 		$out[ $k ] = isset( $in[ $k ] ) ? absint( $in[ $k ] ) : 0;
 	}
 
@@ -175,7 +176,7 @@ function gacct_clubs_render_config_tab() {
 	echo '<form method="post">';
 	wp_nonce_field( 'gacct_clubs_config', 'gacct_clubs_config_nonce' );
 	echo '<h2>Estimation des heures</h2><p>La durée de chaque produit de référence (champ « Durée » de la fiche produit) sert à estimer le temps d’une commande groupée.</p><table class="form-table">';
-	foreach ( array( 'product_ip' => 'Inspection partielle', 'product_rp' => 'Révision périodique', 'product_secours' => 'Pliage de secours' ) as $k => $label ) {
+	foreach ( array( 'product_ip' => 'Inspection partielle', 'product_rp' => 'Révision périodique', 'product_cc' => 'Contrôle complet équipement', 'product_secours' => 'Pliage de secours' ) as $k => $label ) {
 		printf( '<tr><th><label for="%1$s">%2$s</label></th><td><input type="number" min="0" class="small-text" id="%1$s" name="%1$s" value="%3$d"> <span class="description">%4$s</span></td></tr>', esc_attr( $k ), esc_html( $label ), (int) $s[ $k ], $prod( (int) $s[ $k ] ) ); // phpcs:ignore WordPress.Security.EscapeOutput
 	}
 	echo '</table>';

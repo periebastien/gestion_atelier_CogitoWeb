@@ -61,6 +61,7 @@ function gacct_clubs_maybe_install() {
 		contact_email VARCHAR(190) NOT NULL DEFAULT '',
 		nb_ip INT(11) NOT NULL DEFAULT 0,
 		nb_rp INT(11) NOT NULL DEFAULT 0,
+		nb_cc INT(11) NOT NULL DEFAULT 0,
 		nb_secours INT(11) NOT NULL DEFAULT 0,
 		periode VARCHAR(190) NOT NULL DEFAULT '',
 		remarques TEXT NULL,

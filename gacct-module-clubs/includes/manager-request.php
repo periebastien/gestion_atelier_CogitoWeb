@@ -100,7 +100,7 @@ function gacct_clubs_request_shortcode( $atts = array() ) {
 					<input placeholder=" " id="gcl-cmail" name="contact_email" type="email" value="<?php echo $v( 'contact_email', $user->user_email ); // phpcs:ignore ?>" required>
 					<label for="gcl-cmail">E-mail du contact</label>
 				</div>
-				<div class="full gcl-num3">
+				<div class="full gcl-num3 gcl-num4">
 					<div class="gcl-f">
 						<input placeholder=" " id="gcl-ip" name="nb_ip" type="number" min="0" max="200" inputmode="numeric" value="<?php echo $v( 'nb_ip', '0' ); // phpcs:ignore ?>">
 						<label for="gcl-ip">Voiles en inspection partielle</label>
@@ -108,6 +108,10 @@ function gacct_clubs_request_shortcode( $atts = array() ) {
 					<div class="gcl-f">
 						<input placeholder=" " id="gcl-rp" name="nb_rp" type="number" min="0" max="200" inputmode="numeric" value="<?php echo $v( 'nb_rp', '0' ); // phpcs:ignore ?>">
 						<label for="gcl-rp">Voiles en révision périodique</label>
+					</div>
+					<div class="gcl-f">
+						<input placeholder=" " id="gcl-cc" name="nb_cc" type="number" min="0" max="200" inputmode="numeric" value="<?php echo $v( 'nb_cc', '0' ); // phpcs:ignore ?>">
+						<label for="gcl-cc">Contrôles complets équipement</label>
 					</div>
 					<div class="gcl-f">
 						<input placeholder=" " id="gcl-sec" name="nb_secours" type="number" min="0" max="200" inputmode="numeric" value="<?php echo $v( 'nb_secours', '0' ); // phpcs:ignore ?>">
@@ -189,6 +193,7 @@ function gacct_clubs_request_handle() {
 	$nom  = trim( sanitize_text_field( $in['club_nom'] ?? '' ) );
 	$nbip = absint( $in['nb_ip'] ?? 0 );
 	$nbrp = absint( $in['nb_rp'] ?? 0 );
+	$nbcc = absint( $in['nb_cc'] ?? 0 );
 	$nbse = absint( $in['nb_secours'] ?? 0 );
 
 	if ( ! $club_id && '' === $nom ) {
@@ -200,7 +205,7 @@ function gacct_clubs_request_handle() {
 	if ( ! is_email( $in['contact_email'] ?? '' ) ) {
 		$err[] = 'L’adresse e-mail du contact n’est pas valide.';
 	}
-	if ( 0 === $nbip + $nbrp + $nbse ) {
+	if ( 0 === $nbip + $nbrp + $nbcc + $nbse ) {
 		$err[] = 'Indiquez au moins une voile ou un secours.';
 	}
 
@@ -232,6 +237,7 @@ function gacct_clubs_request_handle() {
 		'contact_email' => $in['contact_email'],
 		'nb_ip'         => $nbip,
 		'nb_rp'         => $nbrp,
+		'nb_cc'         => $nbcc,
 		'nb_secours'    => $nbse,
 		'periode'       => $in['periode'] ?? '',
 		'remarques'     => $in['remarques'] ?? '',

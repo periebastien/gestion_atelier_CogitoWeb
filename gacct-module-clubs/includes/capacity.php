@@ -180,7 +180,7 @@ function gacct_clubs_planning_event( $event, $row ) {
 		$event['classNames']                  = array( 'gacct-op-occ', 'gacct-op-occ-club-reserve' );
 		$event['extendedProps']['ref']        = 'Réserve ' . $lot['code'];
 		$event['extendedProps']['client']     = $lot['nom'];
-		$event['extendedProps']['materiel']   = sprintf( '%d voiles et %d secours annoncés', (int) $lot['nb_ip'] + (int) $lot['nb_rp'], (int) $lot['nb_secours'] );
+		$event['extendedProps']['materiel']   = sprintf( '%d voiles et %d secours annoncés', gacct_clubs_lot_voiles( $lot ), (int) $lot['nb_secours'] );
 		$event['extendedProps']['etat_label'] = 'Réserve de commande groupée';
 		$event['extendedProps']['fiche_url']  = gacct_clubs_console_url( (int) $lot['id'] );
 		return $event;

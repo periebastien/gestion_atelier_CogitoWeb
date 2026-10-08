@@ -5,7 +5,7 @@
  *
  * Variables communes : {club_name}, {contact_name}, {lot_code}, {member_url},
  * {lot_dates}, {registration_deadline}, {parcel_deadline}, {account_url},
- * {nb_voiles}, {nb_secours}, {nb_inscrits}, {console_url}, plus celles du
+ * {nb_voiles}, {nb_cc}, {nb_secours}, {nb_inscrits}, {console_url}, plus celles du
  * socle ({site_name}, {contact_phone}, {contact_hours}).
  *
  * @package gacct-module-clubs
@@ -38,7 +38,7 @@ function gacct_clubs_register_emails( $defaults ) {
 			'label'      => 'Clubs : nouvelle demande (à l’atelier)',
 			'subject'    => 'Nouvelle demande groupée : {club_name} ({nb_voiles} voiles, {nb_secours} secours)',
 			'body'       => $p( 'Nouvelle demande de commande groupée.' )
-				. $p( '<strong>{club_name}</strong><br>Contact : {contact_name}, {contact_phone_club}, {contact_email}<br>Inspections partielles : {nb_ip}<br>Révisions périodiques : {nb_rp}<br>Secours : {nb_secours}<br>Période souhaitée : {periode}<br>Estimation : {heures}' )
+				. $p( '<strong>{club_name}</strong><br>Contact : {contact_name}, {contact_phone_club}, {contact_email}<br>Inspections partielles : {nb_ip}<br>Révisions périodiques : {nb_rp}<br>Contrôles complets : {nb_cc}<br>Secours : {nb_secours}<br>Période souhaitée : {periode}<br>Estimation : {heures}' )
 				. $p( 'Remarques : {remarques}' )
 				. $p( 'Planifier depuis la console : {console_url}' ),
 		),
@@ -137,7 +137,8 @@ function gacct_clubs_email_vars( array $lot, array $extra = array() ) {
 		'{console_url}'           => esc_url( gacct_clubs_console_url( (int) $lot['id'] ) ),
 		'{nb_ip}'                 => (string) (int) $lot['nb_ip'],
 		'{nb_rp}'                 => (string) (int) $lot['nb_rp'],
-		'{nb_voiles}'             => (string) ( (int) $lot['nb_ip'] + (int) $lot['nb_rp'] ),
+		'{nb_cc}'                 => (string) (int) $lot['nb_cc'],
+		'{nb_voiles}'             => (string) gacct_clubs_lot_voiles( $lot ),
 		'{nb_secours}'            => (string) (int) $lot['nb_secours'],
 		'{nb_inscrits}'           => (string) $counts['voiles'],
 		'{periode}'               => esc_html( $lot['periode'] ? $lot['periode'] : 'non précisée' ),

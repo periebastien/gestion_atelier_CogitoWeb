@@ -149,6 +149,7 @@
 .gcl-form input:focus, .gcl-form select:focus, .gcl-form textarea:focus { outline: none; border-color: var(--gcl-teal); box-shadow: 0 0 0 3px rgba(32,196,195,.18); }
 .gcl-form .hint { font-size: 16px; color: var(--gcl-ink3); margin-top: 4px; }
 .gcl-num3 { display: grid; grid-template-columns: repeat( 3, minmax( 0, 1fr ) ); gap: 12px; }
+.gcl-num3.gcl-num4 { grid-template-columns: repeat( 2, minmax( 0, 1fr ) ); }
 .gcl-alert { border-radius: 12px; padding: 12px 16px; font-weight: 700; }
 .gcl-alert.ok { background: var(--gcl-green-soft); color: var(--gcl-green); }
 .gcl-alert.err { background: var(--gcl-red-soft); color: var(--gcl-red); }
@@ -169,7 +170,7 @@
 	/* Marges de la carte resserrées : à 360 px, « Demande » et « Renvoyé » tiennent dans leur colonne. */
 	.gcl .gcl-frise { padding: 16px 10px; column-gap: 4px; }
 	.gcl-st > span { overflow-wrap: break-word; }
-	.gcl-share, .gcl-counts, .gcl-form, .gcl-form-3, .gcl-num3 { grid-template-columns: minmax( 0, 1fr ); }
+	.gcl-share, .gcl-counts, .gcl-form, .gcl-form-3, .gcl-num3, .gcl-num3.gcl-num4 { grid-template-columns: minmax( 0, 1fr ); }
 	.gcl-cards thead { display: none; }
 	.gcl-cards, .gcl-cards tbody, .gcl-cards tr, .gcl-cards td { display: block; width: 100%; }
 	.gcl-cards tr { border-bottom: 1px solid var(--gcl-line); padding: 12px 14px; }

@@ -132,7 +132,7 @@ function gacct_clubs_render_lots_list() {
 			. '<button type="button" class="toggle-row"><span class="screen-reader-text">Plus de détails</span></button></td>';
 		echo '<td data-colname="État">' . gacct_clubs_badge( $l['statut'] ) . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput
 		echo '<td data-colname="Intervention">' . esc_html( $l['jours'] ? gacct_clubs_period_label( $l ) : ( $l['periode'] ? 'Souhaitée : ' . $l['periode'] : '–' ) ) . '</td>';
-		echo '<td data-colname="Annoncé">' . esc_html( sprintf( '%d voiles, %d secours', (int) $l['nb_ip'] + (int) $l['nb_rp'], (int) $l['nb_secours'] ) ) . '</td>';
+		echo '<td data-colname="Annoncé">' . esc_html( sprintf( '%d voiles, %d secours', gacct_clubs_lot_voiles( $l ), (int) $l['nb_secours'] ) ) . '</td>';
 		echo '<td data-colname="Inscrit">' . ( $c ? esc_html( sprintf( '%d voiles, %d secours', $c['voiles'], $c['secours'] ) ) : '–' ) . '</td>';
 		echo '<td data-colname="Estimation">' . esc_html( gacct_clubs_hours_label( $l['heures_estimees'] ) ) . '</td>';
 		echo '<td data-colname="Demandée le">' . esc_html( gacct_clubs_date_label( $l['created'], 'j M Y' ) ) . '</td>';
@@ -176,7 +176,7 @@ function gacct_clubs_render_lot_screen( array $lot ) {
 	$html  = '<table class="form-table" role="presentation"><tbody>';
 	$html .= '<tr><th>Contact</th><td>' . esc_html( $lot['contact_nom'] ) . '<br>' . esc_html( $lot['contact_tel'] ) . '<br>' . esc_html( $lot['contact_email'] ) . '</td></tr>';
 	$html .= '<tr><th>Club</th><td>' . esc_html( $club['adresse'] ?? '' ) . ( ! empty( $club['email'] ) ? '<br>' . esc_html( $club['email'] ) : '' ) . '</td></tr>';
-	$html .= '<tr><th>Annoncé</th><td>' . esc_html( sprintf( '%d inspections partielles, %d révisions périodiques, %d secours', (int) $lot['nb_ip'], (int) $lot['nb_rp'], (int) $lot['nb_secours'] ) ) . '</td></tr>';
+	$html .= '<tr><th>Annoncé</th><td>' . esc_html( sprintf( '%d inspections partielles, %d révisions périodiques, %d contrôles complets, %d secours', (int) $lot['nb_ip'], (int) $lot['nb_rp'], (int) $lot['nb_cc'], (int) $lot['nb_secours'] ) ) . '</td></tr>';
 	$html .= '<tr><th>Période souhaitée</th><td>' . esc_html( $lot['periode'] ? $lot['periode'] : 'non précisée' ) . '</td></tr>';
 	$html .= '<tr><th>Remarques</th><td>' . nl2br( esc_html( $lot['remarques'] ? $lot['remarques'] : 'aucune' ) ) . '</td></tr>';
 	$html .= '<tr><th>Estimation</th><td><strong>' . esc_html( gacct_clubs_hours_label( $lot['heures_estimees'] ) ) . '</strong> <span class="description">(calcul automatique d’après les durées des prestations, modifiable dans « Dates et inscriptions »)</span></td></tr>';
@@ -273,7 +273,8 @@ function gacct_clubs_plan_form( array $lot ) {
 	}
 	$f .= '</tbody></table>';
 	$f .= '<p><button type="button" class="button" id="gcl-add">Ajouter un jour</button></p>';
-	$f .= '<p>Estimation : <strong>' . esc_html( gacct_clubs_hours_label( $lot['heures_estimees'] ) ) . '</strong>' . ( $lot['jours'] ? ' · réservé : <strong>' . esc_html( gacct_clubs_hours_label( gacct_clubs_reserved_hours( $lot ) ) ) . '</strong>' : '' ) . '</p>';
+	// Compteur tenu à jour pendant la saisie (retour de Timothée, 08/10/2026).
+	$f .= '<p>Estimation : <strong>' . esc_html( gacct_clubs_hours_label( $lot['heures_estimees'] ) ) . '</strong> · proposé : <strong id="gcl-total"></strong> <span id="gcl-ecart"></span></p>';
 	$f .= '<p><button type="submit" class="button button-primary">' . ( $lot['jours'] ? 'Enregistrer les jours' : 'Réserver ces jours et générer le code club' ) . '</button></p></form>';
 
 	// Jours ouverts des prochaines semaines, pour choisir sans quitter la fiche.
@@ -282,7 +283,19 @@ function gacct_clubs_plan_form( array $lot ) {
 		$f .= esc_html( gacct_clubs_date_label( $ymd, 'D j M' ) ) . ' : ' . esc_html( gacct_clubs_hours_label( max( 0, $avail ) ) ) . '<br>';
 	}
 	$f .= '</p></details>';
-	$f .= '<script>(function(){var b=document.getElementById("gcl-days");document.getElementById("gcl-add").addEventListener("click",function(){var r=b.rows[b.rows.length-1].cloneNode(true);r.querySelectorAll("input").forEach(function(i){i.value="";});r.cells[2].textContent="";b.appendChild(r);});b.addEventListener("click",function(e){if(e.target.classList.contains("gcl-del")&&b.rows.length>1){e.target.closest("tr").remove();}});})();</script>';
+	// « Libre ce jour » recalculé au choix de la date, total proposé comparé à l'estimation.
+	$f .= '<script>(function(){'
+		. 'var b=document.getElementById("gcl-days"),open=' . wp_json_encode( (object) $open ) . ',last="' . esc_js( (string) array_key_last( $open ) ) . '",est=' . (float) $lot['heures_estimees'] . ';'
+		. 'function lab(h){h=Math.round(h*60);var m=h%60;return Math.floor(h/60)+" h"+(m?" "+(m<10?"0":"")+m:"");}'
+		. 'function libre(r){var d=r.querySelector("input[type=date]").value;r.cells[2].textContent=!d?"":(d in open?lab(Math.max(0,open[d])):(d>last?"au-delà de 5 mois, non calculé":"jour fermé"));}'
+		. 'function total(){var t=0;b.querySelectorAll("input[type=number]").forEach(function(i){t+=parseFloat(i.value.replace(",","."))||0;});'
+		. 'document.getElementById("gcl-total").textContent=lab(t);var e=document.getElementById("gcl-ecart"),d=t-est;'
+		. 'if(Math.abs(d)<0.01){e.textContent="· estimation couverte";e.style.color="#008a20";}else if(d<0){e.textContent="· il manque "+lab(-d);e.style.color="#b32d2e";}else{e.textContent="· "+lab(d)+" de plus que l’estimation";e.style.color="#008a20";}}'
+		. 'document.getElementById("gcl-add").addEventListener("click",function(){var r=b.rows[b.rows.length-1].cloneNode(true);r.querySelectorAll("input").forEach(function(i){i.value="";});r.cells[2].textContent="";b.appendChild(r);total();});'
+		. 'b.addEventListener("click",function(e){if(e.target.classList.contains("gcl-del")&&b.rows.length>1){e.target.closest("tr").remove();total();}});'
+		. 'b.addEventListener("input",function(e){if(e.target.type==="date"){libre(e.target.closest("tr"));}total();});'
+		. 'b.addEventListener("change",function(e){if(e.target.type==="date"){libre(e.target.closest("tr"));}total();});'
+		. 'total();})();</script>';
 
 	return $f;
 }
@@ -293,11 +306,11 @@ function gacct_clubs_state_labels() {
 
 function gacct_clubs_members_table( array $lot, array $members, array $counts ) {
 	$labels = gacct_clubs_state_labels();
-	$annonc = (int) $lot['nb_ip'] + (int) $lot['nb_rp'];
+	$annonc = gacct_clubs_lot_voiles( $lot );
 	$marge  = (int) gacct_clubs_setting( 'quota_margin' );
 
-	$h  = '<p>Annoncé : ' . esc_html( sprintf( '%d inspections partielles, %d révisions périodiques, %d secours', (int) $lot['nb_ip'], (int) $lot['nb_rp'], (int) $lot['nb_secours'] ) )
-		. ' · Inscrit : ' . esc_html( sprintf( '%d IP, %d RP, %d secours', $counts['ip'], $counts['rp'], $counts['secours'] ) )
+	$h  = '<p>Annoncé : ' . esc_html( sprintf( '%d inspections partielles, %d révisions périodiques, %d contrôles complets, %d secours', (int) $lot['nb_ip'], (int) $lot['nb_rp'], (int) $lot['nb_cc'], (int) $lot['nb_secours'] ) )
+		. ' · Inscrit : ' . esc_html( sprintf( '%d IP, %d RP, %d contrôles complets, %d secours', $counts['ip'], $counts['rp'], $counts['cc'], $counts['secours'] ) )
 		. ' · Reçu à l’atelier : <strong>' . (int) $counts['recues'] . ' sur ' . (int) $counts['dossiers'] . '</strong></p>';
 
 	if ( $counts['voiles'] > $annonc + $marge ) {

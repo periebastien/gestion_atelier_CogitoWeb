@@ -189,6 +189,7 @@ function gacct_clubs_create_lot( array $data ) {
 		'contact_email' => sanitize_email( $data['contact_email'] ?? '' ),
 		'nb_ip'         => absint( $data['nb_ip'] ?? 0 ),
 		'nb_rp'         => absint( $data['nb_rp'] ?? 0 ),
+		'nb_cc'         => absint( $data['nb_cc'] ?? 0 ),
 		'nb_secours'    => absint( $data['nb_secours'] ?? 0 ),
 		'periode'       => sanitize_text_field( $data['periode'] ?? '' ),
 		'remarques'     => sanitize_textarea_field( $data['remarques'] ?? '' ),
@@ -267,6 +268,11 @@ function gacct_clubs_member_url_text( array $lot ) {
 
 /* --------------------------------------------------------------- heures --- */
 
+/** Voiles annoncées : IP + RP + contrôles complets (une voile chacun). */
+function gacct_clubs_lot_voiles( array $lot ) {
+	return (int) $lot['nb_ip'] + (int) $lot['nb_rp'] + (int) ( $lot['nb_cc'] ?? 0 );
+}
+
 function gacct_clubs_product_hours( $product_id ) {
 	return $product_id ? (float) str_replace( ',', '.', (string) get_post_meta( $product_id, 'duree_presta', true ) ) : 0.0;
 }
@@ -279,6 +285,7 @@ function gacct_clubs_estimate_hours( $lot ) {
 	return round(
 		(int) $lot['nb_ip'] * gacct_clubs_product_hours( (int) gacct_clubs_setting( 'product_ip' ) )
 		+ (int) $lot['nb_rp'] * gacct_clubs_product_hours( (int) gacct_clubs_setting( 'product_rp' ) )
+		+ (int) $lot['nb_cc'] * gacct_clubs_product_hours( (int) gacct_clubs_setting( 'product_cc' ) )
 		+ (int) $lot['nb_secours'] * gacct_clubs_product_hours( (int) gacct_clubs_setting( 'product_secours' ) ),
 		2
 	);
@@ -439,7 +446,8 @@ function gacct_clubs_lot_counts( array $lot, array $members = null ) {
 	$members = null === $members ? gacct_clubs_lot_members( $lot['id'] ) : $members;
 	$ip      = (int) gacct_clubs_setting( 'product_ip' );
 	$rp      = (int) gacct_clubs_setting( 'product_rp' );
-	$c       = array( 'ip' => 0, 'rp' => 0, 'secours' => 0, 'autres' => 0, 'voiles' => 0, 'dossiers' => count( $members ), 'recues' => 0, 'heures' => 0.0, 'hors_lot' => 0 );
+	$cc      = (int) gacct_clubs_setting( 'product_cc' );
+	$c       = array( 'ip' => 0, 'rp' => 0, 'cc' => 0, 'secours' => 0, 'autres' => 0, 'voiles' => 0, 'dossiers' => count( $members ), 'recues' => 0, 'heures' => 0.0, 'hors_lot' => 0 );
 
 	foreach ( $members as $m ) {
 		if ( $m['is_voile'] ) {
@@ -461,6 +469,8 @@ function gacct_clubs_lot_counts( array $lot, array $members = null ) {
 				$c['ip']++;
 			} elseif ( $pid === $rp ) {
 				$c['rp']++;
+			} elseif ( $pid === $cc ) {
+				$c['cc']++;
 			} elseif ( has_term( 'pliages-secours', 'product_cat', $pid ) && $pid !== (int) gacct_clubs_setting( 'product_retour' ) && ! in_array( $pid, (array) gacct_clubs_setting( 'remise_exclude' ), true ) ) {
 				$c['secours']++;
 			}
