@@ -385,3 +385,19 @@ add_action( 'plugins_loaded', function () {
 add_action( 'wp_head', function () {
 	echo '<style id="gacct-aero-no-card-switch">.gacct-card-switch{display:none!important}</style>';
 }, 99 );
+
+// Résumé de commande du module d'envoi Boxtal (aerotech-envois-boxtal) : ses
+// lignes « Acompte à payer aujourd'hui / Reste à régler après l'intervention »
+// sont écrites en dur ; reformulées pour le mode « tout à la fin » (14/10/2026).
+add_action( 'woocommerce_review_order_after_order_total', function () {
+	if ( function_exists( 'gacct_cart_is_atelier_reglement_fin' ) && gacct_cart_is_atelier_reglement_fin() ) {
+		ob_start();
+		add_action( 'woocommerce_review_order_after_order_total', function () {
+			echo str_replace( // phpcs:ignore WordPress.Security.EscapeOutput -- HTML du module Boxtal, seulement reformulé.
+				array( 'Acompte à payer aujourd’hui', 'Reste à régler après l’intervention' ),
+				array( 'À régler aujourd’hui', 'À régler à la fin de l’intervention, par virement' ),
+				(string) ob_get_clean()
+			);
+		}, 999 );
+	}
+}, 1 );
