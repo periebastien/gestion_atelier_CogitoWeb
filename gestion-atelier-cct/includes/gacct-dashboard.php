@@ -788,7 +788,10 @@ function gacct_dash_revision_extra( array $row, $order, array $conf ) {
 
 		$extra['label'] = gacct_dash_text( 'balance_label' );
 		$extra['value'] = gacct_dash_amount( (float) $solde );
-		$extra['url']   = $order->get_checkout_payment_url();
+		// Mode « tout à la fin » : vers le détail (RIB), pas vers le paiement en ligne.
+		$extra['url']   = ( function_exists( 'gacct_pay_mode_end' ) && gacct_pay_mode_end() && function_exists( 'gacct_orders_url' ) )
+			? add_query_arg( 'commande', $order->get_id(), gacct_orders_url() )
+			: $order->get_checkout_payment_url();
 
 		return $extra;
 	}
