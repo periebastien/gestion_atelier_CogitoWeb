@@ -54,8 +54,88 @@ function gacct_biplace_supplement_product_ids() {
  */
 function gacct_biplace_est_produit_supplement( $product_id ) {
 	$ids = array_map( 'absint', array_values( gacct_biplace_supplement_product_ids() ) );
+	// Options de révision (monosurface, maillons Connect…) : mêmes règles d'affichage.
+	$ids = array_merge( $ids, gacct_revision_option_product_ids() );
 
 	return in_array( absint( $product_id ), $ids, true );
+}
+
+/**
+ * Options de révision cumulables avec le choix Solo/Biplace (14/10/2026).
+ *
+ * Chaque site déclare ses options par groupe de prestations (même clé que le
+ * supplément biplace : 'voile' ou 'secours'). Une option = une bascule à deux
+ * positions dans le formulaire de demande, reliée à un produit supplément
+ * ajouté au panier (une fois par prestation concernée cochée). Aucune option
+ * par défaut : le formulaire reste celui d'origine.
+ *
+ * Format :
+ * array(
+ *   'voile' => array(
+ *     'monosurface' => array(
+ *       'product' => 1234,                      // produit supplément (prix, acompte Kojito)
+ *       'label'   => 'Type de voile :',         // libellé de la bascule
+ *       'off'     => 'Classique',               // position par défaut (sans supplément)
+ *       'on'      => 'Monosurface (+%s)',       // position avec supplément (%s = prix)
+ *       'recap'   => '+ Supplément monosurface : %s',
+ *     ),
+ *   ),
+ * )
+ *
+ * @return array<string,array<string,array<string,mixed>>>
+ */
+function gacct_revision_options() {
+	$options = apply_filters( 'gacct_revision_options', array() );
+	$propres = array();
+	foreach ( (array) $options as $type => $liste ) {
+		if ( ! in_array( $type, array( 'voile', 'secours' ), true ) || ! is_array( $liste ) ) {
+			continue;
+		}
+		foreach ( $liste as $cle => $opt ) {
+			$cle = sanitize_key( $cle );
+			if ( '' === $cle || 'biplace' === $cle || empty( $opt['product'] ) ) {
+				continue;
+			}
+			$propres[ $type ][ $cle ] = array(
+				'product' => absint( $opt['product'] ),
+				'label'   => (string) ( $opt['label'] ?? '' ),
+				'off'     => (string) ( $opt['off'] ?? __( 'Non', 'gestion-atelier-cct' ) ),
+				'on'      => (string) ( $opt['on'] ?? __( 'Oui (+%s)', 'gestion-atelier-cct' ) ),
+				'recap'   => (string) ( $opt['recap'] ?? __( '+ Supplément : %s', 'gestion-atelier-cct' ) ),
+			);
+		}
+	}
+	return $propres;
+}
+
+/** IDs de tous les produits supplément des options de révision. */
+function gacct_revision_option_product_ids() {
+	$ids = array();
+	foreach ( gacct_revision_options() as $liste ) {
+		foreach ( $liste as $opt ) {
+			$ids[] = (int) $opt['product'];
+		}
+	}
+	return $ids;
+}
+
+/**
+ * Lit la valeur du champ caché d'un groupe (`biplace_voile` / `biplace_secours`).
+ *
+ * Historique : '1' = Biplace. Depuis les options de révision (14/10/2026) :
+ * liste de jetons séparés par des virgules, ex. « biplace,monosurface ».
+ *
+ * @return string[] Jetons actifs (dont 'biplace').
+ */
+function gacct_revision_option_tokens( $valeur ) {
+	$valeur = trim( (string) $valeur );
+	if ( '' === $valeur ) {
+		return array();
+	}
+	if ( '1' === $valeur ) {
+		return array( 'biplace' );
+	}
+	return array_values( array_filter( array_map( 'sanitize_key', explode( ',', $valeur ) ) ) );
 }
 
 /**

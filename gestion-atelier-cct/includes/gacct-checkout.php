@@ -133,8 +133,16 @@ add_action( 'jet-form-builder/custom-action/ajouter_configurateur_panier', funct
     if ( function_exists( 'gacct_biplace_supplement_product_ids' ) && function_exists( 'gacct_product_biplace_supplement' ) ) {
         $supplements = (array) gacct_biplace_supplement_product_ids();
 
+        // Options de révision (14/10/2026) : le champ du groupe porte une liste de
+        // jetons (« biplace,monosurface ») ; '1' reste « Biplace » (historique).
+        $options_rev = function_exists( 'gacct_revision_options' ) ? gacct_revision_options() : array();
+
         foreach ( [ 'voile' => 'biplace_voile', 'secours' => 'biplace_secours' ] as $type => $champ ) {
-            if ( '1' !== (string) ( $request[ $champ ] ?? '' ) || empty( $supplements[ $type ] ) ) {
+            $jetons = function_exists( 'gacct_revision_option_tokens' )
+                ? gacct_revision_option_tokens( $request[ $champ ] ?? '' )
+                : ( '1' === (string) ( $request[ $champ ] ?? '' ) ? array( 'biplace' ) : array() );
+
+            if ( ! $jetons ) {
                 continue;
             }
 
@@ -145,8 +153,18 @@ add_action( 'jet-form-builder/custom-action/ajouter_configurateur_panier', funct
                 }
             }
 
-            if ( $nb > 0 ) {
+            if ( $nb < 1 ) {
+                continue;
+            }
+
+            if ( in_array( 'biplace', $jetons, true ) && ! empty( $supplements[ $type ] ) ) {
                 WC()->cart->add_to_cart( absint( $supplements[ $type ] ), $nb );
+            }
+
+            foreach ( $jetons as $jeton ) {
+                if ( 'biplace' !== $jeton && ! empty( $options_rev[ $type ][ $jeton ]['product'] ) ) {
+                    WC()->cart->add_to_cart( absint( $options_rev[ $type ][ $jeton ]['product'] ), $nb );
+                }
             }
         }
     }
