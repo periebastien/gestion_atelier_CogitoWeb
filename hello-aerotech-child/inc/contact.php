@@ -65,22 +65,159 @@ add_action( 'wp_footer', function () {
 	<?php
 }, 30 );
 
+/* ---------------------------------------------------------------------------
+ * Anti-spam renforcé (14/10/2026). Constat : 173 des 179 envois de septembre
+ * venaient d'un même robot (80.94.95.173, « Robertriday … your price » en vingt
+ * langues) qui postait directement sur admin-ajax, sans page d'origine ni
+ * JavaScript : le jeton absent était laissé passer. Désormais, dans l'ordre :
+ *  1. jeton signé obligatoire (posé en JS par la page), âgé de 4 s à 12 h ;
+ *  2. envoi depuis une page du site (en-tête Referer du même domaine) ;
+ *  3. objet choisi dans la liste du formulaire (le robot envoyait des variantes) ;
+ *  4. limites par IP : 3 envois / 10 min, 8 / 24 h ;
+ *  5. contenu : liens (2 et plus dans le message, ou un seul dans le nom),
+ *     écriture majoritairement non latine (site FR/EN), prénom = nom.
+ * Chaque rejet est journalisé (option at_contact_spam_log, 300 derniers),
+ * consultable avec : wp option get at_contact_spam_log --format=json
+ * Messages en français ou en anglais selon la page (formulaire EN : 553).
+ * ------------------------------------------------------------------------- */
+function at_contact_is_en() {
+	$ref = isset( $_SERVER['HTTP_REFERER'] ) ? (string) wp_unslash( $_SERVER['HTTP_REFERER'] ) : '';
+	return false !== strpos( $ref, '/en/' );
+}
+
+function at_contact_msg( $cle ) {
+	$en  = at_contact_is_en();
+	$tel = '06 20 89 91 31';
+	$m   = array(
+		'verif'  => $en ? 'Your message could not be verified. Please reload the page and try again, or call us on ' . $tel . '.' : "Votre message n'a pas pu être vérifié. Rechargez la page et réessayez, ou appelez-nous au " . $tel . '.',
+		'vite'   => $en ? 'Your message was sent too quickly to be processed. Please try again in a few seconds.' : 'Votre message est parti trop vite pour être traité. Réessayez dans quelques secondes.',
+		'ancien' => $en ? 'This page has been open for too long. Please reload it and send your message again.' : 'Cette page est ouverte depuis trop longtemps. Rechargez-la et renvoyez votre message.',
+		'objet'  => $en ? 'Please choose the subject of your request in the list.' : "Choisissez l'objet de votre demande dans la liste.",
+		'trop'   => $en ? 'You have sent several messages in a short time. Please wait a little, or call us on ' . $tel . '.' : 'Vous avez envoyé plusieurs messages en peu de temps. Patientez un peu, ou appelez-nous au ' . $tel . '.',
+		'liens'  => $en ? 'For security reasons, links are not accepted in this form. Please describe your request without links.' : "Par sécurité, les liens ne sont pas acceptés dans ce formulaire. Décrivez votre demande sans lien.",
+		'langue' => $en ? 'Please write your message in English or French.' : 'Merci de rédiger votre message en français ou en anglais.',
+	);
+	return $m[ $cle ];
+}
+
+function at_contact_spam_log( $raison, $champs = array() ) {
+	$log   = get_option( 'at_contact_spam_log', array() );
+	$log   = is_array( $log ) ? $log : array();
+	$log[] = array(
+		'date'   => current_time( 'mysql' ),
+		'ip'     => isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '',
+		'raison' => $raison,
+		'email'  => isset( $champs['email'] ) ? sanitize_email( $champs['email'] ) : '',
+		'extrait'=> isset( $champs['message'] ) ? mb_substr( sanitize_text_field( $champs['message'] ), 0, 80 ) : '',
+	);
+	update_option( 'at_contact_spam_log', array_slice( $log, -300 ), false );
+}
+
+/** Part de lettres non latines dans un texte (0 à 1). */
+function at_contact_part_non_latine( $texte ) {
+	$lettres = preg_match_all( '/\p{L}/u', (string) $texte );
+	if ( ! $lettres ) {
+		return 0.0;
+	}
+	$latines = preg_match_all( '/\p{Latin}/u', (string) $texte );
+	return 1 - ( $latines / $lettres );
+}
+
 add_action( 'elementor_pro/forms/validation', function ( $record, $handler ) {
 	if ( 'Contact AEROTECH' !== $record->get_form_settings( 'form_name' ) ) { return; }
+
+	$f = array();
+	foreach ( (array) $record->get( 'fields' ) as $id => $champ ) {
+		$f[ $id ] = is_array( $champ['value'] ?? '' ) ? implode( ' ', $champ['value'] ) : (string) ( $champ['value'] ?? '' );
+	}
+	$rejet = function ( $raison, $cle ) use ( $handler, $f ) {
+		at_contact_spam_log( $raison, $f );
+		// même API que le honeypot natif (classes/honeypot-handler.php) : add_error()
+		$handler->add_error( 'at_ts', at_contact_msg( $cle ) );
+	};
+
+	// 1. Jeton signé obligatoire, entre 4 s et 12 h.
 	// phpcs:ignore WordPress.Security.NonceVerification
-	$raw = isset( $_POST['at_ts'] ) ? sanitize_text_field( wp_unslash( $_POST['at_ts'] ) ) : '';
-	if ( '' === $raw ) { return; } // champ absent (JS désactivé) → on laisse passer
+	$raw   = isset( $_POST['at_ts'] ) ? sanitize_text_field( wp_unslash( $_POST['at_ts'] ) ) : '';
 	$parts = explode( '.', $raw, 2 );
 	$t     = isset( $parts[0] ) ? (int) $parts[0] : 0;
 	$sig   = $parts[1] ?? '';
-	// jeton illisible ou trafiqué = soumission automatisée
-	if ( ! $t || ! hash_equals( wp_hash( $t . '|at_contact_ts' ), $sig ) ) {
-		$handler->add_error( 'at_ts', "Votre message n'a pas pu être vérifié. Rechargez la page et réessayez." );
+	if ( '' === $raw || ! $t || ! hash_equals( wp_hash( $t . '|at_contact_ts' ), $sig ) ) {
+		$rejet( '' === $raw ? 'jeton absent' : 'jeton invalide', 'verif' );
 		return;
 	}
-	if ( ( time() - $t ) < 3 ) {
-		// même API que le honeypot natif (classes/honeypot-handler.php) : add_error()
-		$handler->add_error( 'at_ts', 'Votre message est parti trop vite pour être traité. Réessayez dans quelques secondes.' );
+	$age = time() - $t;
+	if ( $age < 4 ) {
+		$rejet( 'trop rapide (' . $age . ' s)', 'vite' );
+		return;
+	}
+	if ( $age > 12 * HOUR_IN_SECONDS ) {
+		$rejet( 'page trop ancienne', 'ancien' );
+		return;
+	}
+
+	// 2. Envoi depuis une page du site.
+	$ref = isset( $_SERVER['HTTP_REFERER'] ) ? (string) wp_unslash( $_SERVER['HTTP_REFERER'] ) : '';
+	if ( '' === $ref || wp_parse_url( $ref, PHP_URL_HOST ) !== wp_parse_url( home_url(), PHP_URL_HOST ) ) {
+		$rejet( 'origine absente ou externe', 'verif' );
+		return;
+	}
+
+	// 3. Objet choisi dans la liste du formulaire.
+	if ( isset( $f['objet'] ) ) {
+		$options = array();
+		foreach ( (array) $record->get_form_settings( 'form_fields' ) as $def ) {
+			if ( 'objet' === ( $def['custom_id'] ?? '' ) ) {
+				foreach ( preg_split( '/\r\n|\r|\n/', (string) ( $def['field_options'] ?? '' ) ) as $ligne ) {
+					$ligne = trim( $ligne );
+					if ( '' !== $ligne ) {
+						$val       = false !== strpos( $ligne, '|' ) ? trim( substr( $ligne, strpos( $ligne, '|' ) + 1 ) ) : $ligne;
+						$options[] = html_entity_decode( $val, ENT_QUOTES, 'UTF-8' );
+					}
+				}
+			}
+		}
+		if ( $options && ! in_array( html_entity_decode( $f['objet'], ENT_QUOTES, 'UTF-8' ), $options, true ) ) {
+			$rejet( 'objet hors liste', 'objet' );
+			return;
+		}
+	}
+
+	// 4. Limites par IP.
+	$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+	if ( $ip ) {
+		$k10 = 'at_ct_ip10_' . md5( $ip );
+		$k24 = 'at_ct_ip24_' . md5( $ip );
+		$n10 = (int) get_transient( $k10 );
+		$n24 = (int) get_transient( $k24 );
+		if ( $n10 >= 3 || $n24 >= 8 ) {
+			$rejet( 'trop d’envois depuis cette IP', 'trop' );
+			return;
+		}
+	}
+
+	// 5. Contenu.
+	$message = $f['message'] ?? '';
+	$nom     = trim( ( $f['prenom'] ?? '' ) . ' ' . ( $f['nom'] ?? '' ) );
+	$re_lien = '~(https?://|www\.|\[url|<a\s)~i';
+	if ( preg_match_all( $re_lien, $message ) >= 2 || preg_match( $re_lien, $nom ) ) {
+		$rejet( 'liens', 'liens' );
+		return;
+	}
+	if ( at_contact_part_non_latine( $message . ' ' . $nom ) > 0.4 ) {
+		$rejet( 'écriture non latine', 'langue' );
+		return;
+	}
+	$prenom = mb_strtolower( trim( $f['prenom'] ?? '' ) );
+	if ( mb_strlen( $prenom ) >= 4 && $prenom === mb_strtolower( trim( $f['nom'] ?? '' ) ) ) {
+		$rejet( 'prénom identique au nom', 'verif' );
+		return;
+	}
+
+	// Envoi accepté : il compte dans les limites de l'IP.
+	if ( $ip ) {
+		set_transient( $k10, $n10 + 1, 10 * MINUTE_IN_SECONDS );
+		set_transient( $k24, $n24 + 1, DAY_IN_SECONDS );
 	}
 }, 10, 2 );
 
