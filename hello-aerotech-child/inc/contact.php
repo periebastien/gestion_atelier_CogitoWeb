@@ -130,10 +130,11 @@ add_action( 'elementor_pro/forms/validation', function ( $record, $handler ) {
 	foreach ( (array) $record->get( 'fields' ) as $id => $champ ) {
 		$f[ $id ] = is_array( $champ['value'] ?? '' ) ? implode( ' ', $champ['value'] ) : (string) ( $champ['value'] ?? '' );
 	}
-	$rejet = function ( $raison, $cle ) use ( $handler, $f ) {
+	$rejet = function ( $raison, $cle, $champ = 'at_ts' ) use ( $handler, $f ) {
 		at_contact_spam_log( $raison, $f );
 		// même API que le honeypot natif (classes/honeypot-handler.php) : add_error()
-		$handler->add_error( 'at_ts', at_contact_msg( $cle ) );
+		// Sous le champ concerné quand il y en a un (le visiteur sait quoi corriger).
+		$handler->add_error( $champ, at_contact_msg( $cle ) );
 	};
 
 	// 1. Jeton signé obligatoire, entre 4 s et 12 h.
@@ -178,7 +179,7 @@ add_action( 'elementor_pro/forms/validation', function ( $record, $handler ) {
 			}
 		}
 		if ( $options && ! in_array( html_entity_decode( $f['objet'], ENT_QUOTES, 'UTF-8' ), $options, true ) ) {
-			$rejet( 'objet hors liste', 'objet' );
+			$rejet( 'objet hors liste', 'objet', 'objet' );
 			return;
 		}
 	}
@@ -201,11 +202,11 @@ add_action( 'elementor_pro/forms/validation', function ( $record, $handler ) {
 	$nom     = trim( ( $f['prenom'] ?? '' ) . ' ' . ( $f['nom'] ?? '' ) );
 	$re_lien = '~(https?://|www\.|\[url|<a\s)~i';
 	if ( preg_match_all( $re_lien, $message ) >= 2 || preg_match( $re_lien, $nom ) ) {
-		$rejet( 'liens', 'liens' );
+		$rejet( 'liens', 'liens', 'message' );
 		return;
 	}
 	if ( at_contact_part_non_latine( $message . ' ' . $nom ) > 0.4 ) {
-		$rejet( 'écriture non latine', 'langue' );
+		$rejet( 'écriture non latine', 'langue', 'message' );
 		return;
 	}
 	$prenom = mb_strtolower( trim( $f['prenom'] ?? '' ) );
