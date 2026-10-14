@@ -401,3 +401,47 @@ add_action( 'woocommerce_review_order_after_order_total', function () {
 		}, 999 );
 	}
 }, 1 );
+
+/*
+ * =====================================================================
+ * OPTIONS DE RÉVISION (14/10/2026)
+ * =====================================================================
+ * En plus de Solo / Biplace (+10 €), les révisions de voile proposent :
+ *  - voile monosurface : +20 € (cumulable avec biplace : une monosurface
+ *    biplace existe) ;
+ *  - maillons Connect : +10 €.
+ * Produits supplément créés par slug (mêmes réglages que le supplément
+ * biplace 472 : virtuels, masqués, acompte 0, catégorie supplements-biplace).
+ */
+function gacct_aero_produit_par_slug( $slug ) {
+	static $cache = array();
+	if ( ! isset( $cache[ $slug ] ) ) {
+		$post           = get_page_by_path( $slug, OBJECT, 'product' );
+		$cache[ $slug ] = ( $post && 'publish' === $post->post_status ) ? (int) $post->ID : 0;
+	}
+	return $cache[ $slug ];
+}
+
+add_filter( 'gacct_revision_options', function ( $options ) {
+	$mono    = gacct_aero_produit_par_slug( 'supplement-voile-monosurface' );
+	$connect = gacct_aero_produit_par_slug( 'supplement-maillons-connect' );
+	if ( $mono ) {
+		$options['voile']['monosurface'] = array(
+			'product' => $mono,
+			'label'   => 'Type de voile :',
+			'off'     => 'Classique',
+			'on'      => 'Monosurface (+%s)',
+			'recap'   => '+ Supplément monosurface : %s',
+		);
+	}
+	if ( $connect ) {
+		$options['voile']['connect'] = array(
+			'product' => $connect,
+			'label'   => 'Maillons :',
+			'off'     => 'Maillons normaux',
+			'on'      => 'Connect (+%s)',
+			'recap'   => '+ Supplément maillons Connect : %s',
+		);
+	}
+	return $options;
+} );

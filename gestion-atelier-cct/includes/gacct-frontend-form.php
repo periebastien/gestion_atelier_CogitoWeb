@@ -175,10 +175,36 @@ function gacct_demande_v2_config() {
 		}
 	}
 
+	// Options de révision cumulables (monosurface, maillons Connect…), 14/10/2026.
+	$options_revision = array();
+	if ( function_exists( 'gacct_revision_options' ) && function_exists( 'wc_get_product' ) ) {
+		foreach ( gacct_revision_options() as $type => $liste ) {
+			foreach ( $liste as $cle => $opt ) {
+				$produit = wc_get_product( $opt['product'] );
+				if ( ! $produit ) {
+					continue;
+				}
+				$prix                                = (float) $produit->get_price();
+				$options_revision[ $type ][] = array(
+					'cle'     => $cle,
+					'id'      => (int) $opt['product'],
+					'prix'    => $prix,
+					'acompte' => gacct_demande_acompte( $opt['product'], $prix ),
+					'label'   => $opt['label'],
+					'off'     => $opt['off'],
+					'on'      => $opt['on'],
+					'recap'   => $opt['recap'],
+				);
+			}
+		}
+	}
+
 	return apply_filters(
 		'gacct_demande_v2_config',
 		array(
 			'voilesUrl' => function_exists( 'gacct_voiles_json_url' ) ? gacct_voiles_json_url() : '',
+			// Options de révision par groupe ('voile' / 'secours') : bascules supplémentaires.
+			'optionsRevision' => $options_revision,
 			// Referentiel des parachutes de secours (gacct-secours.php, 09/09/2026) :
 			// recherche « quelques lettres » du bloc secours de l etape 2.
 			'secoursUrl' => function_exists( 'gacct_secours_json_url' ) ? gacct_secours_json_url() : '',

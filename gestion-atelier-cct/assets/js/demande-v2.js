@@ -1812,6 +1812,45 @@
 		var devisIds = ( v2.devisIds || [] ).map( String );
 		var biplaceCfg = v2.biplace || {};
 		var biplaceEtat = { voile: false, secours: false };
+		// Options de révision cumulables (monosurface, maillons Connect…), 14/10/2026 :
+		// { voile: [ { cle, id, prix, acompte, label, off, on, recap } ], secours: [...] }.
+		var optionsRev = v2.optionsRevision || {};
+		var optionsEtat = { voile: {}, secours: {} };
+
+		/** Jetons actifs d'un groupe, pour son champ caché (« 1 » = Biplace seul, historique). */
+		function valeurGroupe( type ) {
+			var jetons = [];
+			if ( biplaceEtat[ type ] ) {
+				jetons.push( 'biplace' );
+			}
+			( optionsRev[ type ] || [] ).forEach( function ( opt ) {
+				if ( optionsEtat[ type ][ opt.cle ] ) {
+					jetons.push( opt.cle );
+				}
+			} );
+			if ( 1 === jetons.length && 'biplace' === jetons[ 0 ] ) {
+				return '1';
+			}
+			return jetons.join( ',' );
+		}
+
+		/** Suppléments actifs d'un groupe : [ { recap, prix, acompte } ]. */
+		function supplementsActifs( type ) {
+			var liste = [];
+			if ( biplaceEtat[ type ] && biplaceCfg[ type ] ) {
+				liste.push( {
+					recap: v2i18n.suppBiplace || '+ Supplément biplace : %s',
+					prix: parseFloat( biplaceCfg[ type ].prix ) || 0,
+					acompte: parseFloat( biplaceCfg[ type ].acompte ) || 0
+				} );
+			}
+			( optionsRev[ type ] || [] ).forEach( function ( opt ) {
+				if ( optionsEtat[ type ][ opt.cle ] ) {
+					liste.push( { recap: opt.recap, prix: parseFloat( opt.prix ) || 0, acompte: parseFloat( opt.acompte ) || 0 } );
+				}
+			} );
+			return liste;
+		}
 		var qtys = {}; // product_id (string) → quantité (suspentes cochées)
 		var suspentesName = 'suspentes_travaux';
 		var groupesUniques = [ 'revisions_controle', 'pliages_secours' ];
@@ -2727,11 +2766,36 @@
 					return;
 				}
 				var info = prestations[ input.value ];
-				if ( info && info.biplace && biplaceCfg[ info.biplace ] ) {
+				if ( info && info.biplace && ( biplaceCfg[ info.biplace ] || ( optionsRev[ info.biplace ] || [] ).length ) ) {
 					type = info.biplace;
 				}
 			} );
 			return type;
+		}
+
+		/** Une bascule à deux positions ; onChange( actif ) reçoit l'état choisi. */
+		function creerBascule( libelle, off, on, cle, onChange ) {
+			var seg = document.createElement( 'div' );
+			seg.className = 'gacct-v2-seg';
+			seg.setAttribute( 'data-opt', cle );
+			seg.innerHTML =
+				'<span class="gacct-v2-seg-label">' + escapeHtml( libelle ) + '</span>' +
+				'<span class="gacct-v2-seg-btns">' +
+				'<button type="button" class="gacct-v2-seg-btn is-sel" data-bi="0">' + escapeHtml( off ) + '</button>' +
+				'<button type="button" class="gacct-v2-seg-btn" data-bi="1">' + escapeHtml( on ) + '</button>' +
+				'</span>';
+			seg.addEventListener( 'click', function ( e ) {
+				var btn = e.target.closest( '.gacct-v2-seg-btn' );
+				if ( ! btn ) {
+					return;
+				}
+				e.preventDefault();
+				seg.querySelectorAll( '.gacct-v2-seg-btn' ).forEach( function ( b ) {
+					b.classList.toggle( 'is-sel', b === btn );
+				} );
+				onChange( btn.dataset.bi === '1' );
+			} );
+			return seg;
 		}
 
 		function initBiplace() {
@@ -2743,39 +2807,48 @@
 				if ( ! type ) {
 					return;
 				}
-				var supp = biplaceCfg[ type ];
-				var seg = document.createElement( 'div' );
-				seg.className = 'gacct-v2-seg';
-				seg.innerHTML =
-					'<span class="gacct-v2-seg-label">' +
-					escapeHtml( type === 'secours' ? ( v2i18n.segSecours || 'Votre parachute de secours :' ) : ( v2i18n.segVoile || 'Votre voile :' ) ) +
-					'</span>' +
-					'<span class="gacct-v2-seg-btns">' +
-					'<button type="button" class="gacct-v2-seg-btn is-sel" data-bi="0">' + escapeHtml( v2i18n.segSolo || 'Solo' ) + '</button>' +
-					'<button type="button" class="gacct-v2-seg-btn" data-bi="1">' +
-					escapeHtml( ( v2i18n.segBiplace || 'Biplace (+%s)' ).replace( '%s', formatMoney( supp.prix ) ) ) + '</button>' +
-					'</span>';
-				seg.addEventListener( 'click', function ( e ) {
-					var btn = e.target.closest( '.gacct-v2-seg-btn' );
-					if ( ! btn ) {
-						return;
-					}
-					e.preventDefault();
-					biplaceEtat[ type ] = btn.dataset.bi === '1';
-					seg.querySelectorAll( '.gacct-v2-seg-btn' ).forEach( function ( b ) {
-						b.classList.toggle( 'is-sel', b === btn );
-					} );
-					ecrireChampCache( type === 'secours' ? 'biplace_secours' : 'biplace_voile', biplaceEtat[ type ] ? '1' : '' );
-					majPrixAffiches( acc.name, type );
-					toutRecalculer();
+				var champ = type === 'secours' ? 'biplace_secours' : 'biplace_voile';
+				var bascules = [];
+
+				if ( biplaceCfg[ type ] ) {
+					bascules.push( creerBascule(
+						type === 'secours' ? ( v2i18n.segSecours || 'Votre parachute de secours :' ) : ( v2i18n.segVoile || 'Votre voile :' ),
+						v2i18n.segSolo || 'Solo',
+						( v2i18n.segBiplace || 'Biplace (+%s)' ).replace( '%s', formatMoney( biplaceCfg[ type ].prix ) ),
+						'biplace',
+						function ( actif ) {
+							biplaceEtat[ type ] = actif;
+							ecrireChampCache( champ, valeurGroupe( type ) );
+							majPrixAffiches( acc.name, type );
+							toutRecalculer();
+						}
+					) );
+				}
+
+				( optionsRev[ type ] || [] ).forEach( function ( opt ) {
+					bascules.push( creerBascule(
+						opt.label,
+						opt.off,
+						( opt.on || '' ).replace( '%s', formatMoney( opt.prix ) ),
+						opt.cle,
+						function ( actif ) {
+							optionsEtat[ type ][ opt.cle ] = actif;
+							ecrireChampCache( champ, valeurGroupe( type ) );
+							majPrixAffiches( acc.name, type );
+							toutRecalculer();
+						}
+					) );
 				} );
-				acc.body.insertBefore( seg, acc.body.firstChild );
+
+				for ( var i = bascules.length - 1; i >= 0; i-- ) {
+					acc.body.insertBefore( bascules[ i ], acc.body.firstChild );
+				}
 			} );
 		}
 
-		/** Réécrit les prix affichés du groupe, supplément inclus si Biplace. */
+		/** Réécrit les prix affichés du groupe, suppléments actifs inclus. */
 		function majPrixAffiches( name, type ) {
-			var supp = biplaceCfg[ type ];
+			var extra = supplementsActifs( type ).reduce( function ( s, x ) { return s + x.prix; }, 0 );
 			fieldInputs( name ).forEach( function ( input ) {
 				if ( input.type !== 'checkbox' ) {
 					return;
@@ -2795,19 +2868,19 @@
 				// et le prix changeait de taille. La couleur « prix majoré »
 				// passe par une classe, pas par le contenu.
 				var cible = prixEl.querySelector( '.woocommerce-Price-amount' ) || prixEl;
-				cible.textContent = formatMoney( biplaceEtat[ type ] ? prix + supp.prix : prix );
+				cible.textContent = formatMoney( prix + extra );
 				var conteneur = prixEl.closest( '.service-item-price' ) || prixEl;
-				conteneur.classList.toggle( 'gacct-v2-prix-biplace', !! biplaceEtat[ type ] );
+				conteneur.classList.toggle( 'gacct-v2-prix-biplace', extra > 0 );
 			} );
 		}
 
-		/** Supplément biplace applicable à une prestation cochée (0 sinon). */
+		/** Suppléments (biplace + options) applicables à une prestation cochée (0 sinon). */
 		function suppPour( input, cle ) {
 			var info = prestations[ input.value ];
-			if ( ! info || ! info.biplace || ! biplaceEtat[ info.biplace ] || ! biplaceCfg[ info.biplace ] ) {
+			if ( ! info || ! info.biplace ) {
 				return 0;
 			}
-			return parseFloat( biplaceCfg[ info.biplace ][ cle ] ) || 0;
+			return supplementsActifs( info.biplace ).reduce( function ( s, x ) { return s + ( 'acompte' === cle ? x.acompte : x.prix ); }, 0 );
 		}
 
 		/* Carte de prestation cliquable (tap n'importe où sur l'item). */
@@ -3145,17 +3218,19 @@
 						return;
 					}
 					var qte = qtyDe( input );
-					var supp = suppPour( input, 'prix' );
 					prestaHtml +=
 						'<span style="display:block">' + escapeHtml( info.titre || '' ) +
 						( qte > 1 ? ' × ' + qte : '' ) +
 						' <small style="display:inline">' + formatMoney( ( parseFloat( info.prix ) || 0 ) * qte ) + '</small></span>';
-					if ( supp > 0 ) {
-						prestaHtml +=
-							'<small style="display:block;padding-left:14px">' +
-							escapeHtml( ( v2i18n.suppBiplace || '+ Supplément biplace : %s' ).replace( '%s', formatMoney( supp * qte ) ) ) +
-							'</small>';
-					}
+					// Une sous-ligne par supplément actif (biplace, options de révision).
+					( info.biplace ? supplementsActifs( info.biplace ) : [] ).forEach( function ( s ) {
+						if ( s.prix > 0 ) {
+							prestaHtml +=
+								'<small style="display:block;padding-left:14px">' +
+								escapeHtml( ( s.recap || '+ %s' ).replace( '%s', formatMoney( s.prix * qte ) ) ) +
+								'</small>';
+						}
+					} );
 				} );
 			} );
 			if ( ! prestaHtml ) {
@@ -3386,13 +3461,17 @@
 				var champ = form.querySelector(
 					'[name="' + ( 'secours' === type ? 'biplace_secours' : 'biplace_voile' ) + '"]'
 				);
-				if ( ! champ || '1' !== champ.value ) {
+				if ( ! champ || '' === champ.value ) {
 					return;
 				}
-				var btn = acc.body.querySelector( '.gacct-v2-seg-btn[data-bi="1"]' );
-				if ( btn ) {
-					btn.click();
-				}
+				// « 1 » = Biplace (historique), sinon jetons « biplace,monosurface ».
+				var jetons = '1' === champ.value ? [ 'biplace' ] : champ.value.split( ',' );
+				jetons.forEach( function ( jeton ) {
+					var btn = acc.body.querySelector( '.gacct-v2-seg[data-opt="' + jeton + '"] .gacct-v2-seg-btn[data-bi="1"]' );
+					if ( btn ) {
+						btn.click();
+					}
+				} );
 			} );
 		}
 
