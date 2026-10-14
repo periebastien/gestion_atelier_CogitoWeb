@@ -146,7 +146,7 @@ $fin_total = 0.0;
 
 		<?php do_action( 'woocommerce_review_order_before_order_total' ); ?>
 		<tr class="order-total at-rev-total">
-			<th colspan="2"><?php echo $fin ? 'À régler aujourd'hui' : 'Total'; ?></th>
+			<th colspan="2"><?php echo $fin ? 'À régler aujourd’hui' : 'Total'; ?></th>
 			<td><?php echo wp_kses_post( wc_price( WC()->cart->get_total( 'edit' ) ) ); ?></td>
 		</tr>
 		<?php do_action( 'woocommerce_review_order_after_order_total' ); ?>
