@@ -235,6 +235,17 @@ add_action( 'init', function () {
 		return;
 	}
 	add_action( 'gacct_balance_requested', 'gacct_mode_fin_demande_reglement', 10, 3 );
+	// Suivi « Mes interventions » : libellés des états 0 et 6 sans acompte ni solde.
+	add_filter( 'jwcct_tracker_config', function ( $config ) {
+		if ( isset( $config[0] ) ) {
+			$config[0]['tip'] = '<strong>Info :</strong> votre demande est en cours d’enregistrement.';
+		}
+		if ( isset( $config[6] ) ) {
+			$config[6]['label'] = 'Intervention à régler';
+			$config[6]['tip']   = '<strong>Action requise :</strong> l’intervention est terminée. Réglez-la par virement (coordonnées dans le détail de la commande) pour que votre matériel reparte.';
+		}
+		return $config;
+	}, 20 );
 	add_filter( 'woocommerce_email_enabled_customer_on_hold_order', 'gacct_mode_fin_on_hold_email', 20, 2 );
 	add_filter( 'gettext', 'gacct_mode_fin_gettext', 20, 3 );
 	add_filter( 'gettext_with_context', 'gacct_mode_fin_gettext_context', 20, 4 );

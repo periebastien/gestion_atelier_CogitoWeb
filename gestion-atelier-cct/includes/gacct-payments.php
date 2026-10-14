@@ -421,7 +421,7 @@ function gacct_pay_add_mode_end_variants( array $defaults ) {
 			'body'    => '<p>Bonjour {customer_name},</p>'
 				. '<p>Votre intervention est terminée. Voici les coordonnées pour régler <strong>{balance_amount}</strong> pour votre commande <strong>{order_number}</strong> par virement :</p>'
 				. '{bank_details}'
-				. '<p>Indiquez bien la référence <strong>{order_number}</strong> dans le libellé. Dès réception du virement, votre matériel repart vers vous et vous recevez le suivi du colis.</p>'
+				. '<p>Indiquez bien la référence <strong>{order_number}</strong> dans le libellé. Dès réception du virement, votre matériel vous est réexpédié (avec le suivi du colis) ou tenu à votre disposition à l’atelier.</p>'
 				. '<p>Une question ? Répondez à cet e-mail ou appelez-nous au {contact_phone} ({contact_hours}).</p>'
 				. '<p>À bientôt,<br><br>' . $sig . '</p>',
 		),

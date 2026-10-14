@@ -1257,6 +1257,30 @@ function gacct_dash_action_solde( array $row, $order, array $conf ) {
 
 	$since_ts = ! empty( $row['cct_modified'] ) ? (int) strtotime( (string) $row['cct_modified'] ) : time();
 
+	// Mode « tout à la fin » (14/10/2026) : le règlement se fait par virement,
+	// la carte mène au détail de la commande, qui affiche le RIB et la référence
+	// (la page de paiement en ligne n'accepte pas une commande en attente de virement).
+	if ( function_exists( 'gacct_pay_mode_end' ) && gacct_pay_mode_end() && function_exists( 'gacct_orders_url' ) ) {
+		return array(
+			'type'      => 'solde',
+			'title'     => gacct_dash_text( 'solde_title' ),
+			'text_html' => sprintf(
+				/* translators: 1: montant, 2: référence de commande */
+				esc_html__( 'L’intervention est terminée : %1$s à régler par virement pour la commande %2$s.', 'gestion-atelier-cct' ),
+				'<span class="hl">' . esc_html( gacct_dash_amount( (float) $solde ) ) . '</span>',
+				'<span class="hl">' . esc_html( $order->get_order_number() ) . '</span>'
+			),
+			'note'      => __( 'Votre matériel repart dès réception du virement. Pensez à indiquer la référence de commande.', 'gestion-atelier-cct' ),
+			'chip'      => '',
+			'url'       => add_query_arg( 'commande', $order->get_id(), gacct_orders_url() ),
+			'cta_label' => gacct_dash_text( 'virement_cta' ),
+			'cta_style' => 'primary',
+			'icon'      => 'check',
+			'urgent'    => gacct_dash_action_urgent( 'solde', false, array( 'balance' => (float) $solde, 'since_ts' => $since_ts ) ),
+			'sort_ts'   => $since_ts,
+		);
+	}
+
 	return array(
 		'type'      => 'solde',
 		'title'     => gacct_dash_text( 'solde_title' ),
