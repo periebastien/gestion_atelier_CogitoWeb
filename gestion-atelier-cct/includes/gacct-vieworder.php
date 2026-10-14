@@ -14,10 +14,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-add_filter( 'wc_get_template', 'gacct_vo_locate_template', 10, 2 );
+add_filter( 'wc_get_template', 'gacct_vo_locate_template', 10, 3 );
 
-function gacct_vo_locate_template( $template, $template_name ) {
+function gacct_vo_locate_template( $template, $template_name, $args = array() ) {
 	if ( 'myaccount/view-order.php' !== $template_name ) {
+		return $template;
+	}
+
+	// Site avec boutique (réglage « Commandes concernées », 14/10/2026) : une
+	// commande de la boutique garde le détail de commande WooCommerce.
+	$vo_order = $args['order'] ?? ( ! empty( $args['order_id'] ) ? wc_get_order( (int) $args['order_id'] ) : null );
+	if ( function_exists( 'gacct_order_is_boutique_only' ) && gacct_order_is_boutique_only( $vo_order ) ) {
 		return $template;
 	}
 

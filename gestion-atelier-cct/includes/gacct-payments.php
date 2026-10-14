@@ -1918,8 +1918,8 @@ function gacct_pay_render_admin_page() {
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Commandes concernees', 'gestion-atelier-cct' ); ?></th>
 						<td>
-							<label><input type="checkbox" name="automation_scope_atelier" value="1" <?php checked( 'atelier', $settings['automation_scope'] ); ?>> <?php esc_html_e( 'Relances et annulations automatiques reservees aux commandes atelier', 'gestion-atelier-cct' ); ?></label>
-							<p class="description"><?php esc_html_e( 'A cocher si le site vend aussi en boutique : une commande sans intervention ni vente seule n est alors jamais relancee ni annulee par le plugin.', 'gestion-atelier-cct' ); ?></p>
+							<label><input type="checkbox" name="automation_scope_atelier" value="1" <?php checked( 'atelier', $settings['automation_scope'] ); ?>> <?php esc_html_e( 'Le site vend aussi en boutique : le plugin ne gere que les commandes atelier', 'gestion-atelier-cct' ); ?></label>
+							<p class="description"><?php esc_html_e( 'Une commande sans intervention ni vente seule n est alors jamais relancee ni annulee par le plugin, et garde les pages WooCommerce (confirmation, detail de commande) au lieu de celles de l atelier.', 'gestion-atelier-cct' ); ?></p>
 						</td>
 					</tr>
 					<tr>

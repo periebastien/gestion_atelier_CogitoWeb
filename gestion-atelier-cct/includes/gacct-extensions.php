@@ -51,6 +51,22 @@ function gacct_order_skip_automation( $order, $context ) {
 }
 
 /**
+ * Sur un site qui vend aussi en boutique (réglage « Commandes concernées » =
+ * atelier), la commande est-elle une pure commande de la boutique ? Elle garde
+ * alors les gabarits WooCommerce (confirmation, détail) et échappe aux
+ * automatismes du plugin. Toujours false avec le réglage par défaut.
+ *
+ * @param WC_Order|mixed $order
+ * @return bool
+ */
+function gacct_order_is_boutique_only( $order ) {
+	if ( ! $order instanceof WC_Order || ! function_exists( 'gacct_pay_workshop_setting' ) ) {
+		return false;
+	}
+	return 'atelier' === gacct_pay_workshop_setting( 'automation_scope' ) && ! gacct_order_is_atelier( $order );
+}
+
+/**
  * La commande relève-t-elle de l'atelier (intervention ou vente seule) ?
  *
  * Une commande de la boutique (matériel vendu sur le site, sans dossier de

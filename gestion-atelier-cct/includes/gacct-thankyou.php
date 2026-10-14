@@ -99,10 +99,16 @@ function gacct_commande_sans_acompte( $order ) {
  *  OVERRIDE DU TEMPLATE WOOCOMMERCE
  * ============================================================================= */
 
-add_filter( 'wc_get_template', 'gacct_conf_locate_template', 10, 2 );
+add_filter( 'wc_get_template', 'gacct_conf_locate_template', 10, 3 );
 
-function gacct_conf_locate_template( $template, $template_name ) {
+function gacct_conf_locate_template( $template, $template_name, $args = array() ) {
 	if ( 'checkout/thankyou.php' !== $template_name ) {
+		return $template;
+	}
+
+	// Site avec boutique (réglage « Commandes concernées », 14/10/2026) : une
+	// commande de la boutique garde la page de confirmation WooCommerce.
+	if ( function_exists( 'gacct_order_is_boutique_only' ) && gacct_order_is_boutique_only( $args['order'] ?? null ) ) {
 		return $template;
 	}
 
