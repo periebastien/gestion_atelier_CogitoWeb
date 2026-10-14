@@ -214,12 +214,19 @@ add_action( 'elementor_pro/forms/validation', function ( $record, $handler ) {
 		return;
 	}
 
-	// Envoi accepté : il compte dans les limites de l'IP.
-	if ( $ip ) {
-		set_transient( $k10, $n10 + 1, 10 * MINUTE_IN_SECONDS );
-		set_transient( $k24, $n24 + 1, DAY_IN_SECONDS );
-	}
 }, 10, 2 );
+
+// Les limites par IP ne comptent que les envois réellement acceptés (après le
+// reCAPTCHA et toutes les validations) : new_record ne part qu'en cas de succès.
+add_action( 'elementor_pro/forms/new_record', function ( $record ) {
+	if ( 'Contact AEROTECH' !== $record->get_form_settings( 'form_name' ) ) { return; }
+	$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+	if ( '' === $ip ) { return; }
+	$k10 = 'at_ct_ip10_' . md5( $ip );
+	$k24 = 'at_ct_ip24_' . md5( $ip );
+	set_transient( $k10, (int) get_transient( $k10 ) + 1, 10 * MINUTE_IN_SECONDS );
+	set_transient( $k24, (int) get_transient( $k24 ) + 1, DAY_IN_SECONDS );
+}, 5 );
 
 /* ---------------------------------------------------------------------------
  * Routage de l'e-mail interne selon l'objet de la demande + objet normalisé
