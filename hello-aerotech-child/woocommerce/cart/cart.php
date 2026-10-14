@@ -63,7 +63,7 @@ do_action( 'woocommerce_before_cart' );
 
 		<section class="at-reassure" aria-label="Nos engagements">
 			<div><?php at_icon( 'truck', 21 ); ?><div><b>Expédition 24/48 h</b><span>Offerte dès <?php echo wp_kses_post( wc_price( at_free_shipping_threshold() ) ); ?> en France métropolitaine.</span></div></div>
-			<div><?php at_icon( 'shield-check', 21 ); ?><div><b>Paiement en 3×</b><span>Sans frais dès 300 € d'achat, sans dossier.</span></div></div>
+			<div><?php at_icon( 'shield-check', 21 ); ?><div><b>Paiement par virement</b><span>Coordonnées bancaires transmises avec la confirmation de commande.</span></div></div>
 			<div><?php at_icon( 'wing', 21 ); ?><div><b>Essai avant achat</b><span>Sur le site de Gréolières, sur rendez-vous.</span></div></div>
 			<div><?php at_icon( 'headset', 21 ); ?><div><b>Conseil de pilotes</b><span>Au 06 20 89 91 31, du mardi au samedi.</span></div></div>
 		</section>

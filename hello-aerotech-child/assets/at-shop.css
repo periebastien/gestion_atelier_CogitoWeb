@@ -327,3 +327,20 @@ html{scroll-behavior:auto!important}
 .at-richtext .at-tech-table table{margin:0}
 .at-richtext table+p em,.at-richtext table+p i{font-size:13px;color:var(--text-muted)}
 @media(max-width:600px){.at-tech-table--flow th,.at-tech-table--flow td{padding:10px 12px;font-size:13.5px}.at-tech-table--flow thead th,.at-tech-table--flow tr:first-child th,.at-tech-table--flow tr:first-child td{padding:11px 12px}}
+
+/* Prix sur demande : produits dont le tarif n'est pas encore public (voiles AEROTECH). */
+.at-shop .at-price--ask{font-size:27px;letter-spacing:-.01em}
+.at-shop .at-card-price--ask{font-size:15px;font-weight:700;color:var(--ink-500)}
+.at-shop .at-add--ask{text-decoration:none;color:#fff!important}
+.at-shop .at-callus{display:inline-flex;align-items:center;justify-content:center;height:56px;padding:0 22px;border:1.5px solid var(--border-subtle);border-radius:var(--radius-pill);font-weight:700;font-size:15px;color:var(--text-strong)!important;text-decoration:none;transition:border-color .16s ease,color .16s ease}
+@media(hover:hover){.at-shop .at-callus:hover{border-color:var(--orange-400);color:var(--orange-400)!important}}
+.at-shop .at-mb-ask{font-family:var(--font-display);font-weight:800;font-size:16px;letter-spacing:-.01em;color:var(--text-strong)}
+@media(max-width:600px){.at-shop .at-callus{display:none}}
+
+/* Axes de variation autres que taille et coloris (sac de portage…). */
+.at-shop .at-opts{display:flex;flex-wrap:wrap;gap:8px}
+.at-shop .at-optbtn{min-height:44px;padding:0 18px;border:1.5px solid var(--border-subtle);border-radius:var(--radius-pill);background:var(--surface-page);font-family:var(--font-body);font-size:14.5px;font-weight:600;color:var(--text-faint);cursor:pointer;transition:border-color .16s ease,color .16s ease,background .16s ease}
+@media(hover:hover){.at-shop .at-optbtn:not(.is-on):hover{border-color:var(--orange-300);color:var(--orange-400);background:var(--surface-card)}}
+.at-shop .at-optbtn.is-on{border-color:var(--ink-900);background:var(--surface-card);color:var(--text-strong);font-weight:700}
+
+.at-shop .at-card-from{display:block;font-size:12px;font-weight:600;color:var(--text-faint);line-height:1.2;margin-bottom:1px}

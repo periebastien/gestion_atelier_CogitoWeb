@@ -18,12 +18,13 @@ while ( have_posts() ) :
 	$cat      = $cats && ! is_wp_error( $cats ) ? end( $cats ) : null;
 	$imgs     = array_filter( array_merge( array( $product->get_image_id() ), $product->get_gallery_image_ids() ) );
 	$variable = $product->is_type( 'variable' );
-	$sizes    = $variable ? wc_get_product_terms( $pid, 'pa_taille', array( 'fields' => 'all' ) ) : array();
-	$colors   = $variable ? wc_get_product_terms( $pid, 'pa_couleur', array( 'fields' => 'all' ) ) : array();
+	$sizes    = $variable ? at_attr_terms( $product, 'pa_taille' ) : array();
+	$colors   = $variable ? at_attr_terms( $product, 'pa_couleur' ) : array();
 	$tech     = get_post_meta( $pid, 'at_tech_html', true );
 	$livre    = get_post_meta( $pid, 'at_livre_avec_html', true );
 	$docs     = at_get_documents( $pid );
-	$in_stock = $product->is_in_stock();
+	$in_stock = 'instock' === $product->get_stock_status(); // onbackorder => « Sur commande »
+	$has_price = '' !== $product->get_price(); // sinon : « Prix sur demande »
 
 	$vardata = array();
 	if ( $variable ) {
@@ -117,6 +118,23 @@ while ( have_posts() ) :
 			</div>
 			<?php endif; ?>
 
+			<?php
+			foreach ( $product->get_attributes() as $tx => $att ) :
+				if ( ! $att->get_variation() || ! $att->is_taxonomy() || in_array( $tx, array( 'pa_taille', 'pa_couleur' ), true ) ) { continue; }
+				$opts = at_attr_terms( $product, $tx );
+				if ( ! $opts ) { continue; }
+				$lab = wc_attribute_label( $tx, $product );
+			?>
+			<div class="at-opt">
+				<b class="at-opt-label"><?php echo esc_html( $lab ); ?></b>
+				<div class="at-opts" role="group" aria-label="<?php echo esc_attr( $lab ); ?>">
+					<?php foreach ( $opts as $i => $t ) : ?>
+					<button type="button" class="at-optbtn<?php echo $i ? '' : ' is-on'; ?>" data-attr="<?php echo esc_attr( $tx ); ?>" data-value="<?php echo esc_attr( $t->slug ); ?>" data-label="<?php echo esc_attr( $t->name ); ?>" aria-pressed="<?php echo $i ? 'false' : 'true'; ?>"><?php echo esc_html( $t->name ); ?></button>
+					<?php endforeach; ?>
+				</div>
+			</div>
+			<?php endforeach; ?>
+
 			<div class="at-stockrow">
 				<?php if ( $in_stock ) : ?>
 				<span class="at-stock at-stock--in"><i class="ri-checkbox-circle-fill"></i>En stock à Vence</span>
@@ -127,6 +145,7 @@ while ( have_posts() ) :
 				<?php endif; ?>
 			</div>
 
+			<?php if ( $has_price ) : ?>
 			<div class="at-pricerow">
 				<b class="at-price" data-at-price><?php echo wc_price( wc_get_price_to_display( $product, array( 'price' => $product->get_price() ) ) ); // phpcs:ignore ?></b>
 				<s class="at-price-old" data-at-old hidden></s>
@@ -147,6 +166,20 @@ while ( have_posts() ) :
 				</button>
 			</div>
 			<p class="at-add-error" data-at-error hidden>Impossible d'ajouter au panier. Réessayez ou appelez-nous.</p>
+			<?php else : ?>
+			<div class="at-pricerow">
+				<b class="at-price at-price--ask">Prix sur demande</b>
+			</div>
+			<span class="at-price-note">Voile assemblée à la commande dans notre atelier : nous vous confirmons le tarif, la taille conseillée et le délai.</span>
+
+			<div class="at-buyrow at-buyrow--ask">
+				<a class="at-add at-add--ask" href="<?php echo esc_url( home_url( '/contact/' ) ); ?>">
+					<span data-lbl="a"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h10"/></svg>Demander un devis</span>
+					<span data-lbl="c" aria-hidden="true"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h10"/></svg>Demander un devis</span>
+				</a>
+				<a class="at-callus" href="tel:+33620899131">Nous appeler</a>
+			</div>
+			<?php endif; ?>
 
 			<ul class="at-perks">
 				<li><i class="ri-flight-takeoff-line"></i><span>Essai possible sur le site de Gréolières avant l'achat</span></li>
@@ -273,14 +306,18 @@ if ( $related ) : ?>
 	</div>
 	<div class="at-mb-row2">
 		<span class="at-mb-price">
+			<?php if ( $has_price ) : ?>
 			<b data-at-price><?php echo wc_price( wc_get_price_to_display( $product, array( 'price' => $product->get_price() ) ) ); // phpcs:ignore ?></b>
+			<?php else : ?>
+			<b class="at-mb-ask">Prix sur demande</b>
+			<?php endif; ?>
 			<span class="at-mb-range" aria-live="polite"></span>
 		</span><?php // .at-mb-range affiche la taille sélectionnée ?>
-		<button type="button" class="at-add at-add--sm" data-at-add>
+		<?php if ( $has_price ) : ?><button type="button" class="at-add at-add--sm" data-at-add>
 			<span data-lbl="a"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="18.4" cy="20" r="1.4"/><path d="M2 3h2.6l2.4 11.2a1.8 1.8 0 0 0 1.8 1.4h9.3a1.8 1.8 0 0 0 1.8-1.4L21.5 7H6"/></svg>Ajouter au panier</span>
 			<span data-lbl="c" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="18.4" cy="20" r="1.4"/><path d="M2 3h2.6l2.4 11.2a1.8 1.8 0 0 0 1.8 1.4h9.3a1.8 1.8 0 0 0 1.8-1.4L21.5 7H6"/></svg>Ajouter au panier</span>
 			<span data-lbl="b" aria-hidden="true"><i class="ri-check-line"></i>Ajouté au panier</span>
-		</button>
+		</button><?php else : ?><a class="at-add at-add--sm at-add--ask" href="<?php echo esc_url( home_url( '/contact/' ) ); ?>"><span data-lbl="a">Demander un devis</span><span data-lbl="c" aria-hidden="true">Demander un devis</span></a><?php endif; ?>
 	</div>
 </div>
 

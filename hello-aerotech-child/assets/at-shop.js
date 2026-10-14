@@ -3,6 +3,8 @@
 	'use strict';
 	var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 	var eur = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
+	/* Intl place une espace fine insecable, wc_price() une insecable normale : on aligne. */
+	var eurFmt = function ( n ) { return eur.format( n ).replace( / /g, ' ' ); };
 
 	/* ---------- stagger de la grille (premier affichage uniquement) ---------- */
 	document.querySelectorAll('[data-at-reveal]').forEach(function (g) {
@@ -85,7 +87,7 @@
 		var v = matchVariation();
 		/* prix */
 		if (v) {
-			main.querySelectorAll('[data-at-price]').forEach(function (el) { el.textContent = eur.format(v.price); });
+			main.querySelectorAll('[data-at-price]').forEach(function (el) { el.textContent = eurFmt(v.price); });
 			var old = main.querySelector('[data-at-old]');
 			var off = main.querySelector('[data-at-off]');
 			if (old && off) {
@@ -93,7 +95,7 @@
 				old.hidden = !promo;
 				off.hidden = !promo;
 				if (promo) {
-					old.textContent = eur.format(v.reg);
+					old.textContent = eurFmt(v.reg);
 					off.textContent = '−' + Math.round(100 * (1 - v.price / v.reg)) + ' %';
 				}
 			}
@@ -102,7 +104,11 @@
 		var szBtn = main.querySelector('.at-size.is-on');
 		var szLabel = szBtn ? szBtn.getAttribute('data-label') : '';
 		var mbRange = main.querySelector('.at-mb-range');
-		if (mbRange) { mbRange.textContent = szLabel ? 'Taille ' + szLabel : ''; }
+		if (mbRange) {
+			var bits = szLabel ? ['Taille ' + szLabel] : [];
+			main.querySelectorAll('.at-optbtn.is-on').forEach(function (b) { bits.push(b.getAttribute('data-label')); });
+			mbRange.textContent = bits.join(' · ');
+		}
 		/* libellé coloris */
 		var swBtn = main.querySelector('.at-swatch.is-on[data-label]');
 		var swLabel = main.querySelector('.at-swatch-label');
@@ -111,7 +117,8 @@
 
 	function pick(attr, value) {
 		sel[attr] = value;
-		var cls = 'pa_taille' === attr ? '.at-size' : '.at-swatch';
+		var cls = 'pa_taille' === attr ? '.at-size'
+			: ('pa_couleur' === attr ? '.at-swatch' : '.at-optbtn[data-attr="' + attr + '"]');
 		main.querySelectorAll(cls).forEach(function (b) {
 			var on = b.getAttribute('data-value') === value;
 			b.classList.toggle('is-on', on);
@@ -124,6 +131,13 @@
 	});
 	main.querySelectorAll('.at-swatch, .at-swatch-hit').forEach(function (b) {
 		b.addEventListener('click', function () { pick('pa_couleur', b.getAttribute('data-value')); });
+	});
+	/* autres axes de variation (sac de portage…) : pilules génériques */
+	main.querySelectorAll('.at-optbtn').forEach(function (b) {
+		var a = b.getAttribute('data-attr');
+		if (!(a in sel)) { sel[a] = null; }
+		if (b.classList.contains('is-on')) { sel[a] = b.getAttribute('data-value'); }
+		b.addEventListener('click', function () { pick(a, b.getAttribute('data-value')); });
 	});
 	refresh();
 

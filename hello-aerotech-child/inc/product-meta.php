@@ -24,3 +24,29 @@ function at_get_documents( $pid ) {
 	}
 	return $out;
 }
+
+/**
+ * Termes d'un attribut de produit, dans l'ordre défini sur la fiche produit
+ * (onglet Attributs). wc_get_product_terms() ignore cet ordre : il trie par
+ * la meta order_<taxonomie>, globale au site.
+ */
+function at_attr_terms( $product, $taxonomy ) {
+	$attrs = $product->get_attributes();
+	if ( empty( $attrs[ $taxonomy ] ) || ! $attrs[ $taxonomy ]->is_taxonomy() ) {
+		return array();
+	}
+	$terms = array();
+	foreach ( $attrs[ $taxonomy ]->get_options() as $tid ) {
+		$t = get_term( (int) $tid, $taxonomy );
+		if ( $t && ! is_wp_error( $t ) ) { $terms[] = $t; }
+	}
+	usort(
+		$terms,
+		function ( $a, $b ) {
+			$oa = (int) get_term_meta( $a->term_id, 'order', true );
+			$ob = (int) get_term_meta( $b->term_id, 'order', true );
+			return $oa === $ob ? strcmp( $a->name, $b->name ) : $oa - $ob;
+		}
+	);
+	return $terms;
+}

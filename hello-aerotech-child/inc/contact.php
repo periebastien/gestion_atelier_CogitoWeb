@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /** La page Contact (slug « contact »). */
 function at_is_contact_page() {
-	return is_page( 'contact' );
+	return is_page( array( 'contact', 'contact-us' ) );
 }
 
 /* ---------------------------------------------------------------------------
@@ -90,15 +90,21 @@ add_action( 'elementor_pro/forms/validation', function ( $record, $handler ) {
  * Les adresses sont filtrables : add_filter( 'at_contact_routing', … ).
  * ------------------------------------------------------------------------- */
 function at_contact_routing() {
-	$default = 'pierreyves@fly-aerotech.com';
+	// Alias créés par Pierre-Yves (e-mail du 13/09/2026) : info@ (général), atelier@ (révisions), shop@ (boutique).
+	$info    = 'info@fly-aerotech.com';
+	$atelier = 'atelier@fly-aerotech.com';
+	$shop    = 'shop@fly-aerotech.com';
 	return apply_filters( 'at_contact_routing', array(
-		'Baptême biplace · réserver un vol'       => $default,
-		'Stage de pilotage · s\'inscrire'          => $default,
-		'Atelier · révision ou réparation'         => $default,
-		'Magasin · matériel, commande, SAV'        => $default,
-		'Bureau d\'étude · projet R&D'             => $default,
-		'Bon cadeau'                               => $default,
-		'Autre demande'                            => $default,
+		'Baptême biplace · réserver un vol'       => $info,
+		'Stage de pilotage · s\'inscrire'          => $info,
+		'Atelier · révision ou réparation'         => $atelier,
+		'Magasin · matériel, commande, SAV'        => $shop,
+		'Bureau d\'étude · projet R&D'             => $info,
+		'Bon cadeau'                               => $info,
+		'Autre demande'                            => $info,
+		// Objets du formulaire EN (page 553), memes destinataires.
+		'Workshop · service or repair'             => $atelier,
+		'Shop · equipment, order, after-sales'     => $shop,
 	) );
 }
 
@@ -206,7 +212,7 @@ add_action( 'wp_head', function () {
 		'legalName' => 'AEROTECH SAS',
 		'url'       => home_url( '/' ),
 		'telephone' => '+33620899131',
-		'email'     => 'pierreyves@fly-aerotech.com',
+		'email'     => 'info@fly-aerotech.com',
 		'address'   => array(
 			'@type'           => 'PostalAddress',
 			'streetAddress'   => '489 route de Grasse',

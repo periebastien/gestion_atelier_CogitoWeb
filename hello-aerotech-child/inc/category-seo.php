@@ -36,7 +36,7 @@ function at_cat_pills( $term ) {
 		'pliages-secours',
 		'suspentes-travaux',
 		'reparation',
-		'supplements-biplace',
+		'supplements-biplace', 'supplements',
 	) );
 
 	$children_of = function ( $parent ) use ( $exclude, $slugs_masques ) {

@@ -145,7 +145,13 @@ function at_cart_render_lines() {
 						$bits[]   = wc_attribute_label( $taxonomy, $product ) . ' ' . ( $term ? $term->name : $value );
 					}
 				}
-				$meta = wc_get_formatted_cart_item_data( $item, true );
+				// Les attributs de variation sont deja rendus ci-dessus : on les retire
+				// de l item passe a WooCommerce, sinon ils sortent une seconde fois
+				// (« Taille: 42 »). Le filtre woocommerce_get_item_data, lui, doit
+				// continuer a tourner : c est par la que le tunnel atelier ajoute ses options.
+				$item_sans_var              = $item;
+				$item_sans_var["variation"] = array();
+				$meta                       = wc_get_formatted_cart_item_data( $item_sans_var, true );
 				if ( $meta ) { $bits[] = trim( str_replace( "\n", ' · ', $meta ) ); }
 				if ( $bits ) :
 					?>
@@ -247,7 +253,7 @@ function at_cart_render_totals() {
 	</div>
 
 	<ul class="at-reassure-list">
-		<li><?php at_icon( 'shield-check', 17 ); ?><span>Paiement sécurisé CB, virement ou 3× sans frais</span></li>
+		<li><?php at_icon( 'shield-check', 17 ); ?><span>Paiement par virement bancaire, coordonnées fournies à la commande</span></li>
 		<li><?php at_icon( 'rotate-left', 17 ); ?><span>Retour sous 14 jours si le matériel n'a pas volé</span></li>
 		<li><?php at_icon( 'store', 17 ); ?><span>Retrait gratuit à l'atelier de Vence</span></li>
 	</ul>

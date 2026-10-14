@@ -87,7 +87,9 @@ function at_bicolor( $title ) {
 /** Badge unique : Promo > Nouveau > Occasion. */
 function at_product_badge( $product ) {
 	if ( $product->is_on_sale() ) { return '<span class="at-badge at-badge--promo">Promo</span>'; }
-	if ( get_post_meta( $product->get_id(), 'at_occasion', true ) ) { return '<span class="at-badge at-badge--used">Occasion</span>'; }
+	// Le switcher JetEngine enregistre la chaine "false" (vraie en PHP) : ne garder que les vrais oui.
+	$occ = get_post_meta( $product->get_id(), 'at_occasion', true );
+	if ( in_array( strtolower( (string) $occ ), array( '1', 'true', 'yes', 'on' ), true ) ) { return '<span class="at-badge at-badge--used">Occasion</span>'; }
 	$created = $product->get_date_created();
 	if ( $created && ( time() - $created->getTimestamp() ) < 90 * DAY_IN_SECONDS ) { return '<span class="at-badge at-badge--new">Nouveau</span>'; }
 	return '';
@@ -111,8 +113,18 @@ function at_card_swatches( $product ) {
 
 /** Prix d'une carte. */
 function at_card_price( $product ) {
+	if ( '' === $product->get_price() ) {
+		return '<b class="at-card-price at-card-price--ask">Prix sur demande</b>';
+	}
 	$price = wc_get_price_to_display( $product, array( 'price' => $product->get_price() ) );
-	$html  = '<b class="at-card-price">' . wc_price( $price ) . '</b>';
+	$html  = '';
+	// Produit à variations dont les prix diffèrent : on annonce une fourchette.
+	if ( $product->is_type( 'variable' ) ) {
+		$min = (float) $product->get_variation_price( 'min' );
+		$max = (float) $product->get_variation_price( 'max' );
+		if ( $max > $min ) { $html .= '<span class="at-card-from">À partir de</span>'; }
+	}
+	$html .= '<b class="at-card-price">' . wc_price( $price ) . '</b>';
 	if ( $product->is_on_sale() && ! $product->is_type( 'variable' ) ) {
 		$html .= '<s class="at-card-old">' . wc_price( wc_get_price_to_display( $product, array( 'price' => $product->get_regular_price() ) ) ) . '</s>';
 	}
@@ -261,7 +273,8 @@ define( 'AT_ANNOUNCE_ID', '57d7af9' );
 add_filter(
 	'elementor/frontend/container/should_render',
 	function ( $should_render, $element ) {
-		if ( AT_ANNOUNCE_ID === $element->get_id() && ! is_front_page() ) {
+		if ( AT_ANNOUNCE_ID === $element->get_id() && ! is_front_page()
+			&& ! ( function_exists( 'pll_get_post' ) && is_page( (int) pll_get_post( (int) get_option( 'page_on_front' ), 'en' ) ) ) ) {
 			return false;
 		}
 		return $should_render;
@@ -307,3 +320,21 @@ function hello_aerotech_child_design_assets() {
 	);
 }
 add_action( 'wp_enqueue_scripts', 'hello_aerotech_child_design_assets' );
+
+/* -------------------------------------------------------------------------
+ * AT-LANG-TEMPLATES : header et footer anglais (Polylang).
+ * Les templates EN (clones sans conditions) remplacent 205/210 quand la
+ * langue courante est l'anglais. L'espace client (416/417) reste inchange.
+ * ------------------------------------------------------------------------- */
+add_filter( 'elementor/theme/get_location_templates/template_id', function ( $id ) {
+	if ( function_exists( 'pll_current_language' ) && 'en' === pll_current_language() ) {
+		$map = array( 205 => 610, 210 => 611 );
+		if ( isset( $map[ (int) $id ] ) ) {
+			return $map[ (int) $id ];
+		}
+	}
+	return $id;
+} );
+
+/* AT-PRO : pages Tarifs pro protegees (15/09/2026) */
+require get_stylesheet_directory() . "/inc/pro-tarifs.php";
