@@ -30,7 +30,7 @@ if ( ! $checkout->is_registration_enabled() && $checkout->is_registration_requir
 		</div>
 
 		<div class="at-cart-head">
-			<h1 class="at-h1">Votre <em>commande</em></h1>
+			<h1 class="at-h1">Votre <em><?php echo ( function_exists( 'at_co_reglement_fin' ) && at_co_reglement_fin() ) ? 'demande' : 'commande'; ?></em></h1>
 			<?php at_steps( 2 ); ?>
 		</div>
 
@@ -132,7 +132,7 @@ if ( ! $checkout->is_registration_enabled() && $checkout->is_registration_requir
 						<?php at_icon( 'chevron-down', 19, 'at-co-sumchev' ); ?>
 					</button>
 					<div class="at-card at-sum at-co-sum" id="at-co-sum">
-						<h2 class="at-sum-t">Résumé de la commande</h2>
+						<h2 class="at-sum-t"><?php echo ( function_exists( 'at_co_reglement_fin' ) && at_co_reglement_fin() ) ? 'Résumé de votre demande' : 'Résumé de la commande'; ?></h2>
 						<div class="at-co-review"><?php woocommerce_order_review(); ?></div>
 						<?php if ( wc_coupons_enabled() ) : ?>
 							<?php at_checkout_coupon_box(); ?>
