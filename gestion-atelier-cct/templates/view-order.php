@@ -224,10 +224,12 @@ if ( 5 === $etat && function_exists( 'gacct_state5_suffix' ) ) {
 					<td class="gacct-vo-amount"><?php echo esc_html( $vo_fmt( $d['total_initial'] ) ); ?></td>
 				</tr>
 				<?php else : ?>
+				<?php if ( ! ( function_exists( 'gacct_pay_mode_end' ) && gacct_pay_mode_end() ) ) : // Mode « tout à la fin » : pas de ligne d'acompte (14/10/2026). ?>
 				<tr class="gacct-vo-paid">
 					<td><?php echo esc_html( $is_bacs_waiting ? __( 'Acompte à régler par virement', 'gestion-atelier-cct' ) : __( 'Acompte réglé', 'gestion-atelier-cct' ) ); ?></td>
 					<td class="gacct-vo-amount"><?php echo esc_html( $vo_fmt( $d['deposit'] ) ); ?></td>
 				</tr>
+				<?php endif; ?>
 				<tr class="gacct-vo-balance">
 					<td>
 						<?php esc_html_e( 'Reste à payer', 'gestion-atelier-cct' ); ?>

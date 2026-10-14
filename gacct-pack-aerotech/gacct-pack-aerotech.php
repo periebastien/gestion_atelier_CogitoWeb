@@ -306,3 +306,82 @@ add_shortcode( 'gacct_aero_myaccount_content', function () {
 add_filter( 'woocommerce_is_checkout', function ( $is ) {
 	return $is || is_page( 'commander' );
 } );
+
+/*
+ * =====================================================================
+ * FONCTIONNEMENT DE L'ATELIER AEROTECH (14/10/2026)
+ * =====================================================================
+ * Décisions de PY (via Bastien, 14/10/2026), portées par les réglages
+ * « Fonctionnement de l'atelier » du socle :
+ *  - aucun acompte : tout est réglé à la fin, par virement exclusivement ;
+ *  - aucune annulation automatique : PY annule à la main (récap du matin) ;
+ *    constat : la commande boutique 5611 (voile A1, virement) a été annulée
+ *    seule le 04/10 et le dossier 5848 classé « Sans suite » seul le 13/10 ;
+ *  - les automatismes ne touchent jamais une commande de la boutique ;
+ *  - le matériel doit arriver la veille du créneau, avant 18 h (règle
+ *    historique d'AEROTECH, le socle est passé au jour même à 12 h le 30/09).
+ * Le reste du bloc maintient le comportement d'AEROTECH d'avant la mise à
+ * niveau du socle (version du 13/09 vers celle d'octobre 2026).
+ */
+add_filter( 'gacct_pay_default_settings', function ( $d ) {
+	$d['payment_mode']        = 'end';
+	$d['auto_cancel']         = false;
+	$d['automation_scope']    = 'atelier';
+	$d['deadline_day_offset'] = 1;
+	$d['noshow_hour']         = 18;
+
+	// Copies à l'atelier exactement comme avant la case « Copie à l'atelier »
+	// (30/09/2026) : les modèles que le socle copiait d'office.
+	$copiees = array( 'quote_accepted', 'balance_bank_details', 'noshow_release', 'missing_items', 'hold_notice', 'hold_release', 'deposit_received', 'bacs_cancel', 'unfinished_cancel', 'atelier_cancel', 'quote_refused_partial', 'quote_refused_return' );
+	foreach ( $d['emails'] as $cle => $mail ) {
+		if ( empty( $mail['admin_only'] ) ) {
+			$d['emails'][ $cle ]['copy_admin'] = in_array( $cle, $copiees, true );
+		}
+	}
+
+	// Nouveaux e-mails du socle, absents chez AEROTECH avant la mise à niveau.
+	if ( isset( $d['emails']['ready_to_ship'] ) ) {
+		$d['emails']['ready_to_ship']['enabled'] = false;
+	}
+	if ( isset( $d['emails']['pickup_delivered'] ) ) {
+		$d['emails']['pickup_delivered']['enabled'] = false;
+	}
+
+	return $d;
+}, 100 );
+
+// Copie à l'atelier des notifications d'état adressées au client : avant la
+// case du 30/09/2026, l'atelier les recevait toujours.
+add_filter( 'option_gacct_notification_settings', function ( $s ) {
+	if ( is_array( $s ) && ! empty( $s['emails'] ) && is_array( $s['emails'] ) ) {
+		foreach ( $s['emails'] as $etat => $mail ) {
+			if ( is_array( $mail ) && ! array_key_exists( 'copy_admin', $mail ) ) {
+				$s['emails'][ $etat ]['copy_admin'] = true;
+			}
+		}
+	}
+	return $s;
+} );
+
+// Pas de section « À réexpédier » dans le récapitulatif du matin (nouveauté
+// du socle, l'atelier AEROTECH suit ses expéditions autrement).
+add_filter( 'gacct_lc_recap_sections', function ( $sections ) {
+	return array_values( array_filter( (array) $sections, function ( $s ) {
+		return 0 !== strpos( (string) ( $s['title'] ?? '' ), 'À réexpédier' );
+	} ) );
+} );
+
+// Commandes : ni passage automatique en « Terminée » au règlement, ni e-mail
+// « Commande terminée » réécrit en envoi de facture (AEROTECH n'émet pas de
+// facture PDF) ; virement uniquement, pas de bascule vers la carte.
+add_filter( 'gacct_complete_order_when_paid', '__return_false' );
+add_action( 'plugins_loaded', function () {
+	remove_filter( 'wc_get_template', 'gacct_oc_completed_template', 10 );
+	remove_filter( 'woocommerce_email_subject_customer_completed_order', 'gacct_oc_completed_subject', 20 );
+	remove_filter( 'woocommerce_email_heading_customer_completed_order', 'gacct_oc_completed_heading', 20 );
+	remove_filter( 'woocommerce_valid_order_statuses_for_payment', 'gacct_pay_bacs_allow_card_switch', 20 );
+	remove_filter( 'woocommerce_available_payment_gateways', 'gacct_pay_bacs_switch_gateways', 20 );
+}, 20 );
+add_action( 'wp_head', function () {
+	echo '<style id="gacct-aero-no-card-switch">.gacct-card-switch{display:none!important}</style>';
+}, 99 );

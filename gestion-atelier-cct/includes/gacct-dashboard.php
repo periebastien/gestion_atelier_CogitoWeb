@@ -212,6 +212,24 @@ function gacct_dash_texts() {
 		'state_9' => __( 'Sans suite (matériel jamais reçu)', 'gestion-atelier-cct' ),
 	);
 
+	// Réglages « Fonctionnement de l'atelier » (14/10/2026) : limite la veille,
+	// annulation automatique coupée, mode « tout à la fin ». Sans eux, rien ne change.
+	if ( function_exists( 'gacct_pay_deadline_day_offset' ) && gacct_pay_deadline_day_offset() ) {
+		/* translators: %s: date limite d'arrivée du colis */
+		$defaults['instr_deadline'] = __( 'Votre matériel doit nous parvenir au plus tard le %s, la veille de votre créneau.', 'gestion-atelier-cct' );
+	}
+	if ( function_exists( 'gacct_pay_mode_end' ) && ( gacct_pay_mode_end() || ! gacct_pay_auto_cancel_enabled() ) ) {
+		$defaults['expedition_note'] = __( 'Un retard ou un imprévu d’expédition ? Prévenez-nous : nous conviendrons ensemble d’un nouveau créneau.', 'gestion-atelier-cct' );
+	}
+	if ( function_exists( 'gacct_pay_mode_end' ) && gacct_pay_mode_end() ) {
+		/* translators: %s: référence de commande */
+		$defaults['paiement_text']          = __( 'Le paiement de la commande %s n’a pas abouti. Réessayez ou contactez l’atelier.', 'gestion-atelier-cct' );
+		$defaults['solde_title']            = __( 'Intervention à régler', 'gestion-atelier-cct' );
+		$defaults['solde_cta']              = __( 'Régler mon intervention', 'gestion-atelier-cct' );
+		$defaults['balance_label']          = __( 'Reste à régler', 'gestion-atelier-cct' );
+		$defaults['instr_workorder_locked'] = __( 'Le bon d’intervention sera disponible dès la confirmation de votre demande.', 'gestion-atelier-cct' );
+	}
+
 	$texts = (array) apply_filters( 'gacct_dashboard_texts', $defaults );
 
 	return $texts;

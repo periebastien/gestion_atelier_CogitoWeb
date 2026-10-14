@@ -63,6 +63,12 @@ function gacct_pay_default_settings() {
 		'balance_days_2'    => 10,  // 2e relance du solde : X jours après la demande.
 		'recap_hour'        => 8,   // récapitulatif admin quotidien : à partir de X heures.
 		'recap_enabled'     => true, // récapitulatif admin du matin : décochable (Bastien, 30/09/2026).
+		// Fonctionnement de l'atelier (14/10/2026, AEROTECH). Les valeurs par
+		// défaut reproduisent exactement le comportement historique.
+		'payment_mode'        => 'deposit', // 'deposit' : acompte à la commande puis solde ; 'end' : tout réglé à la fin, par virement.
+		'auto_cancel'         => true,      // false : ni annulation, ni bascule « Sans suite » automatiques (signalées au récap, traitées à la main).
+		'automation_scope'    => 'all',     // 'atelier' : relances et annulations ne touchent que les commandes atelier (jamais la boutique).
+		'deadline_day_offset' => 0,         // limite de réception du matériel : 0 = le jour du créneau, 1 = la veille.
 		'contact_phone'     => '02 31 69 39 31',
 		'contact_hours'     => 'du lundi au vendredi de 9 h 30 à 17 h 30',
 		'emails'            => array(
@@ -348,7 +354,94 @@ function gacct_pay_default_settings() {
 		),
 	);
 
+	$defaults = gacct_pay_add_mode_end_variants( $defaults );
+
 	return apply_filters( 'gacct_pay_default_settings', $defaults );
+}
+
+/**
+ * Variantes « tout à la fin » des modèles qui parlent d'acompte (14/10/2026).
+ *
+ * Rangées sous la clé `end` de chaque modèle ; gacct_pay_settings() les
+ * substitue en mode « tout à la fin » tant que l'atelier n'a pas personnalisé
+ * le texte (texte enregistré identique au défaut, ou absent). Jamais
+ * enregistrées en base.
+ */
+function gacct_pay_add_mode_end_variants( array $defaults ) {
+	$sig     = gacct_team_signature();
+	$colis   = '<p><strong>Comment préparer votre colis</strong></p>'
+		. '<ol>'
+		. '<li><strong>Imprimez le bon d’intervention</strong> et glissez-le dans le colis, bien visible sur le dessus. Il porte un QR code qui nous permet d’enregistrer votre matériel dès son arrivée.</li>'
+		. '<li>Pliez votre matériel comme d’habitude et emballez-le dans un carton ou un sac solide, fermé.</li>'
+		. '<li>Expédiez le colis à l’adresse suivante :<br><strong>{workshop_address}</strong></li>'
+		. '<li>Votre colis doit nous parvenir <strong>avant le {parcel_deadline}</strong>.</li>'
+		. '</ol>';
+	$variants = array(
+		'deposit_received' => array(
+			'label'   => __( 'Demande confirmée : consignes d’expédition + bon d’intervention', 'gestion-atelier-cct' ),
+			'subject' => __( 'Demande confirmée ! Voici comment nous envoyer votre matériel - commande {order_number}', 'gestion-atelier-cct' ),
+			'body'    => '<p>Bonjour {customer_name},</p>'
+				. '<p>Votre demande d’intervention <strong>{order_number}</strong> est bien enregistrée : votre créneau à l’atelier du <strong>{slot_date}</strong> est confirmé. Merci de votre confiance !</p>'
+				. '<p>Rien à régler pour l’instant : nous vous demanderons le montant de l’intervention une fois la révision terminée, à régler par virement avant l’expédition retour.</p>'
+				. '<p>Il ne reste plus qu’une étape : nous faire parvenir votre matériel.</p>'
+				. '{work_order_block}'
+				. $colis
+				. '<p>Dès que le colis est parti, indiquez-nous le transporteur et le numéro de suivi depuis <a href="{shipping_url}">votre espace client</a> : nous saurons ainsi qu’il est en route et nous pourrons l’attendre.</p>'
+				. '<p>Un retard ou un imprévu d’expédition ? Prévenez-nous au <strong>{contact_phone}</strong> ({contact_hours}) : nous conviendrons ensemble d’un nouveau créneau.</p>'
+				. '<p>À très vite,<br><br>' . $sig . '</p>',
+		),
+		'pre_slot_reminder' => array(
+			'body' => '<p>Bonjour {customer_name},</p>'
+				. '<p>Votre créneau à l’atelier est prévu le <strong>{slot_date}</strong>, et nous n’avons pas encore reçu votre matériel.</p>'
+				. '<p>Si votre colis est déjà parti, pensez à nous indiquer le transporteur et le numéro de suivi depuis <a href="{shipping_url}">votre espace client</a> : nous saurons qu’il est en route et nous l’attendrons.</p>'
+				. '<p>S’il n’est pas encore parti, il est temps de l’expédier : il doit nous parvenir <strong>avant le {parcel_deadline}</strong>, à l’adresse suivante :</p>'
+				. '<p><strong>{workshop_address}</strong></p>'
+				. '<p>Un retard ou un imprévu ? Appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}) ou répondez à cet e-mail : nous conviendrons ensemble d’un nouveau créneau.</p>'
+				. '<p>À très vite,<br><br>' . $sig . '</p>',
+		),
+		'noshow_release' => array(
+			'label' => __( 'Créneau libéré : matériel jamais reçu', 'gestion-atelier-cct' ),
+			'body'  => '<p>Bonjour {customer_name},</p>'
+				. '<p>Nous n’avons malheureusement pas reçu votre matériel pour le créneau du <strong>{slot_date}</strong>, réservé pour votre commande <strong>{order_number}</strong>.</p>'
+				. '<p>Ce créneau a donc été libéré pour un autre pilote.</p>'
+				. '<p>Votre dossier n’est pas perdu pour autant : si vous souhaitez replanifier l’intervention, contactez-nous au <strong>{contact_phone}</strong> ({contact_hours}) ou répondez à cet e-mail, nous trouverons une nouvelle date ensemble.</p>'
+				. '<p>À bientôt,<br><br>' . $sig . '</p>',
+		),
+		'quote_accepted' => array(
+			'body' => '<p>Bonjour {customer_name},</p>'
+				. '<p>Nous avons bien enregistré votre accord sur le devis complémentaire de la commande <strong>{order_number}</strong> :</p>'
+				. '{quote_lines}'
+				. '<p>Nouveau total de votre commande : <strong>{quote_total}</strong>, à régler à la fin de l’intervention.</p>'
+				. '<p>L’atelier reprend l’intervention avec ces travaux : nous vous prévenons dès qu’elle est terminée.</p>'
+				. '<p>Merci de votre confiance,<br><br>' . $sig . '</p>',
+		),
+		'balance_bank_details' => array(
+			'label'   => __( 'Règlement par virement : coordonnées bancaires', 'gestion-atelier-cct' ),
+			'subject' => __( 'Votre règlement de {balance_amount} par virement - commande {order_number}', 'gestion-atelier-cct' ),
+			'body'    => '<p>Bonjour {customer_name},</p>'
+				. '<p>Votre intervention est terminée. Voici les coordonnées pour régler <strong>{balance_amount}</strong> pour votre commande <strong>{order_number}</strong> par virement :</p>'
+				. '{bank_details}'
+				. '<p>Indiquez bien la référence <strong>{order_number}</strong> dans le libellé. Dès réception du virement, votre matériel repart vers vous et vous recevez le suivi du colis.</p>'
+				. '<p>Une question ? Répondez à cet e-mail ou appelez-nous au {contact_phone} ({contact_hours}).</p>'
+				. '<p>À bientôt,<br><br>' . $sig . '</p>',
+		),
+		'balance_reminder' => array(
+			'label'   => __( 'Relance du règlement (intervention finie)', 'gestion-atelier-cct' ),
+			'subject' => __( 'Votre commande {order_number} attend votre règlement', 'gestion-atelier-cct' ),
+			'body'    => '<p>Bonjour {customer_name},</p>'
+				. '<p>L’intervention sur votre matériel est terminée depuis quelques jours, et le règlement de <strong>{balance_amount}</strong> pour votre commande <strong>{order_number}</strong> reste à effectuer.</p>'
+				. '<p><a href="{payment_url}">Régler mon intervention</a></p>'
+				. '<p>Votre matériel vous attend à l’atelier : dès le règlement reçu, votre rapport de contrôle est disponible et nous préparons la réexpédition.</p>'
+				. '<p>Une question sur le montant, un souci de paiement ? Répondez à cet e-mail ou appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}).</p>'
+				. '<p>À très vite,<br><br>' . $sig . '</p>',
+		),
+	);
+	foreach ( $variants as $key => $variant ) {
+		if ( isset( $defaults['emails'][ $key ] ) ) {
+			$defaults['emails'][ $key ]['end'] = $variant;
+		}
+	}
+	return $defaults;
 }
 
 function gacct_pay_settings() {
@@ -383,6 +476,25 @@ function gacct_pay_settings() {
 	$settings['balance_days_2']      = max( $settings['balance_days_1'] + 1, (int) $settings['balance_days_2'] );
 	$settings['recap_hour']          = min( 12, max( 5, (int) $settings['recap_hour'] ) );
 	$settings['recap_enabled']       = ! empty( $settings['recap_enabled'] );
+	$settings['payment_mode']        = 'end' === $settings['payment_mode'] ? 'end' : 'deposit';
+	$settings['auto_cancel']         = ! empty( $settings['auto_cancel'] );
+	$settings['automation_scope']    = 'atelier' === $settings['automation_scope'] ? 'atelier' : 'all';
+	$settings['deadline_day_offset'] = min( 1, max( 0, (int) $settings['deadline_day_offset'] ) );
+
+	// Mode « tout à la fin » : variantes sans acompte des modèles, sauf texte
+	// personnalisé par l'atelier (différent du défaut enregistré).
+	foreach ( $settings['emails'] as $key => $email ) {
+		$end = isset( $defaults['emails'][ $key ]['end'] ) ? $defaults['emails'][ $key ]['end'] : null;
+		unset( $settings['emails'][ $key ]['end'] );
+		if ( 'end' !== $settings['payment_mode'] || ! $end ) {
+			continue;
+		}
+		foreach ( array( 'subject', 'body', 'label' ) as $field ) {
+			if ( isset( $end[ $field ] ) && ( ! isset( $saved['emails'][ $key ][ $field ] ) || $saved['emails'][ $key ][ $field ] === $defaults['emails'][ $key ][ $field ] || 'label' === $field ) ) {
+				$settings['emails'][ $key ][ $field ] = $end[ $field ];
+			}
+		}
+	}
 
 	// La suppression ne doit jamais precéder la relance.
 	$settings['unfinished_hours'] = max(
@@ -643,10 +755,96 @@ function gacct_pay_parcel_deadline_ts( $slot_ts ) {
 		return 0;
 	}
 
-	$day = wp_date( 'Y-m-d', $slot_ts );
+	// Réglage « Limite de réception » : le jour du créneau (0) ou la veille (1).
+	$day = wp_date( 'Y-m-d', $slot_ts - gacct_pay_deadline_day_offset() * DAY_IN_SECONDS );
 	$dt  = date_create_immutable( sprintf( '%s %02d:00:00', $day, gacct_pay_noshow_hour() ), wp_timezone() );
 
 	return $dt ? $dt->getTimestamp() : 0;
+}
+
+/* =============================================================================
+ *  FONCTIONNEMENT DE L'ATELIER (14/10/2026)
+ *
+ *  Réglages de la section « Fonctionnement de l'atelier » de la page Paiements
+ *  & relances. Valeurs par défaut = comportement historique (acompte, annulations
+ *  automatiques sur toutes les commandes, limite le jour du créneau).
+ * ============================================================================= */
+
+/**
+ * Lecture mise en cache des réglages de fonctionnement (une fois par requête).
+ *
+ * gacct_pay_settings() reconstruit tous les modèles (des centaines d'appels à
+ * __()) : le filtre gettext du mode « tout à la fin » l'appellerait à chaque
+ * chaîne. Garde anti-récursion : pendant le premier calcul, les valeurs par
+ * défaut historiques sont renvoyées.
+ */
+function gacct_pay_workshop_setting( $key ) {
+	static $cache = null;
+	static $busy  = false;
+
+	if ( null === $cache ) {
+		if ( $busy ) {
+			$fallback = array( 'payment_mode' => 'deposit', 'auto_cancel' => true, 'automation_scope' => 'all', 'deadline_day_offset' => 0 );
+			return $fallback[ $key ] ?? null;
+		}
+		$busy     = true;
+		$settings = gacct_pay_settings();
+		$cache    = array(
+			'payment_mode'        => $settings['payment_mode'],
+			'auto_cancel'         => $settings['auto_cancel'],
+			'automation_scope'    => $settings['automation_scope'],
+			'deadline_day_offset' => $settings['deadline_day_offset'],
+		);
+		$busy     = false;
+	}
+
+	return $cache[ $key ] ?? null;
+}
+
+/** Limite de réception : 0 = le jour du créneau, 1 = la veille. */
+function gacct_pay_deadline_day_offset() {
+	return (int) gacct_pay_workshop_setting( 'deadline_day_offset' );
+}
+
+/** Tout est réglé à la fin de l'intervention (aucun acompte à la commande). */
+function gacct_pay_mode_end() {
+	return 'end' === gacct_pay_workshop_setting( 'payment_mode' );
+}
+
+/** Les annulations et bascules « Sans suite » automatiques sont-elles actives ? */
+function gacct_pay_auto_cancel_enabled() {
+	return ! empty( gacct_pay_workshop_setting( 'auto_cancel' ) );
+}
+
+/**
+ * Moment de la limite de réception, en clair : « le matin de votre révision »
+ * (jour du créneau) ou « la veille de votre créneau ».
+ */
+function gacct_pay_deadline_moment() {
+	return gacct_pay_deadline_day_offset()
+		? __( 'la veille de votre créneau', 'gestion-atelier-cct' )
+		: __( 'le matin de votre révision', 'gestion-atelier-cct' );
+}
+
+/**
+ * Phrase « que se passe-t-il si le matériel n'arrive pas à temps », selon le
+ * mode de règlement et l'annulation automatique. Une seule source pour la
+ * confirmation, l'espace client et les e-mails WooCommerce.
+ *
+ * @param bool $short Variante courte (sans l'invitation à prévenir).
+ */
+function gacct_pay_deadline_rule_text( $short = false ) {
+	if ( gacct_pay_mode_end() || ! gacct_pay_auto_cancel_enabled() ) {
+		/* translators: 1: moment (« la veille de votre créneau »), 2: heure limite */
+		$txt = sprintf( __( 'Votre matériel doit nous parvenir %1$s, avant %2$s. Un retard ou un imprévu d’expédition ? Prévenez-nous : nous conviendrons ensemble d’un nouveau créneau.', 'gestion-atelier-cct' ), gacct_pay_deadline_moment(), gacct_pay_noshow_hour_label() );
+		return $txt;
+	}
+	/* translators: 1: moment (« le matin de votre révision »), 2: heure limite */
+	$txt = sprintf( __( 'L’acompte réserve votre créneau : si votre matériel ne nous est pas parvenu %1$s avant %2$s, votre place est libérée pour un autre pilote et l’acompte reste acquis.', 'gestion-atelier-cct' ), gacct_pay_deadline_moment(), gacct_pay_noshow_hour_label() );
+	if ( ! $short ) {
+		$txt .= ' ' . __( 'Un imprévu d’expédition ? Prévenez-nous avant la date, nous en tiendrons compte.', 'gestion-atelier-cct' );
+	}
+	return $txt;
 }
 
 /**
@@ -1597,6 +1795,10 @@ function gacct_pay_handle_admin_save() {
 		'balance_days_2'    => max( 1, absint( $_POST['balance_days_2'] ?? $defaults['balance_days_2'] ) ),
 		'recap_hour'        => absint( $_POST['recap_hour'] ?? $defaults['recap_hour'] ),
 		'recap_enabled'     => ! empty( $_POST['recap_enabled'] ),
+		'payment_mode'        => 'end' === sanitize_key( $_POST['payment_mode'] ?? $defaults['payment_mode'] ) ? 'end' : 'deposit',
+		'auto_cancel'         => ! empty( $_POST['auto_cancel'] ),
+		'automation_scope'    => ! empty( $_POST['automation_scope_atelier'] ) ? 'atelier' : 'all',
+		'deadline_day_offset' => min( 1, absint( $_POST['deadline_day_offset'] ?? $defaults['deadline_day_offset'] ) ),
 		'contact_phone'     => sanitize_text_field( wp_unslash( $_POST['contact_phone'] ?? $defaults['contact_phone'] ) ),
 		'contact_hours'     => sanitize_text_field( wp_unslash( $_POST['contact_hours'] ?? $defaults['contact_hours'] ) ),
 		'emails'            => array(),
@@ -1689,6 +1891,45 @@ function gacct_pay_render_admin_page() {
 								);
 								?>
 							</p>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<h2><?php esc_html_e( 'Fonctionnement de l atelier', 'gestion-atelier-cct' ); ?></h2>
+			<table class="form-table" role="presentation">
+				<tbody>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Mode de reglement', 'gestion-atelier-cct' ); ?></th>
+						<td>
+							<label><input type="radio" name="payment_mode" value="deposit" <?php checked( 'deposit', $settings['payment_mode'] ); ?>> <?php esc_html_e( 'Acompte a la commande, solde a la fin de l intervention', 'gestion-atelier-cct' ); ?></label><br>
+							<label><input type="radio" name="payment_mode" value="end" <?php checked( 'end', $settings['payment_mode'] ); ?>> <?php esc_html_e( 'Rien a la commande : tout est regle a la fin de l intervention, par virement', 'gestion-atelier-cct' ); ?></label>
+							<p class="description"><?php esc_html_e( 'Sans acompte, le client confirme sa demande sans payer ; les ecrans et e-mails ne parlent plus d acompte, et la demande de reglement de fin d intervention porte sur la totalite. Les prestations doivent alors avoir un acompte a 0.', 'gestion-atelier-cct' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Annulation automatique', 'gestion-atelier-cct' ); ?></th>
+						<td>
+							<label><input type="checkbox" name="auto_cancel" value="1" <?php checked( ! empty( $settings['auto_cancel'] ) ); ?>> <?php esc_html_e( 'Annuler automatiquement quand un delai est depasse', 'gestion-atelier-cct' ); ?></label>
+							<p class="description"><?php esc_html_e( 'Virement non recu, materiel jamais arrive (« Sans suite »), commande non finalisee. Decoche : rien n est annule ni libere automatiquement, les dossiers en retard sont signales chaque matin dans le recapitulatif et l atelier les traite a la main depuis la console.', 'gestion-atelier-cct' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Commandes concernees', 'gestion-atelier-cct' ); ?></th>
+						<td>
+							<label><input type="checkbox" name="automation_scope_atelier" value="1" <?php checked( 'atelier', $settings['automation_scope'] ); ?>> <?php esc_html_e( 'Relances et annulations automatiques reservees aux commandes atelier', 'gestion-atelier-cct' ); ?></label>
+							<p class="description"><?php esc_html_e( 'A cocher si le site vend aussi en boutique : une commande sans intervention ni vente seule n est alors jamais relancee ni annulee par le plugin.', 'gestion-atelier-cct' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="gacct_deadline_day_offset"><?php esc_html_e( 'Limite de reception du materiel', 'gestion-atelier-cct' ); ?></label></th>
+						<td>
+							<select id="gacct_deadline_day_offset" name="deadline_day_offset">
+								<option value="0" <?php selected( 0, (int) $settings['deadline_day_offset'] ); ?>><?php esc_html_e( 'Le jour du creneau', 'gestion-atelier-cct' ); ?></option>
+								<option value="1" <?php selected( 1, (int) $settings['deadline_day_offset'] ); ?>><?php esc_html_e( 'La veille du creneau', 'gestion-atelier-cct' ); ?></option>
+							</select>
+							<?php esc_html_e( 'avant l heure limite reglee plus bas', 'gestion-atelier-cct' ); ?>
+							<p class="description"><?php esc_html_e( 'Annoncee au client partout (confirmation, e-mails, espace client) et utilisee par la bascule « Sans suite ».', 'gestion-atelier-cct' ); ?></p>
 						</td>
 					</tr>
 				</tbody>

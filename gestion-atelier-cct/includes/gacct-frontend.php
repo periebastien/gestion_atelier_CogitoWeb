@@ -441,7 +441,11 @@ function jwcct_add_revision_date_to_email( $order, $sent_to_admin, $plain_text, 
         }
 
         if ( $date_colis && $materiel_attendu ) {
-            echo "L'acompte réserve votre créneau : si votre matériel ne nous est pas parvenu le matin de votre révision avant " . gacct_pay_noshow_hour_label() . ", votre place est libérée pour un autre pilote et l'acompte reste acquis. Un imprévu ? Prévenez-nous avant la date.\n";
+            if ( gacct_pay_mode_end() || ! gacct_pay_auto_cancel_enabled() ) {
+                echo wp_strip_all_tags( gacct_pay_deadline_rule_text() ) . "\n";
+            } else {
+                echo "L'acompte réserve votre créneau : si votre matériel ne nous est pas parvenu le matin de votre révision avant " . gacct_pay_noshow_hour_label() . ", votre place est libérée pour un autre pilote et l'acompte reste acquis. Un imprévu ? Prévenez-nous avant la date.\n";
+            }
         }
 
         echo "\n";
@@ -546,7 +550,7 @@ function jwcct_add_revision_date_to_email( $order, $sent_to_admin, $plain_text, 
 
     if ( $date_colis && $materiel_attendu ) {
         echo '<p style="margin:12px 0 0;font-size:13px;color:#666;">'
-            . esc_html( sprintf( /* translators: %s: heure limite */ __( 'L’acompte réserve votre créneau : si votre matériel ne nous est pas parvenu le matin de votre révision avant %s, votre place est libérée pour un autre pilote et l’acompte reste acquis. Un imprévu d’expédition ? Prévenez-nous avant la date, nous en tiendrons compte.', 'gestion-atelier-cct' ), gacct_pay_noshow_hour_label() ) )
+            . esc_html( gacct_pay_deadline_rule_text() )
             . '</p>';
     }
 

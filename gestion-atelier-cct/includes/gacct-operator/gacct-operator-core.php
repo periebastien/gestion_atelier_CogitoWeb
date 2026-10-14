@@ -194,6 +194,11 @@ function gacct_op_mark_balance_paid( $order, $ymd ) {
 	if ( ! $order instanceof WC_Order ) {
 		return;
 	}
+	// Même filtre que le passage automatique (gacct-order-complete.php) : un site
+	// peut laisser le statut de ses commandes inchangé (14/10/2026).
+	if ( ! apply_filters( 'gacct_complete_order_when_paid', true, $order, 0 ) ) {
+		return;
+	}
 	if ( ! $order->has_status( array( 'completed', 'cancelled', 'refunded' ) ) ) {
 		$order->update_status( 'completed', __( 'Solde réglé hors ligne, marqué payé depuis la console atelier.', 'gestion-atelier-cct' ) );
 	}

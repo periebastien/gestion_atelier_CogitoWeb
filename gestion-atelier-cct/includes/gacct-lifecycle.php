@@ -254,6 +254,10 @@ function gacct_lc_process_no_show() {
 	// rattrapage des créneaux passés jamais traités. Dates stockées à minuit UTC
 	// du jour calendaire : borne = minuit UTC de demain, calculé sur la date locale.
 	$limit = strtotime( current_time( 'Y-m-d' ) . ' 00:00:00 +0000' ) + DAY_IN_SECONDS;
+	// Limite « la veille du créneau » (réglage, 14/10/2026) : les créneaux du lendemain sont aussi concernés.
+	if ( function_exists( 'gacct_pay_deadline_day_offset' ) ) {
+		$limit += gacct_pay_deadline_day_offset() * DAY_IN_SECONDS;
+	}
 	$limit = (int) apply_filters( 'gacct_pay_noshow_limit_ts', $limit );
 
 	$rows = $wpdb->get_results(
@@ -672,6 +676,9 @@ function gacct_lc_recap_sections() {
 
 	// --- Bascules du jour + dossiers épargnés (suivi déclaré). ----------------
 	$limit = strtotime( current_time( 'Y-m-d' ) . ' 00:00:00 +0000' ) + DAY_IN_SECONDS;
+	if ( function_exists( 'gacct_pay_deadline_day_offset' ) ) {
+		$limit += gacct_pay_deadline_day_offset() * DAY_IN_SECONDS;
+	}
 
 	$rows = $wpdb->get_results(
 		$wpdb->prepare(
@@ -780,18 +787,53 @@ function gacct_lc_recap_sections() {
 	$day_start = strtotime( current_time( 'Y-m-d' ) . ' 00:00:00' ) - (int) ( get_option( 'gmt_offset' ) * HOUR_IN_SECONDS );
 	$day_end   = $day_start + DAY_IN_SECONDS;
 
+	$auto_cancel  = ! function_exists( 'gacct_pay_auto_cancel_enabled' ) || gacct_pay_auto_cancel_enabled();
+	$bacs_overdue = array();
+
 	foreach ( $orders as $order ) {
 		if ( ! gacct_pay_order_awaits_transfer( $order ) ) {
 			continue;
 		}
 
-		$deadlines = gacct_pay_order_deadlines( $order );
+		$deadlines   = gacct_pay_order_deadlines( $order );
+		$revision_id = (int) $order->get_meta( JWCCT_ORDER_REVISION_ID );
+
+		// Annulation automatique coupée (réglage, 14/10/2026) : tout virement dont
+		// le délai est dépassé est signalé chaque matin, l'atelier décide.
+		if ( ! $auto_cancel ) {
+			if ( $now >= $deadlines['cancel'] ) {
+				$created        = $order->get_date_created();
+				$bacs_overdue[] = gacct_lc_recap_line( $order, $revision_id, sprintf(
+					/* translators: 1: montant, 2: date de commande */
+					__( 'virement de %1$s attendu depuis la commande du %2$s', 'gestion-atelier-cct' ),
+					wp_strip_all_tags( wc_price( (float) $order->get_total() ) ),
+					$created ? wp_date( get_option( 'date_format' ), $created->getTimestamp() ) : '?'
+				) );
+			}
+			continue;
+		}
+
+		if ( gacct_order_skip_automation( $order, 'auto_cancel' ) ) {
+			continue;
+		}
 
 		if ( $deadlines['cancel'] >= $day_start && $deadlines['cancel'] < $day_end ) {
-			$revision_id     = (int) $order->get_meta( JWCCT_ORDER_REVISION_ID );
 			$bacs_expiring[] = gacct_lc_recap_line( $order, $revision_id, __( 'virement toujours pas reçu, annulation automatique aujourd’hui', 'gestion-atelier-cct' ) );
 		}
 	}
+
+	// Sans annulation automatique, les dossiers « matériel non reçu » ne basculent
+	// pas : la section change de titre et de consigne.
+	$noshow_title = $auto_cancel
+		? sprintf(
+			/* translators: %s: heure limite de réception */
+			__( 'Passeront « Sans suite » aujourd’hui à %s si le matériel n’est pas pointé', 'gestion-atelier-cct' ),
+			gacct_pay_noshow_hour_label()
+		)
+		: __( 'Matériel pas encore reçu : limite de réception aujourd’hui ou dépassée', 'gestion-atelier-cct' );
+	$noshow_hint  = $auto_cancel
+		? __( 'Matériel pas encore reçu, commande payée. Un colis arrivé ou un dépôt au comptoir non pointé ? Confirmez la réception dans la console avant l’heure limite pour éviter la bascule.', 'gestion-atelier-cct' )
+		: __( 'Rien n’est annulé automatiquement. Pointez la réception si le matériel est arrivé ; sinon contactez le client, replanifiez ou classez le dossier sans suite depuis la fiche.', 'gestion-atelier-cct' );
 
 	// --- À réexpédier : solde réglé, rapport disponible, pas de suivi saisi. ---
 	// 28/09/2026 (retour Hervé du 23/09) : récap journalier des révisions payées
@@ -823,12 +865,8 @@ function gacct_lc_recap_sections() {
 			'items' => $ready_to_ship,
 		),
 		array(
-			'title' => sprintf(
-				/* translators: %s: heure limite de réception */
-				__( 'Passeront « Sans suite » aujourd’hui à %s si le matériel n’est pas pointé', 'gestion-atelier-cct' ),
-				gacct_pay_noshow_hour_label()
-			),
-			'hint'  => __( 'Matériel pas encore reçu, commande payée. Un colis arrivé ou un dépôt au comptoir non pointé ? Confirmez la réception dans la console avant l’heure limite pour éviter la bascule.', 'gestion-atelier-cct' ),
+			'title' => $noshow_title,
+			'hint'  => $noshow_hint,
 			'items' => $noshow_candidates,
 		),
 		array(
@@ -850,6 +888,11 @@ function gacct_lc_recap_sections() {
 			'title' => __( 'Virements en échéance aujourd’hui', 'gestion-atelier-cct' ),
 			'hint'  => __( 'Sans réception du virement, l’annulation automatique tombera dans la journée.', 'gestion-atelier-cct' ),
 			'items' => $bacs_expiring,
+		),
+		array(
+			'title' => __( 'Virements attendus, délai dépassé', 'gestion-atelier-cct' ),
+			'hint'  => __( 'Annulation automatique désactivée : relancez le client ou annulez la commande à la main (Commandes WooCommerce, ou fiche du dossier).', 'gestion-atelier-cct' ),
+			'items' => $bacs_overdue,
 		),
 	) );
 }

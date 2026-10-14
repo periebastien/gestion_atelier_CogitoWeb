@@ -34,7 +34,57 @@ function gacct_order_skip_automation( $order, $context ) {
 		return false;
 	}
 
-	return (bool) apply_filters( 'gacct_order_skip_automation', false, $order, (string) $context );
+	$skip = false;
+	// Réglages « Fonctionnement de l'atelier » (14/10/2026), neutres par défaut.
+	if ( function_exists( 'gacct_pay_workshop_setting' ) ) {
+		// Annulation automatique décochée : ni annulation ni bascule « Sans suite ».
+		if ( ! gacct_pay_workshop_setting( 'auto_cancel' ) && in_array( (string) $context, array( 'auto_cancel', 'noshow' ), true ) ) {
+			$skip = true;
+		}
+		// Automatismes réservés à l'atelier : une commande boutique n'est jamais touchée.
+		if ( 'atelier' === gacct_pay_workshop_setting( 'automation_scope' ) && ! gacct_order_is_atelier( $order ) ) {
+			$skip = true;
+		}
+	}
+
+	return (bool) apply_filters( 'gacct_order_skip_automation', $skip, $order, (string) $context );
+}
+
+/**
+ * La commande relève-t-elle de l'atelier (intervention ou vente seule) ?
+ *
+ * Une commande de la boutique (matériel vendu sur le site, sans dossier de
+ * révision) renvoie false. Filtrable pour les modules (commandes de club…).
+ *
+ * @param WC_Order|mixed $order
+ * @return bool
+ */
+function gacct_order_is_atelier( $order ) {
+	global $wpdb;
+
+	if ( ! $order instanceof WC_Order ) {
+		return false;
+	}
+
+	// Dossier de révision lié (méta posée au checkout, ou CCT quel que soit son statut).
+	$is = defined( 'JWCCT_ORDER_REVISION_ID' ) && '' !== (string) $order->get_meta( JWCCT_ORDER_REVISION_ID );
+	if ( ! $is ) {
+		$is = (bool) $wpdb->get_var( $wpdb->prepare(
+			"SELECT 1 FROM {$wpdb->prefix}jet_cct_revision WHERE order_id = %d LIMIT 1",
+			$order->get_id()
+		) );
+	}
+	// Vente seule (produits commandables sans intervention).
+	if ( ! $is ) {
+		foreach ( $order->get_items() as $item ) {
+			if ( $item instanceof WC_Order_Item_Product && 'yes' === get_post_meta( $item->get_product_id(), '_gacct_vente_seule', true ) ) {
+				$is = true;
+				break;
+			}
+		}
+	}
+
+	return (bool) apply_filters( 'gacct_order_is_atelier', $is, $order );
 }
 
 /**

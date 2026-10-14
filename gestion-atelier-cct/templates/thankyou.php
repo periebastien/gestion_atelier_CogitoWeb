@@ -178,6 +178,10 @@ $wo_on       = gacct_conf_feature( 'work_order' );
 $deposit_txt = wp_strip_all_tags( wc_price( $d['deposit'] ) );
 $balance_txt = wp_strip_all_tags( wc_price( $d['balance'] ) );
 $notice      = gacct_conf_notice();
+// Mode « tout à la fin » (réglage, 14/10/2026) : rien n'est payé à la commande.
+$mode_fin    = function_exists( 'gacct_pay_mode_end' ) && gacct_pay_mode_end();
+// Règle « matériel en retard » : texte historique, sauf mode fin ou annulation auto coupée.
+$regle_alt   = $mode_fin || ( function_exists( 'gacct_pay_auto_cancel_enabled' ) && ! gacct_pay_auto_cancel_enabled() );
 ?>
 <div class="gacct-conf">
 
@@ -242,12 +246,16 @@ $notice      = gacct_conf_notice();
 			<div class="mini">
 				<span class="mini-seg <?php echo $is_bacs ? 'now' : 'ok'; ?>">
 					<?php echo gacct_conf_icon( $is_bacs ? 'clock' : 'check' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-					<?php esc_html_e( 'Acompte', 'gestion-atelier-cct' ); ?> <b><?php echo esc_html( $deposit_txt ); ?></b>
+					<?php if ( $mode_fin ) : ?>
+						<?php esc_html_e( 'Demande confirmée', 'gestion-atelier-cct' ); ?>
+					<?php else : ?>
+						<?php esc_html_e( 'Acompte', 'gestion-atelier-cct' ); ?> <b><?php echo esc_html( $deposit_txt ); ?></b>
+					<?php endif; ?>
 				</span>
 				<span class="mini-sep"></span>
 				<span class="mini-seg"><?php esc_html_e( 'Révision', 'gestion-atelier-cct' ); ?></span>
 				<span class="mini-sep"></span>
-				<span class="mini-seg"><?php esc_html_e( 'Solde', 'gestion-atelier-cct' ); ?> <b><?php echo esc_html( $balance_txt ); ?></b></span>
+				<span class="mini-seg"><?php echo esc_html( $mode_fin ? __( 'Règlement', 'gestion-atelier-cct' ) : __( 'Solde', 'gestion-atelier-cct' ) ); ?> <b><?php echo esc_html( $balance_txt ); ?></b></span>
 			</div>
 
 			<!-- Ligne de faits repliable : elle remplace l'ancienne grille méta,
@@ -462,6 +470,31 @@ $notice      = gacct_conf_notice();
 				</div>
 			</section>
 
+			<?php if ( $mode_fin ) : ?>
+			<!-- ══ RÈGLEMENT À LA FIN (mode « tout à la fin », 14/10/2026) ══ -->
+			<div class="pay">
+				<div class="pay-top">
+					<div>
+						<div class="pay-title"><?php esc_html_e( 'Rien à régler', 'gestion-atelier-cct' ); ?> <em><?php esc_html_e( 'aujourd’hui', 'gestion-atelier-cct' ); ?></em></div>
+						<p class="pay-desc"><?php esc_html_e( 'L’intervention se règle en une seule fois, à la fin : nous vous demandons le montant par e-mail une fois la révision terminée, à régler par virement avant l’expédition retour.', 'gestion-atelier-cct' ); ?></p>
+					</div>
+					<div class="pay-total">
+						<div class="pay-total-label"><?php esc_html_e( 'Estimation totale', 'gestion-atelier-cct' ); ?></div>
+						<div class="pay-total-val"><?php echo gacct_conf_amount( $d['total_initial'] ); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
+					</div>
+				</div>
+				<div class="pay-legend">
+					<div class="pay-leg todo">
+						<div class="pay-leg-head">
+							<span class="pay-leg-dot"></span>
+							<span class="pay-leg-name"><?php esc_html_e( 'À régler en fin d’intervention, par virement', 'gestion-atelier-cct' ); ?></span>
+						</div>
+						<div class="pay-leg-amount"><?php echo gacct_conf_amount( $d['balance'] ); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
+						<p class="pay-leg-note"><?php esc_html_e( 'Montant estimé, ajusté selon le diagnostic réel. Jamais avant votre accord sur les éventuels travaux complémentaires.', 'gestion-atelier-cct' ); ?></p>
+					</div>
+				</div>
+			</div>
+			<?php else : ?>
 			<!-- ══ PAIEMENT EN DEUX TEMPS ══ -->
 			<div class="pay<?php echo $is_bacs ? ' wait' : ''; ?>">
 				<div class="pay-top">
@@ -537,6 +570,7 @@ $notice      = gacct_conf_notice();
 					</div>
 				</div>
 			</div>
+			<?php endif; ?>
 
 			<div class="cols">
 				<div>
@@ -622,6 +656,14 @@ $notice      = gacct_conf_notice();
 												esc_html( $d['slot_label'] ? $d['slot_label'] : __( 'créneau choisi', 'gestion-atelier-cct' ) )
 											);
 											?>
+										<?php elseif ( $mode_fin ) : ?>
+											<?php
+											printf(
+												/* translators: 1: date créneau */
+												esc_html__( 'Demande confirmée, créneau du %s bloqué à votre nom.', 'gestion-atelier-cct' ),
+												esc_html( $d['slot_label'] ? $d['slot_label'] : __( 'créneau choisi', 'gestion-atelier-cct' ) )
+											);
+											?>
 										<?php else : ?>
 											<?php
 											printf(
@@ -690,7 +732,11 @@ $notice      = gacct_conf_notice();
 											<?php esc_html_e( 'Cette étape s’ouvrira dès la réception de votre paiement : vous recevrez alors par e-mail les consignes d’expédition, l’adresse de l’atelier et votre bon d’intervention à glisser dans le colis. Vous pourrez aussi déclarer votre numéro de suivi ici même.', 'gestion-atelier-cct' ); ?>
 										</p>
 										<p class="step-txt">
-											<?php printf( /* translators: %s: heure limite */ esc_html__( 'L’acompte réserve ce créneau pour vous : si votre matériel ne nous est pas parvenu le matin de votre révision avant %s, votre place est libérée pour un autre pilote et l’acompte reste acquis à l’atelier.', 'gestion-atelier-cct' ), esc_html( $d['parcel_hour'] ?? '' ) ); ?>
+											<?php if ( $regle_alt ) : ?>
+												<?php echo esc_html( gacct_pay_deadline_rule_text() ); ?>
+											<?php else : ?>
+												<?php printf( /* translators: %s: heure limite */ esc_html__( 'L’acompte réserve ce créneau pour vous : si votre matériel ne nous est pas parvenu le matin de votre révision avant %s, votre place est libérée pour un autre pilote et l’acompte reste acquis à l’atelier.', 'gestion-atelier-cct' ), esc_html( $d['parcel_hour'] ?? '' ) ); ?>
+											<?php endif; ?>
 										</p>
 									<?php else : ?>
 									<ol class="step-txt gacct-ship-steps">
@@ -709,12 +755,16 @@ $notice      = gacct_conf_notice();
 										</li>
 										<li><?php esc_html_e( 'Emballez votre matériel en suivant les consignes d’emballage, et glissez la partie haute du bon dans le colis.', 'gestion-atelier-cct' ); ?></li>
 										<li>
-											<?php esc_html_e( 'Expédiez le colis à l’adresse de l’atelier', 'gestion-atelier-cct' ); ?><?php if ( ! empty( $d['store_address'] ) ) : ?> (<strong><?php echo esc_html( implode( ', ', $d['store_address'] ) ); ?></strong>)<?php endif; ?><?php if ( $d['parcel_label'] ) : ?><?php printf( /* translators: date */ esc_html__( ', pour qu’il nous parvienne avant le %s, le matin de votre révision', 'gestion-atelier-cct' ), '<strong>' . esc_html( $d['parcel_label'] ) . '</strong>' ); ?><?php endif; ?>.
+											<?php esc_html_e( 'Expédiez le colis à l’adresse de l’atelier', 'gestion-atelier-cct' ); ?><?php if ( ! empty( $d['store_address'] ) ) : ?> (<strong><?php echo esc_html( implode( ', ', $d['store_address'] ) ); ?></strong>)<?php endif; ?><?php if ( $d['parcel_label'] ) : ?><?php printf( /* translators: 1: date, 2: moment (« le matin de votre révision ») */ esc_html__( ', pour qu’il nous parvienne avant le %1$s, %2$s', 'gestion-atelier-cct' ), '<strong>' . esc_html( $d['parcel_label'] ) . '</strong>', esc_html( gacct_pay_deadline_moment() ) ); ?><?php endif; ?>.
 										</li>
 										<li><?php esc_html_e( 'Dès l’envoi, renseignez votre numéro de suivi ci-dessous : nous saurons que votre colis est en route.', 'gestion-atelier-cct' ); ?></li>
 									</ol>
 									<p class="step-txt">
-										<?php printf( /* translators: %s: heure limite */ esc_html__( 'L’acompte réserve ce créneau pour vous : si votre matériel ne nous est pas parvenu le matin de votre révision avant %s, votre place est libérée pour un autre pilote et l’acompte reste acquis à l’atelier. Un imprévu d’expédition ? Prévenez-nous avant la date, nous en tiendrons compte.', 'gestion-atelier-cct' ), esc_html( $d['parcel_hour'] ?? '' ) ); ?>
+										<?php if ( $regle_alt ) : ?>
+											<?php echo esc_html( gacct_pay_deadline_rule_text() ); ?>
+										<?php else : ?>
+											<?php printf( /* translators: %s: heure limite */ esc_html__( 'L’acompte réserve ce créneau pour vous : si votre matériel ne nous est pas parvenu le matin de votre révision avant %s, votre place est libérée pour un autre pilote et l’acompte reste acquis à l’atelier. Un imprévu d’expédition ? Prévenez-nous avant la date, nous en tiendrons compte.', 'gestion-atelier-cct' ), esc_html( $d['parcel_hour'] ?? '' ) ); ?>
+										<?php endif; ?>
 									</p>
 										<p class="step-txt"><?php esc_html_e( 'Vous déposez votre matériel vous-même à la boutique, même le matin de la révision, la veille ou le week-end ? Déclarez-le ci-dessous en choisissant « Dépôt à la boutique » : votre créneau reste réservé.', 'gestion-atelier-cct' ); ?></p>
 									<?php if ( function_exists( 'gacct_ship_render_form' ) ) : ?>
@@ -810,7 +860,7 @@ $notice      = gacct_conf_notice();
 									<td class="ord-fill"></td>
 										<td class="ord-amt"><?php echo esc_html( $deposit_txt ); ?></td>
 									</tr>
-								<?php else : ?>
+								<?php elseif ( ! $mode_fin ) : ?>
 									<tr class="paid">
 										<td class="ord-lbl"><?php esc_html_e( 'Acompte déjà réglé', 'gestion-atelier-cct' ); ?></td>
 									<td class="ord-fill"></td>
@@ -896,7 +946,7 @@ $notice      = gacct_conf_notice();
 							<?php if ( $is_bacs ) : ?>
 								<div class="side-row"><span><?php esc_html_e( 'Acompte à virer', 'gestion-atelier-cct' ); ?></span><span class="warn"><?php echo esc_html( $deposit_txt ); ?></span></div>
 								<div class="side-row"><span><?php esc_html_e( 'Avant le', 'gestion-atelier-cct' ); ?></span><span class="danger"><?php echo esc_html( $d['deadline_label'] ); ?></span></div>
-							<?php else : ?>
+							<?php elseif ( ! $mode_fin ) : ?>
 								<div class="side-row"><span><?php esc_html_e( 'Acompte réglé', 'gestion-atelier-cct' ); ?></span><span class="ok"><?php echo esc_html( $deposit_txt ); ?></span></div>
 							<?php endif; ?>
 							<div class="side-row"><span><?php esc_html_e( 'Solde estimé', 'gestion-atelier-cct' ); ?></span><span class="warn"><?php echo esc_html( $balance_txt ); ?></span></div>

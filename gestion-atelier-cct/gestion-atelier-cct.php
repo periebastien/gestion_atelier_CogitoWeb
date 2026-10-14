@@ -42,6 +42,7 @@ require_once __DIR__ . '/includes/gacct-report-forms-ui.php';
 require_once __DIR__ . '/includes/gacct-frontend.php';
 require_once __DIR__ . '/includes/gacct-frontend-form.php';
 require_once __DIR__ . '/includes/gacct-vente-seule.php';
+require_once __DIR__ . '/includes/gacct-mode-fin.php'; // Mode de règlement « tout à la fin » (14/10/2026), inactif par défaut.
 require_once __DIR__ . '/includes/gacct-voiles.php';
 require_once __DIR__ . '/includes/gacct-historique.php';
 require_once __DIR__ . '/includes/gacct-historique-ui.php';
