@@ -133,10 +133,12 @@ $q_fmt = static function ( $amount ) {
 					<td><?php esc_html_e( 'Nouveau total de la commande', 'gestion-atelier-cct' ); ?></td>
 					<td class="gq-amount"><?php echo esc_html( $q_fmt( $data['total_initial'] ) ); ?></td>
 				</tr>
+				<?php if ( ! ( function_exists( 'gacct_pay_mode_end' ) && gacct_pay_mode_end() ) ) : // Mode « tout à la fin » : pas d'acompte (14/10/2026). ?>
 				<tr class="gq-paid">
 					<td><?php esc_html_e( 'Acompte déjà réglé', 'gestion-atelier-cct' ); ?></td>
 					<td class="gq-amount">− <?php echo esc_html( $q_fmt( $data['deposit'] ) ); ?></td>
 				</tr>
+				<?php endif; ?>
 				<tr class="gq-balance">
 					<td><?php esc_html_e( 'Solde à régler à la fin de l\'intervention', 'gestion-atelier-cct' ); ?></td>
 					<td class="gq-amount"><?php echo esc_html( $q_fmt( $data['new_balance'] ) ); ?></td>

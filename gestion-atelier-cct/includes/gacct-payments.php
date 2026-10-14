@@ -951,7 +951,8 @@ function gacct_pay_send_email( $to, $template_key, array $variables, $copy_admin
 		return false;
 	}
 
-	$subject = strtr( (string) $email['subject'], $variables );
+	// Objet en texte brut : les montants (wc_price) y laissaient « 200,00&nbsp;&euro; » (14/10/2026).
+	$subject = html_entity_decode( wp_strip_all_tags( strtr( (string) $email['subject'], $variables ) ), ENT_QUOTES, 'UTF-8' );
 	$body    = strtr( (string) $email['body'], $variables );
 	$message = gacct_render_email_html( $subject, $body );
 

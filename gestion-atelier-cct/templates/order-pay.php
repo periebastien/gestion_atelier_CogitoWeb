@@ -76,10 +76,12 @@ if ( $solde <= 0 ) {
 					<td><?php esc_html_e( 'Total de la commande', 'gestion-atelier-cct' ); ?></td>
 					<td class="gacct-vo-amount"><?php echo esc_html( $vo_fmt( $d['total_initial'] ) ); ?></td>
 				</tr>
+				<?php if ( ! ( function_exists( 'gacct_pay_mode_end' ) && gacct_pay_mode_end() ) ) : // Mode « tout à la fin » : pas d'acompte (14/10/2026). ?>
 				<tr class="gacct-vo-paid">
 					<td><?php esc_html_e( 'Acompte déjà réglé', 'gestion-atelier-cct' ); ?></td>
 					<td class="gacct-vo-amount">− <?php echo esc_html( $vo_fmt( $d['deposit'] ) ); ?></td>
 				</tr>
+				<?php endif; ?>
 				<tr class="gacct-vo-balance gacct-vo-balance-due">
 					<td><?php esc_html_e( 'Solde à régler aujourd’hui', 'gestion-atelier-cct' ); ?></td>
 					<td class="gacct-vo-amount"><?php echo esc_html( $vo_fmt( $solde ) ); ?></td>
