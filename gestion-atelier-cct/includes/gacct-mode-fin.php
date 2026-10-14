@@ -157,6 +157,41 @@ function gacct_order_has_boutique_items( WC_Order $order ) {
 	return false;
 }
 
+/**
+ * Le panier en cours est-il une demande d'intervention sans rien à payer
+ * aujourd'hui (mode « tout à la fin ») ? Sert au thème pour adapter la page de
+ * commande (bouton, résumé, mentions de paiement). Fiable aussi pendant les
+ * rafraîchissements AJAX du checkout, où is_page() ne répond plus.
+ */
+function gacct_cart_is_atelier_reglement_fin() {
+	if ( ! function_exists( 'gacct_pay_mode_end' ) || ! gacct_pay_mode_end() || ! function_exists( 'WC' ) || ! WC()->cart || WC()->cart->is_empty() ) {
+		return false;
+	}
+	if ( WC()->cart->needs_payment() ) {
+		return false;
+	}
+	$cats = (array) apply_filters( 'gacct_atelier_product_cats', array( 'revisions-controle', 'pliages-secours', 'suspentes-travaux', 'reparation', 'frais-de-port', 'supplements-biplace' ) );
+	foreach ( WC()->cart->get_cart() as $item ) {
+		if ( has_term( $cats, 'product_cat', (int) $item['product_id'] ) ) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * Prix catalogue TTC d'une ligne de panier (et non le montant d'acompte que
+ * Kojito y place), pour l'affichage en mode « tout à la fin ».
+ */
+function gacct_cart_item_full_price( array $cart_item ) {
+	$id      = ! empty( $cart_item['variation_id'] ) ? (int) $cart_item['variation_id'] : (int) $cart_item['product_id'];
+	$product = wc_get_product( $id );
+	if ( ! $product ) {
+		return 0.0;
+	}
+	return (float) wc_get_price_to_display( $product, array( 'qty' => (int) $cart_item['quantity'] ) );
+}
+
 add_action( 'init', function () {
 	if ( ! function_exists( 'gacct_pay_mode_end' ) || ! gacct_pay_mode_end() ) {
 		return;

@@ -11,6 +11,10 @@
 defined( 'ABSPATH' ) || exit;
 
 $lines = count( WC()->cart->get_cart() );
+// Demande d'intervention en mode « tout à la fin » : prix catalogue au lieu des
+// montants d'acompte à 0, et montant à régler en fin d'intervention.
+$fin       = function_exists( 'at_co_reglement_fin' ) && at_co_reglement_fin();
+$fin_total = 0.0;
 ?>
 <table class="shop_table woocommerce-checkout-review-order-table at-rev">
 	<tbody class="at-rev-items<?php echo $lines > 4 ? ' is-collapsed' : ''; ?>">
@@ -54,7 +58,12 @@ $lines = count( WC()->cart->get_cart() );
 					<?php if ( $bits ) : ?><span><?php echo esc_html( implode( ' · ', $bits ) ); ?></span><?php endif; ?>
 				</td>
 				<td class="at-rev-price">
-					<?php echo wp_kses_post( apply_filters( 'woocommerce_cart_item_subtotal', WC()->cart->get_product_subtotal( $_product, $cart_item['quantity'] ), $cart_item, $cart_item_key ) ); ?>
+					<?php if ( $fin ) : ?>
+						<?php $line_full = gacct_cart_item_full_price( $cart_item ); $fin_total += $line_full; ?>
+						<?php echo wp_kses_post( wc_price( $line_full ) ); ?>
+					<?php else : ?>
+						<?php echo wp_kses_post( apply_filters( 'woocommerce_cart_item_subtotal', WC()->cart->get_product_subtotal( $_product, $cart_item['quantity'] ), $cart_item, $cart_item_key ) ); ?>
+					<?php endif; ?>
 				</td>
 			</tr>
 			<?php
@@ -72,10 +81,12 @@ $lines = count( WC()->cart->get_cart() );
 	</tbody>
 
 	<tfoot class="at-rev-foot">
+		<?php if ( ! $fin ) : ?>
 		<tr class="at-rev-sub">
 			<th colspan="2">Sous-total</th>
 			<td><?php wc_cart_totals_subtotal_html(); ?></td>
 		</tr>
+		<?php endif; ?>
 
 		<?php foreach ( WC()->cart->get_coupons() as $code => $coupon ) : ?>
 			<tr class="cart-discount coupon-<?php echo esc_attr( sanitize_title( $code ) ); ?> at-rev-discount">
@@ -121,14 +132,21 @@ $lines = count( WC()->cart->get_cart() );
 			</tr>
 		<?php endforeach; ?>
 
+		<?php if ( $fin ) : ?>
+		<tr class="at-rev-tax">
+			<th colspan="2">À régler à la fin de l'intervention, par virement</th>
+			<td><?php echo wp_kses_post( wc_price( $fin_total ) ); ?></td>
+		</tr>
+		<?php else : ?>
 		<tr class="at-rev-tax">
 			<th colspan="2">Dont TVA 20 %</th>
 			<td><?php echo wp_kses_post( wc_price( WC()->cart->get_total_tax() ) ); ?></td>
 		</tr>
+		<?php endif; ?>
 
 		<?php do_action( 'woocommerce_review_order_before_order_total' ); ?>
 		<tr class="order-total at-rev-total">
-			<th colspan="2">Total</th>
+			<th colspan="2"><?php echo $fin ? 'À régler aujourd'hui' : 'Total'; ?></th>
 			<td><?php echo wp_kses_post( wc_price( WC()->cart->get_total( 'edit' ) ) ); ?></td>
 		</tr>
 		<?php do_action( 'woocommerce_review_order_after_order_total' ); ?>

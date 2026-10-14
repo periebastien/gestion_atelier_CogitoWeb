@@ -113,7 +113,7 @@ if ( ! $checkout->is_registration_enabled() && $checkout->is_registration_requir
 					<?php endif; ?>
 
 					<section class="at-card at-co-card at-co-pay" aria-label="Paiement">
-						<div class="at-co-card-head"><h2>Options de paiement</h2></div>
+						<div class="at-co-card-head"><h2><?php echo ( function_exists( 'at_co_reglement_fin' ) && at_co_reglement_fin() ) ? 'Confirmation de votre demande' : 'Options de paiement'; ?></h2></div>
 						<?php
 						/* Les deux blocs sont rendus séparément (paiement à gauche, résumé à
 						   droite) : checkout.js les rafraîchit par leurs sélecteurs
@@ -146,8 +146,14 @@ if ( ! $checkout->is_registration_enabled() && $checkout->is_registration_requir
 						</div>
 					</div>
 					<ul class="at-reassure-list at-co-reassure">
-						<li><?php at_icon( 'shield-check', 17 ); ?><span>Paiement 3D Secure, aucune donnée bancaire stockée</span></li>
-						<li><?php at_icon( 'rotate-left', 17 ); ?><span>Retour sous 14 jours si le matériel n'a pas volé</span></li>
+						<?php if ( function_exists( 'at_co_reglement_fin' ) && at_co_reglement_fin() ) : ?>
+							<li><?php at_icon( 'bank', 17 ); ?><span>Rien à régler aujourd'hui : l'intervention se règle à la fin, par virement</span></li>
+						<?php elseif ( at_is_atelier_checkout() ) : ?>
+							<li><?php at_icon( 'shield-check', 17 ); ?><span>Paiement 3D Secure, aucune donnée bancaire stockée</span></li>
+						<?php else : ?>
+							<li><?php at_icon( 'shield-check', 17 ); ?><span>Paiement 3D Secure, aucune donnée bancaire stockée</span></li>
+							<li><?php at_icon( 'rotate-left', 17 ); ?><span>Retour sous 14 jours si le matériel n'a pas volé</span></li>
+						<?php endif; ?>
 						<li><?php at_icon( 'headset', 17 ); ?><span>Une question ? 06 20 89 91 31, du mardi au samedi</span></li>
 					</ul>
 				</aside>

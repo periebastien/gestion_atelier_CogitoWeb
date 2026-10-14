@@ -34,6 +34,15 @@ function at_is_atelier_checkout() {
 }
 
 /* ---------------------------------------------------------------------------
+ * Demande d'intervention sans rien à payer aujourd'hui (réglage « tout à la
+ * fin » du plugin atelier, 14/10/2026) : bouton « Confirmer ma demande »,
+ * prix réels dans le résumé, pas de mention de paiement en ligne.
+ * ------------------------------------------------------------------------- */
+function at_co_reglement_fin() {
+	return function_exists( 'gacct_cart_is_atelier_reglement_fin' ) && gacct_cart_is_atelier_reglement_fin();
+}
+
+/* ---------------------------------------------------------------------------
  * Y a-t-il au moins un tarif de livraison proposé ?
  * ------------------------------------------------------------------------- */
 function at_checkout_has_shipping_rates() {
@@ -192,6 +201,13 @@ add_filter( 'woocommerce_order_button_html', function ( $html ) {
 	if ( ! function_exists( 'is_checkout' ) || ! is_checkout() || ! WC()->cart ) { return $html; }
 
 	$label = esc_attr( apply_filters( 'woocommerce_order_button_text', __( 'Place order', 'woocommerce' ) ) );
+
+	if ( at_co_reglement_fin() ) {
+		return '<button type="submit" class="button alt at-co-submit" name="woocommerce_checkout_place_order" id="place_order" value="Confirmer ma demande" data-value="Confirmer ma demande" data-at-fin="1">'
+			. at_icon_get( 'check-circle', 18 )
+			. '<span class="at-co-submit-l">Confirmer ma demande</span>'
+			. '</button>';
+	}
 
 	return '<button type="submit" class="button alt at-co-submit" name="woocommerce_checkout_place_order" id="place_order" value="' . $label . '" data-value="' . $label . '">'
 		. at_icon_get( 'lock', 18 )

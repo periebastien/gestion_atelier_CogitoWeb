@@ -239,6 +239,8 @@
 		var btn = document.getElementById('place_order');
 		var total = document.querySelector('.at-rev-total td');
 		if (!btn || !total) { return; }
+		// Demande d'intervention réglée à la fin : libellé fixe (data-at-fin), posé en PHP.
+		if (btn.getAttribute('data-at-fin') || document.querySelector('.at-co-place [data-at-fin]')) { return; }
 		var sprite = (window.AT_CART && AT_CART.sprite) || '';
 		btn.innerHTML =
 			'<svg class="at-i" width="18" height="18" aria-hidden="true"><use href="' + sprite + '#lock"></use></svg>' +

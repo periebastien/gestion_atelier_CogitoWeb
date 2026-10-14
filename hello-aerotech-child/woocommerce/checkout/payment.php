@@ -94,7 +94,11 @@ if ( ! is_ajax() ) {
 
 		<?php do_action( 'woocommerce_review_order_after_submit' ); ?>
 
-		<span class="at-co-secure">Paiement sécurisé : aucune donnée bancaire n'est stockée par AEROTECH.</span>
+		<?php if ( function_exists( 'at_co_reglement_fin' ) && at_co_reglement_fin() ) : ?>
+			<span class="at-co-secure">Rien à régler aujourd'hui : l'intervention se règle à la fin, par virement.</span>
+		<?php else : ?>
+			<span class="at-co-secure">Paiement sécurisé : aucune donnée bancaire n'est stockée par AEROTECH.</span>
+		<?php endif; ?>
 
 		<?php wp_nonce_field( 'woocommerce-process_checkout', 'woocommerce-process-checkout-nonce' ); ?>
 	</div>
