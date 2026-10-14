@@ -42,6 +42,21 @@ function at_co_reglement_fin() {
 	return function_exists( 'gacct_cart_is_atelier_reglement_fin' ) && gacct_cart_is_atelier_reglement_fin();
 }
 
+/* Le panier boutique n'a pas de sens pour une demande d'intervention sans
+   paiement (prestations à 0 €, délais d'expédition, livraison offerte…) : on
+   envoie directement sur la confirmation de la demande, d'où l'on peut revenir
+   modifier le formulaire. Un panier mixte (boutique + atelier) reste normal. */
+add_action( 'template_redirect', function () {
+	if ( ! function_exists( 'is_cart' ) || ! is_cart() || ! at_co_reglement_fin() ) {
+		return;
+	}
+	$page = (int) apply_filters( 'at_atelier_checkout_page_id', 374 );
+	if ( $page && 'publish' === get_post_status( $page ) ) {
+		wp_safe_redirect( get_permalink( $page ) );
+		exit;
+	}
+} );
+
 /* ---------------------------------------------------------------------------
  * Y a-t-il au moins un tarif de livraison proposé ?
  * ------------------------------------------------------------------------- */
