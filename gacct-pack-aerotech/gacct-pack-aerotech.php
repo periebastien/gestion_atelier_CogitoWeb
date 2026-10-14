@@ -371,10 +371,16 @@ add_filter( 'gacct_lc_recap_sections', function ( $sections ) {
 	} ) );
 } );
 
-// Commandes : ni passage automatique en « Terminée » au règlement, ni e-mail
-// « Commande terminée » réécrit en envoi de facture (AEROTECH n'émet pas de
-// facture PDF) ; virement uniquement, pas de bascule vers la carte.
-add_filter( 'gacct_complete_order_when_paid', '__return_false' );
+// Commandes : au « Règlement reçu » de la console (ou solde marqué payé), la
+// commande atelier passe « Terminée » (14/10/2026 : depuis que la fin
+// d'intervention la met « En attente de virement », elle doit en sortir), mais
+// SANS e-mail WooCommerce « Commande terminée » pour l'atelier (les e-mails
+// d'état du plugin informent le client) et sans le gabarit « facture » du
+// socle (AEROTECH n'émet pas de facture PDF). Virement uniquement, pas de
+// bascule vers la carte. La boutique garde l'e-mail standard.
+add_filter( 'woocommerce_email_enabled_customer_completed_order', function ( $on, $order ) {
+	return ( $order instanceof WC_Order && function_exists( 'gacct_order_is_atelier' ) && gacct_order_is_atelier( $order ) ) ? false : $on;
+}, 20, 2 );
 add_action( 'plugins_loaded', function () {
 	remove_filter( 'wc_get_template', 'gacct_oc_completed_template', 10 );
 	remove_filter( 'woocommerce_email_subject_customer_completed_order', 'gacct_oc_completed_subject', 20 );

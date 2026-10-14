@@ -192,10 +192,50 @@ function gacct_cart_item_full_price( array $cart_item ) {
 	return (float) wc_get_price_to_display( $product, array( 'qty' => (int) $cart_item['quantity'] ) );
 }
 
+/**
+ * Fin d'intervention (état 6, solde non nul) : la totalité se règle par
+ * virement. La commande passe « En attente de virement » comme si le client
+ * avait choisi le virement sur la page de règlement : gacct-balance.php envoie
+ * alors l'e-mail « coordonnées bancaires » (RIB, montant, référence), l'espace
+ * client affiche le RIB et la console attend « Règlement reçu ».
+ */
+function gacct_mode_fin_demande_reglement( $order, $revision_id, $balance ) {
+	if ( ! $order instanceof WC_Order || $order->has_status( array( 'on-hold', 'completed', 'cancelled', 'refunded' ) ) ) {
+		return;
+	}
+	$gateways = function_exists( 'WC' ) ? WC()->payment_gateways()->payment_gateways() : array();
+	if ( empty( $gateways['bacs'] ) || 'yes' !== $gateways['bacs']->enabled ) {
+		$order->add_order_note( __( 'Fin d’intervention : virement non activé dans WooCommerce, aucune demande de règlement envoyée.', 'gestion-atelier-cct' ) );
+		$order->save();
+		return;
+	}
+	$order->set_payment_method( 'bacs' );
+	$order->set_payment_method_title( $gateways['bacs']->get_title() );
+	$order->save();
+	$order->update_status( 'on-hold', sprintf(
+		/* translators: %s: montant */
+		__( 'Fin d’intervention : règlement de %s demandé par virement (mode « tout à la fin »).', 'gestion-atelier-cct' ),
+		wp_strip_all_tags( wc_price( (float) $balance ) )
+	) );
+}
+
+/**
+ * Pas d'e-mail WooCommerce « Commande en attente » pour cette demande : l'e-mail
+ * « coordonnées bancaires » du plugin le remplace (montant, RIB, référence).
+ */
+function gacct_mode_fin_on_hold_email( $enabled, $order ) {
+	if ( $enabled && $order instanceof WC_Order && function_exists( 'gacct_bal_phase' ) && 'solde' === gacct_bal_phase( $order ) ) {
+		return false;
+	}
+	return $enabled;
+}
+
 add_action( 'init', function () {
 	if ( ! function_exists( 'gacct_pay_mode_end' ) || ! gacct_pay_mode_end() ) {
 		return;
 	}
+	add_action( 'gacct_balance_requested', 'gacct_mode_fin_demande_reglement', 10, 3 );
+	add_filter( 'woocommerce_email_enabled_customer_on_hold_order', 'gacct_mode_fin_on_hold_email', 20, 2 );
 	add_filter( 'gettext', 'gacct_mode_fin_gettext', 20, 3 );
 	add_filter( 'gettext_with_context', 'gacct_mode_fin_gettext_context', 20, 4 );
 	add_filter( 'woocommerce_get_order_item_totals', 'gacct_mode_fin_totaux', 50, 2 );

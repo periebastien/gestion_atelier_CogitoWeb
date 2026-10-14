@@ -62,6 +62,11 @@ function at_free_shipping_threshold() {
  * ------------------------------------------------------------------------- */
 function at_steps( $current = 1 ) {
 	$steps = array( 'Panier', 'Livraison & paiement', 'Confirmation' );
+	// Demande d'intervention réglée à la fin (rien à payer aujourd'hui) : pas
+	// d'étape « paiement » annoncée (14/10/2026).
+	if ( function_exists( 'at_co_reglement_fin' ) && at_co_reglement_fin() ) {
+		$steps = array( 'Votre demande', 'Vos coordonnées', 'Confirmation' );
+	}
 	echo '<ol class="at-steps">';
 	foreach ( $steps as $i => $label ) {
 		$n     = $i + 1;

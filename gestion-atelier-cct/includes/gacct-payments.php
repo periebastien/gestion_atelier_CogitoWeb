@@ -429,8 +429,9 @@ function gacct_pay_add_mode_end_variants( array $defaults ) {
 			'label'   => __( 'Relance du règlement (intervention finie)', 'gestion-atelier-cct' ),
 			'subject' => __( 'Votre commande {order_number} attend votre règlement', 'gestion-atelier-cct' ),
 			'body'    => '<p>Bonjour {customer_name},</p>'
-				. '<p>L’intervention sur votre matériel est terminée depuis quelques jours, et le règlement de <strong>{balance_amount}</strong> pour votre commande <strong>{order_number}</strong> reste à effectuer.</p>'
-				. '<p><a href="{payment_url}">Régler mon intervention</a></p>'
+				. '<p>L’intervention sur votre matériel est terminée depuis quelques jours, et le règlement de <strong>{balance_amount}</strong> pour votre commande <strong>{order_number}</strong> reste à effectuer, par virement :</p>'
+				. '{bank_details}'
+				. '<p>Indiquez bien la référence <strong>{order_number}</strong> dans le libellé du virement. Si votre virement est déjà parti, vous n’avez rien à faire : un délai bancaire de 1 à 3 jours ouvrés est normal.</p>'
 				. '<p>Votre matériel vous attend à l’atelier : dès le règlement reçu, votre rapport de contrôle est disponible et nous préparons la réexpédition.</p>'
 				. '<p>Une question sur le montant, un souci de paiement ? Répondez à cet e-mail ou appelez-nous au <strong>{contact_phone}</strong> ({contact_hours}).</p>'
 				. '<p>À très vite,<br><br>' . $sig . '</p>',

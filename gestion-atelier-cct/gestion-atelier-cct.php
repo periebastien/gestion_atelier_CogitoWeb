@@ -1584,6 +1584,14 @@ final class GACCT_Plugin {
 				$this->advance_revision_state( $revision_id, 7, $revision );
 				return;
 			}
+
+			// Prise d'extension (14/10/2026) : solde préparé et non nul. Sert au
+			// mode « tout à la fin » (demande de règlement par virement, RIB).
+			do_action( 'gacct_balance_requested', $order, $revision_id, $balance );
+			$order = wc_get_order( $order->get_id() );
+			if ( ! $order ) {
+				return;
+			}
 		}
 
 		$config = $this->notification_config_for_state( $state );
