@@ -81,14 +81,11 @@ function gacct_bal_block_reason( $order ) {
 		return 'bacs_pending';
 	}
 
-	// Paiement carte lancé il y a peu, sans réponse de CAWL : pas de second
-	// paiement (incident AR-2026-2553, débité trois fois, 15/10/2026).
-	if ( function_exists( 'gacct_cawl_pending_attempt' ) ) {
-		$attempt = gacct_cawl_pending_attempt( $order );
-
-		if ( $attempt && ( time() - $attempt ) < gacct_cawl_attempt_lock_seconds() ) {
-			return 'card_pending';
-		}
+	// Paiement encaissé par CAWL mais pas encore enregistré par le site : pas de
+	// second paiement (incident AR-2026-2553, débité trois fois, 15/10/2026).
+	// Une carte refusée ou un paiement abandonné ne bloquent jamais.
+	if ( function_exists( 'gacct_cawl_unrecorded_payment' ) && gacct_cawl_unrecorded_payment( $order ) ) {
+		return 'card_pending';
 	}
 
 	if ( null !== $etat && $etat < 6 ) {
@@ -205,7 +202,7 @@ function gacct_bal_notice() {
 		'card_pending' => array(
 			'tone'  => 'is-neutral',
 			'title' => __( 'Votre paiement par carte est en cours de confirmation', 'gestion-atelier-cct' ),
-			'text'  => __( 'Ne refaites pas le paiement : si votre compte a été débité, l’atelier le confirme et vous recevez un e-mail. Si le paiement a été refusé ou annulé, vous pourrez réessayer dans quelques minutes, ou appelez-nous.', 'gestion-atelier-cct' ),
+			'text'  => __( 'Votre banque a accepté un paiement pour ce solde : ne le refaites pas. L’atelier l’enregistre et vous recevez un e-mail de confirmation. Une question ? Appelez-nous.', 'gestion-atelier-cct' ),
 		),
 		'not_due'      => array(
 			'tone'  => 'is-neutral',

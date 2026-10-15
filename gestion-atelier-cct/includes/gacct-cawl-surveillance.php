@@ -11,11 +11,14 @@
  * - Alerte immédiate à l'atelier quand CAWL abandonne une notification de
  *   paiement (`wlop.webhook_lock_timeout`) ou qu'un de ses traitements plante
  *   (`wlop.webhook_handler_error`).
- * - Solde par carte : chaque tentative est notée (`_gacct_balance_card_attempt`) ;
- *   tant qu'elle n'a reçu aucune réponse définitive de CAWL, le lien de
- *   paiement est suspendu quelques minutes (gacct-balance.php, motif
- *   `card_pending`) et la page de retour dit « paiement en cours de
- *   confirmation » au lieu de « solde réglé » (templates/thankyou.php).
+ * - Paiement encaissé par CAWL mais non enregistré par le site (notification
+ *   abandonnée sur un paiement capturé ou autorisé) : la commande est marquée
+ *   (`_gacct_cawl_unrecorded`) et le lien de paiement du solde est fermé
+ *   (gacct-balance.php, motif `card_pending`) jusqu'à l'enregistrement du solde
+ *   par l'atelier. Une carte refusée ou un paiement abandonné ne bloquent
+ *   JAMAIS une nouvelle tentative (retour Bastien du 15/10/2026).
+ * - Page de retour : « paiement en cours de confirmation » au lieu de « solde
+ *   réglé » tant que le solde n'est pas enregistré (templates/thankyou.php).
  * - Contrôle différé : 15 minutes après un retour de paiement non confirmé,
  *   si le solde n'est toujours pas enregistré, alerte à l'atelier.
  *
@@ -27,6 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 define( 'GACCT_CAWL_META_ATTEMPT', '_gacct_balance_card_attempt' );
+define( 'GACCT_CAWL_META_UNRECORDED', '_gacct_cawl_unrecorded' );
 
 /**
  * Destinataires des alertes : adresses admin de la page Notifications + e-mail
@@ -94,6 +98,12 @@ function gacct_cawl_on_lock_timeout( $data ) {
 
 	gacct_cawl_alert( 'lock_' . $ref, sprintf( 'paiement carte non enregistré, commande %s', $num ), $text );
 
+	// Argent pris par CAWL mais inconnu du site : plus de second paiement.
+	if ( $order && in_array( $type, gacct_cawl_money_types(), true ) && ! $order->get_meta( GACCT_CAWL_META_UNRECORDED ) ) {
+		$order->update_meta_data( GACCT_CAWL_META_UNRECORDED, array( 't' => time(), 'type' => $type ) );
+		$order->save_meta_data();
+	}
+
 	if ( $order && ! get_transient( 'gacct_cawl_note_' . $ref ) ) {
 		set_transient( 'gacct_cawl_note_' . $ref, 1, 2 * HOUR_IN_SECONDS );
 		$order->add_order_note( sprintf( 'ALERTE : notification CAWL « %s » abandonnée (verrou inaccessible), paiement non enregistré par le site. Vérifier dans CAWL. Atelier prévenu par e-mail.', $type ) );
@@ -116,6 +126,25 @@ function gacct_cawl_on_handler_error( $data ) {
 /* -----------------------------------------------------------------------------
  *  Tentatives de paiement du solde par carte
  * -------------------------------------------------------------------------- */
+
+/**
+ * Types de notification CAWL qui signifient que l'argent est pris (capturé ou
+ * autorisé).
+ */
+function gacct_cawl_money_types() {
+	return array( 'payment.captured', 'payment.pending_capture', 'payment.authorization_requested', 'payment.pending_completion' );
+}
+
+/**
+ * Un paiement encaissé par CAWL attend-il d'être enregistré par le site ?
+ * Faux dès que le solde est enregistré (phase Kojito « solde_paye »).
+ *
+ * @param WC_Order $order
+ * @return bool
+ */
+function gacct_cawl_unrecorded_payment( $order ) {
+	return function_exists( 'gacct_bal_phase' ) && 'solde' === gacct_bal_phase( $order ) && (bool) $order->get_meta( GACCT_CAWL_META_UNRECORDED );
+}
 
 /**
  * Types de notification CAWL qui tranchent une tentative.
@@ -195,14 +224,6 @@ function gacct_cawl_pending_attempt( $order ) {
 	}
 
 	return (int) $attempt['t'];
-}
-
-/**
- * Durée pendant laquelle le lien de paiement du solde est suspendu après une
- * tentative sans réponse (secondes).
- */
-function gacct_cawl_attempt_lock_seconds() {
-	return (int) apply_filters( 'gacct_cawl_attempt_lock_seconds', 15 * MINUTE_IN_SECONDS );
 }
 
 /* -----------------------------------------------------------------------------
