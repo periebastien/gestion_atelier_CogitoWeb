@@ -81,6 +81,16 @@ function gacct_bal_block_reason( $order ) {
 		return 'bacs_pending';
 	}
 
+	// Paiement carte lancé il y a peu, sans réponse de CAWL : pas de second
+	// paiement (incident AR-2026-2553, débité trois fois, 15/10/2026).
+	if ( function_exists( 'gacct_cawl_pending_attempt' ) ) {
+		$attempt = gacct_cawl_pending_attempt( $order );
+
+		if ( $attempt && ( time() - $attempt ) < gacct_cawl_attempt_lock_seconds() ) {
+			return 'card_pending';
+		}
+	}
+
 	if ( null !== $etat && $etat < 6 ) {
 		return 'not_due';
 	}
@@ -191,6 +201,11 @@ function gacct_bal_notice() {
 			'tone'  => 'is-neutral',
 			'title' => __( 'Votre virement de solde est annoncé', 'gestion-atelier-cct' ),
 			'text'  => __( 'Nous attendons sa réception ; les coordonnées bancaires vous ont été envoyées par e-mail et figurent ci-dessous. Dès l’encaissement, votre matériel repart.', 'gestion-atelier-cct' ),
+		),
+		'card_pending' => array(
+			'tone'  => 'is-neutral',
+			'title' => __( 'Votre paiement par carte est en cours de confirmation', 'gestion-atelier-cct' ),
+			'text'  => __( 'Ne refaites pas le paiement : si votre compte a été débité, l’atelier le confirme et vous recevez un e-mail. Si le paiement a été refusé ou annulé, vous pourrez réessayer dans quelques minutes, ou appelez-nous.', 'gestion-atelier-cct' ),
 		),
 		'not_due'      => array(
 			'tone'  => 'is-neutral',

@@ -76,6 +76,12 @@ if ( '' !== $conf_phase ) :
 	$conf_solde        = (float) $order->get_meta( '_kojito_solde_restant' );
 	$conf_solde_txt    = wp_strip_all_tags( wc_price( $conf_solde > 0 ? $conf_solde : (float) $order->get_total() ) );
 	$conf_bank_rows    = ( $conf_bacs_pending && function_exists( 'gacct_pay_bank_rows' ) ) ? gacct_pay_bank_rows( $order ) : array();
+	// Carte : tant que Kojito n'a pas enregistré le solde (phase encore « solde »),
+	// le paiement n'est PAS confirmé (incident AR-2026-2553, 15/10/2026).
+	$conf_card_pending = ! $conf_bacs_pending && 'solde' === $conf_phase;
+	if ( $conf_card_pending && function_exists( 'gacct_cawl_schedule_check' ) ) {
+		gacct_cawl_schedule_check( $order );
+	}
 	?>
 	<div class="gacct-conf"><div class="gacct-conf-wrap">
 		<div class="conf">
@@ -90,6 +96,10 @@ if ( '' !== $conf_phase ) :
 					</table>
 				<?php endif; ?>
 				<p class="conf-sub"><?php printf( esc_html__( 'Indiquez bien la référence %s dans le libellé du virement.', 'gestion-atelier-cct' ), '<strong>' . esc_html( $d['reference'] ) . '</strong>' ); ?></p>
+			<?php elseif ( $conf_card_pending ) : ?>
+				<h1><?php '' !== $d['first_name'] ? printf( esc_html__( 'Merci %s, votre paiement est en cours de confirmation', 'gestion-atelier-cct' ), esc_html( $d['first_name'] ) ) : esc_html_e( 'Votre paiement est en cours de confirmation', 'gestion-atelier-cct' ); ?></h1>
+				<p class="conf-sub"><?php printf( esc_html__( 'Commande %s : nous n’avons pas encore reçu la confirmation de votre banque. Ne refaites pas le paiement. Dès qu’il est confirmé, vous recevez un e-mail et votre rapport de contrôle est disponible dans votre espace client.', 'gestion-atelier-cct' ), '<strong>' . esc_html( $d['reference'] ) . '</strong>' ); ?></p>
+				<p class="conf-sub"><?php esc_html_e( 'Un doute ? Appelez l’atelier avant de payer à nouveau.', 'gestion-atelier-cct' ); ?></p>
 			<?php else : ?>
 				<h1><?php '' !== $d['first_name'] ? printf( esc_html__( 'Merci %s, votre solde est réglé', 'gestion-atelier-cct' ), esc_html( $d['first_name'] ) ) : esc_html_e( 'Votre solde est réglé', 'gestion-atelier-cct' ); ?></h1>
 				<p class="conf-sub"><?php printf( esc_html__( 'Commande %s : votre rapport de contrôle est disponible dans votre espace client et votre matériel repart sous un jour ouvré. Vous recevrez le numéro de suivi par e-mail.', 'gestion-atelier-cct' ), '<strong>' . esc_html( $d['reference'] ) . '</strong>' ); ?></p>
