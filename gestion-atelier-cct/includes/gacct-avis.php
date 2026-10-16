@@ -79,10 +79,16 @@ function gacct_avis_email_block() {
 
 	return '<div style="margin:32px 0 8px;padding-top:24px;border-top:1px solid #e5e5e5;">'
 		. '<p style="font-size:16px;margin:0 0 4px;">' . wp_kses_post( $t['avis'] ) . '</p>'
-		. '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:12px 0 4px;"><tr>'
+		// Étoiles en caractères (pas en image : visibles même images bloquées)
+		// puis bouton ; blocs inline-block, ils passent l'un sous l'autre sur
+		// un écran étroit.
+		. '<div style="margin:12px 0 4px;">'
+		. '<a href="' . esc_url( $s['review_url'] ) . '" style="display:inline-block;vertical-align:middle;margin:4px 14px 4px 0;font-size:28px;line-height:1;letter-spacing:2px;color:#fbbc04;text-decoration:none;">&#9733;&#9733;&#9733;&#9733;&#9733;</a>'
+		. '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="display:inline-table;vertical-align:middle;margin:4px 0;"><tr>'
 		. '<td style="background:#1a73e8;border-radius:999px;">'
 		. '<a href="' . esc_url( $s['review_url'] ) . '" style="display:inline-block;padding:14px 28px;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:999px;">' . esc_html( $t['avis_btn'] ) . '</a>'
 		. '</td></tr></table>'
+		. '</div>'
 		. '</div>';
 }
 
