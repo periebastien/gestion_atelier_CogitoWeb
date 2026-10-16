@@ -3,7 +3,8 @@
  * Invitation à laisser un avis Google, 16/10/2026 (demande de Bastien).
  *
  * Encart ajouté sous l'e-mail d'état 7 (révision finie et payée) : une phrase
- * et un bouton vers la page « laisser un avis » de la fiche Google.
+ * et un bouton vers la page « laisser un avis » de la fiche Google, puis un
+ * pied de page de liens réglable (ex. l'école Plaine Altitude).
  *
  * Le jeu de la roue (Cadeo) qu'Hervé joignait autrefois a été écarté le
  * 16/10/2026 par Bastien et Hervé : un cadeau en échange d'un avis est contraire
@@ -25,7 +26,7 @@ define( 'GACCT_AVIS_OPT', 'gacct_avis_settings' );
 /**
  * Réglages du module.
  *
- * @return array{enabled:bool,review_url:string,states:int[]}
+ * @return array{enabled:bool,review_url:string,states:int[],links_title:string,links:string}
  */
 function gacct_avis_settings() {
 	$saved = get_option( GACCT_AVIS_OPT, array() );
@@ -36,6 +37,9 @@ function gacct_avis_settings() {
 			'enabled'    => false,
 			'review_url' => '',
 			'states'     => array( 7 ),
+			// Liens de pied de page : un par ligne, « Libellé | https://… ».
+			'links_title' => '',
+			'links'       => '',
 		),
 		$saved
 	);
@@ -92,6 +96,54 @@ function gacct_avis_email_block() {
 		. '</div>';
 }
 
+/**
+ * Liens de pied de page saisis dans les réglages.
+ *
+ * @return array<int,array{label:string,url:string}>
+ */
+function gacct_avis_links() {
+	$s     = gacct_avis_settings();
+	$links = array();
+
+	foreach ( preg_split( '/
+||
+/', (string) $s['links'] ) as $line ) {
+		$parts = array_map( 'trim', explode( '|', $line, 2 ) );
+
+		if ( 2 === count( $parts ) && '' !== $parts[0] && preg_match( '#^https?://#i', $parts[1] ) ) {
+			$links[] = array( 'label' => $parts[0], 'url' => $parts[1] );
+		}
+	}
+
+	return $links;
+}
+
+/**
+ * HTML du pied de page de liens (centré, séparateurs « · »).
+ */
+function gacct_avis_links_block() {
+	$links = gacct_avis_links();
+
+	if ( empty( $links ) ) {
+		return '';
+	}
+
+	$s     = gacct_avis_settings();
+	$items = array();
+
+	foreach ( $links as $link ) {
+		$items[] = '<a href="' . esc_url( $link['url'] ) . '" style="color:#20c4c3;font-weight:bold;text-decoration:none;white-space:nowrap;">' . esc_html( $link['label'] ) . '</a>';
+	}
+
+	$html = '<div style="margin:32px 0 0;padding-top:20px;border-top:1px solid #e5e5e5;text-align:center;font-size:16px;line-height:1.9;">';
+
+	if ( '' !== trim( (string) $s['links_title'] ) ) {
+		$html .= '<p style="margin:0 0 6px;font-size:16px;color:#4b4b4b;">' . esc_html( $s['links_title'] ) . '</p>';
+	}
+
+	return $html . '<p style="margin:0;">' . implode( ' <span style="color:#bbbbbb;">&middot;</span> ', $items ) . '</p></div>';
+}
+
 /* -----------------------------------------------------------------------------
  *  Ajout à l'e-mail d'état
  * -------------------------------------------------------------------------- */
@@ -109,7 +161,7 @@ function gacct_avis_append_block( $body, $state, $order = null, $revision_id = 0
 		return $body;
 	}
 
-	return $body . gacct_avis_email_block();
+	return $body . gacct_avis_email_block() . gacct_avis_links_block();
 }
 
 /* -----------------------------------------------------------------------------
@@ -134,6 +186,15 @@ function gacct_avis_render_settings() {
 				<td><input type="url" id="gacct_avis_review" name="gacct_avis[review_url]" class="large-text" value="<?php echo esc_attr( $s['review_url'] ); ?>">
 				<p class="description"><?php esc_html_e( 'Vide : encart désactivé.', 'gestion-atelier-cct' ); ?></p></td>
 			</tr>
+			<tr>
+				<th scope="row"><label for="gacct_avis_links_title"><?php esc_html_e( 'Pied de page : titre', 'gestion-atelier-cct' ); ?></label></th>
+				<td><input type="text" id="gacct_avis_links_title" name="gacct_avis[links_title]" class="large-text" value="<?php echo esc_attr( $s['links_title'] ); ?>"></td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="gacct_avis_links"><?php esc_html_e( 'Pied de page : liens', 'gestion-atelier-cct' ); ?></label></th>
+				<td><textarea id="gacct_avis_links" name="gacct_avis[links]" class="large-text" rows="5"><?php echo esc_textarea( $s['links'] ); ?></textarea>
+				<p class="description"><?php esc_html_e( 'Un lien par ligne : Libellé | https://adresse. Vide : pas de pied de page.', 'gestion-atelier-cct' ); ?></p></td>
+			</tr>
 		</tbody>
 	</table>
 	<?php
@@ -148,6 +209,8 @@ function gacct_avis_save_settings() {
 
 	$s['enabled']    = ! empty( $posted['enabled'] );
 	$s['review_url'] = esc_url_raw( trim( (string) ( $posted['review_url'] ?? '' ) ) );
+	$s['links_title'] = sanitize_text_field( (string) ( $posted['links_title'] ?? '' ) );
+	$s['links']       = sanitize_textarea_field( (string) ( $posted['links'] ?? '' ) );
 
 	update_option( GACCT_AVIS_OPT, $s, false );
 }
