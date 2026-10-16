@@ -10,6 +10,8 @@
 	var T = gacctLogin.texts || {};
 	var steps = {
 		email: root.querySelector('[data-step="email"]'),
+		known: root.querySelector('[data-step="known"]'),
+		code: root.querySelector('[data-step="code"]'),
 		password: root.querySelector('[data-step="password"]'),
 		create: root.querySelector('[data-step="create"]')
 	};
@@ -22,7 +24,7 @@
 
 	function show(step) {
 		Object.keys(steps).forEach(function (k) {
-			steps[k].hidden = (k !== step);
+			if (steps[k]) { steps[k].hidden = (k !== step); }
 		});
 		clearMsg();
 		var first = steps[step].querySelector('input:not([type="checkbox"])');
@@ -85,13 +87,20 @@
 			root.querySelectorAll('[data-role="email"]').forEach(function (el) { el.textContent = email; });
 			if (res.data.exists) {
 				state.imported = !!res.data.imported;
-				var hello = steps.password.querySelector('[data-role="hello"]');
-				hello.textContent = res.data.first && T.hello ? T.hello.replace('%s', res.data.first) : T.known_title;
+				root.querySelectorAll('[data-role="hello"]').forEach(function (el) {
+					el.textContent = res.data.first && T.hello ? T.hello.replace('%s', res.data.first) : T.known_title;
+				});
 				steps.password.querySelector('[data-role="intro"]').textContent = state.imported ? T.imported_intro : T.known_intro;
 				var link = steps.password.querySelector('[data-action="sendlink"]');
 				link.textContent = state.imported ? link.dataset.labelImported : T.forgot;
 				steps.password.classList.toggle('is-imported', state.imported);
-				show('password');
+				// Connexion par code en premier (16/10/2026) ; repli sur le mot de passe.
+				if (steps.known) {
+					steps.known.querySelector('[data-role="code-intro"]').textContent = state.imported ? T.code_intro_imported : T.code_intro;
+					show('known');
+				} else {
+					show('password');
+				}
 			} else {
 				show('create');
 			}
@@ -123,6 +132,51 @@
 		}).catch(function () { busy(steps.password, false); fail(); });
 	});
 
+	/* Étape 2a bis : code par e-mail */
+	function sendCode(form, resent) {
+		busy(form, true);
+		return post('gacct_login_sendcode').then(function (res) {
+			busy(form, false);
+			if (!res || !res.success) { return fail(res); }
+			steps.code.querySelector('[data-role="code-sent"]').textContent = res.data.message;
+			steps.code.querySelector('input[name="code"]').value = '';
+			show('code');
+			if (resent) { say(T.code_resent, 'success'); }
+		}).catch(function () { busy(form, false); fail(); });
+	}
+
+	if (steps.known) {
+		steps.known.addEventListener('submit', function (e) {
+			e.preventDefault();
+			sendCode(steps.known, false);
+		});
+	}
+
+	if (steps.code) {
+		var codeInput = steps.code.querySelector('input[name="code"]');
+		var verifying = false;
+		var verify = function () {
+			var code = (codeInput.value || '').replace(/\D/g, '');
+			if (code.length !== 6 || verifying) { return; }
+			verifying = true;
+			busy(steps.code, true);
+			post('gacct_login_verifycode', { code: code }).then(function (res) {
+				verifying = false;
+				if (!res || !res.success) {
+					busy(steps.code, false);
+					codeInput.select();
+					return fail(res);
+				}
+				go(res.data.redirect);
+			}).catch(function () { verifying = false; busy(steps.code, false); fail(); });
+		};
+		steps.code.addEventListener('submit', function (e) { e.preventDefault(); verify(); });
+		// Six chiffres saisis, collés ou proposés par le clavier du téléphone : on valide.
+		codeInput.addEventListener('input', function () {
+			if ((codeInput.value || '').replace(/\D/g, '').length === 6) { verify(); }
+		});
+	}
+
 	/* Étape 2b : création */
 	steps.create.addEventListener('submit', function (e) {
 		e.preventDefault();
@@ -151,6 +205,12 @@
 			var visible = input.type === 'text';
 			input.type = visible ? 'password' : 'text';
 			btn.classList.toggle('is-on', !visible);
+		} else if (action === 'usepw') {
+			show('password');
+		} else if (action === 'usecode') {
+			sendCode(steps.password, false);
+		} else if (action === 'resend') {
+			sendCode(steps.code, true);
 		} else if (action === 'sendlink') {
 			btn.disabled = true;
 			post('gacct_login_sendlink').then(function (res) {

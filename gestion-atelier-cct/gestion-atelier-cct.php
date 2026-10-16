@@ -4,7 +4,7 @@ add_filter( 'document_title_separator', static function () { return '·'; }, 20 
 /**
  * Plugin Name: Gestion Atelier CCT
  * Description: Tableau de bord atelier et génération d'ouvertures pour les CCT JetEngine.
- * Version: 1.1.5
+ * Version: 1.1.6
  * Author: Atelier
  * Text Domain: gestion-atelier-cct
  */
@@ -62,6 +62,7 @@ require_once __DIR__ . '/includes/gacct-avis.php'; // invitation à laisser un a
 require_once __DIR__ . '/includes/gacct-order-complete.php'; // commande Terminée au solde réglé, e-mail facture (08/10/2026)
 require_once __DIR__ . '/includes/gacct-login.php'; // jamais wp-login / wp-admin pour un client (09/09/2026)
 require_once __DIR__ . '/includes/gacct-login-ui.php'; // connexion « l'e-mail d'abord », shortcode [gacct_connexion] (09/09/2026)
+require_once __DIR__ . '/includes/gacct-login-code.php'; // connexion par code e-mail et lien magique, 12 h (16/10/2026)
 require_once __DIR__ . '/includes/gacct-orders.php';
 require_once __DIR__ . '/includes/gacct-address.php';
 require_once __DIR__ . '/includes/gacct-equipement.php';

@@ -67,6 +67,30 @@ function gacct_login_texts() {
 		'err_generic'       => 'Un problème est survenu. Réessayez dans un instant.',
 		'err_ratelimit'     => 'Trop de tentatives. Patientez quelques minutes.',
 		'loading'           => 'Un instant…',
+		// Connexion par code ou lien magique (gacct-login-code.php, 16/10/2026).
+		'code_intro'        => 'Recevez un code par e-mail pour vous connecter, sans mot de passe.',
+		'code_intro_imported' => 'Votre compte vient de notre ancien site. Recevez un code par e-mail pour vous connecter, sans mot de passe.',
+		'code_send'         => 'Recevoir un code de connexion',
+		'use_password'      => 'Utiliser mon mot de passe',
+		'use_code'          => 'Recevoir plutôt un code par e-mail',
+		'code_sent'         => 'Code envoyé à %s. Saisissez-le ci-dessous, ou cliquez sur le lien « Me connecter » de l’e-mail.',
+		'code_label'        => 'Code à 6 chiffres',
+		'code_submit'       => 'Me connecter',
+		'code_resend'       => 'Renvoyer un code',
+		'code_resent'       => 'Nouveau code envoyé. Utilisez celui du dernier e-mail.',
+		'code_wrong'        => 'Ce code ne correspond pas. Vérifiez le dernier e-mail reçu.',
+		'code_expired'      => 'Ce code a expiré ou a déjà servi. Demandez-en un nouveau.',
+		'code_wait'         => 'Un code vient de partir. Patientez une minute avant d’en redemander un.',
+		'code_subject'      => '%1$s est votre code de connexion %2$s',
+		'code_mail_intro'   => 'Voici votre code pour vous connecter à votre espace client :',
+		'code_mail_or'      => 'Ou connectez-vous en un clic :',
+		'code_mail_btn'     => 'Me connecter',
+		'code_mail_validity' => 'Ce code et ce lien sont valables %d heures et ne servent qu’une fois.',
+		'code_mail_ignore'  => 'Vous n’avez pas demandé à vous connecter ? Ignorez simplement cet e-mail.',
+		'magic_title'       => 'Connexion à votre espace client',
+		'magic_btn'         => 'Me connecter',
+		'magic_expired'     => 'Ce lien de connexion a expiré ou a déjà servi.',
+		'magic_again'       => 'Recevoir un nouveau code',
 	);
 
 	return apply_filters( 'gacct_login_texts', $texts );
@@ -145,6 +169,11 @@ function gacct_login_google_button( $redirect ) {
 function gacct_login_ui_render( $context = 'compte' ) {
 	$context = 'demande' === $context ? 'demande' : 'compte';
 
+	// Lien magique reçu par e-mail (gacct-login-code.php).
+	if ( isset( $_GET['gacct_ml'] ) && function_exists( 'gacct_login_magic_screen' ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		return gacct_login_magic_screen();
+	}
+
 	if ( is_user_logged_in() ) {
 		return '<p class="gacct-login-logged"><a href="' . esc_url( home_url( '/mon-compte/' ) ) . '">Aller à mon espace client</a></p>';
 	}
@@ -201,6 +230,34 @@ function gacct_login_ui_render( $context = 'compte' ) {
 			<button type="submit" class="gacct-login-btn"><?php echo esc_html( $t['continue'] ); ?></button>
 		</form>
 
+		<form class="gacct-login-step gacct-login-step--known" data-step="known" hidden novalidate>
+			<div class="gacct-login-who">
+				<p class="gacct-login-who-title" data-role="hello"><?php echo esc_html( $t['known_title'] ); ?></p>
+				<p class="gacct-login-who-mail"><span data-role="email"></span> <button type="button" class="gacct-login-link" data-action="back"><?php echo esc_html( $t['change'] ); ?></button></p>
+			</div>
+			<p class="gacct-login-intro" data-role="code-intro"><?php echo esc_html( $t['code_intro'] ); ?></p>
+			<button type="submit" class="gacct-login-btn"><?php echo esc_html( $t['code_send'] ); ?></button>
+			<p class="gacct-login-alt"><button type="button" class="gacct-login-link" data-action="usepw"><?php echo esc_html( $t['use_password'] ); ?></button></p>
+		</form>
+
+		<form class="gacct-login-step gacct-login-step--code" data-step="code" hidden novalidate>
+			<div class="gacct-login-who">
+				<p class="gacct-login-who-title" data-role="hello"><?php echo esc_html( $t['known_title'] ); ?></p>
+				<p class="gacct-login-who-mail"><span data-role="email"></span> <button type="button" class="gacct-login-link" data-action="back"><?php echo esc_html( $t['change'] ); ?></button></p>
+			</div>
+			<p class="gacct-login-intro" data-role="code-sent"></p>
+			<div class="gacct-login-field gacct-login-code">
+				<input class="gacct-login-input" type="text" id="gacct-login-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]*" maxlength="7" required placeholder=" ">
+				<label class="gacct-login-flabel" for="gacct-login-code"><?php echo esc_html( $t['code_label'] ); ?></label>
+			</div>
+			<button type="submit" class="gacct-login-btn"><?php echo esc_html( $t['code_submit'] ); ?></button>
+			<p class="gacct-login-alt">
+				<button type="button" class="gacct-login-link" data-action="resend"><?php echo esc_html( $t['code_resend'] ); ?></button>
+				<span aria-hidden="true">·</span>
+				<button type="button" class="gacct-login-link" data-action="usepw"><?php echo esc_html( $t['use_password'] ); ?></button>
+			</p>
+		</form>
+
 		<form class="gacct-login-step gacct-login-step--password" data-step="password" hidden novalidate>
 			<div class="gacct-login-who">
 				<p class="gacct-login-who-title" data-role="hello"><?php echo esc_html( $t['known_title'] ); ?></p>
@@ -214,6 +271,7 @@ function gacct_login_ui_render( $context = 'compte' ) {
 			</div>
 			<label class="gacct-login-remember"><input type="checkbox" name="remember" value="1"> <?php echo esc_html( $t['remember'] ); ?></label>
 			<button type="submit" class="gacct-login-btn"><?php echo esc_html( $t['signin'] ); ?></button>
+			<p class="gacct-login-alt"><button type="button" class="gacct-login-link" data-action="usecode"><?php echo esc_html( $t['use_code'] ); ?></button></p>
 			<p class="gacct-login-forgot"><button type="button" class="gacct-login-link" data-action="sendlink" data-label-imported="<?php echo esc_attr( $t['forgot_send'] ); ?>"><?php echo esc_html( $t['forgot'] ); ?></button></p>
 		</form>
 
