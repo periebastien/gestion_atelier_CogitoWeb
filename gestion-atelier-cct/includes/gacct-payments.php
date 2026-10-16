@@ -724,6 +724,24 @@ function gacct_pay_email_variables( $order = null, array $extra = array() ) {
  * @param string $body    Corps HTML.
  * @return string
  */
+/**
+ * Drapeau « e-mail interne à l'atelier » (récap du matin, modèles admin_only,
+ * alertes) : posé autour du rendu, il retire les encarts destinés aux clients
+ * (liens du pied de page, gacct-avis.php).
+ *
+ * @param bool|null $set Nouvelle valeur, ou null pour lire.
+ * @return bool
+ */
+function gacct_email_internal( $set = null ) {
+	static $internal = false;
+
+	if ( null !== $set ) {
+		$internal = (bool) $set;
+	}
+
+	return $internal;
+}
+
 function gacct_render_email_html( $subject, $body ) {
 	if ( ! function_exists( 'WC' ) || ! WC() || ! WC()->mailer() ) {
 		return $body;
@@ -755,7 +773,9 @@ function gacct_pay_send_email( $to, $template_key, array $variables, $copy_admin
 
 	$subject = strtr( (string) $email['subject'], $variables );
 	$body    = strtr( (string) $email['body'], $variables );
+	gacct_email_internal( ! empty( $email['admin_only'] ) );
 	$message = gacct_render_email_html( $subject, $body );
+	gacct_email_internal( false );
 
 	if ( function_exists( 'gacct_ga_email_campaign' ) ) {
 		gacct_ga_email_campaign( str_replace( '_', '-', $template_key ) ); // utm_campaign des liens

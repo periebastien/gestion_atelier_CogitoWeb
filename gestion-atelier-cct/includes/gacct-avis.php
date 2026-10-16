@@ -3,8 +3,11 @@
  * Invitation à laisser un avis Google, 16/10/2026 (demande de Bastien).
  *
  * Encart ajouté sous l'e-mail d'état 7 (révision finie et payée) : une phrase
- * et un bouton vers la page « laisser un avis » de la fiche Google, puis un
- * pied de page de liens réglable (ex. l'école Plaine Altitude).
+ * et un bouton vers la page « laisser un avis » de la fiche Google.
+ *
+ * Liens de pied de page réglables (ex. l'école Plaine Altitude), ajoutés à TOUS
+ * les e-mails clients via `woocommerce_email_footer` ; les e-mails internes à
+ * l'atelier en sont exclus (gacct_email_internal(), e-mails Woo non client).
  *
  * Le jeu de la roue (Cadeo) qu'Hervé joignait autrefois a été écarté le
  * 16/10/2026 par Bastien et Hervé : un cadeau en échange d'un avis est contraire
@@ -161,7 +164,29 @@ function gacct_avis_append_block( $body, $state, $order = null, $revision_id = 0
 		return $body;
 	}
 
-	return $body . gacct_avis_email_block() . gacct_avis_links_block();
+	return $body . gacct_avis_email_block();
+}
+
+/* -----------------------------------------------------------------------------
+ *  Liens en pied de TOUS les e-mails clients (Bastien, 16/10/2026)
+ * -------------------------------------------------------------------------- */
+
+// Priorité 5 : avant le gabarit email-footer.php de WooCommerce (10), donc
+// dans la carte blanche du message, au-dessus de l'adresse de l'atelier.
+add_action( 'woocommerce_email_footer', 'gacct_avis_footer_links', 5 );
+
+function gacct_avis_footer_links( $email = null ) {
+	// E-mails WooCommerce natifs : clients seulement (pas « nouvelle commande »
+	// à l'atelier) ; e-mails maison : tout sauf ceux marqués internes.
+	if ( $email instanceof WC_Email && ! $email->is_customer_email() ) {
+		return;
+	}
+
+	if ( function_exists( 'gacct_email_internal' ) && gacct_email_internal() ) {
+		return;
+	}
+
+	echo gacct_avis_links_block(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- échappé dans gacct_avis_links_block().
 }
 
 /* -----------------------------------------------------------------------------
@@ -187,13 +212,13 @@ function gacct_avis_render_settings() {
 				<p class="description"><?php esc_html_e( 'Vide : encart désactivé.', 'gestion-atelier-cct' ); ?></p></td>
 			</tr>
 			<tr>
-				<th scope="row"><label for="gacct_avis_links_title"><?php esc_html_e( 'Pied de page : titre', 'gestion-atelier-cct' ); ?></label></th>
+				<th scope="row"><label for="gacct_avis_links_title"><?php esc_html_e( 'Pied de page des e-mails clients : titre', 'gestion-atelier-cct' ); ?></label></th>
 				<td><input type="text" id="gacct_avis_links_title" name="gacct_avis[links_title]" class="large-text" value="<?php echo esc_attr( $s['links_title'] ); ?>"></td>
 			</tr>
 			<tr>
-				<th scope="row"><label for="gacct_avis_links"><?php esc_html_e( 'Pied de page : liens', 'gestion-atelier-cct' ); ?></label></th>
+				<th scope="row"><label for="gacct_avis_links"><?php esc_html_e( 'Pied de page des e-mails clients : liens', 'gestion-atelier-cct' ); ?></label></th>
 				<td><textarea id="gacct_avis_links" name="gacct_avis[links]" class="large-text" rows="5"><?php echo esc_textarea( $s['links'] ); ?></textarea>
-				<p class="description"><?php esc_html_e( 'Un lien par ligne : Libellé | https://adresse. Vide : pas de pied de page.', 'gestion-atelier-cct' ); ?></p></td>
+				<p class="description"><?php esc_html_e( 'Un lien par ligne : Libellé | https://adresse. Ajoutés en bas de tous les e-mails envoyés aux clients (pas aux e-mails internes de l atelier). Vide : pas de liens.', 'gestion-atelier-cct' ); ?></p></td>
 			</tr>
 		</tbody>
 	</table>

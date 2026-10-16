@@ -638,7 +638,9 @@ function gacct_lc_process_daily_recap() {
 
 	$intro = '<p>' . esc_html__( 'Voici les dossiers qui demandent un œil aujourd’hui. Les bascules « Sans suite » du soir peuvent encore être évitées en pointant une réception dans la console.', 'gestion-atelier-cct' ) . '</p>';
 
+	gacct_email_internal( true );
 	$message = gacct_render_email_html( $subject, $intro . $html );
+	gacct_email_internal( false );
 	$message = apply_filters( 'gacct_lc_recap_html', $message, $sections );
 
 	$headers = array( 'Content-Type: text/html; charset=UTF-8' );

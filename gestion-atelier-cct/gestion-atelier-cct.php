@@ -1657,6 +1657,9 @@ final class GACCT_Plugin {
 			&& ( ! in_array( 'client', $config['recipients'], true ) || ! empty( $config['copy_admin'] ) );
 
 		if ( $admin_wanted ) {
+			// E-mail adressé au seul atelier (état 3) : pas d'encarts clients.
+			gacct_email_internal( ! in_array( 'client', $config['recipients'], true ) );
+
 			// Plusieurs adresses possibles (atelier + agence) : une copie chacune.
 			$admin_emails = function_exists( 'gacct_pay_admin_emails' )
 				? gacct_pay_admin_emails()
@@ -1687,6 +1690,8 @@ final class GACCT_Plugin {
 			} else {
 				$order->add_order_note( sprintf( __( 'ERREUR : Copie admin %s non envoyee, adresse admin invalide.', 'gestion-atelier-cct' ), $label ) );
 			}
+
+			gacct_email_internal( false );
 		}
 
 		$order->save();
