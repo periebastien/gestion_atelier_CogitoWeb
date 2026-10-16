@@ -4,7 +4,7 @@ add_filter( 'document_title_separator', static function () { return '·'; }, 20 
 /**
  * Plugin Name: Gestion Atelier CCT
  * Description: Tableau de bord atelier et génération d'ouvertures pour les CCT JetEngine.
- * Version: 1.1.4
+ * Version: 1.1.5
  * Author: Atelier
  * Text Domain: gestion-atelier-cct
  */
@@ -58,6 +58,7 @@ require_once __DIR__ . '/includes/gacct-signature.php';
 require_once __DIR__ . '/includes/gacct-vieworder.php';
 require_once __DIR__ . '/includes/gacct-balance.php'; // paiement du solde côté client (09/09/2026)
 require_once __DIR__ . '/includes/gacct-cawl-surveillance.php'; // alertes CAWL, solde carte non confirmé (15/10/2026)
+require_once __DIR__ . '/includes/gacct-avis.php'; // avis Google et jeu de la roue, e-mail d'état 7 (16/10/2026)
 require_once __DIR__ . '/includes/gacct-order-complete.php'; // commande Terminée au solde réglé, e-mail facture (08/10/2026)
 require_once __DIR__ . '/includes/gacct-login.php'; // jamais wp-login / wp-admin pour un client (09/09/2026)
 require_once __DIR__ . '/includes/gacct-login-ui.php'; // connexion « l'e-mail d'abord », shortcode [gacct_connexion] (09/09/2026)
@@ -645,6 +646,8 @@ final class GACCT_Plugin {
 					</table>
 				<?php endforeach; ?>
 
+				<?php do_action( 'gacct_notifications_form_after' ); ?>
+
 				<?php submit_button( __( 'Enregistrer les notifications', 'gestion-atelier-cct' ), 'primary', 'gacct_notifications_submit' ); ?>
 			</form>
 		</div>
@@ -868,6 +871,8 @@ final class GACCT_Plugin {
 			),
 			false
 		);
+
+		do_action( 'gacct_notifications_save' );
 
 		return true;
 	}
@@ -1611,6 +1616,8 @@ final class GACCT_Plugin {
 		$variables = $this->notification_variables( $revision_id, $revision, $order, $validation_url );
 		$subject   = $this->render_notification_template( $config['subject'], $variables );
 		$body      = $this->render_notification_template( $config['body'], $variables );
+		// Encarts ajoutés par les modules (ex. avis Google et jeu, gacct-avis.php).
+		$body      = (string) apply_filters( 'gacct_notification_body', $body, (int) $state, $order, $revision_id );
 
 		if ( in_array( 'client', $config['recipients'], true ) ) {
 			$client_email = $this->order_customer_email( $order );
