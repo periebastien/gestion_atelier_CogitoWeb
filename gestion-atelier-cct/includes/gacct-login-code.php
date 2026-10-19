@@ -62,13 +62,19 @@ function gacct_login_code_get( $user_id ) {
 
 /**
  * Connecte le compte (session « se souvenir de moi ») et détruit le jeton.
+ *
+ * $method (code|lien) est lu par la mesure d'audience pendant wp_login
+ * (événement GA4 login { method }).
  */
-function gacct_login_code_signin( WP_User $user ) {
+function gacct_login_code_signin( WP_User $user, $method = 'code' ) {
 	delete_user_meta( $user->ID, GACCT_LOGIN_CODE_META );
 
 	wp_set_current_user( $user->ID );
 	wp_set_auth_cookie( $user->ID, true, is_ssl() );
+
+	$GLOBALS['gacct_login_method'] = $method;
 	do_action( 'wp_login', $user->user_login, $user );
+	unset( $GLOBALS['gacct_login_method'] );
 }
 
 /**
@@ -213,7 +219,7 @@ function gacct_login_ajax_verifycode() {
 	}
 
 	$redirect = (string) $rec['redirect'];
-	gacct_login_code_signin( $user );
+	gacct_login_code_signin( $user, 'code' );
 
 	if ( function_exists( 'gacct_login_gate_clear_cookie' ) ) {
 		gacct_login_gate_clear_cookie();
@@ -273,7 +279,7 @@ function gacct_login_magic_post() {
 		wp_logout(); // autre compte ouvert sur ce navigateur : on bascule.
 	}
 
-	gacct_login_code_signin( $user );
+	gacct_login_code_signin( $user, 'lien' );
 
 	wp_safe_redirect( $redirect );
 	exit;

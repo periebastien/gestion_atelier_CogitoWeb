@@ -7,7 +7,8 @@
  * Ce que le site pousse dans window.dataLayer :
  *  - au chargement : { site_env, page_type, user_status, user_role, user_id }
  *  - événements différés (file d'attente en user meta, vidée à la page suivante) :
- *      sign_up { method: email|google|checkout }, login { method },
+ *      sign_up { method: email|google|checkout },
+ *      login { method: email (mot de passe)|google|code|lien (connexion par e-mail) },
  *      devis_decision { decision: accepted|refused, mode, order_id, value }
  *  - purchase (page de confirmation, une seule fois par commande) :
  *      { transaction_id, value, currency, items[] }
@@ -191,6 +192,9 @@ add_action( 'wp_login', function ( $login, $user ) {
 		}
 	}
 	$method = did_action( 'nsl_login' ) || ! empty( $_REQUEST['loginSocial'] ) ? 'google' : 'email'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( ! empty( $GLOBALS['gacct_login_method'] ) ) {
+		$method = sanitize_key( $GLOBALS['gacct_login_method'] ); // code ou lien (gacct_login_code_signin)
+	}
 	gacct_ga_queue( $user->ID, 'login', array( 'method' => $method ) );
 }, 10, 2 );
 
