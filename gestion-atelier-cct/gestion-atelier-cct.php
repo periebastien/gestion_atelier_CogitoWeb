@@ -4,7 +4,7 @@ add_filter( 'document_title_separator', static function () { return '·'; }, 20 
 /**
  * Plugin Name: Gestion Atelier CCT
  * Description: Tableau de bord atelier et génération d'ouvertures pour les CCT JetEngine.
- * Version: 1.1.7
+ * Version: 1.1.8
  * Author: Atelier
  * Text Domain: gestion-atelier-cct
  */

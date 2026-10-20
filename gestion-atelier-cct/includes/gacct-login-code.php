@@ -322,8 +322,9 @@ function gacct_login_magic_screen() {
 
 /**
  * Lien d'invitation personnel (campagnes e-mail, 20/10/2026) : identifie le compte
- * sans mettre l'adresse dans l'URL. Il ne connecte pas : il pré-remplit l'adresse
- * et déclenche l'envoi du code, qui part toujours vers la boîte du titulaire.
+ * sans mettre l'adresse dans l'URL. Il connecte directement le client (décision
+ * Bastien du 20/10, sans limite de durée) ; les comptes de l'équipe en sont exclus
+ * et retombent sur l'adresse pré-remplie et l'envoi du code (gacct-login-ui.php).
  * Format : « {user_id}-{16 hexa} », signature HMAC liée au sel du site.
  *
  * @param int $user_id
@@ -349,4 +350,41 @@ function gacct_login_invite_user( $token ) {
 	}
 	$user = get_user_by( 'id', (int) $m[1] );
 	return $user instanceof WP_User ? $user : null;
+}
+
+/**
+ * Le lien d'invitation peut-il ouvrir ce compte sans code ? Jamais pour l'équipe.
+ *
+ * @param WP_User $user
+ * @return bool
+ */
+function gacct_login_invite_can_direct( WP_User $user ) {
+	$ok = ! user_can( $user, 'edit_posts' ) && ! user_can( $user, 'manage_woocommerce' );
+	return (bool) apply_filters( 'gacct_login_invite_can_direct', $ok, $user );
+}
+
+// GET ?gacct_cl=… : connexion directe puis même page sans le jeton (avant tout affichage).
+add_action( 'template_redirect', 'gacct_login_invite_direct', 1 );
+
+function gacct_login_invite_direct() {
+	if ( 'GET' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) || empty( $_GET['gacct_cl'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- la signature HMAC tient lieu de nonce.
+		return;
+	}
+
+	$user = gacct_login_invite_user( sanitize_text_field( wp_unslash( $_GET['gacct_cl'] ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+	if ( ! $user || ! gacct_login_invite_can_direct( $user ) ) {
+		return; // Jeton faux ou compte de l'équipe : le portier gère (adresse + code).
+	}
+
+	if ( get_current_user_id() !== $user->ID ) {
+		if ( is_user_logged_in() ) {
+			wp_logout(); // autre compte ouvert sur ce navigateur : on bascule.
+		}
+		gacct_login_code_signin( $user, 'campagne' );
+	}
+
+	nocache_headers();
+	wp_safe_redirect( remove_query_arg( 'gacct_cl' ) );
+	exit;
 }
