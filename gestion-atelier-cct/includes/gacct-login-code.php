@@ -319,3 +319,34 @@ function gacct_login_magic_screen() {
 	<?php
 	return ob_get_clean();
 }
+
+/**
+ * Lien d'invitation personnel (campagnes e-mail, 20/10/2026) : identifie le compte
+ * sans mettre l'adresse dans l'URL. Il ne connecte pas : il pré-remplit l'adresse
+ * et déclenche l'envoi du code, qui part toujours vers la boîte du titulaire.
+ * Format : « {user_id}-{16 hexa} », signature HMAC liée au sel du site.
+ *
+ * @param int $user_id
+ * @return string
+ */
+function gacct_login_invite_token( $user_id ) {
+	$user_id = (int) $user_id;
+	return $user_id . '-' . substr( hash_hmac( 'sha256', 'gacct_invite|' . $user_id, wp_salt( 'auth' ) ), 0, 16 );
+}
+
+/**
+ * Compte désigné par un lien d'invitation, ou null si la signature est fausse.
+ *
+ * @param string $token
+ * @return WP_User|null
+ */
+function gacct_login_invite_user( $token ) {
+	if ( ! preg_match( '/^(\d+)-([0-9a-f]{16})$/', (string) $token, $m ) ) {
+		return null;
+	}
+	if ( ! hash_equals( gacct_login_invite_token( (int) $m[1] ), $m[0] ) ) {
+		return null;
+	}
+	$user = get_user_by( 'id', (int) $m[1] );
+	return $user instanceof WP_User ? $user : null;
+}

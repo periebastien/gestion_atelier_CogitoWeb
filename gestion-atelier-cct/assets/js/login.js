@@ -87,6 +87,8 @@
 			root.querySelectorAll('[data-role="email"]').forEach(function (el) { el.textContent = email; });
 			if (res.data.exists) {
 				state.imported = !!res.data.imported;
+				var autoCode = state.autoCode;
+				state.autoCode = false;
 				root.querySelectorAll('[data-role="hello"]').forEach(function (el) {
 					el.textContent = res.data.first && T.hello ? T.hello.replace('%s', res.data.first) : T.known_title;
 				});
@@ -98,6 +100,8 @@
 				if (steps.known) {
 					steps.known.querySelector('[data-role="code-intro"]').textContent = state.imported ? T.code_intro_imported : T.code_intro;
 					show('known');
+					// Lien d'invitation d'une campagne : le code part tout seul.
+					if (autoCode) { sendCode(steps.known, false); }
 				} else {
 					show('password');
 				}
@@ -221,7 +225,17 @@
 		}
 	});
 
-	if (emailInput.value) {
+	if (root.dataset.auto === 'code' && emailInput.value) {
+		// Jeton retiré de la barre d'adresse (partage, favoris, mesure d'audience).
+		try {
+			var u = new URL(window.location.href);
+			u.searchParams.delete('gacct_cl');
+			history.replaceState(null, '', u.pathname + u.search + u.hash);
+		} catch (err) { /* navigateur ancien : sans effet */ }
+		state.autoCode = true;
+		if (steps.email.requestSubmit) { steps.email.requestSubmit(); }
+		else { steps.email.dispatchEvent(new Event('submit', { cancelable: true })); }
+	} else if (emailInput.value) {
 		emailInput.focus();
 	}
 })();

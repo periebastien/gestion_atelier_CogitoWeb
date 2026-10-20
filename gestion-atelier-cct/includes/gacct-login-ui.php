@@ -183,10 +183,21 @@ function gacct_login_ui_render( $context = 'compte' ) {
 	$t           = gacct_login_texts();
 	$redirect_to = isset( $_GET['redirect_to'] ) ? (string) wp_unslash( $_GET['redirect_to'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	$prefill     = isset( $_GET['email'] ) ? sanitize_email( wp_unslash( $_GET['email'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$auto        = '';
+
+	// Lien d'invitation d'une campagne (?gacct_cl=…) : adresse du compte pré-remplie
+	// et envoi du code déclenché par le navigateur (gacct-login-code.php).
+	if ( isset( $_GET['gacct_cl'] ) && function_exists( 'gacct_login_invite_user' ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$invite = gacct_login_invite_user( sanitize_text_field( wp_unslash( $_GET['gacct_cl'] ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( $invite ) {
+			$prefill = $invite->user_email;
+			$auto    = 'code';
+		}
+	}
 
 	// Contexte demande : on revient exactement ici (query string comprise, ex. ?svc=17).
 	if ( 'demande' === $context ) {
-		$redirect_to = home_url( add_query_arg( array(), $_SERVER['REQUEST_URI'] ) );
+		$redirect_to = home_url( remove_query_arg( 'gacct_cl', add_query_arg( array(), $_SERVER['REQUEST_URI'] ) ) );
 	}
 	$google_redirect = $redirect_to ? $redirect_to : home_url( '/mon-compte/' );
 	$google          = gacct_login_google_button( $google_redirect );
@@ -205,7 +216,7 @@ function gacct_login_ui_render( $context = 'compte' ) {
 
 	ob_start();
 	?>
-	<div class="gacct-login gacct-login--<?php echo esc_attr( $context ); ?>" data-redirect="<?php echo esc_attr( $redirect_to ); ?>" data-context="<?php echo esc_attr( $context ); ?>">
+	<div class="gacct-login gacct-login--<?php echo esc_attr( $context ); ?>" data-redirect="<?php echo esc_attr( $redirect_to ); ?>" data-context="<?php echo esc_attr( $context ); ?>"<?php echo $auto ? ' data-auto="' . esc_attr( $auto ) . '"' : ''; ?>>
 
 		<?php if ( 'demande' === $context ) : ?>
 		<div class="gacct-login-head">
