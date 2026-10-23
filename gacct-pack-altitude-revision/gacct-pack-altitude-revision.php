@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Pack Altitude Révision (rapports ParachecK®)
  * Description: Pack de modèles de rapports de contrôle pour Gestion Atelier CCT — rapport voile ParachecK® (révision périodique / inspection partielle), contrôle équipement (sellette/secours), calcul réforme suspente. Seuils et textes du classeur ParachecK V8, design validé le 31/07/2026.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Requires Plugins: gestion-atelier-cct
  * Author: CogitoWeb
  *
@@ -136,6 +136,47 @@ add_filter( 'gacct_demande_suspentes_seules', '__return_true' );
 // d'une suspente sont sur la page Suspentes (1273).
 add_filter( 'gacct_vente_seule_guide_url', function () {
 	return (string) get_permalink( 1273 );
+} );
+
+/* -----------------------------------------------------------------------------
+ * Options de révision (23/10/2026, décision Bastien) : en plus de Solo / Biplace,
+ * deux bascules sur les révisions de voile, à 10 € chacune et cumulables :
+ * voile monosurface et maillons Connect (socle : filtre gacct_revision_options).
+ * Produits supplément trouvés par slug, sur le modèle du supplément biplace 689
+ * (catégorie supplements-biplace, acompte 0) : sans produit publié, pas de bascule.
+ * -------------------------------------------------------------------------- */
+
+function gacct_pack_ar_produit_par_slug( $slug ) {
+	static $cache = array();
+	if ( ! isset( $cache[ $slug ] ) ) {
+		$post           = get_page_by_path( $slug, OBJECT, 'product' );
+		$cache[ $slug ] = ( $post && 'publish' === $post->post_status ) ? (int) $post->ID : 0;
+	}
+	return $cache[ $slug ];
+}
+
+add_filter( 'gacct_revision_options', function ( $options ) {
+	$mono    = gacct_pack_ar_produit_par_slug( 'supplement-voile-monosurface' );
+	$connect = gacct_pack_ar_produit_par_slug( 'supplement-maillons-connect' );
+	if ( $mono ) {
+		$options['voile']['monosurface'] = array(
+			'product' => $mono,
+			'label'   => 'Type de voile :',
+			'off'     => 'Classique',
+			'on'      => 'Monosurface (+%s)',
+			'recap'   => '+ Supplément monosurface : %s',
+		);
+	}
+	if ( $connect ) {
+		$options['voile']['connect'] = array(
+			'product' => $connect,
+			'label'   => 'Maillons :',
+			'off'     => 'Maillons normaux',
+			'on'      => 'Connect (+%s)',
+			'recap'   => '+ Supplément maillons Connect : %s',
+		);
+	}
+	return $options;
 } );
 
 /* -----------------------------------------------------------------------------
