@@ -224,6 +224,13 @@ function gacct_demande_v2_config() {
 				3 => __( 'La date et le retour', 'gestion-atelier-cct' ),
 				4 => __( 'Récapitulatif', 'gestion-atelier-cct' ),
 			),
+			// Barre d'étapes cliquable (23/10/2026).
+			'etapesCourtes' => array(
+				1 => __( 'Prestations', 'gestion-atelier-cct' ),
+				2 => __( 'Matériel', 'gestion-atelier-cct' ),
+				3 => __( 'Date', 'gestion-atelier-cct' ),
+				4 => __( 'Récapitulatif', 'gestion-atelier-cct' ),
+			),
 			'i18n'      => array(
 				// --- Étape 1 : recherche de voile ---
 				'comboLabel'      => __( 'Marque et modèle', 'gestion-atelier-cct' ),
@@ -275,6 +282,7 @@ function gacct_demande_v2_config() {
 				'suppBiplace'     => __( '+ Supplément biplace : %s', 'gestion-atelier-cct' ),
 				// --- Navigation / autres étapes ---
 				'etapeSur'        => __( 'Étape %1$s sur %2$s', 'gestion-atelier-cct' ),
+				'etapesAria'      => __( 'Étapes de la demande', 'gestion-atelier-cct' ),
 				'erreurPresta'    => __( 'Choisissez au moins une prestation pour continuer.', 'gestion-atelier-cct' ),
 				'erreurCouleur'   => __( 'Sélectionnez au moins une couleur de votre voile.', 'gestion-atelier-cct' ),
 				'erreurSecours'   => __( 'Indiquez la marque et le modèle de votre parachute de secours.', 'gestion-atelier-cct' ),

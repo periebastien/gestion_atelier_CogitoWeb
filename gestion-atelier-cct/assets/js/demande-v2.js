@@ -180,6 +180,7 @@
 
 		var progressLabel = null;
 		var progressBar = null;
+		var etapesNav = null;
 
 		function buildProgressLabel() {
 			progressBar = form.querySelector( '.jet-form-builder-progress-pages' );
@@ -207,17 +208,63 @@
 				progressBar.insertBefore( seg, progressBar.firstChild );
 			}
 
-			progressLabel = document.createElement( 'p' );
-			progressLabel.className = 'gacct-v2-progress-label';
-			progressBar.parentNode.insertBefore( progressLabel, progressBar );
+			/* Barre d'étapes nommées (23/10/2026, demande Bastien) : remplace le
+			   libellé « Étape X sur 5 » et les segments JFB (masqués en CSS). Les
+			   étapes déjà faites sont cliquables (retour arrière, sans validation,
+			   comme les liens « Modifier » du récapitulatif). */
+			var courtes = v2.etapesCourtes || {};
+			etapesNav = document.createElement( 'ol' );
+			etapesNav.className = 'gacct-v2-etapes';
+			etapesNav.setAttribute( 'aria-label', v2i18n.etapesAria || 'Étapes de la demande' );
+			Object.keys( etapes ).forEach( function ( k ) {
+				var num = parseInt( k, 10 );
+				var li = document.createElement( 'li' );
+				li.className = 'gacct-v2-etapes__item';
+				li.setAttribute( 'data-etape', String( num ) );
+				var btn = document.createElement( 'button' );
+				btn.type = 'button';
+				btn.className = 'gacct-v2-etapes__btn';
+				btn.setAttribute( 'aria-label', etapes[ num ] );
+				btn.innerHTML =
+					'<span class="gacct-v2-etapes__trait" aria-hidden="true"></span>' +
+					'<span class="gacct-v2-etapes__nom" aria-hidden="true">' + escapeHtml( courtes[ num ] || etapes[ num ] ) + '</span>';
+				btn.addEventListener( 'click', function () {
+					if ( ! btn.disabled && num < pageCourante() ) {
+						gotoPage( num );
+					}
+				} );
+				li.appendChild( btn );
+				etapesNav.appendChild( li );
+			} );
+			progressBar.parentNode.insertBefore( etapesNav, progressBar );
+			progressBar.classList.add( 'gacct-v2-progress-natif' );
 			updateProgressLabel();
 		}
 
 		function updateProgressLabel() {
+			var n = pageCourante();
+			if ( etapesNav ) {
+				// Vente seule : l'étape matériel est sautée, jamais « faite ».
+				var vs = venteSeuleActive();
+				etapesNav.querySelectorAll( '.gacct-v2-etapes__item' ).forEach( function ( li ) {
+					var num = parseInt( li.getAttribute( 'data-etape' ), 10 );
+					var saute = vs && num === 2;
+					var fait = num < n && ! saute;
+					var btn = li.querySelector( 'button' );
+					li.classList.toggle( 'is-current', num === n );
+					li.classList.toggle( 'is-done', fait );
+					li.classList.toggle( 'is-skipped', saute );
+					btn.disabled = ! fait;
+					if ( num === n ) {
+						btn.setAttribute( 'aria-current', 'step' );
+					} else {
+						btn.removeAttribute( 'aria-current' );
+					}
+				} );
+			}
 			if ( ! progressLabel ) {
 				return;
 			}
-			var n = pageCourante();
 			var offset = parseInt( ( cfg.v2 && cfg.v2.etapeOffset ) || 0, 10 ) || 0;
 			var total = ( pages().length || 4 ) + offset;
 			var shown = n + offset;
@@ -258,7 +305,7 @@
 		   « Étape X sur 4 » juste sous la barre flottante, au lieu du haut de la
 		   page d'étape qui, lui, laissait le libellé hors champ. */
 		function scrollVersEtape() {
-			var cible = progressLabel || form;
+			var cible = etapesNav || progressLabel || form;
 			window.requestAnimationFrame( function () {
 				var y = cible.getBoundingClientRect().top + window.pageYOffset - decalageHeaderFlottant();
 				window.scrollTo( { top: Math.max( 0, y ), behavior: 'smooth' } );
@@ -1669,6 +1716,36 @@
 				} );
 				if ( cible ) {
 					selectionner( cible );
+				}
+			}
+
+			/* Arrivée sans voile désignée (lien de campagne, bouton du site,
+			   23/10/2026) : la voile suivie si elle est seule, sinon, sans voile
+			   suivie, la plus récente de l'ancien site (boîte dépliée). Plusieurs
+			   voiles suivies : pas de choix à la place du client. Il peut
+			   toujours en changer. */
+			var dejaChoisie = cartes.some( function ( c ) {
+				return c.el.getAttribute( 'aria-checked' ) === 'true';
+			} );
+			if ( ! dejaChoisie ) {
+				var suivies = cartes.filter( function ( c ) {
+					return c.materiel && ! c.el.classList.contains( 'gacct-materiel__carte--ancienne' );
+				} );
+				var defaut = null;
+				if ( suivies.length === 1 ) {
+					defaut = suivies[ 0 ];
+				} else if ( ! suivies.length ) {
+					cartes.forEach( function ( c ) {
+						if ( c.materiel && ( ! defaut || ( parseInt( c.materiel.annee, 10 ) || 0 ) > ( parseInt( defaut.materiel.annee, 10 ) || 0 ) ) ) {
+							defaut = c;
+						}
+					} );
+					if ( defaut && toggle && boite && boite.hidden ) {
+						toggle.click();
+					}
+				}
+				if ( defaut ) {
+					selectionner( defaut );
 				}
 			}
 		}
