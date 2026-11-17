@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: GACCT - Factures PDF (dates de paiement, facture d'acompte)
- * Description: Lignes « Acompte réglé le … » et « Solde réglé le … » sur les factures PDF Invoices & Packing Slips (données Kojito), et facture d'acompte numérotée à part (AC-…), envoyée automatiquement au paiement de l'acompte.
- * Version: 1.2.0
+ * Description: Lignes « Acompte réglé le … » et « Solde réglé le … » sur les factures PDF Invoices & Packing Slips (données Kojito), et facture d'acompte numérotée à part (AC-…), envoyée automatiquement au paiement de l acompte, RIB sur la facture pro forma.
+ * Version: 1.3.0
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -146,3 +146,41 @@ function gacct_factures_lignes_paiements( $totals, $order, $document_type ) {
 /* ------------------------------------------------------- facture d'acompte --- */
 
 require_once GACCT_FACTURES_DIR . '/facture-acompte.php';
+
+/* ------------------------------------------------- facture pro forma : RIB --- */
+
+/**
+ * Bloc « Règlement par virement » sous le tableau de la facture pro forma :
+ * le client s'en sert pour ordonner son virement avant la commande. Coordonnées
+ * = réglages WooCommerce > Paiements > Virement bancaire (premier compte).
+ */
+function gacct_factures_rib_proforma( $document_type, $order ) {
+	if ( 'proforma' !== $document_type || ! $order instanceof WC_Order ) {
+		return;
+	}
+	$comptes = (array) get_option( 'woocommerce_bacs_accounts', array() );
+	$compte  = $comptes ? (array) reset( $comptes ) : array();
+	if ( empty( $compte['iban'] ) ) {
+		return;
+	}
+	$lignes = array(
+		__( 'Titulaire', 'gestion-atelier-cct' ) => $compte['account_name'] ?? '',
+		__( 'Banque', 'gestion-atelier-cct' )    => $compte['bank_name'] ?? '',
+		__( 'IBAN', 'gestion-atelier-cct' )      => $compte['iban'],
+		__( 'BIC', 'gestion-atelier-cct' )       => $compte['bic'] ?? '',
+		__( 'Référence à indiquer', 'gestion-atelier-cct' ) => $order->get_order_number(),
+	);
+	echo '<div class="gacct-rib" style="margin-top:8mm;padding:4mm;border:1px solid #ccc;">';
+	echo '<h3 style="margin:0 0 2mm;font-size:11pt;">' . esc_html__( 'Règlement par virement', 'gestion-atelier-cct' ) . '</h3>';
+	echo '<table style="width:auto;border-collapse:collapse;">';
+	foreach ( $lignes as $label => $valeur ) {
+		if ( '' === (string) $valeur ) {
+			continue;
+		}
+		echo '<tr><td style="padding:0.5mm 6mm 0.5mm 0;">' . esc_html( $label ) . '</td><td style="padding:0.5mm 0;"><strong>' . esc_html( $valeur ) . '</strong></td></tr>';
+	}
+	echo '</table>';
+	echo '<p style="margin:2mm 0 0;">' . esc_html__( 'Document sans valeur comptable : la facture définitive est émise après règlement.', 'gestion-atelier-cct' ) . '</p>';
+	echo '</div>';
+}
+add_action( 'wpo_wcpdf_after_order_details', 'gacct_factures_rib_proforma', 10, 2 );
