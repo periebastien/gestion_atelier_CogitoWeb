@@ -3402,6 +3402,265 @@
 			return { prestations: noms.join( ' | ' ), nb_prestations: noms.length, value: Math.round( total * 100 ) / 100, currency: 'EUR' };
 		}
 		dlPush( { event: 'demande_etape', step: 1 } );
+		/* ---------------------------------------------------------------
+		 * Détail de la demande de devis de réparation (21/11/2026)
+		 *
+		 * Carte « Besoin d'une réparation ? » cochée : zone de texte
+		 * obligatoire + photos ou PDF (glisser-déposer ou sélection). Actif
+		 * seulement si l'atelier l'ouvre (v2.reparation.actif, filtre PHP
+		 * gacct_demande_reparation_actif). Les fichiers partent dès le dépôt
+		 * (gacct-reparation.php) ; le formulaire ne porte que leurs jetons,
+		 * dans des champs hors JetFormBuilder (gacct_rep_detail,
+		 * gacct_rep_fichiers) lus par la garde serveur.
+		 * ------------------------------------------------------------- */
+		function initDetailReparation() {
+			var rc = v2.reparation || {};
+			if ( ! rc.actif || ! carteDevis ) {
+				return;
+			}
+			var tx = rc.textes || {};
+			var inputDevis = inputsSuspentes().filter( estDevis )[ 0 ];
+			if ( ! inputDevis ) {
+				return;
+			}
+
+			var bloc = document.createElement( 'div' );
+			bloc.className = 'gacct-rep';
+			bloc.hidden = true;
+			bloc.innerHTML =
+				'<label class="gacct-rep-titre" for="gacctRepDetail">' + escapeHtml( tx.titre || '' ) + ' <span class="gacct-rep-requis">*</span></label>' +
+				'<p class="gacct-rep-aide">' + escapeHtml( tx.aide || '' ) + '</p>' +
+				'<textarea id="gacctRepDetail" name="gacct_rep_detail" rows="4" placeholder="' + escapeHtml( tx.placeholder || '' ) + '"></textarea>' +
+				'<div class="gacct-rep-titre gacct-rep-titre-photos">' + escapeHtml( tx.photosTitre || '' ) + '</div>' +
+				'<div class="gacct-rep-zone" tabindex="0" role="button">' +
+					'<span class="gacct-rep-zone-texte">' + escapeHtml( tx.deposer || '' ) + ' <u>' + escapeHtml( tx.choisir || '' ) + '</u></span>' +
+					'<span class="gacct-rep-zone-formats">' + escapeHtml( String( tx.formats || '' ).replace( '%d', rc.maxFichiers ) ) + '</span>' +
+				'</div>' +
+				'<input type="file" class="gacct-rep-input" multiple accept="' + escapeHtml( rc.accept || '' ) + '" hidden>' +
+				'<ul class="gacct-rep-liste"></ul>' +
+				'<div class="gacct-rep-err" role="alert" hidden></div>' +
+				'<input type="hidden" name="gacct_rep_fichiers" value="">';
+
+			carteDevis.parentNode.insertBefore( bloc, carteDevis.nextSibling );
+
+			var zone = bloc.querySelector( '.gacct-rep-zone' );
+			var fileInput = bloc.querySelector( '.gacct-rep-input' );
+			var liste = bloc.querySelector( '.gacct-rep-liste' );
+			var errEl = bloc.querySelector( '.gacct-rep-err' );
+			var champJetons = bloc.querySelector( 'input[name="gacct_rep_fichiers"]' );
+			var texte = bloc.querySelector( '#gacctRepDetail' );
+			var fichiers = []; // { li, jeton|null, enCours }
+
+			function majJetons() {
+				champJetons.value = fichiers.filter( function ( f ) {
+					return f.jeton;
+				} ).map( function ( f ) {
+					return f.jeton;
+				} ).join( ',' );
+			}
+
+			function erreur( msg ) {
+				errEl.textContent = msg || '';
+				errEl.hidden = ! msg;
+			}
+
+			function majVisibilite() {
+				bloc.hidden = ! inputDevis.checked;
+			}
+			form.addEventListener( 'change', majVisibilite );
+			carteDevis.addEventListener( 'click', function () {
+				window.setTimeout( majVisibilite, 0 );
+			} );
+			majVisibilite();
+
+			// Photo réduite dans le navigateur (2000 px, JPEG 85 %) : une photo de
+			// téléphone passe de 4-6 Mo à 500 Ko environ, sous la limite du serveur.
+			function reduire( file ) {
+				return new Promise( function ( resolve ) {
+					if ( ! /^image\/(jpeg|png|webp)$/.test( file.type ) || ! window.createImageBitmap ) {
+						resolve( file );
+						return;
+					}
+					window.createImageBitmap( file ).then( function ( img ) {
+						var max = 2000;
+						var ratio = Math.min( 1, max / Math.max( img.width, img.height ) );
+						if ( ratio === 1 && file.size < 1.5 * 1024 * 1024 ) {
+							resolve( file );
+							return;
+						}
+						var c = document.createElement( 'canvas' );
+						c.width = Math.round( img.width * ratio );
+						c.height = Math.round( img.height * ratio );
+						var ctx = c.getContext( '2d' );
+						ctx.fillStyle = '#fff';
+						ctx.fillRect( 0, 0, c.width, c.height );
+						ctx.drawImage( img, 0, 0, c.width, c.height );
+						c.toBlob( function ( blob ) {
+							if ( ! blob ) {
+								resolve( file );
+								return;
+							}
+							resolve( new File( [ blob ], file.name.replace( /\.[^.]+$/, '' ) + '.jpg', { type: 'image/jpeg' } ) );
+						}, 'image/jpeg', 0.85 );
+					} ).catch( function () {
+						resolve( file );
+					} );
+				} );
+			}
+
+			function tailleLisible( o ) {
+				return o >= 1048576 ? ( Math.round( o / 104857.6 ) / 10 ) + ' Mo' : Math.max( 1, Math.round( o / 1024 ) ) + ' Ko';
+			}
+
+			function retirer( f ) {
+				fichiers = fichiers.filter( function ( x ) {
+					return x !== f;
+				} );
+				f.li.remove();
+				majJetons();
+				if ( f.jeton ) {
+					var fd = new FormData();
+					fd.append( 'action', 'gacct_rep_retirer' );
+					fd.append( 'nonce', rc.nonce );
+					fd.append( 'jeton', f.jeton );
+					window.fetch( rc.ajax, { method: 'POST', body: fd, credentials: 'same-origin' } );
+				}
+			}
+
+			function envoyer( file ) {
+				var f = { li: document.createElement( 'li' ), jeton: null, enCours: true };
+				f.li.className = 'gacct-rep-fichier is-envoi';
+				f.li.innerHTML = '<span class="gacct-rep-nom"></span><span class="gacct-rep-etat">' + escapeHtml( tx.envoi || '' ) + '</span>' +
+					'<button type="button" class="gacct-rep-retirer">' + escapeHtml( tx.retirer || 'Retirer' ) + '</button>';
+				f.li.querySelector( '.gacct-rep-nom' ).textContent = file.name;
+				f.li.querySelector( '.gacct-rep-retirer' ).addEventListener( 'click', function () {
+					retirer( f );
+				} );
+				liste.appendChild( f.li );
+				fichiers.push( f );
+
+				reduire( file ).then( function ( pret ) {
+					if ( pret.size > rc.maxOctets ) {
+						retirer( f );
+						erreur( String( tx.erreurPoids || '' ).replace( '%s', file.name ).replace( '%s', tailleLisible( rc.maxOctets ) ) );
+						return;
+					}
+					var fd = new FormData();
+					fd.append( 'action', 'gacct_rep_upload' );
+					fd.append( 'nonce', rc.nonce );
+					fd.append( 'fichier', pret, pret.name );
+					return window.fetch( rc.ajax, { method: 'POST', body: fd, credentials: 'same-origin' } )
+						.then( function ( r ) {
+							return r.json();
+						} )
+						.then( function ( j ) {
+							f.enCours = false;
+							if ( ! j || ! j.success ) {
+								retirer( f );
+								erreur( ( j && j.data && j.data.message ) || String( tx.erreurServeur || '' ).replace( '%s', file.name ) );
+								return;
+							}
+							f.jeton = j.data.jeton;
+							f.li.classList.remove( 'is-envoi' );
+							f.li.querySelector( '.gacct-rep-etat' ).textContent = j.data.taille;
+							majJetons();
+						} );
+				} ).catch( function () {
+					f.enCours = false;
+					retirer( f );
+					erreur( String( tx.erreurServeur || '' ).replace( '%s', file.name ) );
+				} );
+			}
+
+			function ajouter( liste ) {
+				erreur( '' );
+				var accepte = /^(image\/(jpeg|png|webp|heic|heif)|application\/pdf)$/;
+				Array.prototype.forEach.call( liste, function ( file ) {
+					if ( fichiers.length >= rc.maxFichiers ) {
+						erreur( String( tx.erreurNombre || '' ).replace( '%d', rc.maxFichiers ) );
+						return;
+					}
+					var ext = ( file.name.split( '.' ).pop() || '' ).toLowerCase();
+					if ( ! accepte.test( file.type ) && [ 'heic', 'heif' ].indexOf( ext ) < 0 ) {
+						erreur( String( tx.erreurType || '' ).replace( '%s', file.name ) );
+						return;
+					}
+					envoyer( file );
+				} );
+			}
+
+			zone.addEventListener( 'click', function () {
+				fileInput.click();
+			} );
+			zone.addEventListener( 'keydown', function ( e ) {
+				if ( e.key === 'Enter' || e.key === ' ' ) {
+					e.preventDefault();
+					fileInput.click();
+				}
+			} );
+			fileInput.addEventListener( 'change', function () {
+				ajouter( fileInput.files );
+				fileInput.value = '';
+			} );
+			[ 'dragenter', 'dragover' ].forEach( function ( ev ) {
+				zone.addEventListener( ev, function ( e ) {
+					e.preventDefault();
+					zone.classList.add( 'is-survol' );
+				} );
+			} );
+			[ 'dragleave', 'drop' ].forEach( function ( ev ) {
+				zone.addEventListener( ev, function ( e ) {
+					e.preventDefault();
+					zone.classList.remove( 'is-survol' );
+				} );
+			} );
+			zone.addEventListener( 'drop', function ( e ) {
+				if ( e.dataTransfer && e.dataTransfer.files ) {
+					ajouter( e.dataTransfer.files );
+				}
+			} );
+			// Un fichier lâché à côté de la zone ne doit pas ouvrir l'image dans l'onglet.
+			window.addEventListener( 'dragover', function ( e ) {
+				e.preventDefault();
+			} );
+			window.addEventListener( 'drop', function ( e ) {
+				e.preventDefault();
+			} );
+
+			texte.addEventListener( 'input', function () {
+				if ( texte.value.trim() ) {
+					effaceErreur( 'reparation' );
+				}
+			} );
+
+			// Étape 1 : texte obligatoire et envois terminés avant de continuer.
+			form.addEventListener( 'click', function ( e ) {
+				var next = e.target.closest( '.jet-form-builder__next-page' );
+				var page = e.target.closest( '.jet-form-builder-page' );
+				if ( ! next || ! page || parseInt( page.dataset.page, 10 ) !== 1 || ! inputDevis.checked ) {
+					return;
+				}
+				var msg = '';
+				if ( ! texte.value.trim() ) {
+					msg = tx.erreurTexte;
+				} else if ( fichiers.some( function ( f ) {
+					return f.enCours;
+				} ) ) {
+					msg = tx.erreurEnvoi;
+				}
+				if ( msg ) {
+					e.preventDefault();
+					e.stopImmediatePropagation();
+					erreurEtape( 'reparation', next.closest( '.jet-form-builder__next-page-wrap' ), msg );
+					if ( ! texte.value.trim() ) {
+						texte.focus( { preventScroll: true } );
+					}
+					return;
+				}
+				effaceErreur( 'reparation' );
+			}, true );
+		}
+
 		form.addEventListener( 'submit', function () {
 			var d = dlPrestations();
 			d.event = 'demande_envoi';
@@ -3414,6 +3673,7 @@
 		initBiplace();
 		initCarteDevis();
 		initNoteVerrou();
+		initDetailReparation();
 
 		/* ---------------------------------------------------------------
 		 * Brouillon local : ce qui ne vit pas dans un champ

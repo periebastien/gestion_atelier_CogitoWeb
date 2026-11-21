@@ -100,11 +100,14 @@
 .gacct-op-planning .fc .gacct-op-occ-etat-1 {
 	border-left-color: #a7aaad;
 }
-/* 2–3 et 5 : en atelier (bleu admin) */
+/* 2–3 : en atelier (bleu admin) */
 .gacct-op-planning .fc .gacct-op-occ-etat-2,
-.gacct-op-planning .fc .gacct-op-occ-etat-3,
-.gacct-op-planning .fc .gacct-op-occ-etat-5 {
+.gacct-op-planning .fc .gacct-op-occ-etat-3 {
 	border-left-color: var(--gacct-accent);
+}
+/* 5 : intervention à finir (jaune vif, distinct de la voile réceptionnée, demande Titi du 20/11/2026) */
+.gacct-op-planning .fc .gacct-op-occ-etat-5 {
+	border-left-color: #fffa00;
 }
 /* 4 et 6 : action attendue du client — devis à valider, solde à payer (jaune) */
 .gacct-op-planning .fc .gacct-op-occ-etat-4,

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Pack Altitude Révision (rapports ParachecK®)
  * Description: Pack de modèles de rapports de contrôle pour Gestion Atelier CCT — rapport voile ParachecK® (révision périodique / inspection partielle), contrôle équipement (sellette/secours), calcul réforme suspente. Seuils et textes du classeur ParachecK V8, design validé le 31/07/2026.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Requires Plugins: gestion-atelier-cct
  * Author: CogitoWeb
  *
@@ -290,3 +290,27 @@ function gacct_pack_ar_upgrade_porosity_order() {
 	}
 }
 add_action( 'admin_init', 'gacct_pack_ar_upgrade_porosity_order', 20 );
+
+/**
+ * Planning de la console : couleur propre à Altitude pour l'état 7
+ * « Révision finie, rapport disponible » (rose, demande de Titi du 20/11/2026).
+ * Le socle garde son vert : AEROTECH n'est pas concerné.
+ */
+function gacct_pack_ar_planning_colors() {
+	if ( ! function_exists( 'gacct_op_current_view' ) || 'planning' !== gacct_op_current_view() ) {
+		return;
+	}
+	if ( wp_style_is( 'gacct-operator-screen', 'enqueued' ) ) {
+		wp_add_inline_style(
+			'gacct-operator-screen',
+			'.gacct-op-planning .fc .gacct-op-occ-etat-7 { border-left-color: #ff5de4; }'
+		);
+	}
+}
+add_action( 'admin_enqueue_scripts', 'gacct_pack_ar_planning_colors', 20 );
+
+/**
+ * Demande de devis de réparation : zone de texte obligatoire et photos ou PDF
+ * joints (correction n°4 de Titi, 21/11/2026 ; module gacct-reparation.php du socle).
+ */
+add_filter( 'gacct_demande_reparation_actif', '__return_true' );

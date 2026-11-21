@@ -1375,3 +1375,121 @@ form.gacct-v2--vente-seule .gacct-v2-step--date > .field-type-text-field {
 .gacct-v2 .jet-form-builder__field-wrap[hidden] {
 	display: none !important;
 }
+
+/* Détail de la demande de devis de réparation (21/11/2026, gacct-reparation.php). */
+.gacct-rep {
+	border: 2px solid var(--v2-teal);
+	border-top: 0;
+	border-radius: 0 0 12px 12px;
+	margin-top: -10px;
+	padding: 22px 18px 18px;
+	background: #fff;
+}
+.gacct-rep[hidden] {
+	display: none;
+}
+.gacct-rep-titre {
+	display: block;
+	font-weight: 700;
+	font-size: 17px;
+	margin: 0 0 4px;
+}
+.gacct-rep-titre-photos {
+	margin-top: 18px;
+}
+.gacct-rep-requis {
+	color: var(--v2-teal);
+}
+.gacct-rep-aide {
+	margin: 0 0 8px;
+	font-size: 16px;
+	color: var(--v2-ink2);
+}
+.gacct-rep textarea {
+	width: 100%;
+	min-height: 110px;
+	font-size: 16px;
+	padding: 10px 12px;
+	border: 1px solid var(--v2-line);
+	border-radius: 8px;
+	box-sizing: border-box;
+	resize: vertical;
+}
+.gacct-rep-zone {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+	padding: 22px 14px;
+	border: 2px dashed var(--v2-line);
+	border-radius: 10px;
+	text-align: center;
+	cursor: pointer;
+	font-size: 16px;
+	transition: border-color 0.15s, background 0.15s;
+}
+.gacct-rep-zone:hover,
+.gacct-rep-zone:focus-visible,
+.gacct-rep-zone.is-survol {
+	border-color: var(--v2-teal);
+	background: var(--v2-teal-soft);
+	outline: none;
+}
+.gacct-rep-zone u {
+	color: var(--v2-teal);
+}
+.gacct-rep-zone-formats {
+	font-size: 14px;
+	color: var(--v2-ink2);
+}
+.gacct-rep-liste {
+	list-style: none;
+	margin: 10px 0 0;
+	padding: 0;
+}
+.gacct-rep-fichier {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 6px 0;
+	border-bottom: 1px solid var(--v2-line);
+	font-size: 16px;
+}
+.gacct-rep-nom {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.gacct-rep-etat {
+	color: var(--v2-ink2);
+	font-size: 14px;
+}
+.gacct-rep-fichier.is-envoi .gacct-rep-etat {
+	color: var(--v2-teal);
+}
+.gacct-v2 .gacct-rep .gacct-rep-retirer,
+.gacct-rep .gacct-rep-retirer {
+	background: none;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	min-height: 0;
+	padding: 4px;
+	color: #b32d2e;
+	text-decoration: underline;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 400;
+}
+.gacct-rep .gacct-rep-retirer:hover,
+.gacct-rep .gacct-rep-retirer:focus {
+	background: none;
+	color: #8a2424;
+}
+.gacct-rep-err {
+	margin-top: 8px;
+	color: #b32d2e;
+	font-size: 16px;
+}

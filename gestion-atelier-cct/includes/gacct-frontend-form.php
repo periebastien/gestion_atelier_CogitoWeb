@@ -220,6 +220,9 @@ function gacct_demande_v2_config() {
 			// SANS révision ni pliage. Désactivé par défaut (règle du 27/08/2026),
 			// l'atelier l'ouvre par le filtre `gacct_demande_suspentes_seules`.
 			'suspentesSeules' => (bool) apply_filters( 'gacct_demande_suspentes_seules', false ),
+			// 21/11/2026 : détail et pièces jointes de la demande de devis de réparation
+			// (gacct-reparation.php), ouvert par le filtre `gacct_demande_reparation_actif`.
+			'reparation' => function_exists( 'gacct_rep_config_js' ) ? gacct_rep_config_js() : array( 'actif' => false ),
 			// Produits « Vente seule » (gacct-vente-seule.php) : commandés sans
 			// intervention, ils se paient à 100 % et sautent matériel et date.
 			'venteSeuleIds' => function_exists( 'gacct_vente_seule_ids_formulaire' ) ? gacct_vente_seule_ids_formulaire() : array(),

@@ -957,11 +957,13 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 		echo '<p class="gacct-op-muted">' . esc_html__( 'Aucune ligne de commande.', 'gestion-atelier-cct' ) . '</p>';
 	}
 	if ( ! empty( $revision['commentaire_commande'] ) ) {
-		echo '<p class="gacct-op-muted"><strong>' . esc_html__( 'Commentaire client :', 'gestion-atelier-cct' ) . '</strong> ' . esc_html( $revision['commentaire_commande'] ) . '</p>';
+		echo '<p class="gacct-op-muted"><strong>' . esc_html__( 'Commentaire client :', 'gestion-atelier-cct' ) . '</strong> ' . nl2br( esc_html( $revision['commentaire_commande'] ) ) . '</p>';
 	}
 	if ( ! empty( $revision['commentaire_reception'] ) ) {
 		echo '<p class="gacct-op-muted gacct-op-reception-note"><strong>' . esc_html__( 'Commentaire de réception :', 'gestion-atelier-cct' ) . '</strong> ' . nl2br( esc_html( $revision['commentaire_reception'] ) ) . '</p>';
 	}
+	// Pièces jointes d'une demande de devis de réparation (gacct-reparation.php).
+	do_action( 'gacct_op_fiche_apres_commentaires', $revision, $revision_id );
 	echo '</div>';
 
 	echo '</div>'; // side
