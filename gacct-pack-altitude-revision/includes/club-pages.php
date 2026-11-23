@@ -321,7 +321,7 @@ function ar_clubp_render( array $c ) {
 						<?php endif; ?>
 					</p>
 					<p class="ar-clubp-mot-txt">Le plus simple, c'est d'en parler : appelez-moi au <?php echo $tel; // phpcs:ignore ?>, ou remplissez la demande plus bas et je vous rappelle.</p>
-					<p class="ar-clubp-mot-sign"><?php echo esc_html( $r['signature'] ); ?><span>Atelier Altitude Révision, <?php echo esc_html( $r['atelier_ville'] ); ?></span></p>
+					<p class="ar-clubp-mot-sign"><?php echo esc_html( $r['signature'] ); ?><span>Plaine Altitude et Altitude Révision, atelier de <?php echo esc_html( $r['atelier_ville'] ); ?></span></p>
 				</div>
 			</div>
 		</section>
