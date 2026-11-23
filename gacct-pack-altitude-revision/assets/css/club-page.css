@@ -175,20 +175,25 @@ body.ar-clubp [data-elementor-type="wp-page"] > .ar-hero { display: none; }
 .ar-clubp-acces { margin-top: 10px; }
 .ar-clubp-marques strong { color: var(--c-ink); }
 
-/* ---- Mot d'Hervé ---------------------------------------------------------- */
-.ar-clubp-mot { padding: clamp(48px, 6vw, 80px) 0; background: #fff; }
-.ar-clubp-mot-in { display: flex; justify-content: center; }
+/* ---- Mot d'Hervé, dans le héros ------------------------------------------ */
 .ar-clubp-mot-carte {
-	max-width: 720px;
-	padding: clamp(26px, 4vw, 44px);
-	border-radius: 18px;
+	position: relative;
+	margin-top: 8px;
+	padding: 24px 26px 22px;
+	border-radius: 16px;
 	background: #fffdf6;
 	border: 1px solid #f1e6c4;
-	box-shadow: 0 14px 34px rgba(0, 0, 0, .06);
+	box-shadow: 0 12px 30px rgba(0, 0, 0, .06);
 }
-.ar-clubp-mot-txt { margin: 0 0 14px; font-size: 18px; line-height: 1.65; }
-.ar-clubp-mot-sign { margin: 22px 0 0; font-size: 22px; font-weight: 800; }
+.ar-clubp-mot-txt { margin: 0 0 12px; font-size: 17px; line-height: 1.6; }
+.ar-clubp-mot-sign { margin: 16px 0 0; font-size: 20px; font-weight: 800; }
 .ar-clubp-mot-sign span { display: block; font-size: 16px; font-weight: 600; color: var(--c-muted); }
+
+/* ---- Bouton dans le simulateur --------------------------------------------- */
+.ar-clubp-sim .ar-clubp-btn { display: flex; width: 100%; justify-content: center; text-align: center; margin: 4px 0 10px; }
+.ar-clubp-sim .ar-clubp-cta-tel { margin: 0 0 14px; text-align: center; }
+.ar-clubp-hero-grid { align-items: start; }
+.ar-clubp-h1 { font-size: clamp(30px, 3.8vw, 44px); }
 
 @media (max-width: 900px) {
 	.ar-clubp-hero-grid { grid-template-columns: 1fr; }

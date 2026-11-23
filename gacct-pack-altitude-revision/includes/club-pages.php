@@ -223,11 +223,15 @@ function ar_clubp_render( array $c ) {
 	}
 	$cartes = array_slice( $cartes, 0, 4 );
 
-	$intro = $ecole
-		? sprintf( 'Un créneau réservé à l\'atelier pour tout le matériel de l\'école, une remise jusqu\'à 15 %% et le suivi de chaque voile en ligne. Voici ce que ça donnerait pour %s.', $nom )
-		: sprintf( 'Un créneau réservé à l\'atelier pour le club, une remise jusqu\'à 15 %% pour tout le monde et le suivi de chaque voile en ligne. Voici ce que ça donnerait pour %s.', $nom );
-
 	$tel = '<a href="tel:' . esc_attr( $r['tel_lien'] ) . '" data-ar-clubp="tel">' . esc_html( $r['tel'] ) . '</a>';
+	if ( $ecole ) {
+		$mot = 'Avec un parc de voiles d\'école, le plus simple est de tout faire réviser d\'un coup, avant la reprise des stages. On réserve les jours qu\'il faut à l\'atelier rien que pour vous, et chaque voile garde son rapport ParachecK.';
+	} elseif ( $p_dep >= 20 ) {
+		$mot = 'Plusieurs de vos pilotes nous ont sans doute déjà confié leur voile. Plutôt que chacun de son côté, je vous propose de grouper les révisions du club : un créneau rien que pour vous, une seule commande à régler par le club, et une remise pour tout le monde.';
+	} else {
+		$mot = 'On ne se connaît pas encore, mais on reçoit des voiles de toute la France. Pour un club, grouper les révisions simplifie tout : un seul envoi, un créneau rien que pour vous, une seule commande à régler par le club, et une remise pour tout le monde.';
+	}
+	$mot = str_replace( ' :', "\u{00A0}:", $mot );
 	?>
 	<div class="ar-clubp-wrap">
 		<section class="ar-clubp-hero">
@@ -241,16 +245,17 @@ function ar_clubp_render( array $c ) {
 							Les voiles <?php echo esc_html( ar_clubp_de_nom( $nom, true ) ); ?><em><?php echo esc_html( ar_clubp_de_nom( $nom, false ) ); ?></em>, révisées en une seule fois
 						<?php endif; ?>
 					</h1>
-					<p class="ar-clubp-intro"><?php echo esc_html( $intro ); ?></p>
-					<div class="ar-clubp-cta">
-						<a class="ar-clubp-btn" href="#demande-club" data-ar-clubp="cta">Réserver pour <?php echo esc_html( $nom ); ?></a>
-						<span class="ar-clubp-cta-tel">ou appelez Hervé au <?php echo $tel; // phpcs:ignore -- échappé plus haut. ?></span>
+					<div class="ar-clubp-mot-carte">
+						<p class="ar-clubp-mot-txt">Bonjour à toute l'équipe de <?php echo esc_html( $nom ); ?>,</p>
+						<p class="ar-clubp-mot-txt"><?php echo esc_html( $mot ); ?></p>
+						<p class="ar-clubp-mot-txt">Le plus simple, c'est d'en parler&nbsp;: appelez-moi au <?php echo $tel; // phpcs:ignore -- échappé plus haut. ?>, ou faites votre demande en bas de page et je vous rappelle.</p>
+						<p class="ar-clubp-mot-sign"><?php echo esc_html( $r['signature'] ); ?><span>Plaine Altitude et Altitude Révision, atelier de <?php echo esc_html( $r['atelier_ville'] ); ?></span></p>
 					</div>
 				</div>
 
 				<div class="ar-clubp-sim" aria-labelledby="arClubpSimTitre">
 					<p class="ar-clubp-sim-eyebrow">Simulateur de remise</p>
-					<h2 class="ar-clubp-sim-titre" id="arClubpSimTitre">Combien de voiles au club cette année ?</h2>
+					<h2 class="ar-clubp-sim-titre" id="arClubpSimTitre">Combien de voiles au club cette année&nbsp;?</h2>
 					<label class="ar-clubp-sim-label" for="arClubpVoiles">
 						<output id="arClubpNb" for="arClubpVoiles">10</output> voiles à réviser
 					</label>
@@ -262,7 +267,9 @@ function ar_clubp_render( array $c ) {
 							<strong id="arClubpLigne2">soit environ 216 € d'économie pour le club</strong>
 						</div>
 					</div>
-					<p class="ar-clubp-sim-note">Estimation sur la révision ParachecK à <?php echo esc_html( (string) $r['prix_revision'] ); ?> €, hors suppléments, réparations et port. Les secours ne comptent pas dans le palier.</p>
+					<a class="ar-clubp-btn" href="#demande-club" data-ar-clubp="cta">Réserver pour <?php echo esc_html( $nom ); ?></a>
+					<p class="ar-clubp-cta-tel">ou appelez Hervé au <?php echo $tel; // phpcs:ignore ?></p>
+					<p class="ar-clubp-sim-note">Estimation sur la révision ParachecK à <?php echo esc_html( (string) $r['prix_revision'] ); ?>&nbsp;€, hors suppléments, réparations et port. Les secours ne comptent pas dans le palier.</p>
 				</div>
 			</div>
 		</section>
@@ -307,24 +314,6 @@ function ar_clubp_render( array $c ) {
 		</section>
 		<?php endif; ?>
 
-		<section class="ar-clubp-mot">
-			<div class="ar-clubp-in ar-clubp-mot-in">
-				<div class="ar-clubp-mot-carte">
-					<p class="ar-clubp-mot-txt">Bonjour à toute l'équipe de <?php echo esc_html( $nom ); ?>,</p>
-					<p class="ar-clubp-mot-txt">
-						<?php if ( $ecole ) : ?>
-							Avec un parc de voiles d'école, le plus simple est de tout faire réviser d'un coup, avant la reprise des stages. On réserve les jours qu'il faut à l'atelier rien que pour vous, et chaque voile garde son rapport ParachecK.
-						<?php elseif ( $p_dep >= 20 ) : ?>
-							Plusieurs de vos pilotes nous ont sans doute déjà confié leur voile. Plutôt que chacun de son côté, je vous propose de grouper les révisions du club : un créneau rien que pour vous, une seule commande à régler par le club, et une remise pour tout le monde.
-						<?php else : ?>
-							On ne se connaît pas encore, mais on reçoit des voiles de toute la France. Pour un club, grouper les révisions simplifie tout : un seul envoi, un créneau rien que pour vous, une seule commande à régler par le club, et une remise pour tout le monde.
-						<?php endif; ?>
-					</p>
-					<p class="ar-clubp-mot-txt">Le plus simple, c'est d'en parler : appelez-moi au <?php echo $tel; // phpcs:ignore ?>, ou remplissez la demande plus bas et je vous rappelle.</p>
-					<p class="ar-clubp-mot-sign"><?php echo esc_html( $r['signature'] ); ?><span>Plaine Altitude et Altitude Révision, atelier de <?php echo esc_html( $r['atelier_ville'] ); ?></span></p>
-				</div>
-			</div>
-		</section>
 	</div>
 	<?php
 }
