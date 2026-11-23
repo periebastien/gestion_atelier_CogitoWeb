@@ -1,0 +1,206 @@
+/**
+ * Pages club personnalisées /club/<slug>/ (pack Altitude, includes/club-pages.php).
+ * Charte des landings : fond clair, accent teal, eyebrow 11 px en capitales,
+ * texte courant 16 px minimum (public de clubs).
+ */
+
+/* Le héros générique de /commande-groupee/ est remplacé par celui du club. */
+body.ar-clubp [data-elementor-type="wp-page"] > .ar-hero { display: none; }
+
+.ar-clubp-wrap {
+	--c-teal: #20c4c3;
+	--c-teal-dark: #128a89;
+	--c-teal-soft: #e8f8f8;
+	--c-cta: #ffbd20;
+	--c-ink: #1a1a1a;
+	--c-muted: #4f5a63;
+	--c-alt: #f6f8f9;
+	--c-border: #e3e9ec;
+	color: var(--c-ink);
+	font-size: 17px;
+	line-height: 1.6;
+}
+.ar-clubp-wrap * { box-sizing: border-box; }
+.ar-clubp-in { max-width: 1160px; margin: 0 auto; padding-inline: 20px; }
+
+.ar-clubp-eyebrow,
+.ar-clubp-sim-eyebrow {
+	display: flex;
+	align-items: center;
+	gap: 9px;
+	margin: 0 0 14px;
+	font-size: 11px;
+	font-weight: 800;
+	letter-spacing: .14em;
+	text-transform: uppercase;
+	color: var(--c-teal-dark);
+}
+.ar-clubp-eyebrow::before {
+	content: "";
+	width: 26px;
+	height: 2px;
+	border-radius: 2px;
+	background: var(--c-teal);
+	flex: 0 0 auto;
+}
+.ar-clubp-h1 {
+	margin: 0 0 20px;
+	font-size: clamp(32px, 4.4vw, 50px);
+	line-height: 1.08;
+	font-weight: 800;
+	letter-spacing: -.01em;
+	text-wrap: balance;
+}
+.ar-clubp-h2 {
+	margin: 0 0 28px;
+	font-size: clamp(24px, 3vw, 33px);
+	line-height: 1.15;
+	font-weight: 800;
+	text-wrap: balance;
+}
+.ar-clubp-h1 em, .ar-clubp-h2 em { font-style: normal; color: var(--c-teal); }
+
+/* ---- Héros ---------------------------------------------------------------- */
+.ar-clubp-hero { padding: clamp(40px, 6vw, 80px) 0 clamp(40px, 5vw, 70px); background: #fff; }
+.ar-clubp-hero-grid {
+	display: grid;
+	grid-template-columns: 1.05fr .95fr;
+	gap: clamp(28px, 4vw, 64px);
+	align-items: center;
+}
+.ar-clubp-intro { margin: 0 0 28px; max-width: 54ch; font-size: clamp(17px, 1.4vw, 19px); color: var(--c-muted); }
+.ar-clubp-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; }
+.ar-clubp-btn {
+	display: inline-flex;
+	align-items: center;
+	min-height: 50px;
+	padding: 12px 26px;
+	border-radius: 999px;
+	background: var(--c-cta);
+	color: var(--c-ink) !important;
+	font-size: 16px;
+	font-weight: 800;
+	text-decoration: none !important;
+	transition: transform .15s ease, box-shadow .15s ease;
+}
+.ar-clubp-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(255, 189, 32, .35); }
+.ar-clubp-btn:focus-visible { outline: 3px solid var(--c-ink); outline-offset: 3px; }
+.ar-clubp-cta-tel { font-size: 16px; color: var(--c-muted); }
+.ar-clubp-wrap a[href^="tel:"] { color: var(--c-teal-dark); font-weight: 800; text-decoration: none; white-space: nowrap; }
+
+/* ---- Simulateur ----------------------------------------------------------- */
+.ar-clubp-sim {
+	background: #fff;
+	border-radius: 18px;
+	padding: clamp(22px, 3vw, 34px);
+	box-shadow: 0 22px 50px rgba(0, 0, 0, .10);
+	border: 1px solid var(--c-border);
+}
+.ar-clubp-sim-titre { margin: 0 0 18px; font-size: 22px; line-height: 1.25; font-weight: 800; }
+.ar-clubp-sim-label { display: block; margin: 0 0 6px; font-size: 17px; font-weight: 700; }
+.ar-clubp-sim-label output { font-size: 28px; font-weight: 900; color: var(--c-teal-dark); margin-right: 4px; }
+
+.ar-clubp-sim input[type="range"] {
+	--t: .5rem;
+	--th: 1.6rem;
+	--prog: 23%;
+	appearance: none;
+	display: block;
+	inline-size: 100%;
+	block-size: 2.75rem;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	cursor: pointer;
+}
+.ar-clubp-sim input[type="range"]::-webkit-slider-runnable-track {
+	block-size: var(--t);
+	border-radius: 999px;
+	background: linear-gradient(to right, var(--c-teal) var(--prog), #c9d3d8 var(--prog));
+}
+.ar-clubp-sim input[type="range"]::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	inline-size: var(--th);
+	block-size: var(--th);
+	margin-block-start: calc((var(--t) - var(--th)) / 2);
+	border-radius: 50%;
+	border: 4px solid #fff;
+	background: var(--c-teal-dark);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, .25);
+}
+.ar-clubp-sim input[type="range"]::-moz-range-track { block-size: var(--t); border-radius: 999px; background: #c9d3d8; }
+.ar-clubp-sim input[type="range"]::-moz-range-progress { block-size: var(--t); border-radius: 999px; background: var(--c-teal); }
+.ar-clubp-sim input[type="range"]::-moz-range-thumb {
+	inline-size: var(--th);
+	block-size: var(--th);
+	border-radius: 50%;
+	border: 4px solid #fff;
+	background: var(--c-teal-dark);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, .25);
+}
+.ar-clubp-sim input[type="range"]:focus-visible { outline: 3px solid var(--c-teal-dark); outline-offset: 4px; border-radius: 6px; }
+
+.ar-clubp-sim-res {
+	display: flex;
+	align-items: center;
+	gap: 18px;
+	margin: 18px 0 14px;
+	padding: 18px 20px;
+	border-radius: 14px;
+	background: var(--c-teal-soft);
+}
+.ar-clubp-sim-pct { font-size: 46px; line-height: 1; font-weight: 900; color: var(--c-teal-dark); white-space: nowrap; }
+.ar-clubp-sim-detail { display: flex; flex-direction: column; gap: 2px; font-size: 16px; color: var(--c-muted); }
+.ar-clubp-sim-detail strong { color: var(--c-ink); font-size: 17px; }
+.ar-clubp-sim-res.is-zero .ar-clubp-sim-pct { color: #8a949b; }
+.ar-clubp-sim-note { margin: 0; font-size: 16px; line-height: 1.45; color: #6b757d; }
+
+/* ---- Chiffres du secteur -------------------------------------------------- */
+.ar-clubp-chiffres { padding: clamp(48px, 6vw, 80px) 0; background: var(--c-alt); }
+.ar-clubp-cartes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; }
+.ar-clubp-carte {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 24px 22px;
+	border-radius: 16px;
+	background: #fff;
+	border: 1px solid var(--c-border);
+}
+.ar-clubp-carte-num { font-size: 36px; line-height: 1; font-weight: 900; color: var(--c-teal-dark); }
+.ar-clubp-carte-lbl { font-size: 16px; line-height: 1.45; color: var(--c-muted); }
+.ar-clubp-marques, .ar-clubp-acces { margin: 26px 0 0; max-width: 70ch; font-size: 17px; color: var(--c-muted); }
+.ar-clubp-acces { margin-top: 10px; }
+.ar-clubp-marques strong { color: var(--c-ink); }
+
+/* ---- Mot d'Hervé ---------------------------------------------------------- */
+.ar-clubp-mot { padding: clamp(48px, 6vw, 80px) 0; background: #fff; }
+.ar-clubp-mot-in { display: flex; justify-content: center; }
+.ar-clubp-mot-carte {
+	max-width: 720px;
+	padding: clamp(26px, 4vw, 44px);
+	border-radius: 18px;
+	background: #fffdf6;
+	border: 1px solid #f1e6c4;
+	box-shadow: 0 14px 34px rgba(0, 0, 0, .06);
+}
+.ar-clubp-mot-txt { margin: 0 0 14px; font-size: 18px; line-height: 1.65; }
+.ar-clubp-mot-sign { margin: 22px 0 0; font-size: 22px; font-weight: 800; }
+.ar-clubp-mot-sign span { display: block; font-size: 16px; font-weight: 600; color: var(--c-muted); }
+
+@media (max-width: 900px) {
+	.ar-clubp-hero-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 767px) {
+	.ar-clubp-in { padding-inline: 16px; }
+	.ar-clubp-btn { width: 100%; justify-content: center; }
+	.ar-clubp-sim-res { flex-direction: column; align-items: flex-start; gap: 8px; }
+	.ar-clubp-cartes { grid-template-columns: 1fr 1fr; gap: 12px; }
+	.ar-clubp-carte { padding: 18px 16px; }
+	.ar-clubp-carte-num { font-size: 28px; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.ar-clubp-btn { transition: none; }
+}
