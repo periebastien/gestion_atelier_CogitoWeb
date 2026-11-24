@@ -117,3 +117,9 @@
 .gacct-login--magic .gacct-login-who-mail { font-size: 16px; }
 .gacct-login--magic .gacct-login-msg { font-size: 16px; }
 .gacct-login--magic .gacct-login-forgot a.gacct-login-link { font-size: 16px; color: #20c4c3; font-weight: 700; }
+
+/* Phrase sous le bouton Google et lien sous l'identification de la demande (24/11/2026) */
+.gacct-login-google-note { margin: 8px 0 0; font-size: 16px; line-height: 1.4; color: #4c5d66; text-align: center; }
+.gacct-login-more { margin: 18px 0 0; font-size: 16px; text-align: center; }
+.gacct-login-more a { color: #148483; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.gacct-login-more a:hover, .gacct-login-more a:focus-visible { color: #0f6261; }

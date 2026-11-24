@@ -36,7 +36,10 @@ function gacct_login_texts() {
 		'email_placeholder' => 'vous@exemple.fr',
 		'email_hint'        => 'Nous vérifions si vous avez déjà un compte.',
 		'google'            => 'Continuer avec Google',
+		'google_note'       => '', // phrase sous le bouton Google (vide = rien), 24/11/2026
 		'or_email'          => 'ou avec votre adresse e-mail',
+		'demande_more_label' => '', // lien sous l'écran d'identification de la demande (vide = rien)
+		'demande_more_url'   => '',
 		'demande_step'      => 'Étape %1$s sur %2$s',
 		'demande_step_name' => 'Vous',
 		'demande_title'     => 'Votre demande d\'intervention',
@@ -229,6 +232,9 @@ function gacct_login_ui_render( $context = 'compte' ) {
 
 		<?php if ( $google ) : ?>
 		<div class="gacct-login-google"><?php echo $google; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
+		<?php if ( '' !== $t['google_note'] ) : ?>
+		<p class="gacct-login-google-note"><?php echo esc_html( $t['google_note'] ); ?></p>
+		<?php endif; ?>
 		<p class="gacct-login-or"><span><?php echo esc_html( $t['or_email'] ); ?></span></p>
 		<?php endif; ?>
 
@@ -297,6 +303,10 @@ function gacct_login_ui_render( $context = 'compte' ) {
 		</form>
 
 		<p class="gacct-login-msg" role="alert" aria-live="polite" hidden></p>
+
+		<?php if ( 'demande' === $context && '' !== $t['demande_more_label'] && '' !== $t['demande_more_url'] ) : ?>
+		<p class="gacct-login-more"><a href="<?php echo esc_url( $t['demande_more_url'] ); ?>" data-gacct-login-more><?php echo esc_html( $t['demande_more_label'] ); ?></a></p>
+		<?php endif; ?>
 	</div>
 	<?php
 	return ob_get_clean();

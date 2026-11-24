@@ -315,3 +315,14 @@ add_action( 'admin_enqueue_scripts', 'gacct_pack_ar_planning_colors', 20 );
  * joints (correction n°4 de Titi, 21/11/2026 ; module gacct-reparation.php du socle).
  */
 add_filter( 'gacct_demande_reparation_actif', '__return_true' );
+
+/**
+ * Écran d'identification de la demande (24/11/2026, rapport du 23/11 : 44 % de perte
+ * à l'entrée) : rassurer sous le bouton Google et offrir une sortie vers les tarifs.
+ */
+add_filter( 'gacct_login_texts', function ( $texts ) {
+	$texts['google_note']        = 'Pas de mot de passe à créer.';
+	$texts['demande_more_label'] = 'Voir les tarifs';
+	$texts['demande_more_url']   = home_url( '/tarifs/' );
+	return $texts;
+} );
