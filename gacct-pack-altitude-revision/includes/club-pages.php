@@ -143,7 +143,7 @@ add_filter( 'wpseo_opengraph_title', 'ar_clubp_title', 99 );
 add_filter( 'pre_get_document_title', 'ar_clubp_title', 99 );
 function ar_clubp_title( $title ) {
 	$c = ar_clubp_current();
-	return $c ? 'Révision groupée des voiles de ' . $c['nom'] : $title;
+	return $c ? 'Révision groupée des voiles ' . ar_clubp_de_nom( $c['nom'], true ) . ar_clubp_de_nom( $c['nom'], false ) : $title;
 }
 
 add_filter( 'body_class', function ( $classes ) {
@@ -246,7 +246,7 @@ function ar_clubp_render( array $c ) {
 						<?php endif; ?>
 					</h1>
 					<div class="ar-clubp-mot-carte">
-						<p class="ar-clubp-mot-txt">Bonjour à toute l'équipe de <?php echo esc_html( $nom ); ?>,</p>
+						<p class="ar-clubp-mot-txt">Bonjour à toute l'équipe <?php echo esc_html( ar_clubp_de_nom( $nom, true ) . ar_clubp_de_nom( $nom, false ) ); ?>,</p>
 						<p class="ar-clubp-mot-txt"><?php echo esc_html( $mot ); ?></p>
 						<p class="ar-clubp-mot-txt">Le plus simple, c'est d'en parler&nbsp;: appelez-moi au <?php echo $tel; // phpcs:ignore -- échappé plus haut. ?>, ou faites votre demande en bas de page et je vous rappelle.</p>
 						<p class="ar-clubp-mot-sign"><?php echo esc_html( $r['signature'] ); ?><span>Plaine Altitude et Altitude Révision, atelier de <?php echo esc_html( $r['atelier_ville'] ); ?></span></p>
