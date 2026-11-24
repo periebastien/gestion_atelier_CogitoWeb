@@ -198,6 +198,7 @@ function gacct_regions_data() {
 		/* ---- 3 · PAYS DE LA LOIRE -------------------------------------- */
 		'pays-de-la-loire' => array(
 			'name'     => 'Pays de la Loire',
+			'name_de'  => 'des Pays de la Loire',
 			'title'    => 'Révision de parapente en Pays de la Loire',
 			'meta'     => 'Vol au treuil en Vendée ou en Loire-Atlantique ? Expédiez votre voile à notre atelier PARACHECK : rapport détaillé, retour suivi, créneau réservé à l’avance.',
 			'h1'       => 'Révision de parapente en Pays de la Loire',
@@ -248,6 +249,7 @@ function gacct_regions_data() {
 		/* ---- 4 · ÎLE-DE-FRANCE ----------------------------------------- */
 		'ile-de-france' => array(
 			'name'     => 'Île-de-France',
+			'name_de'  => 'd’Île-de-France',
 			'title'    => 'Révision de parapente en Île-de-France, envoi simple',
 			'meta'     => 'Pilote francilien ? Expédiez votre voile à notre atelier PARACHECK, ou déposez-la sur la route de la Normandie. Rapport détaillé et retour en colis suivi.',
 			'h1'       => 'Révision de parapente en Île-de-France',
@@ -298,6 +300,7 @@ function gacct_regions_data() {
 		/* ---- 5 · HAUTS-DE-FRANCE --------------------------------------- */
 		'hauts-de-france' => array(
 			'name'     => 'Hauts-de-France',
+			'name_de'  => 'des Hauts-de-France',
 			'title'    => 'Révision de parapente en Hauts-de-France',
 			'meta'     => 'Côte d’Opale, terrils, treuil : faites réviser votre voile hors saison. Atelier PARACHECK, créneau réservé à l’avance, retour en colis suivi.',
 			'h1'       => 'Révision de parapente en Hauts-de-France',
@@ -341,6 +344,93 @@ function gacct_regions_data() {
 				array( 'q' => 'Quand faire réviser ma voile ?', 'a' => 'Idéalement pendant la période où vos sites sont fermés : vous ne perdez aucun jour de vol.' ),
 				array( 'q' => 'Je vole au treuil, est-ce différent ?', 'a' => 'Le suspentage et les points d’ancrage travaillent davantage. Signalez-le nous.' ),
 				array( 'q' => 'Mon aile est une aile de paramoteur ?', 'a' => 'Nous les traitons couramment, avec leurs contraintes propres.' ),
+			),
+		),
+
+		/* ---- 6 · AUVERGNE-RHÔNE-ALPES (24/11/2026) ----------------------- */
+		'auvergne-rhone-alpes' => array(
+			'name'     => 'Auvergne-Rhône-Alpes',
+			'name_de'  => 'd’Auvergne-Rhône-Alpes',
+			'title'    => 'Révision de parapente en Auvergne-Rhône-Alpes, envoi et retour suivis',
+			'meta'     => 'Pilote des Alpes ou d’Auvergne ? Expédiez votre voile à notre atelier PARACHECK : créneau réservé à l’avance, rapport de contrôle chiffré, retour en colis suivi.',
+			'h1'       => 'Révision de parapente en Auvergne-Rhône-Alpes',
+			'h1_html'  => 'Révision de parapente <em>en Auvergne-Rhône-Alpes</em>',
+			'hero_img' => 2241,
+			'intro'    => 'Vous volez dans la région qui vole le plus en France : le lac d’Annecy, la Chartreuse, la vallée de Chamonix, la chaîne des Puys. Des ateliers, vous en avez près de chez vous. Si des pilotes savoyards, isérois ou drômois nous envoient leur voile, c’est pour une raison simple : un créneau réservé, une date de prise en charge connue d’avance et un rapport de contrôle chiffré.',
+			'stat_local' => array( 'value' => '94', 'label' => 'révisions pour des pilotes d’Auvergne-Rhône-Alpes' ),
+			'depts'    => array(
+				array( 'Savoie', '24' ),
+				array( 'Drôme', '17' ),
+				array( 'Ain', '15' ),
+				array( 'Isère', '10' ),
+				array( 'Haute-Savoie', '10' ),
+			),
+			'brands'   => 'Pour les pilotes de la région, les voiles les plus confiées sont les <strong>Niviuk</strong>, <strong>Ozone</strong> et <strong>Advance</strong>.',
+			'sections' => array(
+				array(
+					'eyebrow' => 'Voler en montagne',
+					'h2'   => 'Beaucoup d’heures, beaucoup de soleil',
+					'html' => '<p>Un pilote alpin vole plus que la moyenne : des thermiques dès le printemps, des journées entières en l’air, des décollages en altitude comme la Forclaz au-dessus du lac d’Annecy, Saint-Hilaire-du-Touvet en Chartreuse ou Planpraz face au Mont-Blanc. En Auvergne, le puy de Dôme offre des vols au-dessus de la chaîne des volcans.</p><p>Ces heures se paient sur le tissu : en altitude, le rayonnement ultraviolet est plus fort, et c’est lui qui dégrade l’enduction et fait chuter la porosité. Une voile qui vole beaucoup en montagne peut vieillir plus vite que ne le laisse croire son âge.</p>',
+				),
+				array(
+					'eyebrow' => 'Voiles légères',
+					'h2'   => 'Marche et vol, matériel léger',
+					'html' => '<p>La marche et vol a fait exploser le nombre de voiles légères dans les Alpes. Tissus plus fins, suspentes non gainées, pliages serrés au fond d’un sac : ce matériel a moins de marge que celui d’une voile classique, et il s’use différemment.</p><p>Le contrôle PARACHECK mesure ce qui compte : porosité sur plusieurs zones de l’extrados, résistance des suspentes par test de rupture, calage complet, coutures. Vous savez où en est votre voile, chiffres à l’appui.</p>',
+				),
+			),
+			'access'   => array(
+				'title' => 'Expédiez votre voile, nous la renvoyons',
+				'intro' => 'Depuis la région, l’envoi est la solution normale. Vous réservez votre créneau en ligne, vous connaissez la date de prise en charge avant même d’expédier, vous suivez votre colis à l’aller comme au retour, et vous recevez votre rapport de contrôle avec la voile. Révisez de préférence hors saison : votre voile est prête quand les thermiques reviennent.',
+				'rows'  => array(),
+			),
+			'reviews'  => array(),
+			'faq'      => array(
+				array( 'q' => 'Combien de temps ma voile est-elle immobilisée ?', 'a' => 'Vous choisissez votre créneau en réservant : la voile est traitée à la date prévue, pas mise en file d’attente. Ajoutez le temps d’acheminement aller et retour.' ),
+				array( 'q' => 'Contrôlez-vous les voiles légères de marche et vol ?', 'a' => 'Oui. Dites-nous simplement qu’il s’agit d’une voile légère : nous adaptons les manipulations à ses tissus et à ses suspentes.' ),
+				array( 'q' => 'Puis-je faire plier mon secours dans le même envoi ?', 'a' => 'Oui : pliage et contrôle du parachute de secours font partie de nos prestations, un seul colis suffit.' ),
+			),
+		),
+
+		/* ---- 7 · NOUVELLE-AQUITAINE (24/11/2026) ------------------------- */
+		'nouvelle-aquitaine' => array(
+			'name'     => 'Nouvelle-Aquitaine',
+			'name_de'  => 'de Nouvelle-Aquitaine',
+			'title'    => 'Révision de parapente en Nouvelle-Aquitaine, envoi et retour suivis',
+			'meta'     => 'Pilote du Poitou, des Charentes, de Gironde ou des Pyrénées ? Expédiez votre voile à notre atelier PARACHECK : rapport détaillé, retour suivi, créneau réservé.',
+			'h1'       => 'Révision de parapente en Nouvelle-Aquitaine',
+			'h1_html'  => 'Révision de parapente <em>en Nouvelle-Aquitaine</em>',
+			'hero_img' => 2240,
+			'intro'    => 'La Nouvelle-Aquitaine réunit des façons de voler qui n’ont presque rien en commun : le treuil dans les plaines du Poitou et des Charentes, le soaring sur la dune du Pilat, la montagne en vallée d’Aspe. Chacune use une voile à sa manière, et c’est ce que le contrôle doit savoir lire.',
+			'stat_local' => array( 'value' => '269', 'label' => 'révisions pour des pilotes de Nouvelle-Aquitaine' ),
+			'depts'    => array(
+				array( 'Deux-Sèvres', '87' ),
+				array( 'Charente-Maritime', '50' ),
+				array( 'Vienne', '35' ),
+				array( 'Gironde', '21' ),
+			),
+			'brands'   => 'En Nouvelle-Aquitaine, les voiles les plus confiées sont les <strong>Niviuk</strong>, <strong>Advance</strong>, <strong>Ozone</strong> et <strong>ITV</strong>.',
+			'sections' => array(
+				array(
+					'eyebrow' => 'Plaine et treuil',
+					'h2'   => 'Le Poitou et les Charentes volent au treuil',
+					'html' => '<p>La majorité de nos clients de la région viennent des Deux-Sèvres, de Charente-Maritime et de la Vienne : un pays de plaine où l’altitude se gagne au treuil. Une traction franche appliquée d’un coup à tout le suspentage, plusieurs fois par journée de vol : les points d’ancrage, les élévateurs et les suspentes hautes travaillent plus durement que sur un vol de pente.</p><p>Le contrôle PARACHECK mesure la résistance réelle des suspentes par test de rupture et vérifie le calage complet. Sur une voile treuillée régulièrement, ce n’est pas une formalité.</p>',
+				),
+				array(
+					'eyebrow' => 'Côte et montagne',
+					'h2'   => 'Du sable de la dune aux vallées pyrénéennes',
+					'html' => '<p>Sur la dune du Pilat et le long de la côte atlantique, on vole en dynamique au-dessus du sable et dans l’air salin. Le sel retient l’humidité au cœur du tissu, le sable s’infiltre dans les caissons et use les gaines : la porosité et la résistance des suspentes baissent plus vite.</p><p>Au sud, les Pyrénées-Atlantiques offrent du vol de montagne, en vallée d’Aspe autour d’Accous. Plus d’heures, plus de soleil : un autre régime d’usure, que le porosimètre mesure tout aussi bien.</p>',
+				),
+			),
+			'access'   => array(
+				'title' => 'Expédiez votre voile, c’est la voie normale',
+				'intro' => 'Pour la plupart des pilotes de la région, l’envoi est la solution la plus simple. Vous réservez votre créneau en ligne, vous connaissez la date de prise en charge avant même d’expédier, vous suivez le colis dans les deux sens, et vous récupérez un rapport de contrôle complet avec votre voile. Depuis le nord de la région, le dépôt en main propre reste possible sur rendez-vous.',
+				'rows'  => array(),
+			),
+			'reviews'  => array(),
+			'faq'      => array(
+				array( 'q' => 'Je vole au treuil, dois-je le signaler ?', 'a' => 'Oui, dites-le nous : nous regardons le suspentage et les points d’ancrage avec une attention particulière.' ),
+				array( 'q' => 'Je vole souvent à la dune du Pilat, faut-il réviser plus souvent ?', 'a' => 'Le sel et le sable accélèrent l’usure du tissu et des suspentes. Un contrôle plus rapproché est raisonnable ; le rapport vous dira ce qu’il en est réellement.' ),
+				array( 'q' => 'Prenez-vous les ailes de paramoteur ?', 'a' => 'Oui, nous les traitons couramment, avec leurs contraintes propres.' ),
 			),
 		),
 	);

@@ -122,7 +122,7 @@ endif;
 			<div class="ar-region-local-in">
 				<p class="ar-region-eyebrow">Nos révisions en <?php echo esc_html( (string) $region['name'] ); ?></p>
 				<h2 class="ar-region-h2">Un ancrage réel dans la région</h2>
-				<div class="ar-region-prose"><p>Depuis 2019, l’atelier a contrôlé <strong><?php echo esc_html( (string) $region['stat_local']['value'] ); ?></strong> voiles pour des pilotes de <?php echo esc_html( (string) $region['name'] ); ?>. La répartition par département&nbsp;:</p></div>
+				<div class="ar-region-prose"><p>Depuis 2019, l’atelier a contrôlé <strong><?php echo esc_html( (string) $region['stat_local']['value'] ); ?></strong> voiles pour des pilotes <?php echo esc_html( (string) ( $region['name_de'] ?? 'de ' . $region['name'] ) ); ?>. La répartition par département&nbsp;:</p></div>
 				<div class="ar-region-depts">
 					<?php foreach ( $region['depts'] as $d ) : ?>
 						<div class="ar-region-dept">
