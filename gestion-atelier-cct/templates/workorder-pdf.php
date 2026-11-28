@@ -85,6 +85,7 @@ td { vertical-align: top; padding: 0; }
 .dot { display: inline-block; width: 3mm; height: 3mm; border-radius: 1.5mm; margin-left: 1.5mm; }
 .presta { margin-top: 1.5mm; font-size: 9.5pt; font-weight: bold; }
 .presta td { padding: 0.7mm 0; }
+.presta-inline { margin-top: 1.5mm; font-size: 9pt; font-weight: bold; line-height: 1.45; }
 .presta-b { width: 4mm; color: <?php echo esc_html( $wo_accent ); ?>; font-size: 12pt; line-height: 1; }
 
 .deadline { background-color: <?php echo esc_html( $wo_accent ); ?>; color: #fff; border-radius: 2.5mm; padding: 4mm; text-align: center; }
@@ -135,9 +136,35 @@ td { vertical-align: top; padding: 0; }
 .foot { position: fixed; bottom: 0; left: 0; right: 0; font-size: 7pt; font-weight: bold; color: #aaa; }
 .foot td { vertical-align: bottom; }
 .foot-r { text-align: right; }
+
+/* ── Bon chargé (plus de 3 prestations, bandeau de club ou commentaire) : espacements
+   resserrés pour que l'étiquette reste en page 1 (28/11/2026 ; la révision
+   319, 8 prestations, sortait sur 2 pages). ── */
+body.dense .rule { height: 2.5mm; }
+body.dense .wo-comment { margin: 2mm 0 1.8mm; }
+body.dense .blk { padding: 2.2mm 3.5mm; margin-bottom: 1.8mm; }
+body.dense .blk-t { font-size: 11pt; margin-top: 0.6mm; }
+body.dense .kv { margin-top: 0.8mm; }
+body.dense .presta-inline { font-size: 8.5pt; line-height: 1.25; margin-top: 1mm; }
+body.dense .deadline { padding: 3mm; }
+body.dense .deadline b { font-size: 14pt; margin-top: 1mm; }
+body.dense .howto { margin-top: 2.2mm; padding: 3mm; }
+body.dense .howto-list { margin-top: 1.2mm; }
+body.dense .howto-list td { padding: 0 0 1.2mm; }
+body.dense .addr { line-height: 1.35; margin-top: 1.2mm; }
+body.dense .cut { margin: 2.5mm 0 2mm; }
+body.dense .tag { padding: 3.5mm; }
+body.dense .tag-sep { margin: 2mm 0; }
+body.dense .tag-presta { font-size: 8pt; line-height: 1.3; }
+body.dense .head-logo img { height: 10mm; }
+body.dense .head-ref { font-size: 18pt; }
+/* Bandeau de club (styles en ligne posés par le module) : !important requis. */
+body.dense .wo-bandeau { padding: 2px 10px !important; margin: 4px 0 4px !important; }
+body.dense .wo-bandeau-t { font-size: 16px !important; }
+body.dense .wo-comment { font-size: 8.5pt; line-height: 1.25; padding: 1.3mm 4mm; }
 </style>
 </head>
-<body>
+<body<?php echo ( count( (array) $data['prestations'] ) > 3 || ! empty( $data['bandeau']['titre'] ) || ! empty( $data['commentaire'] ) ) ? ' class="dense"' : ''; ?>>
 
 <!-- ══ EN-TÊTE ══ -->
 <table class="head">
@@ -161,9 +188,9 @@ td { vertical-align: top; padding: 0; }
 <div class="rule"></div>
 
 <?php if ( ! empty( $data['bandeau']['titre'] ) ) : // Tiers (ex. club) : bandeau très visible, posé par un module. ?>
-	<div style="border:2px solid #1a1a1a;border-radius:6px;padding:5px 12px;margin:6px 0 8px;text-align:center;">
+	<div class="wo-bandeau" style="border:2px solid #1a1a1a;border-radius:6px;padding:5px 12px;margin:6px 0 8px;text-align:center;">
 		<?php if ( ! empty( $data['bandeau']['label'] ) ) : ?><div style="font-size:10px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;"><?php echo esc_html( $data['bandeau']['label'] ); ?></div><?php endif; ?>
-		<div style="font-size:22px;font-weight:bold;line-height:1.1;"><?php echo esc_html( $data['bandeau']['titre'] ); ?></div>
+		<div class="wo-bandeau-t" style="font-size:22px;font-weight:bold;line-height:1.1;"><?php echo esc_html( $data['bandeau']['titre'] ); ?></div>
 		<?php if ( ! empty( $data['bandeau']['sous'] ) ) : ?><div style="font-size:12px;"><?php echo esc_html( $data['bandeau']['sous'] ); ?></div><?php endif; ?>
 	</div>
 <?php endif; ?>
@@ -194,11 +221,15 @@ td { vertical-align: top; padding: 0; }
 			<?php if ( ! empty( $data['prestations'] ) ) : ?>
 				<div class="blk">
 					<div class="lbl"><?php esc_html_e( 'Prestations commandées', 'gestion-atelier-cct' ); ?></div>
+					<?php if ( count( $data['prestations'] ) > 3 ) : // Liste longue : en ligne, sinon l'étiquette passe en page 2 (28/11/2026). ?>
+						<div class="presta-inline"><?php echo esc_html( implode( ' · ', $data['prestations'] ) ); ?></div>
+					<?php else : ?>
 					<table class="presta">
 						<?php foreach ( $data['prestations'] as $wo_prestation ) : ?>
 							<tr><td class="presta-b">&bull;</td><td><?php echo esc_html( $wo_prestation ); ?></td></tr>
 						<?php endforeach; ?>
 					</table>
+					<?php endif; ?>
 				</div>
 			<?php endif; ?>
 

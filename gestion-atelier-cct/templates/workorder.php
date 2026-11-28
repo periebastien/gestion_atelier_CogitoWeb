@@ -70,7 +70,8 @@ $wo_specs = array_filter(
 	<button type="button" class="wo-print-btn" onclick="window.print()"><?php esc_html_e( 'Imprimer ce bon', 'gestion-atelier-cct' ); ?></button>
 </div>
 
-<section class="page">
+<?php $wo_dense = count( (array) $data['prestations'] ) > 3 || ! empty( $data['bandeau']['titre'] ) || ! empty( $data['commentaire'] ); ?>
+<section class="page<?php echo $wo_dense ? ' dense' : ''; ?>">
 
 	<!-- ══ EN-TÊTE ══ -->
 	<div class="head">
@@ -90,9 +91,9 @@ $wo_specs = array_filter(
 
 
 <?php if ( ! empty( $data['bandeau']['titre'] ) ) : // Tiers (ex. club) : bandeau très visible, posé par un module. ?>
-	<div style="border:2px solid #1a1a1a;border-radius:6px;padding:5px 12px;margin:6px 0 8px;text-align:center;">
+	<div class="wo-bandeau" style="border:2px solid #1a1a1a;border-radius:6px;padding:5px 12px;margin:6px 0 8px;text-align:center;">
 		<?php if ( ! empty( $data['bandeau']['label'] ) ) : ?><div style="font-size:10px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;"><?php echo esc_html( $data['bandeau']['label'] ); ?></div><?php endif; ?>
-		<div style="font-size:22px;font-weight:bold;line-height:1.1;"><?php echo esc_html( $data['bandeau']['titre'] ); ?></div>
+		<div class="wo-bandeau-t" style="font-size:22px;font-weight:bold;line-height:1.1;"><?php echo esc_html( $data['bandeau']['titre'] ); ?></div>
 		<?php if ( ! empty( $data['bandeau']['sous'] ) ) : ?><div style="font-size:12px;"><?php echo esc_html( $data['bandeau']['sous'] ); ?></div><?php endif; ?>
 	</div>
 <?php endif; ?>
@@ -124,11 +125,15 @@ $wo_specs = array_filter(
 			<?php if ( ! empty( $data['prestations'] ) ) : ?>
 				<div class="blk">
 					<div class="lbl"><?php esc_html_e( 'Prestations commandées', 'gestion-atelier-cct' ); ?></div>
+					<?php if ( count( $data['prestations'] ) > 3 ) : // Liste longue : en ligne, sinon l'étiquette passe en page 2 (28/11/2026). ?>
+						<div class="presta-inline"><?php echo esc_html( implode( ' · ', $data['prestations'] ) ); ?></div>
+					<?php else : ?>
 					<ul class="presta">
 						<?php foreach ( $data['prestations'] as $wo_prestation ) : ?>
 							<li><?php echo esc_html( $wo_prestation ); ?></li>
 						<?php endforeach; ?>
 					</ul>
+					<?php endif; ?>
 				</div>
 			<?php endif; ?>
 
