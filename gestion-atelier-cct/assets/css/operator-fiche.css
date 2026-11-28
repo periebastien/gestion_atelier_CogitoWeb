@@ -372,3 +372,7 @@
 }
 .gacct-op-fiche .gacct-op-tracking-buttons { margin: 0 0 6px; }
 .gacct-op-fiche .gacct-op-tracking-feedback:empty { display: none; }
+
+/* Commentaire du client en tête de fiche (correction n°6 du 26/11/2026). */
+.gacct-op-fiche .gacct-op-client-comment { border-left: 4px solid var(--gacct-accent); }
+.gacct-op-fiche .gacct-op-client-comment p { margin: 0; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }

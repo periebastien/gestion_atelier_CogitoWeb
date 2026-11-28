@@ -322,6 +322,11 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 	// 1. Lien retour.
 	echo '<p class="gacct-op-back"><a href="' . esc_url( gacct_op_console_url( 0, array( 'view' => 'list' ) ) ) . '">&larr; ' . esc_html__( 'Interventions', 'gestion-atelier-cct' ) . '</a></p>';
 
+	// Repère des notices de l'admin : sans lui, WordPress les glisse sous le
+	// premier titre h2 de la page, c'est-à-dire DANS une carte de la fiche
+	// (vu dans « Avancement », correction n°6 du 26/11/2026).
+	echo '<hr class="wp-header-end">';
+
 	echo '<div class="gacct-op-fiche-grid">';
 	echo '<div class="gacct-op-fiche-main">';
 
@@ -551,6 +556,16 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 	echo '</div>';
 
 	echo '</div>'; // .gacct-op-head
+
+	// ---------------------------------------------------------------- Commentaire du client.
+	// Remonté en tête de fiche (correction n°6 du 26/11/2026) : il était
+	// noyé en bas du cadre « Prestations commandées ». Aussi sur le bon.
+	if ( ! empty( $revision['commentaire_commande'] ) ) {
+		echo '<div class="gacct-op-card gacct-op-client-comment">';
+		echo '<h2>' . esc_html__( 'Commentaire du client', 'gestion-atelier-cct' ) . '</h2>';
+		echo '<p>' . nl2br( esc_html( $revision['commentaire_commande'] ) ) . '</p>';
+		echo '</div>';
+	}
 
 	// ---------------------------------------------------------------- Frise 0→8.
 	// L'état 9 « Sans suite » est terminal HORS frise : encart dédié à la place.
@@ -956,9 +971,7 @@ function gacct_op_render_fiche_screen( $revision_id ) {
 	} else {
 		echo '<p class="gacct-op-muted">' . esc_html__( 'Aucune ligne de commande.', 'gestion-atelier-cct' ) . '</p>';
 	}
-	if ( ! empty( $revision['commentaire_commande'] ) ) {
-		echo '<p class="gacct-op-muted"><strong>' . esc_html__( 'Commentaire client :', 'gestion-atelier-cct' ) . '</strong> ' . nl2br( esc_html( $revision['commentaire_commande'] ) ) . '</p>';
-	}
+	// Commentaire client : affiché en tête de fiche (carte dédiée).
 	if ( ! empty( $revision['commentaire_reception'] ) ) {
 		echo '<p class="gacct-op-muted gacct-op-reception-note"><strong>' . esc_html__( 'Commentaire de réception :', 'gestion-atelier-cct' ) . '</strong> ' . nl2br( esc_html( $revision['commentaire_reception'] ) ) . '</p>';
 	}

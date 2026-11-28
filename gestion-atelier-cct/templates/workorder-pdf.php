@@ -68,6 +68,12 @@ td { vertical-align: top; padding: 0; }
 .head-sub { font-size: 8pt; font-weight: bold; color: #8a8a8a; margin-top: 1mm; }
 .rule { border-bottom: 2px solid <?php echo esc_html( $wo_accent ); ?>; height: 4mm; }
 
+/* ── Commentaire du client (en tête, avant la partie colis) ── */
+/* Compact (libellé sur la ligne du texte) : la page n'a que ~30 pt de marge
+   avant que l'étiquette ne passe en page 2 (mesuré le 28/11/2026). */
+.wo-comment { border: 1.5px solid <?php echo esc_html( $wo_accent ); ?>; background-color: #f2fbfb; border-radius: 2.5mm; padding: 1.6mm 4mm; margin: 2.5mm 0 2mm; font-size: 9pt; font-weight: bold; line-height: 1.3; }
+.wo-comment .lbl { padding-right: 1.5mm; }
+
 /* ── Partie qui part dans le colis ── */
 .body-l { padding-right: 3mm; }
 .body-r { width: 62mm; }
@@ -160,6 +166,10 @@ td { vertical-align: top; padding: 0; }
 		<div style="font-size:22px;font-weight:bold;line-height:1.1;"><?php echo esc_html( $data['bandeau']['titre'] ); ?></div>
 		<?php if ( ! empty( $data['bandeau']['sous'] ) ) : ?><div style="font-size:12px;"><?php echo esc_html( $data['bandeau']['sous'] ); ?></div><?php endif; ?>
 	</div>
+<?php endif; ?>
+
+<?php if ( ! empty( $data['commentaire'] ) ) : ?>
+<div class="wo-comment"><span class="lbl"><?php esc_html_e( 'Commentaire du client', 'gestion-atelier-cct' ); ?></span> <?php echo esc_html( $data['commentaire'] ); ?></div>
 <?php endif; ?>
 
 <!-- ══ PARTIE À GLISSER DANS LE COLIS ══ -->

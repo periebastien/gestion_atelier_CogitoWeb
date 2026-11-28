@@ -79,6 +79,10 @@ body {
 
 /* ── Partie haute : celle qui part DANS le colis ─────────────────────── */
 
+/* Commentaire du client, en tête du bon (correction n°6 du 26/11/2026). */
+.wo-comment { border: 1.5px solid var(--wo-accent); background: color-mix(in srgb, var(--wo-accent) 7%, #fff); border-radius: 2.5mm; padding: 2.5mm 4mm; margin-top: 4mm; }
+.wo-comment-t { font-size: 9pt; font-weight: 700; line-height: 1.35; margin-top: 1mm; overflow-wrap: anywhere; }
+
 .client { display: grid; grid-template-columns: 1fr 62mm; gap: 6mm; margin-top: 5mm; }
 
 .blk { border: 1px solid rgba(0, 0, 0, 0.13); border-radius: 2.5mm; padding: 3.5mm 4mm; }
@@ -275,7 +279,7 @@ body {
 	}
 
 	/* Rien ne doit être coupé par la marge : ni l'étiquette, ni le trait. */
-	.head, .client, .blk, .deadline, .howto, .cut, .tags, .tag, .foot {
+	.head, .wo-comment, .client, .blk, .deadline, .howto, .cut, .tags, .tag, .foot {
 		break-inside: avoid;
 		page-break-inside: avoid;
 	}

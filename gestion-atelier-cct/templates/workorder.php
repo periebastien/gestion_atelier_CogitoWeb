@@ -97,6 +97,13 @@ $wo_specs = array_filter(
 	</div>
 <?php endif; ?>
 
+<?php if ( ! empty( $data['commentaire'] ) ) : ?>
+	<div class="wo-comment">
+		<div class="lbl"><?php esc_html_e( 'Commentaire du client', 'gestion-atelier-cct' ); ?></div>
+		<div class="wo-comment-t"><?php echo nl2br( esc_html( $data['commentaire'] ) ); ?></div>
+	</div>
+<?php endif; ?>
+
 	<!-- ══ PARTIE À GLISSER DANS LE COLIS ══ -->
 	<div class="client">
 		<div>

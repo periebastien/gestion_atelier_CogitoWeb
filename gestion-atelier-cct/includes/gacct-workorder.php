@@ -97,6 +97,26 @@ function gacct_wo_expiry_ts( $order, $slot_ts ) {
 }
 
 /**
+ * Commentaire client prêt pour le bon : un seul paragraphe (lignes jointes
+ * par « / »), coupé vers 165 caractères (deux lignes au plus), pour que le
+ * bon tienne sur une page A4 (le texte complet reste dans la console
+ * atelier). Mesuré le 28/11/2026 : le PDF n'a que deux ou trois lignes de
+ * marge, au-delà l'étiquette à découper passe en page 2.
+ *
+ * @param string $texte Commentaire brut (commentaire_commande).
+ * @return string
+ */
+function gacct_wo_commentaire( $texte ) {
+	$lignes = array_filter( array_map( 'trim', explode( "\n", str_replace( "\r", '', (string) $texte ) ) ), 'strlen' );
+	$texte  = implode( ' / ', $lignes );
+	$max    = (int) apply_filters( 'gacct_wo_commentaire_max', 165 );
+	if ( $max > 0 && mb_strlen( $texte ) > $max ) {
+		$texte = rtrim( mb_substr( $texte, 0, $max ) ) . ' […] ' . __( '(suite dans la console)', 'gestion-atelier-cct' );
+	}
+	return $texte;
+}
+
+/**
  * Données complètes du bon, consommées par templates/workorder.php.
  */
 function gacct_wo_data( $order ) {
@@ -145,6 +165,9 @@ function gacct_wo_data( $order ) {
 			'swatches' => $swatches, // 0–3 entrées { base, light } (palette fermée du site).
 		),
 		'prestations'   => function_exists( 'gacct_op_expected_items' ) ? gacct_op_expected_items( $order ) : array(),
+		// Commentaire saisi par le client à la demande (correction n°6 du
+		// 26/11/2026) : encadré en tête du bon, HTML et PDF.
+		'commentaire'   => $revision ? gacct_wo_commentaire( $revision['commentaire_commande'] ?? '' ) : '',
 		'store_address' => $store_address,
 		'contact_phone' => isset( $pay_settings['contact_phone'] ) ? $pay_settings['contact_phone'] : '',
 		'slot_ts'       => $slot_ts,

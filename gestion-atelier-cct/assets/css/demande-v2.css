@@ -1023,18 +1023,27 @@
 	max-width: none !important;
 }
 
+/* Grille de 7 colonnes égales (correction n°5 du 26/11/2026) : en flex,
+   7 × 13,5 % + les 6 écarts de 3 px hérités du socle v1 dépassaient la
+   largeur sous ~330 px de calendrier (iPhone) : 6 jours par ligne, dates
+   décalées sous les mauvais jours. La grille ne peut plus déborder. */
 .gacct-v2 .flatpickr-calendar.inline .dayContainer {
 	width: 100% !important;
 	max-width: none !important;
 	min-width: 0 !important;
-	justify-content: flex-start;
+	display: grid !important;
+	grid-template-columns: repeat( 7, minmax( 0, 1fr ) );
+	column-gap: 4px;
+	row-gap: 0;
+	justify-content: stretch !important;
 }
 
 /* !important : le socle v1 fige les jours à 40px (max-width/height
    !important, pensé pour le popup) — l'inline pleine largeur doit gagner. */
 .gacct-v2 .flatpickr-calendar.inline .flatpickr-day {
-	flex: 0 0 13.5% !important;
+	flex: none !important;
 	width: auto !important;
+	min-width: 0 !important;
 	max-width: none !important;
 	height: 52px !important;
 	line-height: 50px !important;
